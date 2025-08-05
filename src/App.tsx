@@ -1,0 +1,97 @@
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import GanhaveisDetail from "./pages/GanhaveisDetail";
+import Resultados from "./pages/Resultados";
+import Categorias from "./pages/Categorias";
+import SubcategoriaGanhaveis from "./pages/SubcategoriaGanhaveis";
+import Descobrir from "./pages/Descobrir";
+import SignUp from "./pages/SignUp";
+import Login from "./pages/Login";
+import MinhaConta from "./pages/MinhaConta";
+import ComoFunciona from "./pages/ComoFunciona";
+import GuiaDoCriador from "./pages/GuiaDoCriador";
+import CentralDeAjuda from "./pages/CentralDeAjuda";
+import SobreNos from "./pages/SobreNos";
+import TrabalheConosco from "./pages/TrabalheConosco";
+import ConfiancaSeguranca from "./pages/ConfiancaSeguranca";
+import PerfilPublico from "./pages/PerfilPublico";
+import ConfirmacaoPagamento from "./pages/ConfirmacaoPagamento";
+import PagamentoSucesso from "./pages/PagamentoSucesso";
+import PagamentoErro from "./pages/PagamentoErro";
+import NotFound from "./pages/NotFound";
+import LanceSeuGanhavel from "./pages/LanceSeuGanhavel";
+import GerenciarGanhavel from "./pages/GerenciarGanhavel";
+import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
+import AlterarSenha from "./pages/AlterarSenha";
+import Admin from "./pages/Admin";
+import Dashboard from "./pages/admin/Dashboard";
+import GanhaveisManagement from "./pages/admin/GanhaveisManagement";
+import GanhavelsConcluidos from "./pages/admin/GanhavelsConcluidos";
+import UsersManagement from "./pages/admin/UsersManagement";
+import FinancialControl from "./pages/admin/FinancialControl";
+import Analytics from "./pages/admin/Analytics";
+import Settings from "./pages/admin/Settings";
+import ScrollToTop from "./components/ScrollToTop";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/lance-seu-ganhavel" element={<LanceSeuGanhavel />} />
+          <Route path="/descobrir" element={<Descobrir />} />
+          <Route path="/resultados" element={<Resultados />} />
+          <Route path="/categorias" element={<Categorias />} />
+          <Route path="/categorias/:categoria" element={<Categorias />} />
+          <Route path="/categorias/:categoria/:subcategoria" element={<SubcategoriaGanhaveis />} />
+          <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
+          <Route path="/ganhavel/:ganhaveisId/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
+          <Route path="/ganhavel/:ganhaveisId/pagamento-sucesso" element={<PagamentoSucesso />} />
+          <Route path="/ganhavel/:ganhaveisId/pagamento-erro" element={<PagamentoErro />} />
+          <Route path="/cadastro" element={<SignUp />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/minha-conta" element={<MinhaConta />} />
+          <Route path="/alterar-senha" element={<AlterarSenha />} />
+          <Route path="/gerenciar-cartoes-e-pix" element={<GerenciarCartoesEPix />} />
+          <Route path="/gerenciar-ganhavel/:id" element={<GerenciarGanhavel />} />
+          <Route path="/como-funciona" element={<ComoFunciona />} />
+          <Route path="/guia-do-criador" element={<GuiaDoCriador />} />
+          <Route path="/confianca-seguranca" element={<ConfiancaSeguranca />} />
+          <Route path="/central-de-ajuda" element={<CentralDeAjuda />} />
+          <Route path="/sobre-nos" element={<SobreNos />} />
+          <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
+          <Route path="/perfil/:username" element={<PerfilPublico />} />
+          {/* Admin routes */}
+          <Route path="/admin" element={<Admin />}>
+            <Route index element={<Dashboard />} />
+            <Route path="ganhaveis" element={<GanhaveisManagement />} />
+            <Route path="ganhaveis-concluidos" element={<GanhavelsConcluidos />} />
+            <Route path="usuarios" element={<UsersManagement />} />
+            <Route path="financeiro" element={<FinancialControl />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="configuracoes" element={<Settings />} />
+          </Route>
+          {/* Legacy routes for backward compatibility */}
+          <Route path="/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
+          <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
+          <Route path="/pagamento-erro" element={<PagamentoErro />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;

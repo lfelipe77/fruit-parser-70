@@ -1,0 +1,292 @@
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import Navigation from "@/components/Navigation";
+import { 
+  CheckCircle, 
+  Download, 
+  Share2, 
+  Home,
+  Receipt,
+  Calendar,
+  Clock,
+  Trophy
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface PaymentSuccessData {
+  rifaId: string;
+  rifaTitle: string;
+  rifaImage: string;
+  selectedNumbers: string[];
+  quantity: number;
+  totalAmount: number;
+  organizerName: string;
+  paymentId: string;
+  paymentDate: string;
+}
+
+export default function PagamentoSucesso() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { rifaId } = useParams();
+  const { toast } = useToast();
+  const paymentData: PaymentSuccessData = location.state || {
+    rifaId: "honda-civic-0km-2024",
+    rifaTitle: "Honda Civic 0KM 2024",
+    rifaImage: "/src/assets/honda-civic-2024.jpg",
+    selectedNumbers: ["(12-43-24-56-78-90)", "(34-67-89-12-45-78)", "(56-89-23-45-67-34)"],
+    quantity: 3,
+    totalAmount: 15,
+    organizerName: "AutoRifas Premium",
+    paymentId: "MP_1234567890",
+    paymentDate: new Date().toISOString()
+  };
+
+
+  const handleDownloadReceipt = () => {
+    toast({
+      title: "Download iniciado",
+      description: "Seu comprovante está sendo gerado...",
+    });
+    // Here you would implement PDF generation
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Participando da rifa: ${paymentData.rifaTitle}`,
+        text: `Acabei de comprar ${paymentData.quantity} bilhetes na rifa ${paymentData.rifaTitle}! 🍀`,
+        url: window.location.origin + `/ganhavel/${paymentData.rifaId}`
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.origin + `/ganhavel/${paymentData.rifaId}`);
+      toast({
+        title: "Link copiado!",
+        description: "O link da rifa foi copiado para a área de transferência.",
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Success Header */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-12 w-12 text-green-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-green-600 mb-2">
+              Pagamento Aprovado!
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Sua participação na rifa foi confirmada com sucesso
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Purchase Details */}
+            <div className="md:col-span-2 space-y-6">
+              {/* Transaction Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="h-5 w-5" />
+                    Detalhes da Transação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">ID do Pagamento</p>
+                      <p className="font-mono text-sm">{paymentData.paymentId}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Data e Hora</p>
+                      <p className="text-sm">{formatDate(paymentData.paymentDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Valor Pago</p>
+                      <p className="text-lg font-semibold text-green-600">
+                        R$ {paymentData.totalAmount.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <Badge className="bg-green-100 text-green-800">
+                        Aprovado
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Rifa Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rifa Participando</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4 mb-4">
+                    <img 
+                      src={paymentData.rifaImage} 
+                      alt={paymentData.rifaTitle}
+                      className="w-20 h-20 object-cover rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{paymentData.rifaTitle}</h3>
+                      <p className="text-muted-foreground">Por: {paymentData.organizerName}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Trophy className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm text-muted-foreground">
+                          Aguardando sorteio
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-4" />
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Seus Números da Sorte:</h4>
+                    <div className="space-y-2">
+                      {paymentData.selectedNumbers.map((combination, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <span className="font-mono text-sm">{combination}</span>
+                          <Badge variant="outline" className="border-green-300 text-green-700">
+                            Bilhete #{index + 1}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Next Steps */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Próximos Passos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        1
+                      </div>
+                      <div>
+                        <p className="font-medium">Acompanhe o sorteio</p>
+                        <p className="text-sm text-muted-foreground">
+                          Você será notificado sobre a data do sorteio e resultados
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        2
+                      </div>
+                      <div>
+                        <p className="font-medium">Verifique sua conta</p>
+                        <p className="text-sm text-muted-foreground">
+                          Seus bilhetes aparecerão em "Minha Conta" - "Rifas Participadas"
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        3
+                      </div>
+                      <div>
+                        <p className="font-medium">Compartilhe com amigos</p>
+                        <p className="text-sm text-muted-foreground">
+                          Quanto mais participantes, maior o prêmio!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Actions Sidebar */}
+            <div className="space-y-6">
+              {/* Action Buttons */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Ações Rápidas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button 
+                    onClick={handleDownloadReceipt}
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Baixar Comprovante
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleShare}
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Compartilhar Ganhável
+                  </Button>
+                  
+                  <Link to="/minha-conta" className="block">
+                    <Button variant="secondary" className="w-full">
+                      Ver Meus Ganhaveis
+                    </Button>
+                  </Link>
+                  
+                  <Link to="/" className="block">
+                    <Button className="w-full">
+                      <Home className="h-4 w-4 mr-2" />
+                      Voltar ao Início
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+
+              {/* Support */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Precisa de Ajuda?</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Entre em contato conosco se tiver dúvidas sobre sua compra.
+                  </p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Falar com Suporte
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
