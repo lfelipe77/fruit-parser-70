@@ -11,8 +11,8 @@ const Index = () => {
   return (
     <>
       <SEOHead 
-        title="Ganhavel – Ganháveis Justos e Transparentes"
-        description="Ganhe prêmios reais ou crie seu próprio ganhável com links de afiliado. Tudo rastreável, seguro e baseado nos sorteios da Loteria Federal."
+        title="Ganhavel – Ganhe prêmios reais com transparência e sorte oficial"
+        description="Participe ou lance seu Ganhavel com prêmios de verdade, links afiliados e sorteios rastreados pela Loteria Federal."
         canonical="https://ganhavel.com"
         structuredData={structuredData}
       />
