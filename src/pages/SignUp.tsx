@@ -130,13 +130,13 @@ export default function SignUp() {
                   htmlFor="terms" 
                   className="text-sm text-muted-foreground leading-relaxed"
                 >
-                  Aceito os{" "}
-                  <Link to="/confianca-seguranca" className="text-primary hover:underline">
-                    Termos de Uso
+                  Aceito os Termos na página{" "}
+                  <Link to="/como-funciona" className="text-primary hover:underline">
+                    Como funciona
                   </Link>{" "}
                   e{" "}
                   <Link to="/confianca-seguranca" className="text-primary hover:underline">
-                    Política de Privacidade
+                    confiança e segurança
                   </Link>
                 </Label>
               </div>
