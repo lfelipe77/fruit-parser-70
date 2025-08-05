@@ -26,9 +26,11 @@ export default function Navigation() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4 md:space-x-8">
               <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">G</span>
-                </div>
+                <img 
+                  src="/lovable-uploads/2b0ffd7d-9aa9-400e-b1b9-e07fd50af4a0.png" 
+                  alt="Ganhavel" 
+                  className="w-8 h-8 object-contain"
+                />
                 <span className="text-lg md:text-xl font-bold">Ganhavel</span>
               </Link>
               
