@@ -7,7 +7,7 @@ export const getOrganizationSchema = () => ({
   "name": "Ganhavel",
   "url": "https://ganhavel.com",
   "logo": "https://ganhavel.com/logo.png",
-  "description": "Plataforma de rifas justas e transparentes seguindo a loteria federal",
+  "description": "Plataforma de ganháveis justos e transparentes seguindo a loteria federal",
   "contactPoint": {
     "@type": "ContactPoint",
     "telephone": "+5521985588220",
@@ -80,7 +80,7 @@ export const getWebsiteSchema = () => ({
   "@type": "WebSite",
   "name": "Ganhavel",
   "url": "https://ganhavel.com",
-  "description": "Plataforma de rifas justas e transparentes",
+  "description": "Plataforma de ganháveis justos e transparentes",
   "potentialAction": {
     "@type": "SearchAction",
     "target": "https://ganhavel.com/descobrir?q={search_term_string}",

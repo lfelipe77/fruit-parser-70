@@ -12,10 +12,10 @@ interface SEOHeadProps {
 }
 
 const SEOHead: React.FC<SEOHeadProps> = ({
-  title = "Ganhavel - Rifas Justas e Transparentes",
-  description = "Realize seus sonhos com rifas justas e transparentes na Ganhavel. Participe de rifas de carros, casas, eletrônicos e muito mais!",
+  title = "Ganhavel – Ganháveis Justos e Transparentes",
+  description = "Ganhe prêmios reais ou crie seu próprio ganhável com links de afiliado. Tudo rastreável, seguro e baseado nos sorteios da Loteria Federal.",
   canonical,
-  ogImage = "https://lovable.dev/opengraph-image-p98pqg.png",
+  ogImage = "https://ganhavel.com/src/assets/hero-image-new.jpg",
   ogType = "website",
   noindex = false,
   structuredData

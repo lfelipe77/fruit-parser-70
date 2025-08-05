@@ -11,8 +11,8 @@ const Index = () => {
   return (
     <>
       <SEOHead 
-        title="Ganhavel - Rifas Justas e Transparentes | Realize Seus Sonhos"
-        description="Participe de rifas seguras e transparentes. Carros, casas, eletrônicos e muito mais! Todos os sorteios seguem a loteria federal para garantir justiça."
+        title="Ganhavel – Ganháveis Justos e Transparentes"
+        description="Ganhe prêmios reais ou crie seu próprio ganhável com links de afiliado. Tudo rastreável, seguro e baseado nos sorteios da Loteria Federal."
         canonical="https://ganhavel.com"
         structuredData={structuredData}
       />
