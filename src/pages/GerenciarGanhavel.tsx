@@ -66,7 +66,7 @@ export default function GerenciarRifa() {
     setCopied(true);
     toast({
       title: "Link copiado!",
-      description: "O link da rifa foi copiado para a área de transferência.",
+      description: "O link do ganhavel foi copiado para a área de transferência.",
     });
     setTimeout(() => setCopied(false), 2000);
   };

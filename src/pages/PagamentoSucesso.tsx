@@ -58,15 +58,15 @@ export default function PagamentoSucesso() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `Participando da rifa: ${paymentData.rifaTitle}`,
-        text: `Acabei de comprar ${paymentData.quantity} bilhetes na rifa ${paymentData.rifaTitle}! 🍀`,
+        title: `Participando do ganhavel: ${paymentData.rifaTitle}`,
+        text: `Acabei de comprar ${paymentData.quantity} bilhetes no ganhavel ${paymentData.rifaTitle}! 🍀`,
         url: window.location.origin + `/ganhavel/${paymentData.rifaId}`
       });
     } else {
       navigator.clipboard.writeText(window.location.origin + `/ganhavel/${paymentData.rifaId}`);
       toast({
         title: "Link copiado!",
-        description: "O link da rifa foi copiado para a área de transferência.",
+        description: "O link do ganhavel foi copiado para a área de transferência.",
       });
     }
   };
