@@ -30,7 +30,7 @@ import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
 import AlterarSenha from "./pages/AlterarSenha";
 import Admin from "./pages/Admin";
-import AdminDashboard from "./pages/admin/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import GanhaveisManagement from "./pages/admin/GanhaveisManagement";
 import GanhavelsConcluidos from "./pages/admin/GanhavelsConcluidos";
 import UsersManagement from "./pages/admin/UsersManagement";
@@ -90,8 +90,15 @@ const App = () => (
             <Route path="financeiro" element={<FinancialControl />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="logs" element={<AdminLogs />} />
+            <Route path="painel" element={<AdminDashboard />} />
             <Route path="configuracoes" element={<Settings />} />
           </Route>
+          {/* Standalone admin dashboard route */}
+          <Route path="/admin-dashboard" element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          } />
           {/* Legacy routes for backward compatibility */}
           <Route path="/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
           <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />

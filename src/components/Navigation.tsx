@@ -73,9 +73,9 @@ export default function Navigation() {
               {/* Admin quick access button for authenticated admin users */}
               {isAdmin && (
                 <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
-                  <Link to="/admin">
+                  <Link to="/admin-dashboard">
                     <Settings className="w-4 h-4 mr-2" />
-                    Admin
+                    Painel Admin
                   </Link>
                 </Button>
               )}
