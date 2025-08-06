@@ -329,6 +329,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_attempts: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          identifier: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          identifier: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           created_at: string | null

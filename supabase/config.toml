@@ -1,1 +1,4 @@
 project_id = "whqxpuyjxoiufzhvqneg"
+
+[functions.rate-limiter]
+verify_jwt = false

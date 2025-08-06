@@ -13,6 +13,8 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { rifaFormSchema, type RifaFormData } from "@/lib/validations";
+import { useRateLimit } from "@/hooks/useRateLimit";
+import { TurnstileProtection } from "@/components/TurnstileProtection";
 import { brazilStates } from "@/data/locations";
 import CountryRegionSelector from "@/components/CountryRegionSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +56,7 @@ const categoriesData = {
 
 export default function LanceSuaRifa() {
   const { toast } = useToast();
+  const { checkRateLimit, isChecking } = useRateLimit();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -68,6 +71,7 @@ export default function LanceSuaRifa() {
     images: [] as File[]
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
 
   // Função para obter moeda baseada no país/região
   const getCurrency = () => {
@@ -256,6 +260,24 @@ export default function LanceSuaRifa() {
         variant: "destructive"
       });
       return;
+    }
+
+    // Verificar proteção anti-bot
+    if (!turnstileToken) {
+      toast({
+        title: "Verificação necessária",
+        description: "Por favor, complete a verificação anti-bot.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar rate limiting
+    const identifier = `${Date.now()}_${Math.random()}`; // Fallback se não tiver user ID
+    const rateLimitPassed = await checkRateLimit('raffle_creation', identifier);
+    
+    if (!rateLimitPassed) {
+      return; // Mensagem já foi exibida pelo hook
     }
 
     try {
@@ -663,10 +685,38 @@ export default function LanceSuaRifa() {
                 </CardContent>
               </Card>
 
+              {/* Proteção Anti-Bot */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Verificação de Segurança
+                  </CardTitle>
+                  <CardDescription>
+                    Protegemos nossa plataforma contra spam e bots
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TurnstileProtection
+                    onVerify={(token) => setTurnstileToken(token)}
+                    onError={() => setTurnstileToken("")}
+                    onExpire={() => setTurnstileToken("")}
+                    action="raffle_creation"
+                    theme="auto"
+                    size="normal"
+                  />
+                </CardContent>
+              </Card>
+
               {/* Botão de Envio */}
               <div className="flex gap-4">
-                <Button type="submit" size="lg" className="flex-1">
-                  Enviar para Análise
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="flex-1"
+                  disabled={isChecking || !turnstileToken}
+                >
+                  {isChecking ? "Verificando..." : "Enviar para Análise"}
                 </Button>
                 <Button type="button" variant="outline" size="lg">
                   Salvar Rascunho

@@ -11,6 +11,7 @@ import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
+import { useRateLimit } from "@/hooks/useRateLimit";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +19,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { checkRateLimit, isChecking } = useRateLimit();
   const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -53,6 +55,14 @@ export default function Login() {
     if (!validatedData) {
       toast.error('Por favor, corrija os erros nos campos destacados');
       return;
+    }
+
+    // Verificar rate limiting para tentativas de login
+    const identifier = `login_${email}_${Date.now()}`;
+    const rateLimitPassed = await checkRateLimit('login_attempt', identifier);
+    
+    if (!rateLimitPassed) {
+      return; // Mensagem já foi exibida pelo hook
     }
 
     setIsLoading(true);
@@ -196,9 +206,9 @@ export default function Login() {
                   variant="hero" 
                   className="w-full" 
                   size="lg"
-                  disabled={isLoading}
+                  disabled={isLoading || isChecking}
                 >
-                  {isLoading ? "Entrando..." : "Entrar"}
+                  {isLoading || isChecking ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
 

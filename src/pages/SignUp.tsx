@@ -11,6 +11,8 @@ import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations";
+import { useRateLimit } from "@/hooks/useRateLimit";
+import { TurnstileProtection } from "@/components/TurnstileProtection";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +28,8 @@ export default function SignUp() {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const { checkRateLimit, isChecking } = useRateLimit();
   
   const { user, signInWithGoogle, signUp } = useAuth();
   const navigate = useNavigate();
@@ -104,6 +108,20 @@ export default function SignUp() {
     if (!validatedData) {
       toast.error('Por favor, corrija os erros nos campos destacados');
       return;
+    }
+
+    // Verificar proteção anti-bot
+    if (!turnstileToken) {
+      toast.error('Por favor, complete a verificação anti-bot');
+      return;
+    }
+
+    // Verificar rate limiting
+    const identifier = `signup_${Date.now()}_${Math.random()}`;
+    const rateLimitPassed = await checkRateLimit('signup_attempt', identifier);
+    
+    if (!rateLimitPassed) {
+      return; // Mensagem já foi exibida pelo hook
     }
 
     setLoading(true);
@@ -341,6 +359,18 @@ export default function SignUp() {
 
                 {!user && (
                   <>
+                    {/* Proteção Anti-Bot */}
+                    <div className="space-y-4">
+                      <TurnstileProtection
+                        onVerify={(token) => setTurnstileToken(token)}
+                        onError={() => setTurnstileToken("")}
+                        onExpire={() => setTurnstileToken("")}
+                        action="signup"
+                        theme="auto"
+                        size="compact"
+                      />
+                    </div>
+
                     {/* Security information */}
                     <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
@@ -354,9 +384,9 @@ export default function SignUp() {
                       className="w-full" 
                       size="lg" 
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || isChecking || !turnstileToken}
                     >
-                      {loading ? 'Criando conta...' : 'Criar Conta'}
+                      {loading || isChecking ? 'Criando conta...' : 'Criar Conta'}
                     </Button>
                   </>
                 )}
