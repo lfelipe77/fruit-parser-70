@@ -38,6 +38,7 @@ import Analytics from "./pages/admin/Analytics";
 import Settings from "./pages/admin/Settings";
 import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -75,7 +76,11 @@ const App = () => (
           <Route path="/perfil/:username" element={<PerfilPublico />} />
           {/* Admin routes */}
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin" element={<Admin />}>
+          <Route path="/admin" element={
+            <AdminProtectedRoute>
+              <Admin />
+            </AdminProtectedRoute>
+          }>
             <Route index element={<AdminDashboard />} />
             <Route path="ganhaveis" element={<GanhaveisManagement />} />
             <Route path="ganhaveis-concluidos" element={<GanhavelsConcluidos />} />
