@@ -6,6 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const securityHeaders = {
+  ...corsHeaders,
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src *; frame-ancestors 'none';",
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'X-XSS-Protection': '1; mode=block',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+}
+
 // Rate limiting rules
 const RATE_LIMITS = {
   'raffle_creation': { limit: 5, windowMs: 60 * 60 * 1000 }, // 5 per hour
@@ -22,7 +33,7 @@ interface RateLimitCheck {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: securityHeaders });
   }
 
   try {
@@ -36,7 +47,7 @@ serve(async (req) => {
     if (!action || !identifier) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -44,7 +55,7 @@ serve(async (req) => {
     if (!rule) {
       return new Response(
         JSON.stringify({ error: 'Invalid action type' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -64,7 +75,7 @@ serve(async (req) => {
       console.error('Error fetching rate limit attempts:', fetchError)
       return new Response(
         JSON.stringify({ error: 'Database error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -82,7 +93,7 @@ serve(async (req) => {
           resetTime: resetTime.toISOString(),
           message: getRateLimitMessage(action)
         }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 429, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -117,14 +128,14 @@ serve(async (req) => {
         remaining,
         resetTime: resetTime.toISOString()
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('Error in rate-limiter function:', error)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
