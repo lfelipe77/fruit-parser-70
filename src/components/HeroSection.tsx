@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Play, TrendingUp, Users, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import heroImage from "/lovable-uploads/c7132897-7256-420a-9b67-cd8d90057673.png";
+import heroImage from "/lovable-uploads/272178c2-25f5-40b5-80fe-1a874d899e02.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
@@ -84,7 +84,7 @@ export default function HeroSection() {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <img
                 src={heroImage}
-                alt="Happy people celebrating with luxury prizes - cars, yachts, jets, watches and phones"
+                alt="People celebrating luxury dreams - private jets, diamonds, luxury cars and exclusive rewards"
                 className="w-full h-[300px] md:h-[400px] lg:h-[500px] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
