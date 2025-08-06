@@ -24,6 +24,7 @@ import ConfirmacaoPagamento from "./pages/ConfirmacaoPagamento";
 import PagamentoSucesso from "./pages/PagamentoSucesso";
 import PagamentoErro from "./pages/PagamentoErro";
 import NotFound from "./pages/NotFound";
+import AccessDenied from "./pages/AccessDenied";
 import LanceSeuGanhavel from "./pages/LanceSeuGanhavel";
 import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
@@ -95,6 +96,7 @@ const App = () => (
           <Route path="/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
           <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
           <Route path="/pagamento-erro" element={<PagamentoErro />} />
+          <Route path="/access-denied" element={<AccessDenied />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

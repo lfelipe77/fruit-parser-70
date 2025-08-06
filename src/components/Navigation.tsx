@@ -1,14 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Search, Heart, User, Calendar, Clock } from "lucide-react";
+import { Search, Heart, User, Calendar, Clock, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import NotificationCenter from "@/components/NotificationCenter";
 import LanguageSelector from "@/components/LanguageSelector";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Navigation() {
   const { t } = useTranslation();
   const [selectedLottery, setSelectedLottery] = useState('br');
+  const { isAdmin } = useAdminCheck();
+  const { user } = useAuth();
 
   const lotteryDraws = [
     { id: 'br', flag: '🇧🇷', name: 'Mega-Sena', date: '10/08', time: '20:00' },
@@ -47,6 +51,13 @@ export default function Navigation() {
                 <Link to="/como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('howItWorks')}
                 </Link>
+                {/* Admin link - only visible to admin users */}
+                {isAdmin && (
+                  <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Settings className="w-4 h-4 inline mr-1" />
+                    Admin
+                  </Link>
+                )}
               </div>
             </div>
             
@@ -59,12 +70,30 @@ export default function Navigation() {
               </Button>
               <NotificationCenter />
               <LanguageSelector />
-              <Button variant="outline" size="sm" asChild className="hidden md:flex">
-                <Link to="/login">
-                  <User className="w-4 h-4 mr-2" />
-                  {t('login')}
-                </Link>
-              </Button>
+              {/* Admin quick access button for authenticated admin users */}
+              {isAdmin && (
+                <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
+                  <Link to="/admin">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Admin
+                  </Link>
+                </Button>
+              )}
+              {user ? (
+                <Button variant="outline" size="sm" asChild className="hidden md:flex">
+                  <Link to="/dashboard">
+                    <User className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" asChild className="hidden md:flex">
+                  <Link to="/login">
+                    <User className="w-4 h-4 mr-2" />
+                    {t('login')}
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>

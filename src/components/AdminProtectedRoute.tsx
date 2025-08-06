@@ -59,9 +59,9 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Redirect to unauthorized if not admin
+  // Redirect to access denied if not admin
   if (isAdmin === false) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/access-denied" replace />;
   }
 
   // Render children if user is admin
