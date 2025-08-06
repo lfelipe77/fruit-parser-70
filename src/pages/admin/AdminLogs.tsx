@@ -34,10 +34,9 @@ export default function AdminLogs() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // Use uma consulta SQL direta para acessar a admin_log_view
+      // Use RPC para acessar a admin_log_view
       const { data, error } = await supabase
-        .from('audit_logs')
-        .select('id, user_id, action, context, created_at')
+        .rpc('get_admin_logs', {})
         .order('created_at', { ascending: false })
         .limit(100);
 
