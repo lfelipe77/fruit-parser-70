@@ -28,10 +28,10 @@ export default function CrowdfundingHome() {
           <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 md:mb-12 text-center md:text-left">
             <div className="mb-4 md:mb-0">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-4">
-                Rifas em Destaque
+                Ganhaveis em Destaque
               </h2>
               <p className="text-lg md:text-xl text-muted-foreground">
-                As rifas mais populares selecionadas pela nossa equipe
+                Os ganhaveis mais populares selecionados pela nossa equipe
               </p>
             </div>
             <Badge variant="secondary" className="hidden md:block">
