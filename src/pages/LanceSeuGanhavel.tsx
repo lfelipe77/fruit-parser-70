@@ -248,10 +248,10 @@ export default function LanceSuaRifa() {
         console.error('Error logging audit event:', auditError);
       }
 
-      // Simulação de envio
+      // Notificação de sucesso com evento registrado
       toast({
-        title: "Rifa enviada para análise!",
-        description: "Sua rifa será analisada em até 24 horas. Você receberá um email com o resultado.",
+        title: "🎉 Sua rifa foi lançada com sucesso!",
+        description: "Evento registrado para segurança. Sua rifa será analisada em até 24 horas.",
       });
       
       console.log("Dados da rifa:", formData);
