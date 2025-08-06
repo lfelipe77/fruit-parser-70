@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  FileText,
 } from "lucide-react";
 
 const mainItems = [
@@ -54,6 +55,11 @@ const mainItems = [
     title: "Analytics",
     url: "/admin/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Logs de Auditoria",
+    url: "/admin/logs",
+    icon: FileText,
   },
 ];
 

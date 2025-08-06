@@ -36,6 +36,7 @@ import UsersManagement from "./pages/admin/UsersManagement";
 import FinancialControl from "./pages/admin/FinancialControl";
 import Analytics from "./pages/admin/Analytics";
 import Settings from "./pages/admin/Settings";
+import AdminLogs from "./pages/admin/AdminLogs";
 import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="usuarios" element={<UsersManagement />} />
             <Route path="financeiro" element={<FinancialControl />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="logs" element={<AdminLogs />} />
             <Route path="configuracoes" element={<Settings />} />
           </Route>
           {/* Legacy routes for backward compatibility */}
