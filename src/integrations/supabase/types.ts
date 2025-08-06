@@ -700,6 +700,10 @@ export type Database = {
           created_at: string
         }[]
       }
+      get_current_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
       log_audit_event: {
         Args: { action: string; context?: Json }
         Returns: undefined
