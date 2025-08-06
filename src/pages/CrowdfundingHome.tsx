@@ -55,14 +55,14 @@ export default function CrowdfundingHome() {
           <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 md:mb-12 text-center md:text-left">
             <div className="mb-4 md:mb-0">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-4">
-                Rifas em Alta
+                Ganhaveis em Alta
               </h2>
               <p className="text-lg md:text-xl text-muted-foreground">
-                Rifas que estão bombando e vendendo rápido
+                Ganhaveis que estão bombando e vendendo rápido
               </p>
             </div>
             <Button variant="outline" asChild className="hidden md:flex">
-              <Link to="/descobrir">Ver Todas as Rifas</Link>
+              <Link to="/descobrir">Ver Todos os Ganhaveis</Link>
             </Button>
           </div>
           
