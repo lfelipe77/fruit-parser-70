@@ -16,6 +16,7 @@ import { Calendar, Search, FileText, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import AdminSecurityBanner from "@/components/AdminSecurityBanner";
 
 interface AdminLogEntry {
   id: string;
@@ -129,6 +130,7 @@ export default function AdminLogs() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <AdminSecurityBanner />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
