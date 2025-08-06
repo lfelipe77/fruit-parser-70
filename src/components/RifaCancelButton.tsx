@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import CancelRifaModal from "./CancelRifaModal";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GanhavesCancelButtonProps {
   ganhaveisId: string;
@@ -22,17 +23,33 @@ export default function GanhavesCancelButton({
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   const handleCancelGanhavel = async (reason: string) => {
-    // TODO: Implement when Supabase is connected
-    // This will:
-    // 1. Update ganhavel status to 'cancelled' in database
-    // 2. Process refunds for all participants
-    // 3. Send notification emails with the reason
-    // 4. Update user's ganhavel list
-    
-    console.log("Canceling ganhavel:", { ganhaveisId, reason, participantCount });
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Log audit event for raffle cancellation
+      await supabase.rpc('log_audit_event', {
+        action: 'cancelled_raffle',
+        context: {
+          raffle_id: ganhaveisId,
+          cancellation_reason: reason,
+          participant_count: participantCount,
+          page: 'GerenciarGanhavel',
+          action_type: 'cancellation'
+        }
+      });
+
+      // TODO: Implement when Supabase is connected
+      // This will:
+      // 1. Update ganhavel status to 'cancelled' in database
+      // 2. Process refunds for all participants
+      // 3. Send notification emails with the reason
+      // 4. Update user's ganhavel list
+      
+      console.log("Canceling ganhavel:", { ganhaveisId, reason, participantCount });
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error('Error cancelling raffle:', error);
+    }
   };
 
   // Only show cancel button if user is owner and ganhavel is active

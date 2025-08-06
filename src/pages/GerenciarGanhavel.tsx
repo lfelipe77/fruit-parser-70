@@ -117,16 +117,20 @@ export default function GerenciarRifa() {
     }
   };
 
-  // Mock function to update raffle status (this would be a real function in production)
+  // Function to update raffle status with comprehensive audit logging
   const handleUpdateRaffleStatus = async (newStatus: string) => {
     try {
+      const oldStatus = rifa.status;
+      
       // Log audit event for raffle status update
-      const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
-        action: 'updated_raffle_status',
+      const { error: auditError } = await supabase.rpc('log_audit_event', {
+        action: 'edited_raffle',
         context: {
-          page: 'PaginaDaRifa',
-          status: newStatus,
-          raffle_id: rifa.id.toString()
+          raffle_id: rifa.id.toString(),
+          updated_fields: ['status'],
+          old_status: oldStatus,
+          new_status: newStatus,
+          page: 'GerenciarGanhavel'
         }
       });
 
@@ -145,6 +149,42 @@ export default function GerenciarRifa() {
       toast({
         title: "Erro ao atualizar status",
         description: "Ocorreu um erro ao atualizar o status da rifa.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Example function for comprehensive raffle editing with audit logging
+  const handleEditRaffle = async (updatedData: any, changedFields: string[]) => {
+    try {
+      // Log audit event for raffle editing
+      await supabase.rpc('log_audit_event', {
+        action: 'edited_raffle',
+        context: {
+          raffle_id: rifa.id.toString(),
+          updated_fields: changedFields,
+          page: 'GerenciarGanhavel',
+          changes: changedFields.reduce((acc, field) => {
+            acc[field] = {
+              old: rifa[field as keyof typeof rifa],
+              new: updatedData[field]
+            };
+            return acc;
+          }, {} as any)
+        }
+      });
+
+      // TODO: Update raffle in database with updatedData
+      toast({
+        title: "Rifa atualizada",
+        description: `Campos alterados: ${changedFields.join(', ')}`,
+      });
+      
+    } catch (error) {
+      console.error('Error updating raffle:', error);
+      toast({
+        title: "Erro ao atualizar rifa",
+        description: "Ocorreu um erro ao atualizar a rifa.",
         variant: "destructive"
       });
     }

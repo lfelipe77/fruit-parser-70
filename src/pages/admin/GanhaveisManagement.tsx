@@ -60,6 +60,7 @@ import {
   Gift,
 } from "lucide-react";
 import { getAllCategories } from "@/data/categoriesData";
+import { supabase } from "@/integrations/supabase/client";
 
 const ganhaveisData = [
   {
@@ -238,44 +239,116 @@ export default function GanhaveisManagement() {
     return matchesTab && matchesSearch && matchesCategory;
   });
 
-  const handleApprove = (ganhaveisId: string) => {
-    toast({
-      title: "Ganhavel Aprovado",
-      description: `O ganhavel ${ganhaveisId} foi aprovado com sucesso.`,
-    });
-    setShowApprovalModal(false);
+  const handleApprove = async (ganhaveisId: string) => {
+    try {
+      // Log audit event for raffle approval
+      await supabase.rpc('log_audit_event', {
+        action: 'approved_raffle',
+        context: {
+          raffle_id: ganhaveisId,
+          page: 'GanhaveisManagement',
+          action_type: 'approval'
+        }
+      });
+
+      toast({
+        title: "Ganhavel Aprovado",
+        description: `O ganhavel ${ganhaveisId} foi aprovado com sucesso.`,
+      });
+      setShowApprovalModal(false);
+    } catch (error) {
+      console.error('Error approving raffle:', error);
+    }
   };
 
-  const handleReject = (ganhaveisId: string, reason: string) => {
-    toast({
-      title: "Ganhavel Rejeitado",
-      description: `O ganhavel ${ganhaveisId} foi rejeitado. Motivo: ${reason}`,
-      variant: "destructive",
-    });
-    setShowRejectModal(false);
-    setRejectionReason("");
+  const handleReject = async (ganhaveisId: string, reason: string) => {
+    try {
+      // Log audit event for raffle rejection
+      await supabase.rpc('log_audit_event', {
+        action: 'rejected_raffle',
+        context: {
+          raffle_id: ganhaveisId,
+          rejection_reason: reason,
+          page: 'GanhaveisManagement',
+          action_type: 'rejection'
+        }
+      });
+
+      toast({
+        title: "Ganhavel Rejeitado",
+        description: `O ganhavel ${ganhaveisId} foi rejeitado. Motivo: ${reason}`,
+        variant: "destructive",
+      });
+      setShowRejectModal(false);
+      setRejectionReason("");
+    } catch (error) {
+      console.error('Error rejecting raffle:', error);
+    }
   };
 
-  const handleSuspend = (ganhaveisId: string) => {
-    toast({
-      title: "Ganhavel Suspenso",
-      description: `O ganhavel ${ganhaveisId} foi suspenso temporariamente.`,
-      variant: "destructive",
-    });
+  const handleSuspend = async (ganhaveisId: string) => {
+    try {
+      // Log audit event for raffle suspension
+      await supabase.rpc('log_audit_event', {
+        action: 'suspended_raffle',
+        context: {
+          raffle_id: ganhaveisId,
+          page: 'GanhaveisManagement',
+          action_type: 'suspension'
+        }
+      });
+
+      toast({
+        title: "Ganhavel Suspenso",
+        description: `O ganhavel ${ganhaveisId} foi suspenso temporariamente.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Error suspending raffle:', error);
+    }
   };
 
-  const handleReactivate = (ganhaveisId: string) => {
-    toast({
-      title: "Ganhavel Reativado",
-      description: `O ganhavel ${ganhaveisId} foi reativado com sucesso.`,
-    });
+  const handleReactivate = async (ganhaveisId: string) => {
+    try {
+      // Log audit event for raffle reactivation
+      await supabase.rpc('log_audit_event', {
+        action: 'reactivated_raffle',
+        context: {
+          raffle_id: ganhaveisId,
+          page: 'GanhaveisManagement',
+          action_type: 'reactivation'
+        }
+      });
+
+      toast({
+        title: "Ganhavel Reativado",
+        description: `O ganhavel ${ganhaveisId} foi reativado com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error reactivating raffle:', error);
+    }
   };
 
-  const handleSaveNotes = (ganhaveisId: string, notes: string) => {
-    toast({
-      title: "Observações Salvas",
-      description: "As observações administrativas foram salvas.",
-    });
+  const handleSaveNotes = async (ganhaveisId: string, notes: string) => {
+    try {
+      // Log audit event for admin notes update
+      await supabase.rpc('log_audit_event', {
+        action: 'updated_raffle_notes',
+        context: {
+          raffle_id: ganhaveisId,
+          notes: notes.substring(0, 100) + (notes.length > 100 ? '...' : ''), // Truncate long notes
+          page: 'GanhaveisManagement',
+          action_type: 'notes_update'
+        }
+      });
+
+      toast({
+        title: "Observações Salvas",
+        description: "As observações administrativas foram salvas.",
+      });
+    } catch (error) {
+      console.error('Error saving notes:', error);
+    }
   };
 
   const handleVerifyAffiliate = (link: string) => {
