@@ -25,6 +25,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function GerenciarRifa() {
   const { id } = useParams();
@@ -80,6 +81,72 @@ export default function GerenciarRifa() {
       });
     } else {
       handleCopyLink();
+    }
+  };
+
+  // Mock function to mark ticket as paid (this would be a real function in production)
+  const handleMarkTicketPaid = async (ticketId: string, participantId: string) => {
+    try {
+      // Log audit event for marking ticket as paid
+      const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
+        action: 'marked_ticket_paid',
+        context: {
+          page: 'PaginaDaRifa',
+          ticket_id: ticketId,
+          organizer_id: 'current_user_id' // This would be the real organizer ID
+        }
+      });
+
+      if (auditError) {
+        console.error('Error logging audit event:', auditError);
+      }
+
+      // TODO: Update ticket payment status in database
+      toast({
+        title: "Ticket marcado como pago",
+        description: "O ticket foi marcado como pago com sucesso.",
+      });
+      
+    } catch (error) {
+      console.error('Error marking ticket as paid:', error);
+      toast({
+        title: "Erro ao marcar ticket",
+        description: "Ocorreu um erro ao marcar o ticket como pago.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Mock function to update raffle status (this would be a real function in production)
+  const handleUpdateRaffleStatus = async (newStatus: string) => {
+    try {
+      // Log audit event for raffle status update
+      const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
+        action: 'updated_raffle_status',
+        context: {
+          page: 'PaginaDaRifa',
+          status: newStatus,
+          raffle_id: rifa.id.toString()
+        }
+      });
+
+      if (auditError) {
+        console.error('Error logging audit event:', auditError);
+      }
+
+      // TODO: Update raffle status in database
+      toast({
+        title: "Status da rifa atualizado",
+        description: `A rifa foi marcada como "${newStatus}".`,
+      });
+      
+    } catch (error) {
+      console.error('Error updating raffle status:', error);
+      toast({
+        title: "Erro ao atualizar status",
+        description: "Ocorreu um erro ao atualizar o status da rifa.",
+        variant: "destructive"
+      });
     }
   };
 

@@ -120,7 +120,7 @@ export default function LanceSuaRifa() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
     // File validation
@@ -187,6 +187,24 @@ export default function LanceSuaRifa() {
     
     if (validFiles.length > 0) {
       setFormData(prev => ({ ...prev, images: validFiles }));
+      
+      // Log audit event for image upload
+      try {
+        const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
+          action: 'uploaded_raffle_image',
+          context: {
+            page: 'LanceSeuGanhavel',
+            filename: validFiles[0].name
+          }
+        });
+
+        if (auditError) {
+          console.error('Error logging audit event:', auditError);
+        }
+      } catch (error) {
+        console.error('Error logging image upload audit:', error);
+      }
+      
       toast({
         title: "Arquivo enviado com sucesso",
         description: `${validFiles.length} arquivo válido foi carregado.`,

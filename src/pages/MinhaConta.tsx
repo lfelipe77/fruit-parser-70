@@ -36,31 +36,47 @@ import {
   Clock
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function MinhaConta() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [expandedRifas, setExpandedRifas] = useState<number[]>([]);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileFormData, setProfileFormData] = useState({
+    name: "João Silva",
+    email: "joao@email.com",
+    phone: "(11) 99999-9999",
+    address: "São Paulo, SP",
+    bio: "Empreendedor apaixonado por tecnologia e inovação. Ajudo pequenos negócios a crescerem através de rifas justas e transparentes.",
+    website: "https://joaosilva.com.br",
+    instagram: "@joaosilva_oficial",
+    facebook: "João Silva Oficial",
+    twitter: "@joaosilva",
+    linkedin: "joao-silva-empresario"
+  });
 
   // Mock user data
   const user = {
-    name: "João Silva",
+    name: profileFormData.name,
     username: "joaosilva",
-    email: "joao@email.com",
-    phone: "(11) 99999-9999",
+    email: profileFormData.email,
+    phone: profileFormData.phone,
     cpf: "***.***.***-99",
-    address: "São Paulo, SP",
+    address: profileFormData.address,
     memberSince: "Janeiro 2024",
     totalRifas: 15,
     totalRifasLancadas: 8,
     wins: 2,
     avatar: "",
-    bio: "Empreendedor apaixonado por tecnologia e inovação. Ajudo pequenos negócios a crescerem através de rifas justas e transparentes.",
-    website: "https://joaosilva.com.br",
+    bio: profileFormData.bio,
+    website: profileFormData.website,
     socialLinks: {
-      instagram: "@joaosilva_oficial",
-      facebook: "João Silva Oficial",
-      twitter: "@joaosilva",
-      linkedin: "joao-silva-empresario"
+      instagram: profileFormData.instagram,
+      facebook: profileFormData.facebook,
+      twitter: profileFormData.twitter,
+      linkedin: profileFormData.linkedin
     }
   };
 
@@ -177,6 +193,63 @@ export default function MinhaConta() {
     { id: 1, title: "PS5 Setup Gamer", numbers: "100", status: "Em andamento", image: "/src/assets/ps5-setup-gamer.jpg", vendidos: 75, precoUnitario: 5, totalPossivel: 500 },
     { id: 2, title: "Yamaha MT-03 2024", numbers: "150", status: "Finalizada", image: "/src/assets/yamaha-mt03-2024.jpg", vendidos: 150, precoUnitario: 5, totalPossivel: 750 },
   ];
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      // Track which fields were updated
+      const updatedFields: string[] = [];
+      const originalData = {
+        name: "João Silva",
+        email: "joao@email.com",
+        phone: "(11) 99999-9999",
+        address: "São Paulo, SP",
+        bio: "Empreendedor apaixonado por tecnologia e inovação. Ajudo pequenos negócios a crescerem através de rifas justas e transparentes.",
+        website: "https://joaosilva.com.br",
+        instagram: "@joaosilva_oficial",
+        facebook: "João Silva Oficial",
+        twitter: "@joaosilva",
+        linkedin: "joao-silva-empresario"
+      };
+
+      Object.keys(profileFormData).forEach(key => {
+        if (profileFormData[key as keyof typeof profileFormData] !== originalData[key as keyof typeof originalData]) {
+          updatedFields.push(key);
+        }
+      });
+
+      // Log audit event for profile update
+      if (updatedFields.length > 0) {
+        const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
+          action: 'updated_user_profile',
+          context: {
+            page: 'MinhaConta',
+            updated_fields: updatedFields
+          }
+        });
+
+        if (auditError) {
+          console.error('Error logging audit event:', auditError);
+        }
+      }
+
+      // TODO: Update profile with Supabase
+      setIsEditingProfile(false);
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+      
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Ocorreu um erro ao salvar suas informações. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -557,101 +630,217 @@ export default function MinhaConta() {
                         Mantenha seus dados atualizados
                       </CardDescription>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsEditingProfile(!isEditingProfile)}
+                    >
                       <Settings className="h-4 w-4 mr-2" />
-                      Editar Perfil
+                      {isEditingProfile ? "Cancelar" : "Editar Perfil"}
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Nome Completo</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.name}</span>
-                      </div>
-                    </div>
+                <CardContent>
+                  {isEditingProfile ? (
+                    <form onSubmit={handleProfileUpdate} className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Nome Completo</Label>
+                          <Input
+                            id="name"
+                            value={profileFormData.name}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, name: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Email</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.email}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={profileFormData.email}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Telefone</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.phone}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Telefone</Label>
+                          <Input
+                            id="phone"
+                            value={profileFormData.phone}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">CPF</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Shield className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.cpf}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="address">Endereço</Label>
+                          <Input
+                            id="address"
+                            value={profileFormData.address}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, address: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2 md:col-span-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Endereço</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.address}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="bio">Descrição/Bio</Label>
+                          <Input
+                            id="bio"
+                            value={profileFormData.bio}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, bio: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2 md:col-span-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Descrição/Bio</Label>
-                      <div className="p-3 bg-muted rounded-lg border">
-                        <span className="font-medium leading-relaxed">{user.bio}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="website">Website</Label>
+                          <Input
+                            id="website"
+                            value={profileFormData.website}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, website: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Website</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium text-primary underline">{user.website}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="instagram">Instagram</Label>
+                          <Input
+                            id="instagram"
+                            value={profileFormData.instagram}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, instagram: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Instagram</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Instagram className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.socialLinks.instagram}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="facebook">Facebook</Label>
+                          <Input
+                            id="facebook"
+                            value={profileFormData.facebook}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, facebook: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Facebook</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Facebook className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.socialLinks.facebook}</span>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="twitter">Twitter/X</Label>
+                          <Input
+                            id="twitter"
+                            value={profileFormData.twitter}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, twitter: e.target.value }))}
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">Twitter/X</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Twitter className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.socialLinks.twitter}</span>
+                        <div className="space-y-2">
+                          <Label htmlFor="linkedin">LinkedIn</Label>
+                          <Input
+                            id="linkedin"
+                            value={profileFormData.linkedin}
+                            onChange={(e) => setProfileFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-muted-foreground">LinkedIn</Label>
-                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
-                        <Linkedin className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{user.socialLinks.linkedin}</span>
+                      <div className="flex gap-4 pt-4">
+                        <Button type="submit">
+                          Salvar Alterações
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => setIsEditingProfile(false)}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Nome Completo</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.name}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.email}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Telefone</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.phone}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">CPF</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Shield className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.cpf}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Endereço</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.address}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Descrição/Bio</Label>
+                          <div className="p-3 bg-muted rounded-lg border">
+                            <span className="font-medium leading-relaxed">{user.bio}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Website</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-primary underline">{user.website}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Instagram</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Instagram className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.socialLinks.instagram}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Facebook</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Facebook className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.socialLinks.facebook}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Twitter/X</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Twitter className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.socialLinks.twitter}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">LinkedIn</Label>
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                            <Linkedin className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{user.socialLinks.linkedin}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
