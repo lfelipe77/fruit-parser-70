@@ -76,6 +76,21 @@ export default function SignUp() {
       return;
     }
 
+    if (!formData.name.trim()) {
+      toast.error('Nome completo é obrigatório');
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      toast.error('Email é obrigatório');
+      return;
+    }
+
+    if (!formData.password) {
+      toast.error('Senha é obrigatória');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('As senhas não coincidem');
       return;
@@ -91,9 +106,14 @@ export default function SignUp() {
       const { error } = await signUp(formData.email, formData.password);
       if (!error) {
         toast.success('Cadastro realizado! Verifique seu email para confirmar a conta.');
+        // Optionally redirect to login page after successful signup
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
       }
     } catch (error) {
       toast.error('Erro no cadastro');
+      console.error('Signup error:', error);
     } finally {
       setLoading(false);
     }

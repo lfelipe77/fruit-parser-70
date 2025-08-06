@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -27,10 +28,27 @@ export default function Login() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email.trim()) {
+      toast.error('Email é obrigatório');
+      return;
+    }
+    
+    if (!password) {
+      toast.error('Senha é obrigatória');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      await signInWithEmail(email, password);
+      const { error } = await signInWithEmail(email, password);
+      if (error) {
+        console.error('Login error:', error);
+      }
+      // Success handling is done in useAuth hook with redirect
+    } catch (error) {
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -39,7 +57,13 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      await signInWithGoogle();
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error('Google login error:', error);
+      }
+      // Success handling is done in useAuth hook with redirect
+    } catch (error) {
+      console.error('Google login error:', error);
     } finally {
       setIsLoading(false);
     }
