@@ -18,10 +18,47 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Redirect to dashboard on successful login
+        // Log audit events for auth changes
         if (event === 'SIGNED_IN' && session) {
+          // Log successful login
+          setTimeout(async () => {
+            try {
+              // Determine login method based on provider or default to email
+              const loginMethod = session.user.app_metadata?.provider || 'email';
+              
+              await supabase.rpc('log_audit_event', {
+                action: 'logged_in',
+                context: {
+                  page: window.location.pathname || 'Login',
+                  user_agent: navigator.userAgent,
+                  login_method: loginMethod,
+                  user_email: session.user.email
+                }
+              });
+            } catch (error) {
+              console.error('Error logging login audit event:', error);
+            }
+          }, 0);
+          
           navigate('/dashboard');
           toast.success('Login realizado com sucesso!');
+        }
+
+        if (event === 'SIGNED_OUT') {
+          // Log logout event
+          setTimeout(async () => {
+            try {
+              await supabase.rpc('log_audit_event', {
+                action: 'logged_out',
+                context: {
+                  page: window.location.pathname || 'Logout',
+                  user_agent: navigator.userAgent
+                }
+              });
+            } catch (error) {
+              console.error('Error logging logout audit event:', error);
+            }
+          }, 0);
         }
       }
     );
@@ -50,6 +87,8 @@ export const useAuth = () => {
         return { error };
       }
 
+      // Note: The audit log will be handled by the onAuthStateChange listener
+      // when the user successfully authenticates
       return { error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -70,6 +109,8 @@ export const useAuth = () => {
         return { error };
       }
 
+      // Note: The audit log will be handled by the onAuthStateChange listener
+      // when the user successfully authenticates
       return { error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -105,6 +146,19 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
+    // Log logout before actually signing out
+    try {
+      await supabase.rpc('log_audit_event', {
+        action: 'logout_initiated',
+        context: {
+          page: window.location.pathname,
+          user_agent: navigator.userAgent
+        }
+      });
+    } catch (error) {
+      console.error('Error logging logout audit event:', error);
+    }
+
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast.error('Erro ao sair: ' + error.message);
