@@ -10,6 +10,7 @@ import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { signUpSchema, type SignUpFormData } from "@/lib/validations";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +25,7 @@ export default function SignUp() {
     confirmPassword: ''
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const { user, signInWithGoogle, signUp } = useAuth();
   const navigate = useNavigate();
@@ -51,6 +53,10 @@ export default function SignUp() {
       ...prev,
       [field]: value
     }));
+    // Limpar erro do campo quando o usuário digitar
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
   };
 
   const handleGoogleSignUp = async () => {
@@ -68,6 +74,23 @@ export default function SignUp() {
     }
   };
 
+  const validateForm = () => {
+    try {
+      const validatedData = signUpSchema.parse(formData);
+      setErrors({});
+      return validatedData;
+    } catch (error: any) {
+      const newErrors: Record<string, string> = {};
+      error.errors?.forEach((err: any) => {
+        if (err.path && err.path.length > 0) {
+          newErrors[err.path[0]] = err.message;
+        }
+      });
+      setErrors(newErrors);
+      return null;
+    }
+  };
+
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -76,30 +99,10 @@ export default function SignUp() {
       return;
     }
 
-    if (!formData.name.trim()) {
-      toast.error('Nome completo é obrigatório');
-      return;
-    }
-
-    if (!formData.email.trim()) {
-      toast.error('Email é obrigatório');
-      return;
-    }
-
-    if (!formData.password) {
-      toast.error('Senha é obrigatória');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('As senhas não coincidem');
-      return;
-    }
-
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{8,}$/;
-
-    if (!strongPasswordRegex.test(formData.password)) {
-      toast.error("Senha fraca: Use pelo menos 8 caracteres, uma letra maiúscula, uma minúscula, um número e um símbolo.");
+    // Validação completa com Zod
+    const validatedData = validateForm();
+    if (!validatedData) {
+      toast.error('Por favor, corrija os erros nos campos destacados');
       return;
     }
 
@@ -186,11 +189,14 @@ export default function SignUp() {
                     <Input 
                       id="name" 
                       placeholder="Digite seu nome completo"
-                      className="pl-10"
+                      className={`pl-10 ${errors.name ? "border-destructive" : ""}`}
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       required
                     />
+                    {errors.name && (
+                      <p className="text-sm text-destructive">{errors.name}</p>
+                    )}
                   </div>
                 </div>
 
@@ -202,11 +208,14 @@ export default function SignUp() {
                       id="email" 
                       type="email" 
                       placeholder="seu@email.com"
-                      className="pl-10"
+                      className={`pl-10 ${errors.email ? "border-destructive" : ""}`}
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       required
                     />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
                   </div>
                 </div>
 
@@ -217,10 +226,13 @@ export default function SignUp() {
                     <Input 
                       id="phone" 
                       placeholder="(11) 99999-9999"
-                      className="pl-10"
+                      className={`pl-10 ${errors.phone ? "border-destructive" : ""}`}
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                     />
+                    {errors.phone && (
+                      <p className="text-sm text-destructive">{errors.phone}</p>
+                    )}
                   </div>
                 </div>
 
@@ -229,9 +241,13 @@ export default function SignUp() {
                   <Input 
                     id="cpf" 
                     placeholder="000.000.000-00"
+                    className={errors.cpf ? "border-destructive" : ""}
                     value={formData.cpf}
                     onChange={(e) => handleInputChange('cpf', e.target.value)}
                   />
+                  {errors.cpf && (
+                    <p className="text-sm text-destructive">{errors.cpf}</p>
+                  )}
                 </div>
 
                 {!user && (
@@ -244,11 +260,14 @@ export default function SignUp() {
                           id="password" 
                           type={showPassword ? "text" : "password"}
                           placeholder="Digite sua senha"
-                          className="pl-10 pr-10"
+                          className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`}
                           value={formData.password}
                           onChange={(e) => handleInputChange('password', e.target.value)}
                           required
                         />
+                        {errors.password && (
+                          <p className="text-sm text-destructive">{errors.password}</p>
+                        )}
                         <Button
                           type="button"
                           variant="ghost"
@@ -273,11 +292,14 @@ export default function SignUp() {
                           id="confirmPassword" 
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirme sua senha"
-                          className="pl-10 pr-10"
+                          className={`pl-10 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`}
                           value={formData.confirmPassword}
                           onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                           required
                         />
+                        {errors.confirmPassword && (
+                          <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                        )}
                         <Button
                           type="button"
                           variant="ghost"

@@ -12,6 +12,7 @@ import { Calendar, Upload, DollarSign, Users, Shield, Clock, MapPin, Globe, Aler
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { rifaFormSchema, type RifaFormData } from "@/lib/validations";
 import { brazilStates } from "@/data/locations";
 import CountryRegionSelector from "@/components/CountryRegionSelector";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,6 +67,7 @@ export default function LanceSuaRifa() {
     affiliateLink: "",
     images: [] as File[]
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Função para obter moeda baseada no país/região
   const getCurrency = () => {
@@ -85,6 +87,10 @@ export default function LanceSuaRifa() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Limpar erro do campo quando o usuário digitar
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
   };
 
   // Função para detectar país/região baseado no link
@@ -221,14 +227,32 @@ export default function LanceSuaRifa() {
     return { prizeValue, processingFee, totalAmount: prizeValue + processingFee };
   };
 
+  const validateForm = () => {
+    try {
+      const validatedData = rifaFormSchema.parse(formData);
+      setErrors({});
+      return validatedData;
+    } catch (error: any) {
+      const newErrors: Record<string, string> = {};
+      error.errors?.forEach((err: any) => {
+        if (err.path && err.path.length > 0) {
+          newErrors[err.path[0]] = err.message;
+        }
+      });
+      setErrors(newErrors);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação básica
-    if (!formData.title || !formData.description || !formData.category) {
+    // Validação completa com Zod
+    const validatedData = validateForm();
+    if (!validatedData) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios para continuar.",
+        title: "Dados inválidos",
+        description: "Por favor, corrija os erros nos campos destacados.",
         variant: "destructive"
       });
       return;
@@ -320,8 +344,12 @@ export default function LanceSuaRifa() {
                       placeholder="Ex: iPhone 15 Pro Max 256GB"
                       value={formData.title}
                       onChange={(e) => handleInputChange("title", e.target.value)}
+                      className={errors.title ? "border-destructive" : ""}
                       required
                     />
+                    {errors.title && (
+                      <p className="text-sm text-destructive">{errors.title}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -332,15 +360,22 @@ export default function LanceSuaRifa() {
                       rows={4}
                       value={formData.description}
                       onChange={(e) => handleInputChange("description", e.target.value)}
+                      className={errors.description ? "border-destructive" : ""}
                       required
                     />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{formData.description.length}/1000 caracteres</span>
+                      {errors.description && (
+                        <span className="text-destructive">{errors.description}</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="category">Categoria *</Label>
                       <Select onValueChange={(value) => handleInputChange("category", value)}>
-                        <SelectTrigger>
+                        <SelectTrigger className={errors.category ? "border-destructive" : ""}>
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
@@ -351,6 +386,9 @@ export default function LanceSuaRifa() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.category && (
+                        <p className="text-sm text-destructive">{errors.category}</p>
+                      )}
                     </div>
 
                     {formData.category && (
@@ -438,7 +476,7 @@ export default function LanceSuaRifa() {
                     </div>
                   )}
 
-                  {/* Campo para Link de Afiliado */}
+                   {/* Campo para Link de Afiliado */}
                   {formData.countryRegion && (
                     <div className="space-y-2">
                       <Label htmlFor="affiliateLink">Link de Afiliado {formData.countryRegion === 'online' ? '*' : ''}</Label>
@@ -448,8 +486,12 @@ export default function LanceSuaRifa() {
                         placeholder="https://exemplo.com/produto?ref=seucodigo"
                         value={formData.affiliateLink || ""}
                         onChange={(e) => handleAffiliateLinkChange(e.target.value)}
+                        className={errors.affiliateLink ? "border-destructive" : ""}
                         required={formData.countryRegion === 'online'}
                       />
+                      {errors.affiliateLink && (
+                        <p className="text-sm text-destructive">{errors.affiliateLink}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         {formData.countryRegion === 'online' 
                           ? "Cole aqui o link de afiliado do produto. Este link será usado para comprar o produto quando o sorteio acontecer."
@@ -527,10 +569,17 @@ export default function LanceSuaRifa() {
                         type="number"
                         placeholder="5.00"
                         step="0.01"
+                        min="0.1"
+                        max="1000"
                         value={formData.ticketPrice}
                         onChange={(e) => handleInputChange("ticketPrice", e.target.value)}
+                        className={errors.ticketPrice ? "border-destructive" : ""}
                         required
                       />
+                      {errors.ticketPrice && (
+                        <p className="text-sm text-destructive">{errors.ticketPrice}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">Entre {getCurrency()} 0,10 e {getCurrency()} 1.000,00</p>
                     </div>
 
                     <div className="space-y-2">
@@ -539,10 +588,16 @@ export default function LanceSuaRifa() {
                         id="prizeValue"
                         type="number"
                         placeholder="5000"
+                        min="1"
                         value={formData.prizeValue}
                         onChange={(e) => handleInputChange("prizeValue", e.target.value)}
+                        className={errors.prizeValue ? "border-destructive" : ""}
                         required
                       />
+                      {errors.prizeValue && (
+                        <p className="text-sm text-destructive">{errors.prizeValue}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">Valor total do prêmio</p>
                     </div>
                   </div>
 

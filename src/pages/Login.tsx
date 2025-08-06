@@ -10,12 +10,14 @@ import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { loginSchema, type LoginFormData } from "@/lib/validations";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -26,16 +28,30 @@ export default function Login() {
     }
   }, [user, loading, navigate]);
 
+  const validateForm = () => {
+    try {
+      const validatedData = loginSchema.parse({ email, password });
+      setErrors({});
+      return validatedData;
+    } catch (error: any) {
+      const newErrors: Record<string, string> = {};
+      error.errors?.forEach((err: any) => {
+        if (err.path && err.path.length > 0) {
+          newErrors[err.path[0]] = err.message;
+        }
+      });
+      setErrors(newErrors);
+      return null;
+    }
+  };
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim()) {
-      toast.error('Email é obrigatório');
-      return;
-    }
-    
-    if (!password) {
-      toast.error('Senha é obrigatória');
+    // Validação completa com Zod
+    const validatedData = validateForm();
+    if (!validatedData) {
+      toast.error('Por favor, corrija os erros nos campos destacados');
       return;
     }
 
@@ -103,11 +119,17 @@ export default function Login() {
                       id="email" 
                       type="email" 
                       placeholder="seu@email.com"
-                      className="pl-10"
+                      className={`pl-10 ${errors.email ? "border-destructive" : ""}`}
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) setErrors(prev => ({ ...prev, email: "" }));
+                      }}
                       required
                     />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
                   </div>
                 </div>
 
@@ -119,11 +141,17 @@ export default function Login() {
                       id="password" 
                       type={showPassword ? "text" : "password"}
                       placeholder="Digite sua senha"
-                      className="pl-10 pr-10"
+                      className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`}
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (errors.password) setErrors(prev => ({ ...prev, password: "" }));
+                      }}
                       required
                     />
+                    {errors.password && (
+                      <p className="text-sm text-destructive">{errors.password}</p>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"
