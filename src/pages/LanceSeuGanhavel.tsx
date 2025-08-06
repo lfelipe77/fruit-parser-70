@@ -121,7 +121,79 @@ export default function LanceSuaRifa() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setFormData(prev => ({ ...prev, images: [...prev.images, ...files] }));
+    
+    // File validation
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    const maxFiles = 1; // Limit to 1 file
+    
+    // Check if trying to upload more than 1 file
+    if (files.length > maxFiles) {
+      toast({
+        title: "Limite de arquivos excedido",
+        description: `Você pode enviar no máximo ${maxFiles} arquivo.`,
+        variant: "destructive"
+      });
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
+    // Check if already has files and trying to add more
+    if (formData.images.length > 0) {
+      toast({
+        title: "Limite de arquivos excedido",
+        description: "Você já enviou um arquivo. Remova o arquivo atual para enviar outro.",
+        variant: "destructive"
+      });
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
+    const validFiles: File[] = [];
+    
+    for (const file of files) {
+      // Check file type
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Tipo de arquivo não permitido",
+          description: `O arquivo "${file.name}" não é um tipo de imagem válido. Use apenas JPG, JPEG, PNG, WEBP ou GIF.`,
+          variant: "destructive"
+        });
+        continue;
+      }
+      
+      // Check file size
+      if (file.size > maxSize) {
+        toast({
+          title: "Arquivo muito grande",
+          description: `O arquivo "${file.name}" excede o limite de 5MB.`,
+          variant: "destructive"
+        });
+        continue;
+      }
+      
+      // Sanitize filename
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+      
+      // Create new file with sanitized name
+      const sanitizedFile = new File([file], sanitizedName, {
+        type: file.type,
+        lastModified: file.lastModified,
+      });
+      
+      validFiles.push(sanitizedFile);
+    }
+    
+    if (validFiles.length > 0) {
+      setFormData(prev => ({ ...prev, images: validFiles }));
+      toast({
+        title: "Arquivo enviado com sucesso",
+        description: `${validFiles.length} arquivo válido foi carregado.`,
+      });
+    }
+    
+    // Clear the input regardless
+    e.target.value = '';
   };
 
   const calculateCommission = () => {
@@ -457,13 +529,12 @@ export default function LanceSuaRifa() {
                       <Input
                         id="images"
                         type="file"
-                        multiple
-                        accept="image/*"
+                        accept=".jpg,.jpeg,.png,.webp,.gif"
                         className="hidden"
                         onChange={handleImageUpload}
                       />
                       <p className="text-sm text-muted-foreground">
-                        PNG, JPG até 10MB cada (máximo 5 imagens)
+                        JPG, JPEG, PNG, WEBP, GIF até 5MB (máximo 1 imagem)
                       </p>
                     </div>
                   </div>
@@ -471,13 +542,24 @@ export default function LanceSuaRifa() {
                   {formData.images.length > 0 && (
                     <div className="mt-4">
                       <p className="text-sm font-medium mb-2">
-                        Imagens selecionadas: {formData.images.length}
+                        Imagem selecionada:
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {formData.images.map((file, index) => (
-                          <Badge key={index} variant="secondary">
-                            {file.name}
-                          </Badge>
+                          <div key={index} className="flex items-center gap-2">
+                            <Badge variant="secondary">
+                              {file.name}
+                            </Badge>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setFormData(prev => ({ ...prev, images: [] }))}
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                            >
+                              ×
+                            </Button>
+                          </div>
                         ))}
                       </div>
                     </div>
