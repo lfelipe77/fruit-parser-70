@@ -29,7 +29,7 @@ import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
 import AlterarSenha from "./pages/AlterarSenha";
 import Admin from "./pages/Admin";
-import Dashboard from "./pages/admin/Dashboard";
+import AdminDashboard from "./pages/admin/Dashboard";
 import GanhaveisManagement from "./pages/admin/GanhaveisManagement";
 import GanhavelsConcluidos from "./pages/admin/GanhavelsConcluidos";
 import UsersManagement from "./pages/admin/UsersManagement";
@@ -37,6 +37,7 @@ import FinancialControl from "./pages/admin/FinancialControl";
 import Analytics from "./pages/admin/Analytics";
 import Settings from "./pages/admin/Settings";
 import ScrollToTop from "./components/ScrollToTop";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -73,8 +74,9 @@ const App = () => (
           <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
           <Route path="/perfil/:username" element={<PerfilPublico />} />
           {/* Admin routes */}
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<Admin />}>
-            <Route index element={<Dashboard />} />
+            <Route index element={<AdminDashboard />} />
             <Route path="ganhaveis" element={<GanhaveisManagement />} />
             <Route path="ganhaveis-concluidos" element={<GanhavelsConcluidos />} />
             <Route path="usuarios" element={<UsersManagement />} />
