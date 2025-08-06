@@ -5,23 +5,23 @@ import { getFAQSchema } from '@/utils/structuredData';
 // SEO wrapper for pages that need simple meta tags
 export const CategoriasSEO = () => (
   <SEOHead
-    title="Categorias de Rifas - Carros, Casas, Eletrônicos | Ganhavel"
-    description="Explore todas as categorias de rifas disponíveis: carros e motos, celulares, games, propriedades e gift cards. Encontre a rifa perfeita para você!"
+    title="Categorias de Ganháveis - Carros, Casas, Eletrônicos | Ganhavel"
+    description="Explore todas as categorias de ganháveis disponíveis: carros e motos, celulares, games, propriedades e gift cards. Encontre o ganhável perfeito para você!"
     canonical="https://ganhavel.com/categorias"
   />
 );
 
 export const DescobrirSEO = () => (
   <SEOHead
-    title="Descobrir Rifas - Todas as Rifas Ativas | Ganhavel"
-    description="Descubra todas as rifas ativas na Ganhavel. Filtre por categoria, preço e localização. Participe de rifas justas e transparentes hoje mesmo!"
+    title="Descobrir Ganháveis - Todos os Ganháveis Ativos | Ganhavel"
+    description="Descubra todos os ganháveis ativos na Ganhavel. Filtre por categoria, preço e localização. Participe de ganháveis justos e transparentes hoje mesmo!"
     canonical="https://ganhavel.com/descobrir"
   />
 );
 
 export const ResultadosSEO = () => (
   <SEOHead
-    title="Resultados de Rifas - Acompanhe os Sorteios | Ganhavel"
+    title="Resultados de Ganháveis - Acompanhe os Sorteios | Ganhavel"
     description="Confira os resultados dos sorteios da Ganhavel. Todos os resultados são baseados na Loteria Federal para garantir transparência total."
     canonical="https://ganhavel.com/resultados"
   />
@@ -29,8 +29,8 @@ export const ResultadosSEO = () => (
 
 export const ComoFuncionaSEO = () => (
   <SEOHead
-    title="Como Funciona - Guia Completo das Rifas | Ganhavel"
-    description="Aprenda como funcionam as rifas na Ganhavel. Processo transparente, baseado na Loteria Federal, com total segurança para participantes."
+    title="Como Funciona - Guia Completo dos Ganháveis | Ganhavel"
+    description="Aprenda como funcionam os ganháveis na Ganhavel. Processo transparente, baseado na Loteria Federal, com total segurança para participantes."
     canonical="https://ganhavel.com/como-funciona"
     structuredData={getFAQSchema()}
   />

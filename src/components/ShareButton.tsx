@@ -19,7 +19,7 @@ interface ShareButtonProps {
 export default function ShareButton({ 
   url = window.location.href, 
   title = "Confira este perfil na Ganhavel!",
-  description = "Rifas justas e transparentes",
+  description = "Ganháveis justos e transparentes",
   variant = "outline",
   size = "sm"
 }: ShareButtonProps) {
