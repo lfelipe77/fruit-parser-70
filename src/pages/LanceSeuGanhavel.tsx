@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { brazilStates } from "@/data/locations";
 import CountryRegionSelector from "@/components/CountryRegionSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 const categoriesData = {
   "eletronicos": {
@@ -202,7 +203,7 @@ export default function LanceSuaRifa() {
     return { prizeValue, processingFee, totalAmount: prizeValue + processingFee };
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validação básica
@@ -215,13 +216,35 @@ export default function LanceSuaRifa() {
       return;
     }
 
-    // Simulação de envio
-    toast({
-      title: "Rifa enviada para análise!",
-      description: "Sua rifa será analisada em até 24 horas. Você receberá um email com o resultado.",
-    });
-    
-    console.log("Dados da rifa:", formData);
+    try {
+      // Log audit event for raffle creation
+      const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
+        action: 'launched_new_raffle',
+        context: {
+          raffle_name: formData.title,
+          page: 'LanceSeuGanhavel'
+        }
+      });
+
+      if (auditError) {
+        console.error('Error logging audit event:', auditError);
+      }
+
+      // Simulação de envio
+      toast({
+        title: "Rifa enviada para análise!",
+        description: "Sua rifa será analisada em até 24 horas. Você receberá um email com o resultado.",
+      });
+      
+      console.log("Dados da rifa:", formData);
+    } catch (error) {
+      console.error('Error submitting raffle:', error);
+      toast({
+        title: "Erro ao enviar rifa",
+        description: "Ocorreu um erro ao processar sua solicitação. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const { prizeValue, processingFee, totalAmount } = calculateCommission();
