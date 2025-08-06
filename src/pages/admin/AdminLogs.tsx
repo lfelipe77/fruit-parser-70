@@ -34,11 +34,8 @@ export default function AdminLogs() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // Use RPC para acessar a admin_log_view
-      const { data, error } = await supabase
-        .rpc('get_admin_logs', {})
-        .order('created_at', { ascending: false })
-        .limit(100);
+      // Use the get_admin_logs function to access admin_log_view
+      const { data, error } = await supabase.rpc('get_admin_logs');
 
       if (error) {
         console.error('Error fetching logs:', error);

@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string | null
+          context: Json | null
+          created_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ganhaveis: {
         Row: {
           affiliate_link: string | null
@@ -92,6 +155,13 @@ export type Database = {
             foreignKeyName: "ganhaveis_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ganhaveis_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -126,6 +196,45 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      logs: {
+        Row: {
+          action: string
+          context: Json | null
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lottery_results: {
         Row: {
@@ -186,6 +295,7 @@ export type Database = {
           ticket_price: number | null
           title: string | null
           total_tickets: number | null
+          user_id: string
         }
         Insert: {
           category?: string | null
@@ -200,6 +310,7 @@ export type Database = {
           ticket_price?: number | null
           title?: string | null
           total_tickets?: number | null
+          user_id?: string
         }
         Update: {
           category?: string | null
@@ -214,6 +325,7 @@ export type Database = {
           ticket_price?: number | null
           title?: string | null
           total_tickets?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -276,6 +388,13 @@ export type Database = {
             foreignKeyName: "tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -293,6 +412,7 @@ export type Database = {
           payment_provider: string | null
           payment_reference: string | null
           received_at: string | null
+          source: string | null
           status: string | null
           ticket_numbers: Json | null
           type: string | null
@@ -309,6 +429,7 @@ export type Database = {
           payment_provider?: string | null
           payment_reference?: string | null
           received_at?: string | null
+          source?: string | null
           status?: string | null
           ticket_numbers?: Json | null
           type?: string | null
@@ -325,6 +446,7 @@ export type Database = {
           payment_provider?: string | null
           payment_reference?: string | null
           received_at?: string | null
+          source?: string | null
           status?: string | null
           ticket_numbers?: Json | null
           type?: string | null
@@ -342,6 +464,13 @@ export type Database = {
             foreignKeyName: "transactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -350,6 +479,7 @@ export type Database = {
       user_profiles: {
         Row: {
           avatar_url: string | null
+          banned: boolean
           bio: string | null
           created_at: string | null
           full_name: string | null
@@ -364,6 +494,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          banned?: boolean
           bio?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -378,6 +509,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          banned?: boolean
           bio?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -392,12 +524,207 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          role: string
+          user_id: string
+        }
+        Insert: {
+          role: string
+          user_id: string
+        }
+        Update: {
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      admin_log_view: {
+        Row: {
+          action: string | null
+          context: Json | null
+          created_at: string | null
+          id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          context?: Json | null
+          created_at?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          context?: Json | null
+          created_at?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_activity_log_translated: {
+        Row: {
+          action: string | null
+          created_at: string | null
+          details: string | null
+          id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_log_view: {
+        Row: {
+          action: string | null
+          created_at: string | null
+          details: string | null
+          id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profile_preview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profile_preview: {
+        Row: {
+          id: string | null
+          username: string | null
+        }
+        Insert: {
+          id?: string | null
+          username?: string | null
+        }
+        Update: {
+          id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_admin_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          user_id: string
+          action: string
+          context: Json
+          created_at: string
+        }[]
+      }
+      log_audit_event: {
+        Args: { action: string; context?: Json }
+        Returns: undefined
+      }
+      log_event: {
+        Args: { user_id: string; action: string; context?: Json }
+        Returns: undefined
+      }
+      log_ticket_purchase: {
+        Args: {
+          p_user_id: string
+          p_raffle_id: string
+          p_ticket_count: number
+          p_total_amount: number
+        }
+        Returns: undefined
+      }
+      log_user_action: {
+        Args: { p_user_id: string; p_action_type: string; p_context?: Json }
+        Returns: undefined
+      }
+      update_user_role: {
+        Args: { user_id: string; new_role: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
