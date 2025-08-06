@@ -12,10 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Search, FileText, RefreshCw } from "lucide-react";
+import { Calendar, Search, FileText, RefreshCw, Activity, TrendingUp, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, subDays, subHours } from "date-fns";
 import AdminSecurityBanner from "@/components/AdminSecurityBanner";
 
 interface AdminLogEntry {
@@ -26,11 +26,72 @@ interface AdminLogEntry {
   created_at: string;
 }
 
+interface DashboardStats {
+  logsLast24h: number;
+  logsLastWeek: number;
+  topActions: { action: string; count: number }[];
+}
+
 export default function AdminLogs() {
   const [logs, setLogs] = useState<AdminLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredLogs, setFilteredLogs] = useState<AdminLogEntry[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    logsLast24h: 0,
+    logsLastWeek: 0,
+    topActions: []
+  });
+
+  const fetchDashboardStats = async () => {
+    try {
+      const now = new Date();
+      const last24h = subHours(now, 24);
+      const lastWeek = subDays(now, 7);
+
+      // Get logs from last 24h
+      const { data: last24hLogs, error: error24h } = await supabase
+        .from('admin_log_view')
+        .select('*')
+        .gte('created_at', last24h.toISOString());
+
+      // Get logs from last week
+      const { data: lastWeekLogs, error: errorWeek } = await supabase
+        .from('admin_log_view')
+        .select('*')
+        .gte('created_at', lastWeek.toISOString());
+
+      // Get all logs for top actions
+      const { data: allLogs, error: errorAll } = await supabase
+        .from('admin_log_view')
+        .select('action');
+
+      if (error24h || errorWeek || errorAll) {
+        console.error('Error fetching dashboard stats:', { error24h, errorWeek, errorAll });
+        return;
+      }
+
+      // Calculate top actions
+      const actionCounts: { [key: string]: number } = {};
+      (allLogs || []).forEach(log => {
+        actionCounts[log.action] = (actionCounts[log.action] || 0) + 1;
+      });
+
+      const topActions = Object.entries(actionCounts)
+        .map(([action, count]) => ({ action, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+
+      setDashboardStats({
+        logsLast24h: last24hLogs?.length || 0,
+        logsLastWeek: lastWeekLogs?.length || 0,
+        topActions
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -61,6 +122,7 @@ export default function AdminLogs() {
 
   useEffect(() => {
     fetchLogs();
+    fetchDashboardStats();
   }, []);
 
   useEffect(() => {
@@ -144,7 +206,7 @@ export default function AdminLogs() {
             </p>
           </div>
           
-          <Button onClick={fetchLogs} variant="outline" disabled={loading}>
+          <Button onClick={() => { fetchLogs(); fetchDashboardStats(); }} variant="outline" disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
@@ -173,6 +235,50 @@ export default function AdminLogs() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="bg-slate-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Activity className="w-8 h-8 text-slate-600" />
+                <div>
+                  <div className="text-2xl font-bold text-slate-700">{dashboardStats.logsLast24h}</div>
+                  <div className="text-sm text-slate-600">Últimas 24h</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-green-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="w-8 h-8 text-green-600" />
+                <div>
+                  <div className="text-2xl font-bold text-green-700">{dashboardStats.logsLastWeek}</div>
+                  <div className="text-sm text-green-600">Última semana</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top Actions */}
+          {dashboardStats.topActions.slice(0, 3).map((actionData, index) => (
+            <Card key={actionData.action} className="bg-blue-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="w-8 h-8 text-blue-600" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xl font-bold text-blue-700">{actionData.count}</div>
+                    <div className="text-sm text-blue-600 truncate" title={actionData.action}>
+                      {actionData.action}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
         {/* Statistics */}
         <div className="grid md:grid-cols-4 gap-4">
