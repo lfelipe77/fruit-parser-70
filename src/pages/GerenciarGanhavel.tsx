@@ -75,7 +75,7 @@ export default function GerenciarRifa() {
     if (navigator.share) {
       navigator.share({
         title: rifa.title,
-        text: `Participe da rifa: ${rifa.title}`,
+        text: `Participe do ganhavel: ${rifa.title}`,
         url: `${window.location.origin}/ganhavel/${rifa.id}`
       });
     } else {

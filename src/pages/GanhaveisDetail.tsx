@@ -523,7 +523,7 @@ export default function RifaDetail() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-center">Participe da Rifa</CardTitle>
+                <CardTitle className="text-center">Participe do Ganhavel</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Progress */}
