@@ -18,7 +18,7 @@ interface ShareButtonProps {
 
 export default function ShareButton({ 
   url = window.location.href, 
-  title = "Confira este perfil na Ganhavel!",
+  title = "Participando do Ganhavel!",
   description = "Ganháveis justos e transparentes",
   variant = "outline",
   size = "sm"
