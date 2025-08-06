@@ -95,7 +95,7 @@ const resources = {
       launchGanhavel: "Lance seu Ganhável",
       
       // Hero Section
-      heroTitle: "Ganhe premios incriveis comm Ganhavel",
+      heroTitle: "Ganhe premios incriveis com Ganhavel",
       heroSubtitle: "Participe de sorteios emocionantes e transforme sua sorte em recompensas incríveis",
       startNow: "Comece Agora",
       
