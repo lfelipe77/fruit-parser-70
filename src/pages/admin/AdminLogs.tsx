@@ -34,52 +34,22 @@ export default function AdminLogs() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // Create mock data based on the audit events we know are being logged
-      const mockLogs: AdminLogEntry[] = [
-        {
-          id: '1',
-          user_id: 'user123',
-          action: 'updated_user_profile',
-          context: { page: 'MinhaConta', updated_fields: ['name', 'email'] },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          user_id: 'user456',
-          action: 'uploaded_raffle_image',
-          context: { page: 'LanceSeuGanhavel', filename: 'image.jpg' },
-          created_at: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: '3',
-          user_id: 'organizer789',
-          action: 'marked_ticket_paid',
-          context: { page: 'PaginaDaRifa', ticket_id: 'ticket123', organizer_id: 'org456' },
-          created_at: new Date(Date.now() - 7200000).toISOString()
-        },
-        {
-          id: '4',
-          user_id: 'organizer789',
-          action: 'updated_raffle_status',
-          context: { page: 'PaginaDaRifa', status: 'closed', raffle_id: 'raffle123' },
-          created_at: new Date(Date.now() - 10800000).toISOString()
-        },
-        {
-          id: '5',
-          user_id: null,
-          action: 'launched_new_raffle',
-          context: { page: 'LanceSeuGanhavel', raffle_name: 'Smartphone Galaxy S24' },
-          created_at: new Date(Date.now() - 14400000).toISOString()
-        }
-      ];
+      // Use uma consulta SQL direta para acessar a admin_log_view
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('id, user_id, action, context, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (error) {
+        console.error('Error fetching logs:', error);
+        toast.error('Erro ao carregar logs');
+        return;
+      }
 
-      setLogs(mockLogs);
-      setFilteredLogs(mockLogs);
+      setLogs(data || []);
+      setFilteredLogs(data || []);
       
-      toast.success('Logs carregados com sucesso');
     } catch (error) {
       console.error('Error fetching logs:', error);
       toast.error('Erro ao carregar logs');
@@ -112,38 +82,49 @@ export default function AdminLogs() {
   const formatContext = (context: any) => {
     if (!context) return '-';
     
-    // Handle common context patterns
-    if (typeof context === 'object') {
-      return Object.entries(context)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ');
+    // Format as readable JSON with proper indentation
+    try {
+      return JSON.stringify(context, null, 2);
+    } catch (error) {
+      return String(context);
     }
-    
-    return String(context);
   };
 
-  const getActionBadgeVariant = (action: string) => {
-    if (action.includes('create') || action.includes('upload')) return 'default';
-    if (action.includes('update') || action.includes('edit')) return 'secondary';
-    if (action.includes('delete') || action.includes('cancel')) return 'destructive';
-    if (action.includes('login') || action.includes('auth')) return 'outline';
-    return 'secondary';
-  };
-
-  const getActionDisplayName = (action: string) => {
-    const actionMap: Record<string, string> = {
-      'updated_user_profile': 'Perfil Atualizado',
-      'uploaded_raffle_image': 'Imagem da Rifa Enviada',
-      'marked_ticket_paid': 'Bilhete Marcado como Pago',
-      'updated_raffle_status': 'Status da Rifa Atualizado',
-      'create_raffle': 'Rifa Criada',
-      'update_raffle': 'Rifa Atualizada',
-      'ticket_purchase': 'Compra de Bilhete',
-      'user_login': 'Login do Usuário',
-      'password_change': 'Senha Alterada'
-    };
+  const ContextDisplay = ({ context }: { context: any }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
     
-    return actionMap[action] || action.charAt(0).toUpperCase() + action.slice(1).replace(/_/g, ' ');
+    if (!context) return <span className="text-muted-foreground">-</span>;
+    
+    const contextStr = formatContext(context);
+    const isLongContext = contextStr.length > 50;
+    
+    return (
+      <div>
+        {isLongContext ? (
+          <div>
+            <div className="text-sm">
+              {isExpanded ? (
+                <pre className="whitespace-pre-wrap text-xs bg-muted p-2 rounded">
+                  {contextStr}
+                </pre>
+              ) : (
+                <span>{contextStr.substring(0, 50)}...</span>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto p-1 text-xs mt-1"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? 'Recolher' : 'Expandir'}
+            </Button>
+          </div>
+        ) : (
+          <span className="text-sm">{contextStr}</span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -154,10 +135,10 @@ export default function AdminLogs() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <FileText className="w-8 h-8" />
-              Logs de Auditoria
+              Log de Auditoria
             </h1>
             <p className="text-muted-foreground mt-2">
-              Visualização dos eventos e ações registrados no sistema
+              Visualização completa das ações realizadas no sistema pelos usuários
             </p>
           </div>
           
@@ -175,12 +156,12 @@ export default function AdminLogs() {
           <CardContent>
             <div className="flex gap-4 items-end">
               <div className="flex-1">
-                <Label htmlFor="search">Buscar por ação, usuário ou contexto</Label>
+                <Label htmlFor="search">Buscar por ação ou ID do usuário</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="search"
-                    placeholder="Digite para buscar..."
+                    placeholder="Digite para buscar ação ou user_id..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -245,7 +226,7 @@ export default function AdminLogs() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              Logs de Auditoria ({filteredLogs.length})
+              Registros de Auditoria ({filteredLogs.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -268,9 +249,9 @@ export default function AdminLogs() {
                     <TableRow>
                       <TableHead>Data/Hora</TableHead>
                       <TableHead>Ação</TableHead>
-                      <TableHead>Usuário</TableHead>
+                      <TableHead>ID do Usuário</TableHead>
                       <TableHead>Contexto</TableHead>
-                      <TableHead>ID</TableHead>
+                      <TableHead>ID do Log</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -280,17 +261,15 @@ export default function AdminLogs() {
                           {formatDate(log.created_at)}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getActionBadgeVariant(log.action)}>
-                            {getActionDisplayName(log.action)}
-                          </Badge>
+                          <code className="bg-muted px-2 py-1 rounded text-sm">
+                            {log.action}
+                          </code>
                         </TableCell>
                         <TableCell className="font-mono text-sm">
                           {log.user_id ? `${log.user_id.substring(0, 8)}...` : 'Sistema'}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          <span className="text-sm text-muted-foreground">
-                            {formatContext(log.context)}
-                          </span>
+                        <TableCell className="max-w-xs">
+                          <ContextDisplay context={log.context} />
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {log.id.substring(0, 8)}...
