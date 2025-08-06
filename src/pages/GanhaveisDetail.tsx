@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Heart, Shield, Clock, Users, Trophy, CheckCircle, MapPin } from "lucide-react";
+import { ArrowLeft, Heart, Shield, Clock, Users, Trophy, CheckCircle, MapPin, Mail } from "lucide-react";
 import SEOHead from "@/components/SEOHead";
 import { getProductSchema, getLotteryEventSchema, getBreadcrumbSchema } from "@/utils/structuredData";
 import ShareButton from "@/components/ShareButton";
@@ -628,6 +628,31 @@ export default function RifaDetail() {
                     `Comprar ${selectedQuantity} bilhete${selectedQuantity > 1 ? 's' : ''}`
                   )}
                 </Button>
+
+                {/* Security badges */}
+                <div className="space-y-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 text-sm text-green-800 dark:text-green-200">
+                    <Shield className="w-4 h-4" />
+                    <span className="font-medium">🔐 Pagamento Seguro via PIX direto para o organizador</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-green-800 dark:text-green-200">
+                    <Mail className="w-4 h-4" />
+                    <span className="font-medium">✉️ Você receberá o comprovante por e-mail</span>
+                  </div>
+                </div>
+
+                {/* Organizer verification badge */}
+                <div className="text-center">
+                  {getOrganizerData(rifa).ganhaveisCompletos > 3 ? (
+                    <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                      🌟 Organizador Verificado
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      🆕 Novo Organizador
+                    </Badge>
+                  )}
+                </div>
 
                 {/* Lottery Security */}
                 <div className="text-center text-sm text-muted-foreground pt-4 border-t">

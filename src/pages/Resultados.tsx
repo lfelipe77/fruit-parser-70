@@ -112,6 +112,14 @@ export default function Resultados() {
             <p className="text-xl text-muted-foreground">
               Confira os ganhadores e resultados oficiais baseados na Loteria Federal
             </p>
+            
+            {/* Verification banner */}
+            <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 max-w-2xl mx-auto">
+              <div className="flex items-center justify-center gap-2 text-blue-800 dark:text-blue-200">
+                <CheckCircle className="w-5 h-5" />
+                <span className="font-medium">🏛️ Resultados registrados e verificados com base na Loteria Federal Brasileira</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

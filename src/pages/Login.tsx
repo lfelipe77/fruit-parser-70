@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -154,6 +154,14 @@ export default function Login() {
                   Esqueceu a senha?
                 </Link>
               </div>
+
+                {/* Security information */}
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+                    <Shield className="w-4 h-4" />
+                    <span className="font-medium">🔐 Protegido por Senha Forte + Verificação de E-mail</span>
+                  </div>
+                </div>
 
                 <Button 
                   type="submit" 

@@ -318,15 +318,25 @@ export default function SignUp() {
                 </div>
 
                 {!user && (
-                  <Button 
-                    variant="hero" 
-                    className="w-full" 
-                    size="lg" 
-                    type="submit"
-                    disabled={loading}
-                  >
-                    {loading ? 'Criando conta...' : 'Criar Conta'}
-                  </Button>
+                  <>
+                    {/* Security information */}
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
+                        <Lock className="w-4 h-4" />
+                        <span className="font-medium">🔐 Protegido por Senha Forte + Verificação de E-mail</span>
+                      </div>
+                    </div>
+
+                    <Button 
+                      variant="hero" 
+                      className="w-full" 
+                      size="lg" 
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {loading ? 'Criando conta...' : 'Criar Conta'}
+                    </Button>
+                  </>
                 )}
                 
                 {user && (
