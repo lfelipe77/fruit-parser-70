@@ -8,6 +8,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/hooks/use-toast";
+import { z } from 'zod';
+
+const passwordSchema = z
+  .string()
+  .min(8, 'A senha deve ter no mínimo 8 caracteres.')
+  .regex(/[a-z]/, 'Deve conter pelo menos uma letra minúscula.')
+  .regex(/[A-Z]/, 'Deve conter pelo menos uma letra maiúscula.')
+  .regex(/[0-9]/, 'Deve conter pelo menos um número.')
+  .regex(/[^A-Za-z0-9]/, 'Deve conter pelo menos um símbolo.');
+
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
+  password: passwordSchema,
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"]
+}).refine((data) => data.currentPassword !== data.password, {
+  message: "A nova senha deve ser diferente da atual",
+  path: ["password"]
+});
 
 export default function AlterarSenha() {
   const navigate = useNavigate();
@@ -17,38 +38,28 @@ export default function AlterarSenha() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     currentPassword: "",
-    newPassword: "",
+    password: "",
     confirmPassword: ""
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = "Senha atual é obrigatória";
+    try {
+      passwordChangeSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            newErrors[err.path[0].toString()] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
     }
-
-    if (!formData.newPassword) {
-      newErrors.newPassword = "Nova senha é obrigatória";
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = "Nova senha deve ter pelo menos 8 caracteres";
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.newPassword)) {
-      newErrors.newPassword = "Nova senha deve conter ao menos: 1 letra maiúscula, 1 minúscula e 1 número";
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Confirmação da senha é obrigatória";
-    } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "As senhas não coincidem";
-    }
-
-    if (formData.currentPassword === formData.newPassword) {
-      newErrors.newPassword = "A nova senha deve ser diferente da atual";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -89,7 +100,7 @@ export default function AlterarSenha() {
     };
   };
 
-  const strength = passwordStrength(formData.newPassword);
+  const strength = passwordStrength(formData.password);
 
   return (
     <div className="min-h-screen bg-background">
@@ -158,16 +169,16 @@ export default function AlterarSenha() {
 
               {/* New Password */}
               <div className="space-y-2">
-                <Label htmlFor="newPassword">Nova Senha</Label>
+                <Label htmlFor="password">Nova Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="newPassword"
+                    id="password"
                     type={showNewPassword ? "text" : "password"}
                     placeholder="Digite sua nova senha"
                     className="pl-10 pr-10"
-                    value={formData.newPassword}
-                    onChange={(e) => handleInputChange("newPassword", e.target.value)}
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
                   />
                   <Button
                     type="button"
@@ -183,7 +194,7 @@ export default function AlterarSenha() {
                     )}
                   </Button>
                 </div>
-                {formData.newPassword && (
+                {formData.password && (
                   <div className="flex items-center gap-2">
                     <div className="text-sm">Força da senha:</div>
                     <div className={`text-sm font-medium ${strength.color}`}>
@@ -191,8 +202,8 @@ export default function AlterarSenha() {
                     </div>
                   </div>
                 )}
-                {errors.newPassword && (
-                  <p className="text-sm text-destructive">{errors.newPassword}</p>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
                 )}
               </div>
 
@@ -223,7 +234,7 @@ export default function AlterarSenha() {
                     )}
                   </Button>
                 </div>
-                {formData.confirmPassword && formData.newPassword === formData.confirmPassword && (
+                {formData.confirmPassword && formData.password === formData.confirmPassword && (
                   <div className="flex items-center gap-2 text-green-600">
                     <CheckCircle className="h-4 w-4" />
                     <span className="text-sm">As senhas coincidem</span>
@@ -262,7 +273,7 @@ export default function AlterarSenha() {
                 <Button
                   type="submit"
                   className="flex-1"
-                  disabled={!formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
+                  disabled={!formData.currentPassword || !formData.password || !formData.confirmPassword}
                 >
                   Alterar Senha
                 </Button>
