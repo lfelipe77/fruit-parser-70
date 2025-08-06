@@ -96,8 +96,10 @@ export default function SignUp() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#])[A-Za-z\d@$!%*?&.#]{8,}$/;
+
+    if (!strongPasswordRegex.test(formData.password)) {
+      toast.error("Senha fraca: Use pelo menos 8 caracteres, uma letra maiúscula, uma minúscula, um número e um símbolo.");
       return;
     }
 
