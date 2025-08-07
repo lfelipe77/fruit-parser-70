@@ -839,7 +839,7 @@ export default function ComoFunciona() {
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-2">A plataforma usa inteligência artificial?</h3>
                 <p className="text-muted-foreground">
-                  Sim. Utilizamos IA para automatizar processos de validação, status de ganhaveis, confirmação de prêmios e liberação de valores. 
+                  Sim. Utilizamos IA para automatizar processos de validação, status de rifas, confirmação de prêmios e liberação de valores. 
                   Isso reduz fraudes e agiliza o funcionamento.
                 </p>
               </CardContent>
