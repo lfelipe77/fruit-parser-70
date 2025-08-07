@@ -3,12 +3,14 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuditLogger } from './useAuditLogger';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logLogin, logLogout, logSignup } = useAuditLogger();
 
   useEffect(() => {
     // Set up auth state listener
@@ -21,23 +23,9 @@ export const useAuth = () => {
         // Log audit events for auth changes
         if (event === 'SIGNED_IN' && session) {
           // Log successful login
-          setTimeout(async () => {
-            try {
-              // Determine login method based on provider or default to email
-              const loginMethod = session.user.app_metadata?.provider || 'email';
-              
-              await supabase.rpc('log_audit_event', {
-                action: 'logged_in',
-                context: {
-                  page: window.location.pathname || 'Login',
-                  user_agent: navigator.userAgent,
-                  login_method: loginMethod,
-                  user_email: session.user.email
-                }
-              });
-            } catch (error) {
-              console.error('Error logging login audit event:', error);
-            }
+          setTimeout(() => {
+            const loginMethod = session.user.app_metadata?.provider || 'email';
+            logLogin(loginMethod as 'email' | 'google', true, session.user.email);
           }, 0);
           
           navigate('/dashboard');
@@ -46,18 +34,8 @@ export const useAuth = () => {
 
         if (event === 'SIGNED_OUT') {
           // Log logout event
-          setTimeout(async () => {
-            try {
-              await supabase.rpc('log_audit_event', {
-                action: 'logged_out',
-                context: {
-                  page: window.location.pathname || 'Logout',
-                  user_agent: navigator.userAgent
-                }
-              });
-            } catch (error) {
-              console.error('Error logging logout audit event:', error);
-            }
+          setTimeout(() => {
+            logLogout();
           }, 0);
         }
       }
@@ -105,6 +83,8 @@ export const useAuth = () => {
       });
 
       if (error) {
+        // Log failed login attempt
+        logLogin('email', false, email);
         toast.error('Erro no login: ' + error.message);
         return { error };
       }
@@ -136,6 +116,8 @@ export const useAuth = () => {
         return { error };
       }
 
+      // Log successful signup
+      logSignup(email, 'email');
       toast.success('Verifique seu email para confirmar o cadastro!');
       return { error: null };
     } catch (error) {
@@ -146,19 +128,6 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    // Log logout before actually signing out
-    try {
-      await supabase.rpc('log_audit_event', {
-        action: 'logout_initiated',
-        context: {
-          page: window.location.pathname,
-          user_agent: navigator.userAgent
-        }
-      });
-    } catch (error) {
-      console.error('Error logging logout audit event:', error);
-    }
-
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast.error('Erro ao sair: ' + error.message);

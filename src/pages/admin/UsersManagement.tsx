@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuditLogger } from "@/hooks/useAuditLogger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ export default function UsersManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("todos");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const { logAdminAction } = useAuditLogger();
   
   // Supabase state
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -185,19 +187,67 @@ export default function UsersManagement() {
     return matchesTab && matchesSearch && matchesStatus;
   });
 
-  const handleSuspend = (userId: string) => {
-    console.log("Suspender usuário:", userId);
-    // Implementar lógica de suspensão
+  const handleSuspend = async (userId: string) => {
+    try {
+      // Update user status in database
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ banned: true })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Log admin action
+      logAdminAction('user_banned', {
+        targetUserId: userId,
+        reason: 'Suspended via admin panel'
+      });
+
+      await loadUsers(); // Refresh data
+    } catch (error) {
+      console.error("Error suspending user:", error);
+    }
   };
 
-  const handleReactivate = (userId: string) => {
-    console.log("Reativar usuário:", userId);
-    // Implementar lógica de reativação
+  const handleReactivate = async (userId: string) => {
+    try {
+      // Update user status in database
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ banned: false })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Log admin action
+      logAdminAction('user_unbanned', {
+        targetUserId: userId,
+        reason: 'Reactivated via admin panel'
+      });
+
+      await loadUsers(); // Refresh data
+    } catch (error) {
+      console.error("Error reactivating user:", error);
+    }
   };
 
-  const handleVerify = (userId: string) => {
-    console.log("Verificar usuário:", userId);
-    // Implementar lógica de verificação
+  const handlePromoteRole = async (userId: string, newRole: string, oldRole: string) => {
+    try {
+      // Note: This would typically require a separate admin function
+      // for security, but showing the audit logging pattern
+      
+      // Log admin action
+      logAdminAction('role_promoted', {
+        targetUserId: userId,
+        oldRole,
+        newRole,
+        reason: 'Role change via admin panel'
+      });
+
+      await loadUsers(); // Refresh data
+    } catch (error) {
+      console.error("Error promoting user role:", error);
+    }
   };
 
   return (

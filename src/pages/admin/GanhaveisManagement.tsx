@@ -36,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuditLogger } from "@/hooks/useAuditLogger";
 import {
   Search,
   Filter,
@@ -200,6 +201,7 @@ export default function GanhaveisManagement() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const { toast } = useToast();
+  const { logAdminAction } = useAuditLogger();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -241,14 +243,10 @@ export default function GanhaveisManagement() {
 
   const handleApprove = async (ganhaveisId: string) => {
     try {
-      // Log audit event for raffle approval
-      await supabase.rpc('log_audit_event', {
-        action: 'approved_raffle',
-        context: {
-          raffle_id: ganhaveisId,
-          page: 'GanhaveisManagement',
-          action_type: 'approval'
-        }
+      // Log admin action
+      logAdminAction('raffle_approved', {
+        targetRaffleId: ganhaveisId,
+        reason: 'Approved via admin panel'
       });
 
       toast({
@@ -263,15 +261,10 @@ export default function GanhaveisManagement() {
 
   const handleReject = async (ganhaveisId: string, reason: string) => {
     try {
-      // Log audit event for raffle rejection
-      await supabase.rpc('log_audit_event', {
-        action: 'rejected_raffle',
-        context: {
-          raffle_id: ganhaveisId,
-          rejection_reason: reason,
-          page: 'GanhaveisManagement',
-          action_type: 'rejection'
-        }
+      // Log admin action
+      logAdminAction('raffle_rejected', {
+        targetRaffleId: ganhaveisId,
+        reason
       });
 
       toast({
@@ -288,14 +281,10 @@ export default function GanhaveisManagement() {
 
   const handleSuspend = async (ganhaveisId: string) => {
     try {
-      // Log audit event for raffle suspension
-      await supabase.rpc('log_audit_event', {
-        action: 'suspended_raffle',
-        context: {
-          raffle_id: ganhaveisId,
-          page: 'GanhaveisManagement',
-          action_type: 'suspension'
-        }
+      // Log admin action
+      logAdminAction('raffle_suspended', {
+        targetRaffleId: ganhaveisId,
+        reason: 'Suspended via admin panel'
       });
 
       toast({
@@ -310,14 +299,10 @@ export default function GanhaveisManagement() {
 
   const handleReactivate = async (ganhaveisId: string) => {
     try {
-      // Log audit event for raffle reactivation
-      await supabase.rpc('log_audit_event', {
-        action: 'reactivated_raffle',
-        context: {
-          raffle_id: ganhaveisId,
-          page: 'GanhaveisManagement',
-          action_type: 'reactivation'
-        }
+      // Log admin action
+      logAdminAction('raffle_reactivated', {
+        targetRaffleId: ganhaveisId,
+        reason: 'Reactivated via admin panel'
       });
 
       toast({
@@ -331,14 +316,12 @@ export default function GanhaveisManagement() {
 
   const handleSaveNotes = async (ganhaveisId: string, notes: string) => {
     try {
-      // Log audit event for admin notes update
-      await supabase.rpc('log_audit_event', {
-        action: 'updated_raffle_notes',
-        context: {
-          raffle_id: ganhaveisId,
-          notes: notes.substring(0, 100) + (notes.length > 100 ? '...' : ''), // Truncate long notes
-          page: 'GanhaveisManagement',
-          action_type: 'notes_update'
+      // Log admin action for notes update
+      logAdminAction('raffle_rejected', {
+        targetRaffleId: ganhaveisId,
+        additionalContext: {
+          action_type: 'notes_update',
+          notes_preview: notes.substring(0, 100) + (notes.length > 100 ? '...' : '')
         }
       });
 
