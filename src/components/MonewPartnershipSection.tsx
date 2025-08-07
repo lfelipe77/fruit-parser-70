@@ -45,7 +45,7 @@ export default function MonewPartnershipSection() {
           
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
             A Ganhavél conta com a <strong>Monew</strong> – uma fintech brasileira licenciada – 
-            como parceira financeira responsável por reter e validar todos os valores pagos nas rifas.
+            como parceira financeira responsável por reter e validar todos os valores pagos nos ganhaveis.
           </p>
         </div>
 
@@ -66,60 +66,6 @@ export default function MonewPartnershipSection() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Benefits List */}
-        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-2xl border border-slate-200 dark:border-slate-700 p-8 md:p-10 mb-10">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                <span className="text-green-600 dark:text-green-400 text-lg">💸</span>
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  Automação via PIX
-                </h4>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  Divisão inteligente de valores com Split de Pagamento automático
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                <span className="text-blue-600 dark:text-blue-400 text-lg">🔍</span>
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  Transparência Total
-                </h4>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  Rastreabilidade completa em cada transação realizada
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                <span className="text-slate-600 dark:text-slate-300 text-lg">🏦</span>
-              </div>
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                  Conformidade Legal
-                </h4>
-                <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  Regulamentação garantida, sem necessidade de intermediários
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 dark:border-slate-700 mt-8 pt-6 text-center">
-            <p className="text-slate-700 dark:text-slate-300 font-medium">
-              Todos os valores são gerenciados automaticamente pela Monew, 
-              garantindo segurança para organizadores e participantes.
-            </p>
-          </div>
         </div>
 
         {/* Company Info & CTA */}
