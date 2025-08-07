@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,56 +13,36 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-    console.log('🔧 AdminRoute: Auth loading:', loading, 'User:', !!user);
-
     const checkAdmin = async () => {
       if (!user) {
-        if (isMounted) {
-          console.log('🔧 AdminRoute: No user, denying access');
-          setIsAdmin(false);
-          setChecking(false);
-        }
+        setChecking(false);
         return;
       }
 
       try {
-        console.log('🔧 AdminRoute: Checking admin status for user:', user.id);
         const { data, error } = await supabase
           .from('user_profiles')
           .select('role')
           .eq('id', user.id)
-          .maybeSingle();
-
-        if (!isMounted) return;
+          .single();
 
         if (error) {
-          console.error('🔧 AdminRoute: Error checking admin role:', error);
+          console.error('Error checking admin role:', error);
           setIsAdmin(false);
         } else {
-          const isAdminUser = data?.role === 'admin';
-          console.log('🔧 AdminRoute: Admin check result:', isAdminUser, 'Role data:', data);
-          setIsAdmin(isAdminUser);
+          setIsAdmin(data.role === 'admin');
         }
       } catch (error) {
-        console.error('🔧 AdminRoute: Exception checking admin role:', error);
-        if (isMounted) {
-          setIsAdmin(false);
-        }
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
       } finally {
-        if (isMounted) {
-          setChecking(false);
-        }
+        setChecking(false);
       }
     };
 
     if (!loading) {
       checkAdmin();
     }
-
-    return () => {
-      isMounted = false;
-    };
   }, [user, loading]);
 
   // Show loading while checking auth or admin status

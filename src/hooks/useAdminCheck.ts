@@ -20,7 +20,7 @@ export const useAdminCheck = () => {
           .from('user_profiles')
           .select('role')
           .eq('id', user.id)
-          .maybeSingle();
+          .single();
 
         if (error) {
           console.error('Error checking admin role:', error);

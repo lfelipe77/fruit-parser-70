@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,68 +11,67 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let isMounted = true;
-    console.log('🔧 useAuth: Starting auth setup');
-
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (!isMounted) return;
-        
-        console.log('🔧 Auth event:', event, 'Session:', !!session, 'User ID:', session?.user?.id);
-        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Handle navigation ONLY for successful login (not for initial session)
+        // Log audit events for auth changes
         if (event === 'SIGNED_IN' && session) {
-          console.log('🔧 User signed in, redirecting to dashboard');
-          // Defer navigation and other side effects
-          setTimeout(() => {
-            if (!isMounted) return;
-            navigate('/dashboard');
-            toast.success('Login realizado com sucesso!');
-          }, 100);
+          // Log successful login
+          setTimeout(async () => {
+            try {
+              // Determine login method based on provider or default to email
+              const loginMethod = session.user.app_metadata?.provider || 'email';
+              
+              await supabase.rpc('log_audit_event', {
+                action: 'logged_in',
+                context: {
+                  page: window.location.pathname || 'Login',
+                  user_agent: navigator.userAgent,
+                  login_method: loginMethod,
+                  user_email: session.user.email
+                }
+              });
+            } catch (error) {
+              console.error('Error logging login audit event:', error);
+            }
+          }, 0);
+          
+          navigate('/dashboard');
+          toast.success('Login realizado com sucesso!');
         }
 
         if (event === 'SIGNED_OUT') {
-          console.log('🔧 User signed out');
+          // Log logout event
+          setTimeout(async () => {
+            try {
+              await supabase.rpc('log_audit_event', {
+                action: 'logged_out',
+                context: {
+                  page: window.location.pathname || 'Logout',
+                  user_agent: navigator.userAgent
+                }
+              });
+            } catch (error) {
+              console.error('Error logging logout audit event:', error);
+            }
+          }, 0);
         }
       }
     );
 
-    // THEN check for existing session
-    const getInitialSession = async () => {
-      try {
-        console.log('🔧 Checking initial session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (!isMounted) return;
-        
-        if (error) {
-          console.error('🔧 Error getting session:', error);
-        }
-        
-        console.log('🔧 Initial session check:', !!session, 'User ID:', session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      } catch (error) {
-        console.error('🔧 Error in getInitialSession:', error);
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    getInitialSession();
-
-    return () => {
-      console.log('🔧 useAuth: Cleaning up');
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []); // Removed navigate dependency to prevent loops
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const signInWithGoogle = async () => {
     try {
@@ -89,6 +87,8 @@ export const useAuth = () => {
         return { error };
       }
 
+      // Note: The audit log will be handled by the onAuthStateChange listener
+      // when the user successfully authenticates
       return { error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -109,6 +109,8 @@ export const useAuth = () => {
         return { error };
       }
 
+      // Note: The audit log will be handled by the onAuthStateChange listener
+      // when the user successfully authenticates
       return { error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';

@@ -2,13 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Play, TrendingUp, Users, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import heroImage from "/lovable-uploads/9b1dfafa-8d0f-4d6b-a608-0ec17bcecaf7.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
-  const [imageLoaded, setImageLoaded] = useState(false);
-  
-  console.log('🔧 HeroSection: Rendering');
   
   return (
     <section className="relative bg-gradient-hero py-12 md:py-20 lg:py-32 overflow-hidden">
@@ -85,25 +82,10 @@ export default function HeroSection() {
           
           <div className="relative lg:ml-8 animate-scale-in max-w-lg mx-auto lg:max-w-none">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-              {!imageLoaded && (
-                <div className="w-full h-[300px] md:h-[400px] lg:h-[500px] bg-muted flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
-                </div>
-              )}
               <img
-                src="/lovable-uploads/9b1dfafa-8d0f-4d6b-a608-0ec17bcecaf7.png"
+                src={heroImage}
                 alt="Group of friends celebrating with luxury rewards in golden circle - private jets and luxury cars"
-                className={`w-full h-[300px] md:h-[400px] lg:h-[500px] object-cover transition-opacity duration-300 ${
-                  imageLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
-                onLoad={() => {
-                  console.log('🔧 HeroSection: Image loaded successfully');
-                  setImageLoaded(true);
-                }}
-                onError={() => {
-                  console.log('🔧 HeroSection: Image failed to load');
-                  setImageLoaded(true); // Show content even if image fails
-                }}
+                className="w-full h-[300px] md:h-[400px] lg:h-[500px] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
