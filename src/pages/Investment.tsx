@@ -31,6 +31,31 @@ const Investment: React.FC = () => {
         description="Oportunidade única de investir na Ganhavel, plataforma de sorteios reais com modelo validado e time pronto para escalar."
       />
       
+      {/* Header with Logo */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <a 
+              href="/" 
+              className="flex items-center gap-3 hover-scale group"
+            >
+              <div className="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                <span className="text-white font-bold text-lg">G</span>
+              </div>
+              <div className="hidden sm:block">
+                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Ganhavel
+                </h2>
+                <p className="text-xs text-muted-foreground">Sorteios Reais</p>
+              </div>
+            </a>
+            <Badge variant="outline" className="border-primary/30 text-primary">
+              Proposta de Investimento
+            </Badge>
+          </div>
+        </div>
+      </header>
+      
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-b">
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]" />
