@@ -356,6 +356,48 @@ export type Database = {
         }
         Relationships: []
       }
+      security_alerts: {
+        Row: {
+          context: Json | null
+          created_at: string
+          description: string
+          id: string
+          ip_address: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string | null
+          status: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          description: string
+          id?: string
+          ip_address?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string | null
+          status?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          description?: string
+          id?: string
+          ip_address?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           created_at: string | null
@@ -702,6 +744,29 @@ export type Database = {
       }
     }
     Functions: {
+      check_login_abuse: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_raffle_spam: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_suspicious_actions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_security_alert: {
+        Args: {
+          alert_type: string
+          alert_description: string
+          alert_ip_address?: string
+          alert_user_id?: string
+          alert_context?: Json
+          alert_severity?: string
+        }
+        Returns: string
+      }
       get_admin_logs: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -735,6 +800,10 @@ export type Database = {
       }
       log_user_action: {
         Args: { p_user_id: string; p_action_type: string; p_context?: Json }
+        Returns: undefined
+      }
+      run_security_checks: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       update_user_role: {
