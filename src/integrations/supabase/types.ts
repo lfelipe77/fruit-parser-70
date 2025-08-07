@@ -281,39 +281,6 @@ export type Database = {
           },
         ]
       }
-      public_visits: {
-        Row: {
-          city: string | null
-          country: string | null
-          created_at: string
-          id: string
-          ip_address: string
-          referer: string | null
-          url: string
-          user_agent: string | null
-        }
-        Insert: {
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          id?: string
-          ip_address: string
-          referer?: string | null
-          url: string
-          user_agent?: string | null
-        }
-        Update: {
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          id?: string
-          ip_address?: string
-          referer?: string | null
-          url?: string
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
       raffles: {
         Row: {
           category: string | null
@@ -822,17 +789,6 @@ export type Database = {
         Args: { user_id: string; action: string; context?: Json }
         Returns: undefined
       }
-      log_public_visit: {
-        Args: {
-          visit_ip: string
-          visit_user_agent?: string
-          visit_url?: string
-          visit_referer?: string
-          visit_country?: string
-          visit_city?: string
-        }
-        Returns: string
-      }
       log_ticket_purchase: {
         Args: {
           p_user_id: string
@@ -849,10 +805,6 @@ export type Database = {
       run_security_checks: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      should_log_visit: {
-        Args: { visit_ip: string; visit_url: string }
-        Returns: boolean
       }
       update_user_role: {
         Args: { user_id: string; new_role: string }
