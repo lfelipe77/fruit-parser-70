@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Search, Heart, User, Calendar, Clock, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -11,14 +12,22 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Navigation() {
   const { t } = useTranslation();
   const [selectedLottery, setSelectedLottery] = useState('br');
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCheckComplete, setAdminCheckComplete] = useState(false);
 
-  // Check if user is admin
+  // Check if user is admin with proper error handling
   useEffect(() => {
+    let isMounted = true;
+    
     const checkAdmin = async () => {
+      if (authLoading) return; // Wait for auth to load
+      
       if (!user) {
-        setIsAdmin(false);
+        if (isMounted) {
+          setIsAdmin(false);
+          setAdminCheckComplete(true);
+        }
         return;
       }
 
@@ -29,19 +38,35 @@ export default function Navigation() {
           .eq('id', user.id)
           .maybeSingle();
 
-        if (!error && data?.role === 'admin') {
-          setIsAdmin(true);
-        } else {
+        if (!isMounted) return;
+
+        if (error) {
+          console.error('Error checking admin role:', error);
           setIsAdmin(false);
+        } else {
+          setIsAdmin(data?.role === 'admin');
         }
       } catch (error) {
         console.error('Error checking admin role:', error);
-        setIsAdmin(false);
+        if (isMounted) {
+          setIsAdmin(false);
+        }
+      } finally {
+        if (isMounted) {
+          setAdminCheckComplete(true);
+        }
       }
     };
 
-    checkAdmin();
-  }, [user]);
+    // Only check admin when auth is not loading
+    if (!authLoading) {
+      checkAdmin();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, authLoading]);
 
   const lotteryDraws = [
     { id: 'br', flag: '🇧🇷', name: 'Mega-Sena', date: '10/08', time: '20:00' },
@@ -80,8 +105,8 @@ export default function Navigation() {
                 <Link to="/como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('howItWorks')}
                 </Link>
-                {/* Admin link - only visible to admin users */}
-                {isAdmin && (
+                {/* Admin link - only visible to admin users and after check is complete */}
+                {adminCheckComplete && isAdmin && (
                   <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">
                     <Settings className="w-4 h-4 inline mr-1" />
                     Admin
@@ -100,7 +125,7 @@ export default function Navigation() {
               <NotificationCenter />
               <LanguageSelector />
               {/* Admin quick access button for authenticated admin users */}
-              {isAdmin && (
+              {adminCheckComplete && isAdmin && (
                 <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
                   <Link to="/admin-dashboard">
                     <Settings className="w-4 h-4 mr-2" />
@@ -127,7 +152,6 @@ export default function Navigation() {
           </div>
         </div>
       </nav>
-
     </>
   );
 }

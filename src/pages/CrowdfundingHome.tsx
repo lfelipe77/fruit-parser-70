@@ -1,35 +1,65 @@
+
 import CaixaLotterySection from "@/components/CaixaLotterySection";
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
-
 import CategoriesSection from "@/components/CategoriesSection";
 import ProjectCard from "@/components/ProjectCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { getAllGanhaveis } from "@/data/ganhaveisData";
-
-// Get the first 3 ganhaveis as featured
-let featuredGanhaveis = [];
-let trendingGanhaveis = [];
-
-try {
-  const allGanhaveis = getAllGanhaveis();
-  console.log('Ganhaveis loaded successfully:', allGanhaveis.length);
-  featuredGanhaveis = allGanhaveis.slice(0, 3);
-  trendingGanhaveis = allGanhaveis.slice(3, 6);
-} catch (error) {
-  console.error('Error loading ganhaveis data:', error);
-  // Use empty arrays as fallback
-}
+import { useState, useEffect } from "react";
 
 export default function CrowdfundingHome() {
+  const [featuredGanhaveis, setFeaturedGanhaveis] = useState([]);
+  const [trendingGanhaveis, setTrendingGanhaveis] = useState([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadGanhaveis = async () => {
+      try {
+        console.log('Loading ganhaveis data...');
+        const allGanhaveis = getAllGanhaveis();
+        console.log('Ganhaveis loaded successfully:', allGanhaveis.length);
+        
+        setFeaturedGanhaveis(allGanhaveis.slice(0, 3));
+        setTrendingGanhaveis(allGanhaveis.slice(3, 6));
+        setDataLoaded(true);
+        setError(null);
+      } catch (error) {
+        console.error('Error loading ganhaveis data:', error);
+        setError('Error loading data');
+        // Set empty arrays as fallback
+        setFeaturedGanhaveis([]);
+        setTrendingGanhaveis([]);
+        setDataLoaded(true);
+      }
+    };
+
+    loadGanhaveis();
+  }, []);
+
+  if (error) {
+    console.log('Rendering with error state:', error);
+  }
+
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <HeroSection />
       <CaixaLotterySection />
-      
       
       {/* Featured Projects Section */}
       <section className="py-12 md:py-16">
@@ -50,7 +80,7 @@ export default function CrowdfundingHome() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {featuredGanhaveis.map((ganhavel, index) => (
-              <ProjectCard key={index} {...ganhavel} />
+              <ProjectCard key={`featured-${index}`} {...ganhavel} />
             ))}
           </div>
         </div>
@@ -77,7 +107,7 @@ export default function CrowdfundingHome() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {trendingGanhaveis.map((ganhavel, index) => (
-              <ProjectCard key={index} {...ganhavel} />
+              <ProjectCard key={`trending-${index}`} {...ganhavel} />
             ))}
           </div>
         </div>

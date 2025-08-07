@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,19 +12,23 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
 
         // Log audit events for auth changes
         if (event === 'SIGNED_IN' && session) {
-          // Log successful login
+          // Defer the audit logging to avoid blocking the auth flow
           setTimeout(async () => {
+            if (!isMounted) return;
             try {
-              // Determine login method based on provider or default to email
               const loginMethod = session.user.app_metadata?.provider || 'email';
               
               await supabase.rpc('log_audit_event', {
@@ -38,7 +43,7 @@ export const useAuth = () => {
             } catch (error) {
               console.error('Error logging login audit event:', error);
             }
-          }, 0);
+          }, 100);
           
           navigate('/dashboard');
           toast.success('Login realizado com sucesso!');
@@ -47,6 +52,7 @@ export const useAuth = () => {
         if (event === 'SIGNED_OUT') {
           // Log logout event
           setTimeout(async () => {
+            if (!isMounted) return;
             try {
               await supabase.rpc('log_audit_event', {
                 action: 'logged_out',
@@ -58,19 +64,38 @@ export const useAuth = () => {
             } catch (error) {
               console.error('Error logging logout audit event:', error);
             }
-          }, 0);
+          }, 100);
         }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    getInitialSession();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const signInWithGoogle = async () => {
@@ -87,8 +112,6 @@ export const useAuth = () => {
         return { error };
       }
 
-      // Note: The audit log will be handled by the onAuthStateChange listener
-      // when the user successfully authenticates
       return { error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -109,8 +132,6 @@ export const useAuth = () => {
         return { error };
       }
 
-      // Note: The audit log will be handled by the onAuthStateChange listener
-      // when the user successfully authenticates
       return { error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';

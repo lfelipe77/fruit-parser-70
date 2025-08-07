@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,9 +14,14 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAdmin = async () => {
       if (!user) {
-        setChecking(false);
+        if (isMounted) {
+          setIsAdmin(false);
+          setChecking(false);
+        }
         return;
       }
 
@@ -26,6 +32,8 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
           .eq('id', user.id)
           .maybeSingle();
 
+        if (!isMounted) return;
+
         if (error) {
           console.error('Error checking admin role:', error);
           setIsAdmin(false);
@@ -34,15 +42,23 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
         }
       } catch (error) {
         console.error('Error checking admin role:', error);
-        setIsAdmin(false);
+        if (isMounted) {
+          setIsAdmin(false);
+        }
       } finally {
-        setChecking(false);
+        if (isMounted) {
+          setChecking(false);
+        }
       }
     };
 
     if (!loading) {
       checkAdmin();
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, loading]);
 
   // Show loading while checking auth or admin status
