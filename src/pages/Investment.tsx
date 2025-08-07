@@ -201,8 +201,8 @@ const Investment: React.FC = () => {
               </div>
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
                 <div className="font-semibold text-green-700 dark:text-green-400">Gateway exclusivo</div>
-                <div className="text-2xl font-bold text-green-600">R$ 1,99 + %</div>
-                <div className="text-sm text-green-600">sobre parcelamentos</div>
+                <div className="text-2xl font-bold text-green-600">R$ 1,99 +</div>
+                <div className="text-sm text-green-600">por transações</div>
               </div>
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
                 <div className="font-semibold text-green-700 dark:text-green-400">ADS internos</div>
