@@ -10,9 +10,16 @@ import { Link } from "react-router-dom";
 import { getAllGanhaveis } from "@/data/ganhaveisData";
 
 // Get the first 3 ganhaveis as featured
-const allGanhaveis = getAllGanhaveis();
-const featuredGanhaveis = allGanhaveis.slice(0, 3);
-const trendingGanhaveis = allGanhaveis.slice(3, 6);
+let featuredGanhaveis, trendingGanhaveis;
+try {
+  const allGanhaveis = getAllGanhaveis();
+  featuredGanhaveis = allGanhaveis.slice(0, 3);
+  trendingGanhaveis = allGanhaveis.slice(3, 6);
+} catch (error) {
+  console.error('Error loading ganhaveis data:', error);
+  featuredGanhaveis = [];
+  trendingGanhaveis = [];
+}
 
 export default function CrowdfundingHome() {
   return (
