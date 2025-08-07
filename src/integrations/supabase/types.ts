@@ -805,12 +805,27 @@ export type Database = {
           created_at: string
         }[]
       }
+      get_audit_statistics: {
+        Args: { days_back?: number }
+        Returns: {
+          total_events: number
+          login_events: number
+          admin_actions: number
+          payment_events: number
+          security_events: number
+          top_actions: Json
+        }[]
+      }
       get_current_user_role: {
         Args: { user_id: string }
         Returns: string
       }
       log_audit_event: {
         Args: { action: string; context?: Json }
+        Returns: undefined
+      }
+      log_bulk_admin_action: {
+        Args: { action_type: string; affected_ids: string[]; reason?: string }
         Returns: undefined
       }
       log_event: {
@@ -844,6 +859,23 @@ export type Database = {
       run_security_checks: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      search_audit_logs: {
+        Args: {
+          search_user_id?: string
+          search_action?: string
+          search_context?: string
+          days_back?: number
+          limit_results?: number
+        }
+        Returns: {
+          id: string
+          user_id: string
+          action: string
+          context: Json
+          created_at: string
+          user_email: string
+        }[]
       }
       should_log_visit: {
         Args: { visit_ip: string; visit_url: string }
