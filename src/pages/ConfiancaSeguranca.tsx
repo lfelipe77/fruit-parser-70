@@ -14,7 +14,11 @@ import {
   AlertTriangle,
   Heart,
   Clock,
-  Globe
+  Globe,
+  DollarSign,
+  Building2,
+  ExternalLink,
+  Banknote
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -209,6 +213,118 @@ export default function ConfiancaSeguranca() {
                 </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Monew Partnership Section */}
+      <section className="py-20 bg-gradient-to-br from-blue-500/5 to-green-500/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 px-4 py-2 rounded-full mb-6">
+                <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Parceiro Oficial
+                </span>
+              </div>
+              
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                💸 Parceiro Oficial de Pagamentos: Monew
+              </h2>
+              
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+                A Ganhavel conta com a <strong>Monew</strong> como parceira oficial de pagamentos — 
+                uma <strong>fintech licenciada</strong>, segura e transparente.
+              </p>
+              
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Todos os valores pagos pelos participantes ficam sob custódia da Monew, garantindo:
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <Card className="border-2 border-green-500/20 bg-green-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Banknote className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-green-700 dark:text-green-400">
+                    ✔️ Arrecadação automática via PIX
+                  </h3>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-blue-500/20 bg-blue-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">
+                    ✔️ Validação da entrega antes de liberar o valor
+                  </h3>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-purple-500/20 bg-purple-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Eye className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-purple-700 dark:text-purple-400">
+                    ✔️ Rastreabilidade total do processo
+                  </h3>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-orange-500/20 bg-orange-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Shield className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-orange-700 dark:text-orange-400">
+                    ✔️ Zero manipulação direta pela Ganhavel
+                  </h3>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="bg-gradient-to-r from-slate-900 to-blue-900 rounded-2xl p-8 md:p-12 text-center text-white">
+              <Building2 className="w-16 h-16 mx-auto mb-6 text-blue-300" />
+              <h3 className="text-2xl font-bold mb-4">
+                Com a Monew, você participa com tranquilidade
+              </h3>
+              <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+                Sabendo que o dinheiro só será liberado quando o ganhador receber seu prêmio.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  variant="secondary" 
+                  size="lg" 
+                  className="bg-white text-slate-900 hover:bg-blue-50"
+                  asChild
+                >
+                  <a href="https://monew.com.br" target="_blank" rel="noopener noreferrer">
+                    <Globe className="w-4 h-4 mr-2" />
+                    Saiba mais sobre a Monew
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="border-white/30 text-white hover:bg-white/10"
+                  asChild
+                >
+                  <Link to="/como-funciona">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Como funciona o processo
+                  </Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
