@@ -800,6 +800,10 @@ export type Database = {
         }
         Returns: string
       }
+      example_function: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_admin_logs: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -853,6 +857,10 @@ export type Database = {
       should_log_visit: {
         Args: { visit_ip: string; visit_url: string }
         Returns: boolean
+      }
+      some_function: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       update_user_role: {
         Args: { user_id: string; new_role: string }
