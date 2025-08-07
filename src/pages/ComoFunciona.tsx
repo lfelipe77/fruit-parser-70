@@ -4,7 +4,7 @@ import { ComoFuncionaSEO } from "@/components/SEOPages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Users, Gift, Shield, Clock, Trophy, Building2, Mail, Eye, Heart, AlertTriangle, Bot, Package, CreditCard } from "lucide-react";
+import { CheckCircle, Users, Gift, Shield, Clock, Trophy, Building2, Mail, Eye, Heart, AlertTriangle, Bot, Package, CreditCard, DollarSign, ExternalLink, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function ComoFunciona() {
@@ -359,7 +359,7 @@ export default function ComoFunciona() {
                   <Shield className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold mb-2 text-green-700 dark:text-green-400">Produtos Próprios</h3>
-                    <p className="text-muted-foreground">Qualquer pessoa pode vender seus bens, desde que comprove a entrega ao ganhador para validar a liberação do valor perante a Asaas.</p>
+                    <p className="text-muted-foreground">Qualquer pessoa pode vender seus bens, desde que comprove a entrega ao ganhador para validar a liberação do valor perante a Monew.</p>
                   </div>
                 </div>
                 
@@ -580,6 +580,116 @@ export default function ComoFunciona() {
         </div>
       </section>
 
+      {/* Monew Partnership Section */}
+      <section className="py-20 bg-gradient-to-br from-blue-500/5 to-green-500/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 px-4 py-2 rounded-full mb-6">
+                <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Parceiro Oficial
+                </span>
+              </div>
+              
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                💸 Parceiro Oficial de Pagamentos: Monew
+              </h2>
+              
+              <p className="text-xl text-muted-foreground max-w-4xl mx-auto mb-8">
+                A Ganhavel conta com a <strong>Monew</strong> como parceira oficial de pagamentos — 
+                uma <strong>fintech licenciada</strong> que faz a custódia dos valores arrecadados, 
+                libera os pagamentos somente após a entrega dos prêmios e garante segurança total via PIX.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <Card className="border-2 border-green-500/20 bg-green-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Shield className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-green-700 dark:text-green-400">
+                    Custódia Segura
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Valores ficam sob custódia da Monew até a entrega
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-blue-500/20 bg-blue-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">
+                    Liberação Controlada
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Pagamentos só após comprovação da entrega
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-purple-500/20 bg-purple-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <CreditCard className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-purple-700 dark:text-purple-400">
+                    Segurança Total via PIX
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Transações protegidas e rastreáveis
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-orange-500/20 bg-orange-500/5 hover:shadow-lg transition-all duration-300">
+                <CardContent className="pt-6 text-center">
+                  <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Building2 className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold mb-2 text-orange-700 dark:text-orange-400">
+                    Fintech Licenciada
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Regulamentada e confiável
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="bg-gradient-to-r from-slate-900 to-blue-900 rounded-2xl p-8 md:p-12 text-center text-white">
+              <Building2 className="w-16 h-16 mx-auto mb-6 text-blue-300" />
+              <h3 className="text-2xl font-bold mb-4">
+                Transparência e Segurança Garantidas
+              </h3>
+              <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+                Com a Monew, todos os valores ficam protegidos e só são liberados quando o ganhador receber seu prêmio.
+                A Ganhavel não manipula dinheiro diretamente, garantindo total transparência.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  variant="secondary" 
+                  size="lg" 
+                  className="bg-white text-slate-900 hover:bg-blue-50"
+                  asChild
+                >
+                  <a href="https://monew.com.br" target="_blank" rel="noopener noreferrer">
+                    <Globe className="w-4 h-4 mr-2" />
+                    Conheça a Monew
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Lottery Process Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -785,10 +895,10 @@ export default function ComoFunciona() {
                 <h3 className="text-lg font-semibold mb-2">Como funcionam os valores?</h3>
                 <p className="text-muted-foreground">
                   Os valores são pagos diretamente para nosso parceiro financeiro seguro 
-                  <a href="https://www.asaas.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mx-1">
-                    Asaas
+                  <a href="https://monew.com.br" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mx-1">
+                    Monew
                   </a>
-                  - uma instituição licenciada pelo Banco Central que retém o valor em segurança e autoriza a compra final do prêmio quando o ganhador for definido. 
+                  - uma fintech licenciada que retém o valor em segurança e autoriza a compra final do prêmio quando o ganhador for definido. 
                   A Ganhavel não movimenta dinheiro diretamente, garantindo total transparência e segurança nas transações.
                 </p>
               </CardContent>
@@ -809,7 +919,7 @@ export default function ComoFunciona() {
                 <h3 className="text-lg font-semibold mb-2">E se o prêmio não for entregue?</h3>
                 <p className="text-muted-foreground">
                   Se o prêmio não for comprovado como entregue até 7 dias após o sorteio, o ganhador poderá escolher outro produto do mesmo valor. 
-                  A plataforma em parceria com a Asaas sempre fará a compra diretamente para garantir que o ganhador receba seu prêmio, 
+                  A plataforma em parceria com a Monew sempre fará a compra diretamente para garantir que o ganhador receba seu prêmio, 
                   independentemente de qualquer problema com o organizador original.
                 </p>
               </CardContent>
@@ -829,7 +939,7 @@ export default function ComoFunciona() {
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-2">A plataforma movimenta o dinheiro do ganhavel?</h3>
                 <p className="text-muted-foreground">
-                  Não. Os valores ficam sob custódia de parceiros de pagamento (como ASAAS). 
+                  Não. Os valores ficam sob custódia de parceiros de pagamento (como Monew). 
                   Só são liberados após a confirmação da entrega do prêmio, trazendo mais segurança para todos.
                 </p>
               </CardContent>
@@ -901,7 +1011,14 @@ export default function ComoFunciona() {
       {/* Footer Extra */}
       <section className="py-12 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <CreditCard className="w-4 h-4" />
+              <span className="text-sm">
+                💳 Pagamentos com segurança por Monew – Fintech Parceira Oficial da Ganhavel
+              </span>
+            </div>
+            
             <Button variant="outline" size="sm" asChild className="text-muted-foreground">
               <Link to="/termos">
                 📜 Consulte nossos Termos de Uso para regras completas sobre prazos, devoluções, segurança e funcionamento da plataforma
