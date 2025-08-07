@@ -75,14 +75,20 @@ export default function AdminDashboard() {
           .from("user_profiles")
           .select("role")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.error("Error checking user role:", error);
           return;
         }
         
-        setUserRole(data?.role || "");
+        if (!data) {
+          console.warn("User profile not found, assuming no role");
+          setUserRole("");
+          return;
+        }
+        
+        setUserRole(data.role || "");
       } catch (error) {
         console.error("Error checking admin role:", error);
       }
