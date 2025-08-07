@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     headers: {
       'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://www.gstatic.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src * ws: wss:; frame-ancestors 'none'; object-src 'none'; base-uri 'self';",
-      'X-Frame-Options': 'DENY',
+      'X-Frame-Options': 'SAMEORIGIN',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'no-referrer',
       'X-XSS-Protection': '1; mode=block',
