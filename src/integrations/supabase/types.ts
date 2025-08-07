@@ -857,6 +857,15 @@ export type Database = {
         Args: { user_id: string; new_role: string }
         Returns: undefined
       }
+      validate_rate_limit_before_action: {
+        Args: {
+          action_type: string
+          user_identifier: string
+          max_attempts?: number
+          time_window_minutes?: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

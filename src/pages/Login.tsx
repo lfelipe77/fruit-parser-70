@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
+import { TurnstileProtection } from "@/components/TurnstileProtection";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +20,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const { checkRateLimit, isChecking } = useRateLimit();
   const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -54,6 +56,12 @@ export default function Login() {
     const validatedData = validateForm();
     if (!validatedData) {
       toast.error('Por favor, corrija os erros nos campos destacados');
+      return;
+    }
+
+    // Verificar proteção anti-bot
+    if (!turnstileToken) {
+      toast.error('Por favor, complete a verificação anti-bot');
       return;
     }
 
@@ -193,11 +201,22 @@ export default function Login() {
                 </Link>
               </div>
 
+                {/* Anti-bot protection */}
+                <div className="space-y-4">
+                  <TurnstileProtection
+                    onVerify={(token) => setTurnstileToken(token)}
+                    onError={() => setTurnstileToken("")}
+                    onExpire={() => setTurnstileToken("")}
+                    action="login"
+                    theme="auto"
+                  />
+                </div>
+
                 {/* Security information */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
                     <Shield className="w-4 h-4" />
-                    <span className="font-medium">🔐 Protegido por Senha Forte + Verificação de E-mail</span>
+                    <span className="font-medium">🔐 Protegido por Verificação Anti-Bot + Rate Limiting</span>
                   </div>
                 </div>
 
@@ -206,7 +225,7 @@ export default function Login() {
                   variant="hero" 
                   className="w-full" 
                   size="lg"
-                  disabled={isLoading || isChecking}
+                  disabled={isLoading || isChecking || !turnstileToken}
                 >
                   {isLoading || isChecking ? "Entrando..." : "Entrar"}
                 </Button>
