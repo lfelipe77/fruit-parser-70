@@ -17,27 +17,38 @@ export default function CrowdfundingHome() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadGanhaveis = async () => {
       try {
-        console.log('Loading ganhaveis data...');
+        console.log('🔧 CrowdfundingHome: Loading ganhaveis data...');
         const allGanhaveis = getAllGanhaveis();
-        console.log('Ganhaveis loaded successfully:', allGanhaveis.length);
+        console.log('🔧 CrowdfundingHome: Ganhaveis loaded successfully:', allGanhaveis.length, allGanhaveis);
         
-        setFeaturedGanhaveis(allGanhaveis.slice(0, 3));
-        setTrendingGanhaveis(allGanhaveis.slice(3, 6));
-        setDataLoaded(true);
-        setError(null);
+        if (isMounted) {
+          setFeaturedGanhaveis(allGanhaveis.slice(0, 3));
+          setTrendingGanhaveis(allGanhaveis.slice(3, 6));
+          setDataLoaded(true);
+          setError(null);
+          console.log('🔧 CrowdfundingHome: State updated successfully');
+        }
       } catch (error) {
-        console.error('Error loading ganhaveis data:', error);
-        setError('Error loading data');
-        // Set empty arrays as fallback
-        setFeaturedGanhaveis([]);
-        setTrendingGanhaveis([]);
-        setDataLoaded(true);
+        console.error('🔧 CrowdfundingHome: Error loading ganhaveis data:', error);
+        if (isMounted) {
+          setError('Error loading data');
+          // Set empty arrays as fallback
+          setFeaturedGanhaveis([]);
+          setTrendingGanhaveis([]);
+          setDataLoaded(true);
+        }
       }
     };
 
     loadGanhaveis();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (error) {

@@ -15,10 +15,12 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
 
   useEffect(() => {
     let isMounted = true;
+    console.log('🔧 AdminRoute: Auth loading:', loading, 'User:', !!user);
 
     const checkAdmin = async () => {
       if (!user) {
         if (isMounted) {
+          console.log('🔧 AdminRoute: No user, denying access');
           setIsAdmin(false);
           setChecking(false);
         }
@@ -26,6 +28,7 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
       }
 
       try {
+        console.log('🔧 AdminRoute: Checking admin status for user:', user.id);
         const { data, error } = await supabase
           .from('user_profiles')
           .select('role')
@@ -35,13 +38,15 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
         if (!isMounted) return;
 
         if (error) {
-          console.error('Error checking admin role:', error);
+          console.error('🔧 AdminRoute: Error checking admin role:', error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(data?.role === 'admin');
+          const isAdminUser = data?.role === 'admin';
+          console.log('🔧 AdminRoute: Admin check result:', isAdminUser, 'Role data:', data);
+          setIsAdmin(isAdminUser);
         }
       } catch (error) {
-        console.error('Error checking admin role:', error);
+        console.error('🔧 AdminRoute: Exception checking admin role:', error);
         if (isMounted) {
           setIsAdmin(false);
         }

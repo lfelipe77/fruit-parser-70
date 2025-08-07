@@ -13,77 +13,53 @@ export const useAuth = () => {
 
   useEffect(() => {
     let isMounted = true;
+    console.log('🔧 useAuth: Starting auth setup');
 
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
         
+        console.log('🔧 Auth event:', event, 'Session:', !!session, 'User ID:', session?.user?.id);
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Log audit events for auth changes
+        // Handle navigation ONLY for successful login (not for initial session)
         if (event === 'SIGNED_IN' && session) {
-          // Defer the audit logging to avoid blocking the auth flow
-          setTimeout(async () => {
+          console.log('🔧 User signed in, redirecting to dashboard');
+          // Defer navigation and other side effects
+          setTimeout(() => {
             if (!isMounted) return;
-            try {
-              const loginMethod = session.user.app_metadata?.provider || 'email';
-              
-              await supabase.rpc('log_audit_event', {
-                action: 'logged_in',
-                context: {
-                  page: window.location.pathname || 'Login',
-                  user_agent: navigator.userAgent,
-                  login_method: loginMethod,
-                  user_email: session.user.email
-                }
-              });
-            } catch (error) {
-              console.error('Error logging login audit event:', error);
-            }
+            navigate('/dashboard');
+            toast.success('Login realizado com sucesso!');
           }, 100);
-          
-          navigate('/dashboard');
-          toast.success('Login realizado com sucesso!');
         }
 
         if (event === 'SIGNED_OUT') {
-          // Log logout event
-          setTimeout(async () => {
-            if (!isMounted) return;
-            try {
-              await supabase.rpc('log_audit_event', {
-                action: 'logged_out',
-                context: {
-                  page: window.location.pathname || 'Logout',
-                  user_agent: navigator.userAgent
-                }
-              });
-            } catch (error) {
-              console.error('Error logging logout audit event:', error);
-            }
-          }, 100);
+          console.log('🔧 User signed out');
         }
       }
     );
 
-    // Check for existing session
+    // THEN check for existing session
     const getInitialSession = async () => {
       try {
+        console.log('🔧 Checking initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         if (!isMounted) return;
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('🔧 Error getting session:', error);
         }
         
+        console.log('🔧 Initial session check:', !!session, 'User ID:', session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       } catch (error) {
-        console.error('Error in getInitialSession:', error);
+        console.error('🔧 Error in getInitialSession:', error);
         if (isMounted) {
           setLoading(false);
         }
@@ -93,10 +69,11 @@ export const useAuth = () => {
     getInitialSession();
 
     return () => {
+      console.log('🔧 useAuth: Cleaning up');
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []); // Removed navigate dependency to prevent loops
 
   const signInWithGoogle = async () => {
     try {

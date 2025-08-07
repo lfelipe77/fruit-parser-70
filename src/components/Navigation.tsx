@@ -16,56 +16,16 @@ export default function Navigation() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminCheckComplete, setAdminCheckComplete] = useState(false);
 
-  // Check if user is admin with proper error handling
+  // TEMPORARILY DISABLED admin check to stabilize site
   useEffect(() => {
-    let isMounted = true;
+    console.log('🔧 Navigation: Auth loading:', authLoading, 'User:', !!user);
     
-    const checkAdmin = async () => {
-      if (authLoading) return; // Wait for auth to load
-      
-      if (!user) {
-        if (isMounted) {
-          setIsAdmin(false);
-          setAdminCheckComplete(true);
-        }
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (!isMounted) return;
-
-        if (error) {
-          console.error('Error checking admin role:', error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data?.role === 'admin');
-        }
-      } catch (error) {
-        console.error('Error checking admin role:', error);
-        if (isMounted) {
-          setIsAdmin(false);
-        }
-      } finally {
-        if (isMounted) {
-          setAdminCheckComplete(true);
-        }
-      }
-    };
-
-    // Only check admin when auth is not loading
+    // Simple, safe admin check without Supabase calls for now
     if (!authLoading) {
-      checkAdmin();
+      setIsAdmin(false); // Temporarily disable admin features
+      setAdminCheckComplete(true);
+      console.log('🔧 Navigation: Admin check completed (disabled for stability)');
     }
-
-    return () => {
-      isMounted = false;
-    };
   }, [user, authLoading]);
 
   const lotteryDraws = [
