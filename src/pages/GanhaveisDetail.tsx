@@ -605,7 +605,7 @@ export default function RifaDetail() {
                     </div>
                     <div className="mt-2 p-2 bg-muted rounded-lg">
                       <p className="text-xs text-muted-foreground">
-                        <strong>Taxa institucional:</strong> R$ 2,00 destinados à instituição financeira para processamento e segurança dos pagamentos.
+                        <strong>Taxa institucional:</strong> R$ 2,00 processados pela <span className="font-semibold text-blue-600">Monew</span> para garantir segurança e transparência em todas as transações.
                       </p>
                     </div>
                   </div>

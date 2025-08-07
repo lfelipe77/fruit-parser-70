@@ -274,10 +274,15 @@ export default function ConfirmacaoPagamento() {
                       <span>Valor unitário:</span>
                       <span>R$ {purchaseData.unitPrice.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Taxa Institucional:</span>
-                      <span>R$ 2,00</span>
-                    </div>
+                     <div className="flex justify-between text-sm">
+                       <span>Taxa Institucional:</span>
+                       <span>R$ 2,00</span>
+                     </div>
+                     <div className="mt-2 p-2 bg-muted rounded-lg">
+                       <p className="text-xs text-muted-foreground">
+                         <strong>Taxa processada pela Monew:</strong> R$ 2,00 destinados para garantir segurança e transparência em todas as transações financeiras.
+                       </p>
+                     </div>
                     <Separator />
                     <div className="flex justify-between font-semibold">
                       <span>Total:</span>
