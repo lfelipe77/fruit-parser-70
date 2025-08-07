@@ -63,7 +63,7 @@ export default function Categorias() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold">{categoryData.name}</h1>
-                <p className="text-muted-foreground">{categoryData.count} rifas disponíveis</p>
+                <p className="text-muted-foreground">{categoryData.count} ganhaveis disponíveis</p>
               </div>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function Categorias() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Todas as Categorias</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Explore todas as categorias de rifas disponíveis e encontre exatamente o que você está procurando
+            Explore todas as categorias de ganhaveis disponíveis e encontre exatamente o que você está procurando
           </p>
         </div>
 

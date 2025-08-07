@@ -104,7 +104,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Explore as rifas disponíveis e comece a participar para ter a chance de ganhar 
+                  Explore os ganhaveis disponíveis e comece a participar para ter a chance de ganhar 
                   carros, motos, dinheiro e muito mais!
                 </p>
                 <div className="mt-4">

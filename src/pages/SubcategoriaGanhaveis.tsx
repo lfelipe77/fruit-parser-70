@@ -277,7 +277,7 @@ export default function SubcategoriaRifas() {
           <div className="flex items-center gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold">{subcategoryName}</h1>
-              <p className="text-muted-foreground">{rifas.length} rifas disponíveis</p>
+              <p className="text-muted-foreground">{rifas.length} ganhaveis disponíveis</p>
             </div>
           </div>
         </div>
