@@ -1,16 +1,16 @@
 project_id = "whqxpuyjxoiufzhvqneg"
 
 [functions.audit-logger]
-verify_jwt = false
+verify_jwt = true
 
 [functions.visit-logger]
-verify_jwt = false
+verify_jwt = true
 
 [functions.rate-limiter]
-verify_jwt = false
+verify_jwt = true
 
 [functions.security-monitor]
-verify_jwt = false
+verify_jwt = true
 
 [functions.security-notifications]
-verify_jwt = false
+verify_jwt = true
