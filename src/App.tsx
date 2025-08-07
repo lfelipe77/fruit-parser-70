@@ -18,6 +18,7 @@ import GuiaDoCriador from "./pages/GuiaDoCriador";
 import CentralDeAjuda from "./pages/CentralDeAjuda";
 import SobreNos from "./pages/SobreNos";
 import TrabalheConosco from "./pages/TrabalheConosco";
+import Investment from "./pages/Investment";
 import ConfiancaSeguranca from "./pages/ConfiancaSeguranca";
 import PerfilPublico from "./pages/PerfilPublico";
 import ConfirmacaoPagamento from "./pages/ConfirmacaoPagamento";
@@ -94,6 +95,7 @@ const AppContent = () => {
           <Route path="/central-de-ajuda" element={<CentralDeAjuda />} />
           <Route path="/sobre-nos" element={<SobreNos />} />
           <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
+          <Route path="/investment" element={<Investment />} />
           <Route path="/perfil/:username" element={<PerfilPublico />} />
           {/* User dashboard - requires auth but not admin */}
           <Route path="/dashboard" element={<Dashboard />} />
