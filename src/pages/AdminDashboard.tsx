@@ -317,6 +317,235 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Seção de Alertas de Segurança Recentes - DESTACADA */}
+        <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <ShieldAlert className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-orange-900 text-xl">
+                    🚨 Alertas de Segurança Recentes
+                  </CardTitle>
+                  <CardDescription className="text-orange-700">
+                    Últimos 10 alertas dos últimos 7 dias - ordenados por data
+                  </CardDescription>
+                </div>
+              </div>
+              <Button
+                onClick={runSecurityChecks}
+                size="sm"
+                variant="outline"
+                disabled={alertsLoading}
+                className="flex items-center gap-2 border-orange-300 text-orange-700 hover:bg-orange-100"
+              >
+                <Play className="h-4 w-4" />
+                {alertsLoading ? 'Verificando...' : 'Executar Verificações'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border-2 border-orange-200 bg-white shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-orange-50">
+                    <TableHead className="font-semibold">Data/Hora</TableHead>
+                    <TableHead className="font-semibold">Tipo de Alerta</TableHead>
+                    <TableHead className="font-semibold">Usuário</TableHead>
+                    <TableHead className="font-semibold">IP</TableHead>
+                    <TableHead className="font-semibold">Detalhes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {alerts.slice(0, 10).map((alert, index) => {
+                    // Função para determinar ícone e cor do tipo de alerta
+                    const getAlertTypeDisplay = (type: string) => {
+                      const types: Record<string, { icon: any, color: string, bgColor: string }> = {
+                        'login_abuse': { 
+                          icon: Ban, 
+                          color: 'text-red-700', 
+                          bgColor: 'bg-red-50 border-red-200' 
+                        },
+                        'raffle_spam': { 
+                          icon: AlertTriangle, 
+                          color: 'text-yellow-700', 
+                          bgColor: 'bg-yellow-50 border-yellow-200' 
+                        },
+                        'suspicious_action': { 
+                          icon: ShieldAlert, 
+                          color: 'text-orange-700', 
+                          bgColor: 'bg-orange-50 border-orange-200' 
+                        },
+                        'security_breach': { 
+                          icon: Shield, 
+                          color: 'text-red-800', 
+                          bgColor: 'bg-red-100 border-red-300' 
+                        }
+                      };
+                      
+                      const typeInfo = types[type] || { 
+                        icon: AlertTriangle, 
+                        color: 'text-gray-700', 
+                        bgColor: 'bg-gray-50 border-gray-200' 
+                      };
+                      const IconComponent = typeInfo.icon;
+                      
+                      return (
+                        <div className="flex items-center gap-2">
+                          <IconComponent className={`h-4 w-4 ${typeInfo.color}`} />
+                          <Badge variant="outline" className={`text-xs ${typeInfo.bgColor} ${typeInfo.color} border`}>
+                            {type.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <TableRow 
+                        key={alert.id} 
+                        className={`hover:bg-orange-25 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                      >
+                        <TableCell className="font-mono text-sm font-medium">
+                          <div className="flex flex-col">
+                            <span className="text-gray-900">
+                              {format(new Date(alert.created_at), "dd/MM/yy", { locale: ptBR })}
+                            </span>
+                            <span className="text-xs text-gray-600">
+                              {format(new Date(alert.created_at), "HH:mm:ss")}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getAlertTypeDisplay(alert.type)}
+                        </TableCell>
+                        <TableCell>
+                          {alert.user_id ? (
+                            <div className="flex items-center gap-2">
+                              <Users className="h-3 w-3 text-gray-500" />
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {alert.user_id.slice(0, 8)}...
+                              </Badge>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm flex items-center gap-1">
+                              <Ban className="h-3 w-3" /> N/A
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {alert.ip_address ? (
+                            <code className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded border border-blue-200">
+                              {alert.ip_address}
+                            </code>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          <div className="flex items-center gap-2">
+                            <div className="truncate text-sm text-gray-800 max-w-[200px]">
+                              {alert.description}
+                            </div>
+                            {alert.context && Object.keys(alert.context).length > 0 && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-6 w-6 p-0 hover:bg-orange-100"
+                                    title="Ver detalhes completos"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-3xl">
+                                  <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                      <ShieldAlert className="h-5 w-5 text-orange-600" />
+                                      Detalhes Completos do Alerta
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                      Informações detalhadas do alerta: <strong>{alert.type}</strong>
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <ScrollArea className="h-[400px]">
+                                    <div className="space-y-4">
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <strong>Descrição:</strong>
+                                          <p className="text-sm mt-1">{alert.description}</p>
+                                        </div>
+                                        <div>
+                                          <strong>Severidade:</strong>
+                                          <Badge 
+                                            className="ml-2"
+                                            variant={
+                                              alert.severity === 'critical' ? 'destructive' : 
+                                              alert.severity === 'high' ? 'destructive' :
+                                              alert.severity === 'medium' ? 'default' : 'secondary'
+                                            }
+                                          >
+                                            {alert.severity.toUpperCase()}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="grid grid-cols-2 gap-4">
+                                        {alert.ip_address && (
+                                          <div>
+                                            <strong>Endereço IP:</strong>
+                                            <code className="block text-sm mt-1 bg-gray-100 p-2 rounded">
+                                              {alert.ip_address}
+                                            </code>
+                                          </div>
+                                        )}
+                                        {alert.user_id && (
+                                          <div>
+                                            <strong>ID do Usuário:</strong>
+                                            <code className="block text-sm mt-1 bg-gray-100 p-2 rounded">
+                                              {alert.user_id}
+                                            </code>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div>
+                                        <strong>Contexto Técnico:</strong>
+                                        <pre className="text-xs bg-gray-50 p-4 rounded-lg overflow-auto mt-2 border">
+                                          {JSON.stringify(alert.context, null, 2)}
+                                        </pre>
+                                      </div>
+                                    </div>
+                                  </ScrollArea>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {alerts.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Shield className="h-12 w-12 mx-auto mb-4 opacity-50 text-gray-400" />
+                  <p className="text-lg font-medium text-gray-600">Nenhum alerta de segurança</p>
+                  <p className="text-sm text-gray-500 mt-1">Última verificação: {format(new Date(), "dd/MM/yy HH:mm")}</p>
+                </div>
+              )}
+            </div>
+            {alerts.length > 0 && (
+              <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                <span>Mostrando {Math.min(alerts.length, 10)} de {alerts.length} alertas</span>
+                <span className="text-xs">Atualizado: {format(new Date(), "HH:mm:ss")}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Seção de Alertas de Segurança */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -376,15 +605,15 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
-                Alertas Recentes
+                Alertas Ativos
               </CardTitle>
               <CardDescription>
-                Últimos 10 alertas de segurança
+                Alertas que requerem ação imediata
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[300px]">
-                {alerts.slice(0, 10).map((alert) => (
+                {alerts.filter(alert => alert.status === 'active').slice(0, 5).map((alert) => (
                   <div key={alert.id} className="flex items-center justify-between p-3 border-b last:border-b-0">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -429,10 +658,10 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
-                {alerts.length === 0 && (
+                {alerts.filter(alert => alert.status === 'active').length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Nenhum alerta de segurança</p>
+                    <p>Nenhum alerta ativo</p>
                   </div>
                 )}
               </ScrollArea>
