@@ -39,8 +39,12 @@ const Investment: React.FC = () => {
               href="/" 
               className="flex items-center gap-3 hover-scale group"
             >
-              <div className="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                <span className="text-white font-bold text-lg">G</span>
+              <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow">
+                <img 
+                  src="/lovable-uploads/90a8d604-6da6-4291-867b-8c11ee03620e.png" 
+                  alt="Ganhavel Logo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="hidden sm:block">
                 <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
