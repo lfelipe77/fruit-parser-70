@@ -95,8 +95,10 @@ const AppContent = () => {
           <Route path="/sobre-nos" element={<SobreNos />} />
           <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
           <Route path="/perfil/:username" element={<PerfilPublico />} />
-          {/* Admin routes */}
+          {/* User dashboard - requires auth but not admin */}
           <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Admin routes - all protected with AdminProtectedRoute */}
           <Route path="/admin" element={
             <AdminProtectedRoute>
               <Admin />
@@ -111,8 +113,10 @@ const AppContent = () => {
             <Route path="logs" element={<AdminLogs />} />
             <Route path="painel" element={<AdminDashboard />} />
             <Route path="configuracoes" element={<Settings />} />
+            <Route path="visits" element={<AdminVisits />} />
           </Route>
-          {/* Standalone admin dashboard route */}
+          
+          {/* Standalone admin routes - also protected */}
           <Route path="/admin-dashboard" element={
             <AdminProtectedRoute>
               <AdminDashboard />
