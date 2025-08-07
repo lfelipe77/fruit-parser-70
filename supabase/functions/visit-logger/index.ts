@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,42 +12,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Create supabase client with service role for database access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
-    // Get real IP address from headers (considering proxies)
-    const getRealIP = (request: Request): string => {
-      // Try various headers that might contain the real IP
-      const xForwardedFor = request.headers.get('x-forwarded-for')
-      const xRealIP = request.headers.get('x-real-ip')
-      const cfConnectingIP = request.headers.get('cf-connecting-ip') // Cloudflare
-      const xClientIP = request.headers.get('x-client-ip')
-      
-      // Return the first valid IP found
-      if (cfConnectingIP) return cfConnectingIP
-      if (xRealIP) return xRealIP
-      if (xForwardedFor) return xForwardedFor.split(',')[0].trim()
-      if (xClientIP) return xClientIP
-      
-      // Fallback to a default if no IP is found
-      return 'unknown'
-    }
-
-    // Parse request body
-    const body = await req.json()
-    const { url, user_agent, referer } = body
-
-    // Get visitor's IP
-    const ip_address = getRealIP(req)
+    const { url, user_agent, referer } = await req.json()
     
-    console.log('Logging public visit:', { ip_address, url, user_agent })
+    // Get IP address from request
+    const ip_address = req.headers.get('x-forwarded-for') || 
+                      req.headers.get('x-real-ip') || 
+                      'unknown'
 
-    // Log the visit using the database function
+    console.log('Logging visit:', { url, ip_address, user_agent })
+
+    // Call the log_public_visit function
     const { data, error } = await supabase.rpc('log_public_visit', {
       visit_ip: ip_address,
       visit_user_agent: user_agent || null,
@@ -58,37 +37,34 @@ Deno.serve(async (req) => {
     })
 
     if (error) {
-      console.error('Error logging public visit:', error)
-      return new Response(
-        JSON.stringify({ error: 'Failed to log visit' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      console.error('Error logging visit:', error)
+      throw error
     }
 
-    // Return success (data will be null if visit was not logged due to rate limiting)
+    console.log('Visit logged successfully:', data)
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        visit_id: data,
-        ip_address: ip_address,
-        logged: data !== null 
+        visit_id: data 
       }),
       { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
       }
     )
 
   } catch (error) {
-    console.error('Visit logger error:', error)
+    console.error('Error in visit-logger:', error)
+    
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: error.message,
+        success: false 
+      }),
       { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400 
       }
     )
   }

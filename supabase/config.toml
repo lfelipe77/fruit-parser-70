@@ -1,5 +1,11 @@
 project_id = "whqxpuyjxoiufzhvqneg"
 
+[functions.audit-logger]
+verify_jwt = false
+
+[functions.visit-logger]
+verify_jwt = false
+
 [functions.rate-limiter]
 verify_jwt = false
 
