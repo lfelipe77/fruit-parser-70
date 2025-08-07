@@ -1,7 +1,7 @@
 import CaixaLotterySection from "@/components/CaixaLotterySection";
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
-
+import MonewPartnershipSection from "@/components/MonewPartnershipSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import ProjectCard from "@/components/ProjectCard";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,9 @@ export default function CrowdfundingHome() {
           </div>
         </div>
       </section>
+      
+      {/* Monew Partnership Section */}
+      <MonewPartnershipSection />
       
       {/* Call to Action Section */}
       <section className="py-16 md:py-20 bg-gradient-hero">
