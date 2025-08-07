@@ -3,6 +3,7 @@ import SEOHead from '@/components/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -13,130 +14,257 @@ import {
   PieChart,
   AlertTriangle,
   Settings,
-  CheckCircle
+  CheckCircle,
+  Rocket,
+  Target,
+  Zap,
+  Award,
+  Building,
+  LineChart
 } from 'lucide-react';
 
 const Investment: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SEOHead 
         title="Oportunidade de Investimento – Ganhavel + Investidor Parceiro Monew"
         description="Oportunidade única de investir na Ganhavel, plataforma de sorteios reais com modelo validado e time pronto para escalar."
       />
       
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            Oportunidade de Investimento
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Ganhavel + Investidor Parceiro Monew
-          </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-b">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]" />
+        <div className="container mx-auto px-4 py-16 max-w-4xl relative">
+          <div className="text-center animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <Rocket className="w-4 h-4" />
+              Oportunidade de Investimento
+            </div>
+            <h1 className="text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Ganhavel + Monew
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Invista na próxima revolução dos sorteios digitais no Brasil
+            </p>
+            <div className="flex justify-center gap-4 mt-8">
+              <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                <Target className="w-5 h-5 mr-2" />
+                Ver Proposta
+              </Button>
+              <Button variant="outline" size="lg" className="hover-scale">
+                <LineChart className="w-5 h-5 mr-2" />
+                Analisar Dados
+              </Button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12 max-w-6xl">
 
         {/* Visão Geral */}
-        <Card className="mb-8 border-green-200 bg-green-50/50 dark:bg-green-950/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              Visão Geral
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg mb-4">
-              Ganhavel é uma plataforma onde qualquer pessoa pode lançar, participar e promover sorteios de prêmios reais ("ganhaveis").
-            </p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-green-600" />
-                <span>Produtos diversos: físicos, digitais, afiliados e próprios</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span>Segurança total com validação via Loteria Federal</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                <span>Modelo simples: Publica → Vende → Sorteia → Entrega</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-green-600" />
-                <span>Pagamento seguro: liberado somente com confirmação de entrega</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          <div className="lg:col-span-2">
+            <Card className="h-full border-green-200/50 bg-gradient-to-br from-green-50/80 to-emerald-50/60 dark:from-green-950/30 dark:to-emerald-950/20 hover-scale">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-green-700 dark:text-green-400 text-2xl">
+                  <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                  Visão Geral
+                  <Badge variant="secondary" className="ml-auto bg-green-100 text-green-800">
+                    MVP Pronto
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <p className="text-lg leading-relaxed text-foreground/90">
+                  Ganhavel é uma plataforma onde qualquer pessoa pode lançar, participar e promover sorteios de prêmios reais ("ganhaveis").
+                </p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Produtos diversos: físicos, digitais, afiliados e próprios</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <Award className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Segurança total com validação via Loteria Federal</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <TrendingUp className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Modelo simples: Publica → Vende → Sorteia → Entrega</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <DollarSign className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Pagamento seguro: liberado somente com confirmação de entrega</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Stats Sidebar */}
+          <div className="space-y-4">
+            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover-scale">
+              <CardContent className="p-6 text-center">
+                <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
+                <div className="text-3xl font-bold text-primary">15%</div>
+                <div className="text-sm text-muted-foreground">Equity Fase 1</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200/50 hover-scale">
+              <CardContent className="p-6 text-center">
+                <Building className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <div className="text-3xl font-bold text-blue-600">R$ 165K</div>
+                <div className="text-sm text-muted-foreground">Investimento Total</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200/50 hover-scale">
+              <CardContent className="p-6 text-center">
+                <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <div className="text-3xl font-bold text-purple-600">6</div>
+                <div className="text-sm text-muted-foreground">Meses de Runway</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Estrutura do Investimento */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-6 h-6 text-primary" />
+        <Card className="mb-12 overflow-hidden bg-gradient-to-br from-background to-muted/20 border-border/50 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <DollarSign className="w-6 h-6 text-primary" />
+              </div>
               Estrutura do Investimento
+              <Badge variant="outline" className="ml-auto">Fase 1 + 2</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xl font-semibold mb-4 text-blue-600">
-                  Fase 1 – Até o Lançamento (Meses 1 a 3)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="font-medium">Felipe (CEO)</div>
-                    <div className="text-2xl font-bold text-primary">R$ 30.000</div>
+          <CardContent className="p-8">
+            <div className="space-y-8">
+              <div className="relative">
+                <div className="absolute left-8 top-12 bottom-0 w-px bg-gradient-to-b from-blue-400 to-blue-600"></div>
+                
+                <div className="relative">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                      1-3M
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-blue-600 mb-1">
+                        Fase 1 – Até o Lançamento
+                      </h3>
+                      <p className="text-muted-foreground">Meses 1 a 3 • Desenvolvimento e Preparação</p>
+                    </div>
                   </div>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="font-medium">Albert (Dev)</div>
-                    <div className="text-2xl font-bold text-primary">R$ 30.000</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 ml-20">
+                    <div className="group hover-scale">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 p-6 rounded-xl border border-blue-200/50 transition-all group-hover:shadow-lg">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Users className="w-5 h-5 text-blue-600" />
+                          <div className="font-semibold text-blue-900 dark:text-blue-300">Felipe (CEO)</div>
+                        </div>
+                        <div className="text-3xl font-bold text-blue-600 mb-1">R$ 30.000</div>
+                        <div className="text-xs text-blue-600/70">Dedicação integral</div>
+                      </div>
+                    </div>
+                    <div className="group hover-scale">
+                      <div className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 p-6 rounded-xl border border-green-200/50 transition-all group-hover:shadow-lg">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Settings className="w-5 h-5 text-green-600" />
+                          <div className="font-semibold text-green-900 dark:text-green-300">Albert (Dev)</div>
+                        </div>
+                        <div className="text-3xl font-bold text-green-600 mb-1">R$ 30.000</div>
+                        <div className="text-xs text-green-600/70">Desenvolvimento</div>
+                      </div>
+                    </div>
+                    <div className="group hover-scale">
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 p-6 rounded-xl border border-purple-200/50 transition-all group-hover:shadow-lg">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Zap className="w-5 h-5 text-purple-600" />
+                          <div className="font-semibold text-purple-900 dark:text-purple-300">Ferramentas</div>
+                        </div>
+                        <div className="text-3xl font-bold text-purple-600 mb-1">R$ 7.500</div>
+                        <div className="text-xs text-purple-600/70">Infraestrutura</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="font-medium">Ferramentas</div>
-                    <div className="text-2xl font-bold text-primary">R$ 7.500</div>
+                  <div className="ml-20">
+                    <Badge variant="secondary" className="text-lg px-6 py-3 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300">
+                      Subtotal: R$ 67.500
+                    </Badge>
                   </div>
                 </div>
-                <div className="text-right">
-                  <Badge variant="secondary" className="text-lg px-4 py-2">
-                    Subtotal: R$ 67.500
-                  </Badge>
-                </div>
-              </div>
 
-              <Separator />
-
-              <div>
-                <h3 className="text-xl font-semibold mb-4 text-blue-600">
-                  Fase 1 – Pós-lançamento (Meses 4 a 6)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="font-medium">Felipe (CEO)</div>
-                    <div className="text-2xl font-bold text-primary">R$ 30.000</div>
+                <div className="relative mt-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                      4-6M
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-emerald-600 mb-1">
+                        Fase 1 – Pós-lançamento
+                      </h3>
+                      <p className="text-muted-foreground">Meses 4 a 6 • Crescimento e Marketing</p>
+                    </div>
                   </div>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="font-medium">Albert (Dev)</div>
-                    <div className="text-2xl font-bold text-primary">R$ 30.000</div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 ml-20">
+                    <div className="group hover-scale">
+                      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 p-6 rounded-xl border border-emerald-200/50 transition-all group-hover:shadow-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Users className="w-4 h-4 text-emerald-600" />
+                          <div className="font-medium text-emerald-900 dark:text-emerald-300 text-sm">Felipe (CEO)</div>
+                        </div>
+                        <div className="text-2xl font-bold text-emerald-600">R$ 30K</div>
+                      </div>
+                    </div>
+                    <div className="group hover-scale">
+                      <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/30 dark:to-teal-900/20 p-6 rounded-xl border border-teal-200/50 transition-all group-hover:shadow-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Settings className="w-4 h-4 text-teal-600" />
+                          <div className="font-medium text-teal-900 dark:text-teal-300 text-sm">Albert (Dev)</div>
+                        </div>
+                        <div className="text-2xl font-bold text-teal-600">R$ 30K</div>
+                      </div>
+                    </div>
+                    <div className="group hover-scale">
+                      <div className="bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-950/30 dark:to-cyan-900/20 p-6 rounded-xl border border-cyan-200/50 transition-all group-hover:shadow-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-4 h-4 text-cyan-600" />
+                          <div className="font-medium text-cyan-900 dark:text-cyan-300 text-sm">Ferramentas</div>
+                        </div>
+                        <div className="text-2xl font-bold text-cyan-600">R$ 7.5K</div>
+                      </div>
+                    </div>
+                    <div className="group hover-scale">
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20 p-6 rounded-xl border border-orange-200/50 transition-all group-hover:shadow-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingUp className="w-4 h-4 text-orange-600" />
+                          <div className="font-medium text-orange-900 dark:text-orange-300 text-sm">Marketing</div>
+                        </div>
+                        <div className="text-2xl font-bold text-orange-600">R$ 30K</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="font-medium">Ferramentas</div>
-                    <div className="text-2xl font-bold text-primary">R$ 7.500</div>
-                  </div>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <div className="font-medium">Marketing</div>
-                    <div className="text-2xl font-bold text-primary">R$ 30.000</div>
+                  <div className="ml-20">
+                    <Badge variant="secondary" className="text-lg px-6 py-3 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border-emerald-300">
+                      Subtotal: R$ 97.500
+                    </Badge>
                   </div>
                 </div>
-                <div className="text-right">
-                  <Badge variant="secondary" className="text-lg px-4 py-2">
-                    Subtotal: R$ 97.500
-                  </Badge>
-                </div>
-              </div>
 
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-lg">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-primary mb-2">
-                    Total Fase 1: R$ 165.000 = 15% da empresa
+                <div className="mt-12 mx-auto max-w-2xl">
+                  <div className="bg-gradient-to-r from-primary/15 via-primary/10 to-accent/15 p-8 rounded-2xl border border-primary/20 shadow-xl">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-3 mb-4">
+                        <Rocket className="w-8 h-8 text-primary" />
+                        <span className="text-lg font-medium text-muted-foreground">Total Fase 1</span>
+                      </div>
+                      <div className="text-4xl font-bold text-primary mb-2">
+                        R$ 165.000
+                      </div>
+                      <div className="text-2xl font-semibold text-accent">
+                        = 15% da empresa
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -145,40 +273,55 @@ const Investment: React.FC = () => {
         </Card>
 
         {/* Fase 2 */}
-        <Card className="mb-8 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
-              <TrendingUp className="w-6 h-6" />
-              Fase 2 — Pós-tração (opcional)
+        <Card className="mb-12 overflow-hidden border-blue-200/50 bg-gradient-to-br from-blue-50/80 to-indigo-50/60 dark:from-blue-950/30 dark:to-indigo-950/20 shadow-lg hover-scale">
+          <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-b border-blue-200/30">
+            <CardTitle className="flex items-center gap-3 text-blue-700 dark:text-blue-400 text-2xl">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+              </div>
+              Fase 2 — Pós-tração 
+              <Badge variant="outline" className="ml-auto border-blue-300 text-blue-700">
+                Opcional
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600 mb-2">R$ 200K a R$ 1M</div>
-                  <p>Aporte adicional</p>
-                  <div className="text-lg font-semibold text-blue-600 mt-2">Até +15% de equity adicional</div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Investidor da Fase 1 tem prioridade (right of first refusal)
-                  </p>
+          <CardContent className="p-8">
+            <div className="grid lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-blue-100/80 to-indigo-100/60 dark:from-blue-900/30 dark:to-indigo-900/20 p-6 rounded-xl border border-blue-200/50">
+                  <div className="flex items-center gap-3 mb-4">
+                    <DollarSign className="w-8 h-8 text-blue-600" />
+                    <div>
+                      <div className="text-3xl font-bold text-blue-600">R$ 200K a R$ 1M</div>
+                      <p className="text-blue-600/70">Aporte adicional</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-xl font-semibold text-blue-700 dark:text-blue-400">
+                      Até +15% de equity adicional
+                    </div>
+                    <p className="text-sm text-blue-600/80">
+                      Investidor da Fase 1 tem prioridade (right of first refusal)
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Critérios de ativação:</h4>
-                  <ul className="space-y-1 text-sm">
-                    <li className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-blue-600" />
-                      Usuários ativos e base engajada
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-blue-600" />
-                      Receita gerada
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
-                      Engajamento e viralização de campanhas
-                    </li>
-                  </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-bold text-lg mb-4 text-blue-700 dark:text-blue-400">Critérios de ativação:</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <Users className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                    <span className="font-medium">Usuários ativos e base engajada</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <DollarSign className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                    <span className="font-medium">Receita gerada</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <TrendingUp className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                    <span className="font-medium">Engajamento e viralização de campanhas</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -392,42 +535,68 @@ const Investment: React.FC = () => {
         </Card>
 
         {/* Resumo Final */}
-        <Card className="border-primary bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <CheckCircle className="w-6 h-6" />
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 shadow-2xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+          <CardHeader className="relative bg-gradient-to-r from-primary/20 to-accent/20 border-b border-primary/20">
+            <CardTitle className="flex items-center gap-3 text-primary text-2xl">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <CheckCircle className="w-6 h-6" />
+              </div>
               Resumo Final da Oportunidade
+              <Badge className="ml-auto bg-primary text-primary-foreground">
+                Investimento Premium
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">📌</span>
-                    <span className="font-semibold">R$ 165K por 15% equity (6 meses)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">📈</span>
-                    <span className="font-semibold">R$ 200K–1M futura rodada = até +15%</span>
+          <CardContent className="relative p-8">
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
+                  <span className="text-3xl">📌</span>
+                  <div>
+                    <div className="font-bold text-lg">R$ 165K por 15% equity</div>
+                    <div className="text-sm text-muted-foreground">6 meses de runway</div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🔐</span>
-                    <span className="font-semibold">Exclusividade em todas as transações por 3 anos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">💡</span>
-                    <span className="font-semibold">MVP funcional, time pronto, modelo validado</span>
+                <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
+                  <span className="text-3xl">📈</span>
+                  <div>
+                    <div className="font-bold text-lg">R$ 200K–1M futura rodada</div>
+                    <div className="text-sm text-muted-foreground">até +15% adicional</div>
                   </div>
                 </div>
               </div>
-              
-              <div className="text-center mt-6 p-4 bg-primary/10 rounded-lg">
-                <p className="text-lg font-semibold text-primary">
-                  Esta é uma oportunidade única de investir com risco protegido, upside claro e um time pronto para escalar.
-                </p>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
+                  <span className="text-3xl">🔐</span>
+                  <div>
+                    <div className="font-bold text-lg">Exclusividade total</div>
+                    <div className="text-sm text-muted-foreground">3 anos em transações</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
+                  <span className="text-3xl">💡</span>
+                  <div>
+                    <div className="font-bold text-lg">MVP funcional</div>
+                    <div className="text-sm text-muted-foreground">Time pronto, modelo validado</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-primary/20 via-primary/15 to-accent/20 p-8 rounded-2xl border border-primary/30 shadow-xl">
+              <p className="text-xl font-bold text-center text-primary leading-relaxed">
+                Esta é uma oportunidade única de investir com risco protegido, upside claro e um time pronto para escalar.
+              </p>
+              <div className="flex justify-center gap-4 mt-6">
+                <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg">
+                  <Handshake className="w-5 h-5 mr-2" />
+                  Fechar Acordo
+                </Button>
+                <Button variant="outline" size="lg" className="border-primary/30 hover:bg-primary/10">
+                  <Target className="w-5 h-5 mr-2" />
+                  Agendar Reunião
+                </Button>
               </div>
             </div>
           </CardContent>
