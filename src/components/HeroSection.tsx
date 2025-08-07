@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Play, TrendingUp, Users, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import heroImage from "/lovable-uploads/9b1dfafa-8d0f-4d6b-a608-0ec17bcecaf7.png";
-
 export default function HeroSection() {
   const { t } = useTranslation();
   
@@ -83,7 +81,7 @@ export default function HeroSection() {
           <div className="relative lg:ml-8 animate-scale-in max-w-lg mx-auto lg:max-w-none">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <img
-                src={heroImage}
+                src="/lovable-uploads/9b1dfafa-8d0f-4d6b-a608-0ec17bcecaf7.png"
                 alt="Group of friends celebrating with luxury rewards in golden circle - private jets and luxury cars"
                 className="w-full h-[300px] md:h-[400px] lg:h-[500px] object-cover"
               />
