@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import GanhaveisDetail from "./pages/GanhaveisDetail";
 import Resultados from "./pages/Resultados";
@@ -38,20 +38,39 @@ import FinancialControl from "./pages/admin/FinancialControl";
 import Analytics from "./pages/admin/Analytics";
 import Settings from "./pages/admin/Settings";
 import AdminLogs from "./pages/admin/AdminLogs";
+import AdminVisits from "./pages/admin/AdminVisits";
 import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
+// Component to handle visit logging
+function VisitLogger() {
+  const location = useLocation();
+  
+  // Only log if this is a public page
+  if (shouldLogPage(location.pathname)) {
+    usePublicVisitLogger();
+  }
+  
+  return null;
+}
+
+// App component with visit logging
+const AppContent = () => {
+  const location = useLocation();
+  
+  // Only log if this is a public page
+  if (shouldLogPage(location.pathname)) {
+    usePublicVisitLogger();
+  }
+
+  return (
+    <>
+      <ScrollToTop />
+      <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/lance-seu-ganhavel" element={<LanceSeuGanhavel />} />
           <Route path="/descobrir" element={<Descobrir />} />
@@ -99,14 +118,30 @@ const App = () => (
               <AdminDashboard />
             </AdminProtectedRoute>
           } />
+          <Route path="/admin-visits" element={
+            <AdminProtectedRoute>
+              <AdminVisits />
+            </AdminProtectedRoute>
+          } />
           {/* Legacy routes for backward compatibility */}
           <Route path="/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
           <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
           <Route path="/pagamento-erro" element={<PagamentoErro />} />
           <Route path="/access-denied" element={<AccessDenied />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

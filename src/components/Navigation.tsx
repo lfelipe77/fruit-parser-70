@@ -1,18 +1,63 @@
 import { Button } from "@/components/ui/button";
-import { Search, Heart, User, Calendar, Clock, Settings } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { 
+  Search, 
+  Heart, 
+  User, 
+  Calendar, 
+  Clock, 
+  Settings,
+  ChevronDown,
+  Shield,
+  BarChart3,
+  Eye
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NotificationCenter from "@/components/NotificationCenter";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Navigation() {
   const { t } = useTranslation();
   const [selectedLottery, setSelectedLottery] = useState('br');
   const { isAdmin } = useAdminCheck();
   const { user } = useAuth();
+  const [userRole, setUserRole] = useState<string>("");
+
+  // Verificar role do usuário
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+          
+        if (error) {
+          console.error("Error checking user role:", error);
+          return;
+        }
+        
+        setUserRole(data?.role || "");
+      } catch (error) {
+        console.error("Error checking user role:", error);
+      }
+    };
+
+    checkUserRole();
+  }, [user]);
 
   const lotteryDraws = [
     { id: 'br', flag: '🇧🇷', name: 'Mega-Sena', date: '10/08', time: '20:00' },
@@ -70,14 +115,37 @@ export default function Navigation() {
               </Button>
               <NotificationCenter />
               <LanguageSelector />
-              {/* Admin quick access button for authenticated admin users */}
-              {isAdmin && (
-                <Button variant="ghost" size="sm" asChild className="hidden lg:flex">
-                  <Link to="/admin-dashboard">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Painel Admin
-                  </Link>
-                </Button>
+              {/* Admin dropdown menu */}
+              {userRole === "admin" && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Admin
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Painel Principal
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin-dashboard" className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin-visits" className="flex items-center gap-2">
+                        <Eye className="h-4 w-4" />
+                        Visitas Públicas
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {user ? (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
