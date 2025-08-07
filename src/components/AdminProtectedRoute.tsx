@@ -24,13 +24,13 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
           .from('user_profiles')
           .select('role')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error checking admin role:', error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(data.role === 'admin');
+          setIsAdmin(data?.role === 'admin');
         }
       } catch (error) {
         console.error('Error checking admin role:', error);
