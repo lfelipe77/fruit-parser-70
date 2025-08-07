@@ -226,6 +226,246 @@ export default function GuiaDoCriador() {
         </div>
       </section>
 
+      {/* Affiliate Marketing Section */}
+      <section className="py-20 bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 bg-emerald-500 text-white border-0">
+              <DollarSign className="w-4 h-4 mr-2" />
+              Monetização
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              💸 Transforme Links em Lucro
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Você pode ganhar com cada bilhete vendido, sem estoque, sem dor de cabeça.
+            </p>
+          </div>
+
+          {/* How it Works Cards */}
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
+            <Card className="text-center border-2 hover:border-emerald-500/20 transition-all hover:shadow-lg">
+              <CardContent className="pt-8">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center">
+                  <Lightbulb className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">✨ Escolha e Crie</h3>
+                <p className="text-muted-foreground">
+                  Basta escolher um produto, gerar seu link de afiliado, criar um Ganhavel e compartilhar!
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center border-2 hover:border-emerald-500/20 transition-all hover:shadow-lg">
+              <CardContent className="pt-8">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
+                  <DollarSign className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">💰 Todo o Valor é Seu</h3>
+                <p className="text-muted-foreground">
+                  A Ganhavel não participa das transações financeiras — você lucra direto pelo seu link.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center border-2 hover:border-emerald-500/20 transition-all hover:shadow-lg">
+              <CardContent className="pt-8">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">🔥 Dica de Ouro</h3>
+                <p className="text-muted-foreground">
+                  Combine bons produtos + boas imagens + um bom título... E veja seu Ganhavel bombar nas redes!
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Affiliate Programs */}
+          <div className="max-w-6xl mx-auto">
+            <h3 className="text-2xl md:text-3xl font-bold text-center mb-12">
+              🔥 TOP Programas de Afiliados
+            </h3>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Amazon Brasil */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-orange-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-yellow-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">🛍️</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Amazon Brasil</h4>
+                      <p className="text-sm text-muted-foreground">Eletrônicos, livros, utensílios</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → associados.amazon.com.br
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* AliExpress */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-red-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">🌐</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">AliExpress</h4>
+                      <p className="text-sm text-muted-foreground">Produtos virais, LEDs, gadgets</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → portals.aliexpress.com
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Shopee */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-orange-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">🧨</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Shopee</h4>
+                      <p className="text-sm text-muted-foreground">Beleza, casa criativa, acessórios</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → affiliate.shopee.com.br
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Shein */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-pink-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">💅</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Shein</h4>
+                      <p className="text-sm text-muted-foreground">Roupas, bolsas, maquiagem</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → affiliate.shein.com
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Magalu */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-blue-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">💻</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Magalu Parceiro</h4>
+                      <p className="text-sm text-muted-foreground">Celulares, games, eletros</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → parceiromagalu.com.br
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Booking */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-cyan-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">✈️</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Booking.com</h4>
+                      <p className="text-sm text-muted-foreground">Hospedagens e experiências</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → booking.com/affiliate-program
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* TikTok Shop */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-purple-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">📱</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">TikTok Shop</h4>
+                      <p className="text-sm text-muted-foreground">Produtos virais + vídeos</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → Pelo app TikTok ("Afiliados")
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Digital Products */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-green-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">📚</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Hotmart / Eduzz</h4>
+                      <p className="text-sm text-muted-foreground">Cursos e e-books</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → hotmart.com | eduzz.com
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Americanas */}
+              <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 hover:border-red-400/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">🛒</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg">Americanas</h4>
+                      <p className="text-sm text-muted-foreground">TVs, eletros, brinquedos</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full" size="sm">
+                    → lomadee.com
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+            <Button variant="hero" size="lg" className="text-lg px-8">
+              <Users className="w-5 h-5 mr-2" />
+              👉 Como se cadastrar nos programas
+            </Button>
+            <Button variant="outline" size="lg" className="text-lg px-8">
+              <Gift className="w-5 h-5 mr-2" />
+              📦 Ver produtos prontos para lançar
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Common Mistakes */}
       <section className="py-20">
         <div className="container mx-auto px-4">
