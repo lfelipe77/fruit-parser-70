@@ -705,22 +705,11 @@ export type Database = {
           action: string | null
           context: Json | null
           created_at: string | null
+          full_name: string | null
           id: string | null
           user_id: string | null
-        }
-        Insert: {
-          action?: string | null
-          context?: Json | null
-          created_at?: string | null
-          id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string | null
-          context?: Json | null
-          created_at?: string | null
-          id?: string | null
-          user_id?: string | null
+          user_role: string | null
+          username: string | null
         }
         Relationships: []
       }
