@@ -10,15 +10,17 @@ import { Link } from "react-router-dom";
 import { getAllGanhaveis } from "@/data/ganhaveisData";
 
 // Get the first 3 ganhaveis as featured
-let featuredGanhaveis, trendingGanhaveis;
+let featuredGanhaveis = [];
+let trendingGanhaveis = [];
+
 try {
   const allGanhaveis = getAllGanhaveis();
+  console.log('Ganhaveis loaded successfully:', allGanhaveis.length);
   featuredGanhaveis = allGanhaveis.slice(0, 3);
   trendingGanhaveis = allGanhaveis.slice(3, 6);
 } catch (error) {
   console.error('Error loading ganhaveis data:', error);
-  featuredGanhaveis = [];
-  trendingGanhaveis = [];
+  // Use empty arrays as fallback
 }
 
 export default function CrowdfundingHome() {
