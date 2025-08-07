@@ -572,25 +572,25 @@ export default function AdminDashboard() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="p-3 bg-red-50 rounded-lg">
-                  <div className="text-lg font-bold text-red-600">{securityStats.loginAbuse}</div>
+                  <div className="text-lg font-bold text-red-600">{securityStats.loginAbuseAlerts}</div>
                   <div className="text-xs text-muted-foreground">Abuso Login</div>
                 </div>
                 <div className="p-3 bg-yellow-50 rounded-lg">
-                  <div className="text-lg font-bold text-yellow-600">{securityStats.raffleSpam}</div>
+                  <div className="text-lg font-bold text-yellow-600">{securityStats.raffleSpamAlerts}</div>
                   <div className="text-xs text-muted-foreground">Spam Rifas</div>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-lg">
-                  <div className="text-lg font-bold text-purple-600">{securityStats.suspiciousActions}</div>
+                  <div className="text-lg font-bold text-purple-600">{securityStats.suspiciousActionAlerts}</div>
                   <div className="text-xs text-muted-foreground">Ações Suspeitas</div>
                 </div>
               </div>
 
-              {securityStats.active > 0 && (
+              {securityStats.activeAlerts > 0 && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-center gap-2 text-red-700">
                     <AlertTriangle className="h-4 w-4" />
                     <span className="font-medium">
-                      {securityStats.active} alerta{securityStats.active > 1 ? 's' : ''} ativo{securityStats.active > 1 ? 's' : ''}
+                      {securityStats.activeAlerts} alerta{securityStats.activeAlerts > 1 ? 's' : ''} ativo{securityStats.activeAlerts > 1 ? 's' : ''}
                     </span>
                   </div>
                   <p className="text-sm text-red-600 mt-1">
