@@ -5,10 +5,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const securityHeaders = {
+  'X-Frame-Options': 'DENY',
+  'Frame-Options': 'DENY',
+  'Frame-ancestors': "'none'",
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://*.supabase.co https://whqxpuyjxoiufzhvqneg.functions.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; object-src 'none';",
+  'X-XSS-Protection': '1; mode=block',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
   }
 
   try {
@@ -43,29 +54,29 @@ Deno.serve(async (req) => {
 
     console.log('Visit logged successfully:', data)
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        visit_id: data 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
-    )
+return new Response(
+  JSON.stringify({ 
+    success: true, 
+    visit_id: data 
+  }),
+  { 
+    headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+    status: 200 
+  }
+)
 
   } catch (error) {
     console.error('Error in visit-logger:', error)
     
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
-      }
-    )
+return new Response(
+  JSON.stringify({ 
+    error: error.message,
+    success: false 
+  }),
+  { 
+    headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+    status: 400 
+  }
+)
   }
 })

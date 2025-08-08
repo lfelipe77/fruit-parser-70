@@ -6,16 +6,28 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
+const securityHeaders = {
+  "X-Frame-Options": "DENY",
+  "Frame-Options": "DENY",
+  "Frame-ancestors": "'none'",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://*.supabase.co https://whqxpuyjxoiufzhvqneg.functions.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; object-src 'none';",
+  "X-XSS-Protection": "1; mode=block",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
   }
 
   try {
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ success: false, message: "Method not allowed" }), {
         status: 405,
-        headers: corsHeaders,
+        headers: { ...corsHeaders, ...securityHeaders },
       });
     }
 
@@ -24,7 +36,7 @@ serve(async (req) => {
     if (!token) {
       return new Response(JSON.stringify({ success: false, message: "Missing token" }), {
         status: 400,
-        headers: corsHeaders,
+        headers: { ...corsHeaders, ...securityHeaders },
       });
     }
 
@@ -33,7 +45,7 @@ serve(async (req) => {
       console.error("TURNSTILE_SECRET_KEY is not set");
       return new Response(JSON.stringify({ success: false, message: "Server misconfiguration" }), {
         status: 500,
-        headers: corsHeaders,
+        headers: { ...corsHeaders, ...securityHeaders },
       });
     }
 
@@ -58,19 +70,19 @@ serve(async (req) => {
       console.warn("Turnstile verification failed", { errorCodes });
       return new Response(JSON.stringify({ success: false, errorCodes }), {
         status: 400,
-        headers: corsHeaders,
+        headers: { ...corsHeaders, ...securityHeaders },
       });
     }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: corsHeaders,
+      headers: { ...corsHeaders, ...securityHeaders },
     });
   } catch (e) {
     console.error("Unexpected error in verify-turnstile:", e);
     return new Response(JSON.stringify({ success: false, message: "Internal server error" }), {
       status: 500,
-      headers: corsHeaders,
+      headers: { ...corsHeaders, ...securityHeaders },
     });
   }
 });
