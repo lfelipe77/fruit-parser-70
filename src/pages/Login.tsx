@@ -62,7 +62,7 @@ export default function Login() {
 
     // Verificar proteção anti-bot
     if (!turnstileToken) {
-      toast.error('Valide o desafio de segurança para continuar.');
+      toast.error('Please complete verification');
       return;
     }
 
@@ -72,7 +72,7 @@ export default function Login() {
     });
     console.log('verify-turnstile result', { verifyData, verifyError });
     if (verifyError || !verifyData?.success) {
-      toast.error('Valide o desafio de segurança para continuar.');
+      toast.error('Please complete verification');
       setTurnstileToken('');
       return;
     }
