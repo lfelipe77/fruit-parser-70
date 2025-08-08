@@ -593,12 +593,11 @@ export default function ComoFunciona() {
               </div>
               
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                💸 Parceiro Oficial de Pagamentos: Monew
+                Pagamentos 100% Seguros
               </h2>
               
               <p className="text-xl text-muted-foreground max-w-4xl mx-auto mb-8">
-                A Ganhavel conta com a <strong>Monew</strong> como parceira oficial de pagamentos — 
-                uma <strong>fintech licenciada</strong> que faz a custódia dos valores arrecadados, 
+                Contamos com parceiro financeiro licenciado que faz a custódia dos valores arrecadados, 
                 libera os pagamentos somente após a entrega dos prêmios e garante segurança total via PIX.
               </p>
             </div>
@@ -613,7 +612,7 @@ export default function ComoFunciona() {
                     Custódia Segura
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Valores ficam sob custódia da Monew até a entrega
+                    Valores ficam sob custódia de parceiro financeiro licenciado até a entrega
                   </p>
                 </CardContent>
               </Card>
@@ -667,7 +666,7 @@ export default function ComoFunciona() {
                 Transparência e Segurança Garantidas
               </h3>
               <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
-                Com a Monew, todos os valores ficam protegidos e só são liberados quando o ganhador receber seu prêmio.
+                Com parceiro financeiro licenciado, todos os valores ficam protegidos e só são liberados quando o ganhador receber seu prêmio.
                 A Ganhavel não manipula dinheiro diretamente, garantindo total transparência.
               </p>
               
@@ -678,11 +677,10 @@ export default function ComoFunciona() {
                   className="bg-white text-slate-900 hover:bg-blue-50"
                   asChild
                 >
-                  <a href="https://monew.com.br" target="_blank" rel="noopener noreferrer">
-                    <Globe className="w-4 h-4 mr-2" />
-                    Conheça a Monew
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </a>
+                  <Link to="/confianca-seguranca">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Saiba mais sobre nossa segurança
+                  </Link>
                 </Button>
               </div>
             </div>

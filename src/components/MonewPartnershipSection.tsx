@@ -8,7 +8,7 @@ export default function MonewPartnershipSection() {
     {
       icon: Shield,
       title: "Pagamentos 100% Seguros",
-      description: "Todos os valores são gerenciados pela Monew, fintech licenciada"
+      description: "Todos os valores são gerenciados por parceiro financeiro licenciado"
     },
     {
       icon: Zap,
@@ -40,12 +40,11 @@ export default function MonewPartnershipSection() {
           </div>
           
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-            🔐 Pagamentos 100% Seguros com a Monew
+            🔐 Pagamentos 100% Seguros
           </h2>
           
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
-            A Ganhavél conta com a <strong>Monew</strong> – uma fintech brasileira licenciada – 
-            como parceira financeira responsável por reter e validar todos os valores pagos nos ganhaveis.
+            A Ganhavél conta com parceiro financeiro licenciado, responsável por reter e validar todos os valores pagos nos ganhaveis.
           </p>
         </div>
 
@@ -73,13 +72,10 @@ export default function MonewPartnershipSection() {
           <div className="text-center lg:text-left">
             <div className="flex items-center justify-center lg:justify-start gap-3 mb-4">
               <Building2 className="w-6 h-6 text-blue-400" />
-              <span className="text-white font-semibold text-lg">Monew Soluções em Pagamentos</span>
+              <span className="text-white font-semibold text-lg">Infraestrutura de Pagamentos Licenciada</span>
             </div>
-            <p className="text-slate-300 text-sm">
-              <strong>CNPJ:</strong> 50.399.346/0001-82
-            </p>
             <p className="text-slate-400 text-xs mt-2">
-              Fintech brasileira licenciada e regulamentada
+              Fintech licenciada e regulamentada
             </p>
           </div>
 

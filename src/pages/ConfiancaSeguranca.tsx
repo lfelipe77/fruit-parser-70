@@ -230,16 +230,15 @@ export default function ConfiancaSeguranca() {
               </div>
               
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                💸 Parceiro Oficial de Pagamentos: Monew
+                Pagamentos 100% Seguros
               </h2>
               
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-                A Ganhavel conta com a <strong>Monew</strong> como parceira oficial de pagamentos — 
-                uma <strong>fintech licenciada</strong>, segura e transparente.
+                Contamos com parceiro financeiro licenciado, seguro e transparente.
               </p>
               
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Todos os valores pagos pelos participantes ficam sob custódia da Monew, garantindo:
+                Todos os valores pagos pelos participantes ficam sob custódia de parceiro financeiro licenciado, garantindo:
               </p>
             </div>
 
@@ -292,7 +291,7 @@ export default function ConfiancaSeguranca() {
             <div className="bg-gradient-to-r from-slate-900 to-blue-900 rounded-2xl p-8 md:p-12 text-center text-white">
               <Building2 className="w-16 h-16 mx-auto mb-6 text-blue-300" />
               <h3 className="text-2xl font-bold mb-4">
-                Com a Monew, você participa com tranquilidade
+                Participe com tranquilidade
               </h3>
               <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
                 Sabendo que o dinheiro só será liberado quando o ganhador receber seu prêmio.
@@ -305,12 +304,12 @@ export default function ConfiancaSeguranca() {
                   className="bg-white text-slate-900 hover:bg-blue-50"
                   asChild
                 >
-                  <a href="https://monew.com.br" target="_blank" rel="noopener noreferrer">
-                    <Globe className="w-4 h-4 mr-2" />
-                    Saiba mais sobre a Monew
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </a>
+                  <Link to="/como-funciona">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Saiba como funciona
+                  </Link>
                 </Button>
+                
                 
                 <Button 
                   variant="outline" 
