@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Play, TrendingUp, Users, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import heroImage from "/lovable-uploads/8b05c0cd-7a34-49ca-9924-9ad46942d70b.png";
+import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
@@ -84,7 +84,7 @@ export default function HeroSection() {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <img
                 src={heroImage}
-                alt="Group of friends celebrating with luxury rewards in golden circle - private jets and luxury cars"
+                alt="Ganhavel – amigos comemorando prêmios reais: carros, viagens e tecnologia"
                 className="w-full h-[300px] md:h-[400px] lg:h-[500px] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
