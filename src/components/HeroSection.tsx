@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Play, TrendingUp, Users, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import heroImage from "/lovable-uploads/9b1dfafa-8d0f-4d6b-a608-0ec17bcecaf7.png";
+import heroImage from "/lovable-uploads/8b05c0cd-7a34-49ca-9924-9ad46942d70b.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
