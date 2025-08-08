@@ -121,6 +121,7 @@ export default function SignUp() {
     const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
       body: { token: turnstileToken },
     });
+    console.log('verify-turnstile result', { verifyData, verifyError });
     if (verifyError || !verifyData?.success) {
       toast.error('Valide o desafio de segurança para continuar.');
       setTurnstileToken('');
@@ -373,7 +374,10 @@ export default function SignUp() {
                     {/* Proteção Anti-Bot */}
                     <div className="space-y-4">
                       <TurnstileProtection
-                        onVerify={(token) => setTurnstileToken(token)}
+                        onVerify={(token) => {
+                          console.log('Turnstile token obtained', token);
+                          setTurnstileToken(token);
+                        }}
                         onError={() => setTurnstileToken("")}
                         onExpire={() => setTurnstileToken("")}
                         action="signup"
