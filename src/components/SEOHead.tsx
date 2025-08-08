@@ -15,7 +15,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   title = "Ganhavel – Ganhe prêmios reais com transparência e sorte oficial",
   description = "Participe ou lance seu Ganhavel com prêmios de verdade, links afiliados e sorteios rastreados pela Loteria Federal.",
   canonical,
-  ogImage = "/lovable-uploads/3c5cde6d-c55c-443a-9ea0-44d5cc48d0ac.png",
+  ogImage = "/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png",
   ogType = "website",
   noindex = false,
   structuredData
