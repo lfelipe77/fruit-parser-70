@@ -34,6 +34,7 @@ export const TurnstileProtection: React.FC<TurnstileProps> = ({
   const turnstileRef = useRef<HTMLDivElement>(null);
   const [widgetId, setWidgetId] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(false);
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAAiL8E8eEjkFr4Yr';
 
   useEffect(() => {
     // Load Turnstile script
@@ -58,7 +59,7 @@ export const TurnstileProtection: React.FC<TurnstileProps> = ({
   useEffect(() => {
     if (isLoaded && window.turnstile && turnstileRef.current && !widgetId) {
       const id = window.turnstile.render(turnstileRef.current, {
-        sitekey: '0x4AAAAAAAiL8E8eEjkFr4Yr', // Cloudflare Turnstile demo site key
+        sitekey: siteKey,
         action,
         theme,
         size: invisible ? 'invisible' : size,

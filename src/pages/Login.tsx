@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { TurnstileProtection } from "@/components/TurnstileProtection";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -59,11 +60,20 @@ export default function Login() {
       return;
     }
 
-    // Verificar proteção anti-bot (temporariamente desabilitado para testes)
+    // Verificar proteção anti-bot
     if (!turnstileToken) {
-      console.warn('Turnstile desabilitado para testes - prosseguindo sem verificação');
-      // toast.error('Por favor, complete a verificação anti-bot');
-      // return;
+      toast.error('Valide o desafio de segurança para continuar.');
+      return;
+    }
+
+    // Validar token no servidor
+    const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
+      body: { token: turnstileToken },
+    });
+    if (verifyError || !verifyData?.success) {
+      toast.error('Valide o desafio de segurança para continuar.');
+      setTurnstileToken('');
+      return;
     }
 
     // Verificar rate limiting para tentativas de login
