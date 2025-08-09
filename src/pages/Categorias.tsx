@@ -74,7 +74,7 @@ export default function Categorias() {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-xl">{subcategory.name}</CardTitle>
-                    <Badge variant="secondary">{subcategory.count} rifas</Badge>
+                    <Badge variant="secondary">{subcategory.count} ganhaveis</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -89,7 +89,7 @@ export default function Categorias() {
                   </div>
                   <Link to={`/categorias/${categoria}/${subcategory.slug}`}>
                     <Button className="w-full mt-4" variant="outline">
-                      Ver todas as rifas de {subcategory.name}
+                      Ver todos os ganhaveis de {subcategory.name}
                     </Button>
                   </Link>
                 </CardContent>
@@ -126,7 +126,7 @@ export default function Categorias() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-lg">{category.name}</h3>
-                        <p className="text-sm text-muted-foreground">{category.count} rifas</p>
+                        <p className="text-sm text-muted-foreground">{category.count} ganhaveis</p>
                       </div>
                     </div>
                     
