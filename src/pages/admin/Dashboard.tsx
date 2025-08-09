@@ -90,7 +90,7 @@ const pendingRifas = [
 const recentActivities = [
   {
     type: "approval",
-    message: "Rifa 'PS5 + Setup Gamer' foi aprovada",
+    message: "Ganhavel 'PS5 + Setup Gamer' foi aprovada",
     time: "2 min atrás",
     icon: CheckCircle,
     color: "text-green-600",
@@ -104,7 +104,7 @@ const recentActivities = [
   },
   {
     type: "alert",
-    message: "Rifa suspeita detectada - ID: RF004",
+    message: "Ganhavel suspeito detectado - ID: RF004",
     time: "1h atrás",
     icon: AlertTriangle,
     color: "text-orange-600",
@@ -136,7 +136,7 @@ export default function Dashboard() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard Administrativo</h1>
         <p className="text-muted-foreground">
-          Visão geral do sistema de rifas e métricas importantes
+          Visão geral do sistema de ganhaveis e métricas importantes
         </p>
       </div>
 

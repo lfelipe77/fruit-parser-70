@@ -38,7 +38,7 @@ const metricsData = {
     { name: "Ana Costa", rifas: 4, revenue: 28000, rating: 4.6 },
   ],
   recentTrends: [
-    { metric: "Rifas Criadas", thisWeek: 24, lastWeek: 18, change: 33 },
+    { metric: "Ganhaveis Criados", thisWeek: 24, lastWeek: 18, change: 33 },
     { metric: "Novos Usuários", thisWeek: 156, lastWeek: 134, change: 16 },
     { metric: "Receita", thisWeek: 23400, lastWeek: 19800, change: 18 },
     { metric: "Taxa de Conclusão", thisWeek: 87, lastWeek: 82, change: 6 },
@@ -135,7 +135,7 @@ export default function Analytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Rifas</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Ganhaveis</CardTitle>
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -190,7 +190,7 @@ export default function Analytics() {
             <CardHeader>
               <CardTitle>Performance por Categoria</CardTitle>
               <CardDescription>
-                Análise de receita e quantidade de rifas por categoria
+                Análise de receita e quantidade de ganhaveis por categoria
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -203,7 +203,7 @@ export default function Analytics() {
                       </div>
                       <div>
                         <h3 className="font-medium">{category.name}</h3>
-                        <p className="text-sm text-muted-foreground">{category.rifas} rifas</p>
+                        <p className="text-sm text-muted-foreground">{category.rifas} ganhaveis</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -239,7 +239,7 @@ export default function Analytics() {
                       <div>
                         <h3 className="font-medium">{organizer.name}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{organizer.rifas} rifas</span>
+                          <span>{organizer.rifas} ganhaveis</span>
                           <span>•</span>
                           <span>⭐ {organizer.rating}</span>
                         </div>
@@ -331,7 +331,7 @@ export default function Analytics() {
                       <div>
                         <h3 className="font-medium">{state.state}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {formatNumber(state.users)} usuários • {state.rifas} rifas
+                          {formatNumber(state.users)} usuários • {state.rifas} ganhaveis
                         </p>
                       </div>
                     </div>

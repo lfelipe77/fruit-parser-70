@@ -238,7 +238,7 @@ export default function FinancialControl() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summaryData.totalRefunds}</div>
-            <p className="text-xs text-muted-foreground">Rifas canceladas</p>
+            <p className="text-xs text-muted-foreground">Ganhaveis cancelados</p>
           </CardContent>
         </Card>
 
@@ -282,7 +282,7 @@ export default function FinancialControl() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por rifa, organizador ou ID..."
+                  placeholder="Buscar por ganhavel, organizador ou ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -332,7 +332,7 @@ export default function FinancialControl() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Rifa</TableHead>
+                      <TableHead>Ganhavel</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead>Valor</TableHead>
                       <TableHead>Taxa</TableHead>
@@ -392,11 +392,11 @@ export default function FinancialControl() {
                                         <p className="text-sm">{selectedTransaction.id}</p>
                                       </div>
                                       <div>
-                                        <Label>ID da Rifa</Label>
+                                        <Label>ID do Ganhavel</Label>
                                         <p className="text-sm">{selectedTransaction.rifaId}</p>
                                       </div>
                                       <div>
-                                        <Label>Título da Rifa</Label>
+                                        <Label>Título do Ganhavel</Label>
                                         <p className="text-sm">{selectedTransaction.rifaTitle}</p>
                                       </div>
                                       <div>

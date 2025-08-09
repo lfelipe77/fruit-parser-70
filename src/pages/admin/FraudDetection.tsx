@@ -60,7 +60,7 @@ const fraudAlertsData = [
       "IPs diferentes mas mesma região",
       "Padrão de cliques automatizado"
     ],
-    automaticActions: ["Rifa suspensa temporariamente", "Notificação enviada ao admin"],
+    automaticActions: ["Ganhavel suspenso temporariamente", "Notificação enviada ao admin"],
   },
   {
     id: "FR002",
@@ -78,7 +78,7 @@ const fraudAlertsData = [
       "3 contas com mesmo CPF",
       "Endereços similares",
       "Mesmo dispositivo utilizado",
-      "Participação em rifas do mesmo organizador"
+      "Participação em ganhaveis do mesmo organizador"
     ],
     automaticActions: ["Contas marcadas para revisão", "Participações bloqueadas"],
   },
@@ -100,7 +100,7 @@ const fraudAlertsData = [
       "Domínio registrado recentemente",
       "Sem comissão válida"
     ],
-    automaticActions: ["Rifa removida", "Usuário notificado", "Reembolsos processados"],
+    automaticActions: ["Ganhavel removido", "Usuário notificado", "Reembolsos processados"],
   },
 ];
 
@@ -307,7 +307,7 @@ export default function FraudDetection() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por rifa, usuário ou ID..."
+                  placeholder="Buscar por ganhavel, usuário ou ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -357,7 +357,7 @@ export default function FraudDetection() {
                     <TableRow>
                       <TableHead>ID</TableHead>
                       <TableHead>Tipo</TableHead>
-                      <TableHead>Rifa</TableHead>
+                      <TableHead>Ganhavel</TableHead>
                       <TableHead>Usuário</TableHead>
                       <TableHead>Severidade</TableHead>
                       <TableHead>Risk Score</TableHead>
