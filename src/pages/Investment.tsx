@@ -165,8 +165,8 @@ const Investment: React.FC = () => {
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200/50 hover-scale">
               <CardContent className="p-6 text-center">
                 <Building className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-3xl font-bold text-blue-600">R$ 165K</div>
-                <div className="text-sm text-muted-foreground">Investimento Total</div>
+                <div className="text-3xl font-bold text-blue-600">R$ 30/60K</div>
+                <div className="text-sm text-muted-foreground">Bootstrap</div>
               </CardContent>
             </Card>
             <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200/50 hover-scale">
