@@ -42,30 +42,30 @@ export default function ComoFunciona() {
   const launchSteps = [
     {
       number: "01",
-      title: "Validação de Negócio",
-      description: "Prove que possui um negócio validado para lançar ganhaveis com credibilidade na plataforma",
-      icon: Shield,
+      title: "Qualquer um pode lançar",
+      description: "Qualquer pessoa pode lançar um ganhavel na plataforma - não há restrições especiais",
+      icon: Users,
       color: "from-emerald-500 to-teal-500"
     },
     {
       number: "02", 
-      title: "Cadastre seu Ganhavel",
-      description: "Defina prêmio, valor do bilhete (mín. R$5), quantidade e regulamento. Após aprovação, fica visível!",
-      icon: Gift,
+      title: "Dinheiro retido em instituição financeira",
+      description: "O valor arrecadado fica seguro em instituição financeira parceira durante todo o processo",
+      icon: Shield,
       color: "from-violet-500 to-purple-500"
     },
     {
       number: "03",
-      title: "Você Retém o Dinheiro",
-      description: "Primeira fase: anunciantes aprovados retêm o dinheiro. Em breve teremos parcerias com instituições financeiras",
-      icon: Users,
+      title: "Sorteio baseado na Loteria Federal",
+      description: "Resultado determinado pela Loteria Federal quando 100% do valor for arrecadado",
+      icon: Trophy,
       color: "from-pink-500 to-rose-500"
     },
     {
       number: "04",
-      title: "Acompanhe e Entregue",
-      description: "Monitore o progresso até 100% e entregue o prêmio ao ganhador sorteado pela Loteria Federal!",
-      icon: CheckCircle,
+      title: "Entrega automática ou manual",
+      description: "Produtos afiliados: compra automática. Produtos físicos: protocolo de confirmação de entrega",
+      icon: Package,
       color: "from-amber-500 to-orange-500"
     }
   ];
@@ -207,7 +207,7 @@ export default function ComoFunciona() {
                   🚀 Como Lançar seu Próprio Ganhavel
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Qualquer um pode lançar o Ganhavel, desde que aprovados. Negócios têm preferências e pessoas comuns em breve poderão registrar em instituição financeira parceira.
+                  Qualquer pessoa pode lançar ganhaveis na plataforma. O dinheiro fica seguro em instituição financeira durante todo o processo.
                 </p>
               </div>
               
@@ -233,27 +233,27 @@ export default function ComoFunciona() {
                   <Card>
                     <CardContent className="p-6 text-center">
                       <Shield className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                      <h4 className="font-semibold mb-2">Primeira Fase</h4>
+                      <h4 className="font-semibold mb-2">Segurança Financeira</h4>
                       <p className="text-sm text-muted-foreground">
-                        Anunciantes aprovados retêm valores. Em breve: parcerias com instituições financeiras
+                        Dinheiro retido em instituição financeira durante todo o processo para máxima segurança
                       </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="p-6 text-center">
-                      <Gift className="w-12 h-12 mx-auto mb-4 text-blue-500" />
-                      <h4 className="font-semibold mb-2">Configuração Flexível</h4>
+                      <ExternalLink className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+                      <h4 className="font-semibold mb-2">Produtos Afiliados</h4>
                       <p className="text-sm text-muted-foreground">
-                        Defina prêmio, valor mínimo R$5, quantidade e regulamento próprio
+                        Compra é efetivada automaticamente usando links de afiliado após o sorteio
                       </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="p-6 text-center">
-                      <Users className="w-12 h-12 mx-auto mb-4 text-purple-500" />
-                      <h4 className="font-semibold mb-2">Compartilhamento</h4>
+                      <Package className="w-12 h-12 mx-auto mb-4 text-purple-500" />
+                      <h4 className="font-semibold mb-2">Produtos Físicos</h4>
                       <p className="text-sm text-muted-foreground">
-                        Link exclusivo para compartilhar em redes sociais e WhatsApp
+                        Seguem protocolos rigorosos de confirmação da entrega ao ganhador
                       </p>
                     </CardContent>
                   </Card>
@@ -345,8 +345,8 @@ export default function ComoFunciona() {
                 <div className="flex items-start gap-4">
                   <Package className="w-6 h-6 text-blue-500 mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Como funciona com produtos afiliados</h3>
-                    <p className="text-muted-foreground">Quando o sorteio acontecer, usaremos o valor arrecadado para comprar o produto através do seu link de afiliado. O comprovante será enviado tanto para o ganhador quanto para o organizador.</p>
+                    <h3 className="text-lg font-semibold mb-2">Produtos afiliados - Compra automática</h3>
+                    <p className="text-muted-foreground">Para produtos com links de afiliado, a compra é efetivada automaticamente após o sorteio. O comprovante é enviado para o ganhador e organizador.</p>
                   </div>
                 </div>
               </CardContent>
