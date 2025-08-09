@@ -27,8 +27,8 @@ const Investment: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SEOHead 
-        title="Oportunidade de Investimento – Ganhavel + Investidor Parceiro Monew"
-        description="Oportunidade única de investir na Ganhavel, plataforma de sorteios reais com modelo validado e time pronto para escalar."
+        title="Oportunidade de Investimento — Ganhavel + Monew (Partners)"
+        description="Invista na próxima revolução dos sorteios digitais no Brasil. MVP pronto, modelo validado e segurança via Loteria Federal."
       />
       
       {/* Header with Logo */}
@@ -70,7 +70,7 @@ const Investment: React.FC = () => {
               Oportunidade de Investimento
             </div>
             <h1 className="text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Ganhavel + Monew
+              Ganhavel + Monew (Partners)
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Invista na próxima revolução dos sorteios digitais no Brasil
@@ -111,7 +111,11 @@ const Investment: React.FC = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
                     <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
-                    <span className="text-sm">Produtos diversos: físicos, digitais, afiliados e próprios</span>
+                    <span className="text-sm">Produtos diversos: físicos, digitais, afiliados, próprios, alheios e virais</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                    <Users className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Produtos afiliados próprios, links próprios, infinitas fontes de renda e marketing viral</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
                     <Award className="w-6 h-6 text-green-600 flex-shrink-0" />
@@ -191,35 +195,44 @@ const Investment: React.FC = () => {
                           <Users className="w-5 h-5 text-blue-600" />
                           <div className="font-semibold text-blue-900 dark:text-blue-300">Felipe (CEO)</div>
                         </div>
-                        <div className="text-3xl font-bold text-blue-600 mb-1">R$ 30.000</div>
-                        <div className="text-xs text-blue-600/70">Dedicação integral</div>
+                        <div className="text-3xl font-bold text-blue-600 mb-1">R$ 10K–20K/mês</div>
+                        <div className="text-xs text-blue-600/70">média inicial de R$ 10K</div>
                       </div>
                     </div>
                     <div className="group hover-scale">
                       <div className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 p-6 rounded-xl border border-green-200/50 transition-all group-hover:shadow-lg">
                         <div className="flex items-center gap-3 mb-3">
                           <Settings className="w-5 h-5 text-green-600" />
-                          <div className="font-semibold text-green-900 dark:text-green-300">Albert (Dev)</div>
+                          <div className="font-semibold text-green-900 dark:text-green-300">Suporte de Desenvolvedores</div>
                         </div>
-                        <div className="text-3xl font-bold text-green-600 mb-1">R$ 30.000</div>
-                        <div className="text-xs text-green-600/70">Desenvolvimento</div>
+                        <div className="text-2xl font-bold text-green-600 mb-1">1/5 do orçamento</div>
+                        <div className="text-xs text-green-600/70">capacidade sob demanda</div>
                       </div>
                     </div>
                     <div className="group hover-scale">
                       <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 p-6 rounded-xl border border-purple-200/50 transition-all group-hover:shadow-lg">
                         <div className="flex items-center gap-3 mb-3">
                           <Zap className="w-5 h-5 text-purple-600" />
-                          <div className="font-semibold text-purple-900 dark:text-purple-300">Ferramentas</div>
+                          <div className="font-semibold text-purple-900 dark:text-purple-300">Ferramentas e Infraestrutura</div>
                         </div>
-                        <div className="text-3xl font-bold text-purple-600 mb-1">R$ 7.500</div>
-                        <div className="text-xs text-purple-600/70">Infraestrutura</div>
+                        <div className="text-2xl font-bold text-purple-600 mb-1">1/5 do orçamento</div>
+                        <div className="text-xs text-purple-600/70">VEO 3, Lovable, Email/Supabase, etc.</div>
                       </div>
                     </div>
                   </div>
                   <div className="ml-20">
                     <Badge variant="secondary" className="text-lg px-6 py-3 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300">
-                      Subtotal: R$ 67.500
+                      Investimento inicial: R$ 30K–60K (3 meses) • Equity: 15% + suporte estratégico
                     </Badge>
+                  </div>
+                  <div className="ml-20 mt-4 text-sm text-muted-foreground">
+                    <div className="font-medium">Ferramentas principais:</div>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>VEO 3 — USD 250/mês</li>
+                      <li>Lovable (fase desenvolvimento) — USD 150/mês</li>
+                      <li>Lovable (pós-lançamento) — USD 50–100/mês</li>
+                      <li>Email, Supabase, HopperHQ, CapCut — ~USD 100/mês</li>
+                    </ul>
                   </div>
                 </div>
 
@@ -235,48 +248,17 @@ const Investment: React.FC = () => {
                       <p className="text-muted-foreground">Meses 4 a 6 • Crescimento e Marketing</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 ml-20">
-                    <div className="group hover-scale">
-                      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 p-6 rounded-xl border border-emerald-200/50 transition-all group-hover:shadow-lg">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Users className="w-4 h-4 text-emerald-600" />
-                          <div className="font-medium text-emerald-900 dark:text-emerald-300 text-sm">Felipe (CEO)</div>
-                        </div>
-                        <div className="text-2xl font-bold text-emerald-600">R$ 30K</div>
-                      </div>
+                  <div className="ml-20 space-y-4">
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 p-6 rounded-xl border border-emerald-200/50">
+                      <div className="text-emerald-700 dark:text-emerald-300 font-semibold mb-2">Investimento adicional</div>
+                      <div className="text-2xl font-bold text-emerald-600">R$ 200K–1M</div>
+                      <div className="text-sm text-emerald-700/80">para:</div>
+                      <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-emerald-700 dark:text-emerald-300">
+                        <li>Marketing de alto impacto</li>
+                        <li>Aquisição de usuários</li>
+                        <li>Escalabilidade técnica</li>
+                      </ul>
                     </div>
-                    <div className="group hover-scale">
-                      <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/30 dark:to-teal-900/20 p-6 rounded-xl border border-teal-200/50 transition-all group-hover:shadow-lg">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Settings className="w-4 h-4 text-teal-600" />
-                          <div className="font-medium text-teal-900 dark:text-teal-300 text-sm">Albert (Dev)</div>
-                        </div>
-                        <div className="text-2xl font-bold text-teal-600">R$ 30K</div>
-                      </div>
-                    </div>
-                    <div className="group hover-scale">
-                      <div className="bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-950/30 dark:to-cyan-900/20 p-6 rounded-xl border border-cyan-200/50 transition-all group-hover:shadow-lg">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="w-4 h-4 text-cyan-600" />
-                          <div className="font-medium text-cyan-900 dark:text-cyan-300 text-sm">Ferramentas</div>
-                        </div>
-                        <div className="text-2xl font-bold text-cyan-600">R$ 7.5K</div>
-                      </div>
-                    </div>
-                    <div className="group hover-scale">
-                      <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/20 p-6 rounded-xl border border-orange-200/50 transition-all group-hover:shadow-lg">
-                        <div className="flex items-center gap-2 mb-3">
-                          <TrendingUp className="w-4 h-4 text-orange-600" />
-                          <div className="font-medium text-orange-900 dark:text-orange-300 text-sm">Marketing</div>
-                        </div>
-                        <div className="text-2xl font-bold text-orange-600">R$ 30K</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-20">
-                    <Badge variant="secondary" className="text-lg px-6 py-3 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border-emerald-300">
-                      Subtotal: R$ 97.500
-                    </Badge>
                   </div>
                 </div>
 
@@ -357,6 +339,32 @@ const Investment: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Critérios para Avançar à Próxima Rodada */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-6 h-6 text-primary" />
+              Critérios para Avançar à Próxima Rodada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-primary mt-0.5" />
+                <span>MVP validado e rodando sem falhas críticas</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-primary mt-0.5" />
+                <span>Base inicial de usuários engajada</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-primary mt-0.5" />
+                <span>Fluxos de monetização confirmados</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Fontes de Receita */}
         <Card className="mb-8">
           <CardHeader>
@@ -368,22 +376,70 @@ const Investment: React.FC = () => {
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                <div className="font-semibold text-green-700 dark:text-green-400">Margem sobre prêmios</div>
-                <div className="text-2xl font-bold text-green-600">5% a 20%</div>
+                <div className="font-semibold text-green-700 dark:text-green-400">Taxa fixa por transação</div>
+                <div className="text-sm text-green-700 dark:text-green-300">R$ 2,00 por venda confirmada</div>
               </div>
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                <div className="font-semibold text-green-700 dark:text-green-400">Gateway exclusivo</div>
-                <div className="text-2xl font-bold text-green-600">R$ 1,99 +</div>
-                <div className="text-sm text-green-600">por transações</div>
+                <div className="font-semibold text-green-700 dark:text-green-400">Margem sobre valor do prêmio</div>
+                <div className="text-sm text-green-700 dark:text-green-300">2% inicial, com possibilidade de aumento progressivo até 8–15% conforme escala</div>
               </div>
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                <div className="font-semibold text-green-700 dark:text-green-400">ADS internos</div>
-                <div className="text-sm text-green-600">destaques pagos nas páginas</div>
+                <div className="font-semibold text-green-700 dark:text-green-400">Prêmios e produtos afiliados</div>
+                <div className="text-sm text-green-700 dark:text-green-300">Produtos próprios ou de parceiros integrados à plataforma</div>
               </div>
               <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                <div className="font-semibold text-green-700 dark:text-green-400">Taxa premium</div>
-                <div className="text-sm text-green-600">administração premium</div>
+                <div className="font-semibold text-green-700 dark:text-green-400">Destaques e promoções internas</div>
+                <div className="text-sm text-green-700 dark:text-green-300">Posição privilegiada nas páginas e vitrines de categorias</div>
               </div>
+              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                <div className="font-semibold text-green-700 dark:text-green-400">Comissões de parceiros</div>
+                <div className="text-sm text-green-700 dark:text-green-300">Somente em conformidade legal (avaliar formatos permitidos)</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                <div className="font-semibold text-green-700 dark:text-green-400">Marketing viral</div>
+                <div className="text-sm text-green-700 dark:text-green-300">Monetização via conteúdos, campanhas e rankings de usuários</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
+                <div className="font-semibold text-green-700 dark:text-green-400">Rede Social de Ganhadores</div>
+                <div className="text-sm text-green-700 dark:text-green-3 00">Comunidade gamificada com rankings, interações e engajamento social</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Oportunidade de Marketing e Viralidade */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-6 h-6 text-pink-600" />
+              Oportunidade de Marketing e Viralidade
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <div>Quem lança o ganhavel (link ou produto) → compartilha para vender</div>
+              <div>Quem compra → compartilha para que o sorteio aconteça → viralidade orgânica</div>
+              <div>Transformamos a plataforma em uma rede social de sorteios honestos, com suporte e engajamento comunitário</div>
+              <div>Potencial de expansão via marketing de influência e afiliados massivos</div>
+              <div>Pacotes de marketing envolvendo influencers, jatinhos, cruzeiros e prêmios virais para grande alcance orgânico</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Blindagem e Observações Legais */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-6 h-6 text-emerald-600" />
+              Blindagem e Observações Legais
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /><span>Não retemos dinheiro de sorteios (fundos ficam com o organizador)</span></div>
+              <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /><span>Sorteios validados pela Caixa Econômica / Loteria Federal</span></div>
+              <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /><span>Não recebemos valores diretamente do sorteio — atuamos como facilitadora tecnológica e de marketing</span></div>
+              <div className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /><span>Modelo estruturado para minimizar riscos regulatórios e fiscais</span></div>
             </div>
           </CardContent>
         </Card>
@@ -468,14 +524,9 @@ const Investment: React.FC = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg">
-                <div className="text-3xl font-bold text-orange-600">50%</div>
+                <div className="text-3xl font-bold text-orange-600">73%</div>
                 <div className="text-sm font-medium">Luiz Felipe</div>
                 <div className="text-xs text-muted-foreground">(Fundador)</div>
-              </div>
-              <div className="text-center bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-                <div className="text-3xl font-bold text-blue-600">20%</div>
-                <div className="text-sm font-medium">Albert Abril</div>
-                <div className="text-xs text-muted-foreground">(Dev)</div>
               </div>
               <div className="text-center bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
                 <div className="text-3xl font-bold text-green-600">15%</div>
@@ -486,6 +537,11 @@ const Investment: React.FC = () => {
                 <div className="text-3xl font-bold text-purple-600">até +15%</div>
                 <div className="text-sm font-medium">Investidor</div>
                 <div className="text-xs text-muted-foreground">Fase 2</div>
+              </div>
+              <div className="text-center bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                <div className="text-3xl font-bold text-blue-600">3%</div>
+                <div className="text-sm font-medium">Possível desenvolvedor</div>
+                <div className="text-xs text-muted-foreground">futuro</div>
               </div>
             </div>
           </CardContent>
@@ -508,10 +564,6 @@ const Investment: React.FC = () => {
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
                 <span>Encerramento por falta de performance previamente definida</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
-                <span>Toda transação vinculada a marcos acordados</span>
               </div>
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
@@ -583,15 +635,15 @@ const Investment: React.FC = () => {
                 <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
                   <span className="text-3xl">📌</span>
                   <div>
-                    <div className="font-bold text-lg">R$ 165K por 15% equity</div>
-                    <div className="text-sm text-muted-foreground">6 meses de runway</div>
+                    <div className="font-bold text-lg">Investimento inicial: R$ 30K a R$ 60K por 15% equity + suporte estratégico</div>
+                    <div className="text-sm text-muted-foreground">Fase 1</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
                   <span className="text-3xl">📈</span>
                   <div>
-                    <div className="font-bold text-lg">R$ 200K–1M futura rodada</div>
-                    <div className="text-sm text-muted-foreground">até +15% adicional</div>
+                    <div className="font-bold text-lg">Rodada seguinte: R$ 200K–1M, até +15% equity adicionais</div>
+                    <div className="text-sm text-muted-foreground">prioridade para investidor Fase 1</div>
                   </div>
                 </div>
               </div>
@@ -599,15 +651,15 @@ const Investment: React.FC = () => {
                 <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
                   <span className="text-3xl">🔐</span>
                   <div>
-                    <div className="font-bold text-lg">Exclusividade total</div>
-                    <div className="text-sm text-muted-foreground">3 anos em transações</div>
+                    <div className="font-bold text-lg">Exclusividade</div>
+                    <div className="text-sm text-muted-foreground">3 anos em gateway de transações</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
                   <span className="text-3xl">💡</span>
                   <div>
                     <div className="font-bold text-lg">MVP funcional</div>
-                    <div className="text-sm text-muted-foreground">Time pronto, modelo validado</div>
+                    <div className="text-sm text-muted-foreground">Modelo validado e escalável</div>
                   </div>
                 </div>
               </div>
@@ -615,7 +667,7 @@ const Investment: React.FC = () => {
             
             <div className="bg-gradient-to-r from-primary/20 via-primary/15 to-accent/20 p-8 rounded-2xl border border-primary/30 shadow-xl">
               <p className="text-xl font-bold text-center text-primary leading-relaxed">
-                Esta é uma oportunidade única de investir com risco protegido, upside claro e um time pronto para escalar.
+                Investimento bootstrapping — viável para manter um bom desenvolvedor focado ou direcionar para outras infraestruturas estratégicas conforme a expansão.
               </p>
               <div className="flex justify-center gap-4 mt-6">
                 <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg">
