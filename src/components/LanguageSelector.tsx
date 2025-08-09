@@ -23,7 +23,6 @@ export default function LanguageSelector() {
       <SelectTrigger className="w-auto border-none bg-transparent hover:bg-accent">
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4" />
-          <span className="text-lg">{currentLanguage.flag}</span>
           <span className="text-sm font-medium">{codeLabel[currentLanguage.code] || currentLanguage.code.toUpperCase()}</span>
         </div>
       </SelectTrigger>
