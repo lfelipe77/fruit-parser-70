@@ -653,8 +653,8 @@ const Investment: React.FC = () => {
                 <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
                   <span className="text-3xl">🔐</span>
                   <div>
-                    <div className="font-bold text-lg">Exclusividade</div>
-                    <div className="text-sm text-muted-foreground">3 anos em gateway de transações</div>
+                    <div className="font-bold text-lg">Eclusividade 3 anos — Parceiro Exclusivo — Partner crescimento</div>
+                    <div className="text-sm text-muted-foreground">(se do interesse claro)</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
