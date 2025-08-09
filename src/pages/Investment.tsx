@@ -22,6 +22,13 @@ import {
   Building,
   LineChart
 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
+
+const SITE_VERSION = "2025-08-09-2";
+const PROPOSTA_PATH = "/proposta-de-investimento";
+const versionedPath = `${PROPOSTA_PATH}?v=${SITE_VERSION}`;
+const ogImage = `/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png?v=${SITE_VERSION}`;
 
 const Investment: React.FC = () => {
   return (
@@ -29,8 +36,16 @@ const Investment: React.FC = () => {
       <SEOHead 
         title="Oportunidade de Investimento — Ganhavel + Monew (Partners)"
         description="Invista na próxima revolução dos sorteios digitais no Brasil. MVP pronto, modelo validado e segurança via Loteria Federal."
+        canonical={versionedPath}
+        ogImage={ogImage}
       />
       
+      <Helmet>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+      </Helmet>
+
       {/* Header with Logo */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
         <div className="container mx-auto px-4 py-4">
@@ -41,7 +56,7 @@ const Investment: React.FC = () => {
             >
               <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow">
                 <img 
-                  src="/lovable-uploads/90a8d604-6da6-4291-867b-8c11ee03620e.png" 
+                  src={`/lovable-uploads/90a8d604-6da6-4291-867b-8c11ee03620e.png?v=${SITE_VERSION}`} 
                   alt="Ganhavel Logo" 
                   className="w-full h-full object-cover"
                 />
@@ -76,13 +91,17 @@ const Investment: React.FC = () => {
               Invista na próxima revolução dos sorteios digitais no Brasil
             </p>
             <div className="flex justify-center gap-4 mt-8">
-              <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
-                <Target className="w-5 h-5 mr-2" />
-                Ver Proposta
+              <Button size="lg" asChild className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                <Link to={versionedPath}>
+                  <Target className="w-5 h-5 mr-2" />
+                  Ver Proposta
+                </Link>
               </Button>
-              <Button variant="outline" size="lg" className="hover-scale">
-                <LineChart className="w-5 h-5 mr-2" />
-                Analisar Dados
+              <Button variant="outline" size="lg" asChild className="hover-scale">
+                <Link to={versionedPath}>
+                  <LineChart className="w-5 h-5 mr-2" />
+                  Analisar Dados
+                </Link>
               </Button>
             </div>
           </div>

@@ -96,6 +96,7 @@ const AppContent = () => {
           <Route path="/sobre-nos" element={<SobreNos />} />
           <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
           <Route path="/investment" element={<Investment />} />
+          <Route path="/proposta-de-investimento" element={<Investment />} />
           <Route path="/perfil/:username" element={<PerfilPublico />} />
           {/* User dashboard - requires auth but not admin */}
           <Route path="/dashboard" element={<Dashboard />} />
