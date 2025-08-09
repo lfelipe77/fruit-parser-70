@@ -16,6 +16,7 @@ export default function LanguageSelector() {
   };
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+  const codeLabel: Record<string, string> = { en: "EN", pt: "BR", es: "ES" };
 
   return (
     <Select value={i18n.language} onValueChange={handleLanguageChange}>
@@ -23,7 +24,7 @@ export default function LanguageSelector() {
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4" />
           <span className="text-lg">{currentLanguage.flag}</span>
-          <SelectValue />
+          <span className="text-sm font-medium">{codeLabel[currentLanguage.code] || currentLanguage.code.toUpperCase()}</span>
         </div>
       </SelectTrigger>
       <SelectContent>
