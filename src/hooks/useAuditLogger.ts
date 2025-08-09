@@ -74,7 +74,8 @@ export const useAuditLogger = () => {
       };
 
       // Use existing log_audit_event function if user is authenticated
-      if (userId || supabase.auth.getUser()) {
+      const { data: authUser } = await supabase.auth.getUser();
+      if (userId || authUser?.user) {
         await supabase.rpc('log_audit_event', {
           action,
           context: enrichedContext
