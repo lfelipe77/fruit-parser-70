@@ -267,13 +267,15 @@ const Investment: React.FC = () => {
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-3 mb-4">
                         <Rocket className="w-8 h-8 text-primary" />
-                        <span className="text-lg font-medium text-muted-foreground">Total Fase 1</span>
                       </div>
-                      <div className="text-4xl font-bold text-primary mb-2">
-                        R$ 165.000
+                      <div className="text-2xl font-bold text-primary mb-2">
+                        30K a 60K Reais - Launch
                       </div>
-                      <div className="text-2xl font-semibold text-accent">
-                        = 15% da empresa
+                      <div className="text-lg font-medium text-primary">
+                        + Support
+                      </div>
+                      <div className="text-2xl font-semibold text-accent mt-1">
+                        15%
                       </div>
                     </div>
                   </div>
