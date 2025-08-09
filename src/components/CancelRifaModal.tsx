@@ -48,7 +48,7 @@ export default function CancelRifaModal({
       await onConfirmCancel(reason);
       toast({
         title: "Rifa cancelada",
-        description: "Todos os participantes serão notificados e reembolsados.",
+        description: "Todos os participantes serão notificados e poderão transferir seus créditos para qualquer outro ganhaveis não sorteados na plataforma.",
       });
       onClose();
       setReason("");
@@ -81,7 +81,7 @@ export default function CancelRifaModal({
             <Users className="h-4 w-4" />
             <AlertDescription>
               {participantCount > 0 
-                ? `${participantCount} participante(s) serão reembolsados automaticamente.`
+                ? `${participantCount} participante(s) poderão transferir seus créditos para qualquer outro ganhaveis não sorteados na plataforma.`
                 : "Nenhum participante será afetado."
               }
             </AlertDescription>

@@ -51,7 +51,7 @@ export default function ConfiancaSeguranca() {
     {
       title: "Processo Livre de Fraude",
       items: [
-        "Reembolso imediato caso a Rifa trave por 30 dias se receber pagamento",
+        "Transferência de créditos caso o ganhavel fique 30 dias sem novos recebimentos: todos os participantes poderão transferir seus créditos para qualquer outro ganhaveis não sorteados na plataforma",
         "Suporte segunda a sexta das 9h às 17h",
         "Rastreamento completo de todas as transações",
         "Compra imediata de ganhaveis de afiliados validados (Amazon, OLX, Mercado Livre, etc)"

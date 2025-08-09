@@ -431,7 +431,7 @@ export default function ComoFunciona() {
                   <Clock className="w-6 h-6 text-orange-500 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold mb-2">Cancelamento automático após 30 dias</h3>
-                    <p className="text-muted-foreground">Todo ganhavel que ficar 30 dias sem novos recebimentos será automaticamente cancelado. Todos os participantes receberão o valor pago de volta, descontando apenas eventuais taxas da plataforma.</p>
+                    <p className="text-muted-foreground">Todo ganhavel que ficar 30 dias sem novos recebimentos será automaticamente cancelado. Todos os participantes poderão transferir seus créditos para qualquer outro ganhaveis não sorteados na plataforma.</p>
                   </div>
                 </div>
                 
