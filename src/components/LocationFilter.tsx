@@ -38,7 +38,7 @@ export default function LocationFilter({
           className="w-full justify-start"
         >
           <Globe className="h-4 w-4 mr-2" />
-          Apenas Rifas Online
+          Apenas Ganhaveis Online
         </Button>
 
         {/* Seletor de Estado */}

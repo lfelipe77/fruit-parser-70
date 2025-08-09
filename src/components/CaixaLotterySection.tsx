@@ -133,7 +133,7 @@ export default function CaixaLotterySection() {
         <div className="text-center mb-8">
           <div className="bg-primary/10 border border-primary/20 p-6 rounded-xl max-w-4xl mx-auto shadow-lg">
             <p className="text-base font-medium text-primary">
-              A Ganhavel apenas conecta participantes com organizadores. Não operamos rifas diretamente nem movimentamos os valores dos bilhetes.
+              A Ganhavel apenas conecta participantes com organizadores. Não operamos ganhaveis diretamente nem movimentamos os valores dos bilhetes.
             </p>
           </div>
         </div>

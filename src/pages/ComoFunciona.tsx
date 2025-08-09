@@ -99,7 +99,7 @@ export default function ComoFunciona() {
           <div className="flex items-center justify-center gap-2 text-center">
             <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              <strong>Atenção:</strong> A Ganhavel apenas conecta participantes com organizadores. Não operamos rifas diretamente nem movimentamos os valores dos bilhetes.
+              <strong>Atenção:</strong> A Ganhavel apenas conecta participantes com organizadores. Não operamos ganhaveis diretamente nem movimentamos os valores dos bilhetes.
             </p>
           </div>
         </div>
@@ -465,7 +465,7 @@ export default function ComoFunciona() {
                 <div>
                   <h3 className="text-xl font-bold mb-2 text-yellow-800 dark:text-yellow-200">⚠️ Importante</h3>
                   <p className="text-yellow-700 dark:text-yellow-300 font-medium">
-                    A plataforma apenas conecta participantes com organizadores. Não operamos rifas diretamente nem movimentamos os valores dos bilhetes.
+                    A plataforma apenas conecta participantes com organizadores. Não operamos ganhaveis diretamente nem movimentamos os valores dos bilhetes.
                   </p>
                 </div>
               </div>
@@ -947,7 +947,7 @@ export default function ComoFunciona() {
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-2">A plataforma usa inteligência artificial?</h3>
                 <p className="text-muted-foreground">
-                  Sim. Utilizamos IA para automatizar processos de validação, status de rifas, confirmação de prêmios e liberação de valores. 
+                  Sim. Utilizamos IA para automatizar processos de validação, status de ganhaveis, confirmação de prêmios e liberação de valores. 
                   Isso reduz fraudes e agiliza o funcionamento.
                 </p>
               </CardContent>

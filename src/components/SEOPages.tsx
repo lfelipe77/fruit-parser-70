@@ -38,8 +38,8 @@ export const ComoFuncionaSEO = () => (
 
 export const LanceSeuGanhaveISEO = () => (
   <SEOHead
-    title="Lance Seu Ganhavel - Crie Sua Rifa | Ganhavel"
-    description="Lance sua própria rifa na Ganhavel. Plataforma segura e transparente para organizar rifas de carros, casas, eletrônicos e muito mais."
+    title="Lance Seu Ganhavel - Crie Seu Ganhavel | Ganhavel"
+    description="Lance seu próprio ganhavel na Ganhavel. Plataforma segura e transparente para organizar ganhaveis de carros, casas, eletrônicos e muito mais."
     canonical="https://ganhavel.com/lance-seu-ganhavel"
   />
 );
@@ -47,7 +47,7 @@ export const LanceSeuGanhaveISEO = () => (
 export const CentralDeAjudaSEO = () => (
   <SEOHead
     title="Central de Ajuda - Suporte e FAQ | Ganhavel"
-    description="Precisa de ajuda? Encontre respostas para suas dúvidas sobre rifas, pagamentos, sorteios e muito mais na nossa central de ajuda."
+    description="Precisa de ajuda? Encontre respostas para suas dúvidas sobre ganhaveis, pagamentos, sorteios e muito mais na nossa central de ajuda."
     canonical="https://ganhavel.com/central-de-ajuda"
     structuredData={getFAQSchema()}
   />
@@ -56,23 +56,23 @@ export const CentralDeAjudaSEO = () => (
 export const SobreNosSEO = () => (
   <SEOHead
     title="Sobre Nós - Conheça a Ganhavel | Missão e Valores"
-    description="Conheça a história da Ganhavel, nossa missão de democratizar rifas justas e transparentes, e como estamos transformando este mercado no Brasil."
+    description="Conheça a história da Ganhavel, nossa missão de democratizar ganhaveis justos e transparentes, e como estamos transformando este mercado no Brasil."
     canonical="https://ganhavel.com/sobre-nos"
   />
 );
 
 export const ConfiancaSegurancaSEO = () => (
   <SEOHead
-    title="Confiança e Segurança - Rifas Seguras | Ganhavel"
-    description="Entenda como garantimos a segurança e transparência das rifas. Todos os sorteios seguem a Loteria Federal para máxima confiabilidade."
+    title="Confiança e Segurança - Ganhaveis Seguros | Ganhavel"
+    description="Entenda como garantimos a segurança e transparência dos ganhaveis. Todos os sorteios seguem a Loteria Federal para máxima confiabilidade."
     canonical="https://ganhavel.com/confianca-seguranca"
   />
 );
 
 export const GuiaDoCriadorSEO = () => (
   <SEOHead
-    title="Guia do Criador - Como Organizar Rifas | Ganhavel"
-    description="Guia completo para organizar rifas na Ganhavel. Aprenda as melhores práticas, regras e dicas para criar rifas de sucesso."
+    title="Guia do Criador - Como Organizar Ganhaveis | Ganhavel"
+    description="Guia completo para organizar ganhaveis na Ganhavel. Aprenda as melhores práticas, regras e dicas para criar ganhaveis de sucesso."
     canonical="https://ganhavel.com/guia-do-criador"
   />
 );

@@ -65,15 +65,15 @@ export default function Dashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Minhas Rifas</CardTitle>
+                <CardTitle>Meus Ganhaveis</CardTitle>
                 <CardDescription>
-                  Rifas que você está participando
+                  Ganhaveis que você está participando
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">0</p>
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma rifa ativa
+                  Nenhum ganhavel ativo
                 </p>
               </CardContent>
             </Card>
@@ -109,7 +109,7 @@ export default function Dashboard() {
                 </p>
                 <div className="mt-4">
                   <Button asChild>
-                    <a href="/descobrir">Explorar Rifas</a>
+                    <a href="/descobrir">Explorar Ganhaveis</a>
                   </Button>
                 </div>
               </CardContent>
