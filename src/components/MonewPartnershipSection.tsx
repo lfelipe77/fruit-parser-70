@@ -44,7 +44,7 @@ export default function MonewPartnershipSection() {
           </h2>
           
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
-            A Ganhavél conta com parceiro financeiro licenciado, responsável por reter e validar todos os valores pagos nos ganhaveis.
+            Parceiros Financeiros Licenciados.
           </p>
         </div>
 
