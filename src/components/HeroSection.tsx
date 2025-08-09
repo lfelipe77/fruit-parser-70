@@ -21,6 +21,18 @@ export default function HeroSection() {
               </p>
             </div>
             
+            {/* Mobile image - shown right after title on mobile only */}
+            <div className="lg:hidden relative max-w-sm mx-auto animate-scale-in">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                <img
+                  src={heroImage}
+                  alt="Ganhavel – amigos comemorando prêmios reais: carros, viagens e tecnologia"
+                  className="w-full h-[250px] md:h-[300px] object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              </div>
+            </div>
+            
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button variant="hero" size="lg" className="text-base md:text-lg px-6 md:px-8" asChild>
                 <Link to="/lance-seu-ganhavel">
@@ -80,25 +92,26 @@ export default function HeroSection() {
             </div>
           </div>
           
-          <div className="relative lg:ml-8 animate-scale-in max-w-lg mx-auto lg:max-w-none">
+          {/* Desktop image - hidden on mobile */}
+          <div className="hidden lg:block relative lg:ml-8 animate-scale-in max-w-lg mx-auto lg:max-w-none">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <img
                 src={heroImage}
                 alt="Ganhavel – amigos comemorando prêmios reais: carros, viagens e tecnologia"
-                className="w-full h-[300px] md:h-[400px] lg:h-[500px] object-cover"
+                className="w-full h-[500px] object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
             
-            {/* Floating stats cards */}
-            <div className="absolute -top-2 md:-top-4 -left-2 md:-left-4 bg-white p-3 md:p-4 rounded-lg shadow-lg animate-pulse">
-              <div className="text-xs md:text-sm text-muted-foreground">Ganhaveis Ativos</div>
-              <div className="text-xl md:text-2xl font-bold text-primary">128</div>
+            {/* Floating stats cards - only on desktop */}
+            <div className="absolute -top-4 -left-4 bg-white p-4 rounded-lg shadow-lg animate-pulse">
+              <div className="text-sm text-muted-foreground">Ganhaveis Ativos</div>
+              <div className="text-2xl font-bold text-primary">128</div>
             </div>
             
-            <div className="absolute -bottom-2 md:-bottom-4 -right-2 md:-right-4 bg-white p-3 md:p-4 rounded-lg shadow-lg animate-pulse delay-150">
-              <div className="text-xs md:text-sm text-muted-foreground">Taxa de Entrega</div>
-              <div className="text-xl md:text-2xl font-bold text-success">100%</div>
+            <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg animate-pulse delay-150">
+              <div className="text-sm text-muted-foreground">Taxa de Entrega</div>
+              <div className="text-2xl font-bold text-success">100%</div>
             </div>
           </div>
         </div>
