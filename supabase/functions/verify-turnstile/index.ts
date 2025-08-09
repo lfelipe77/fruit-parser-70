@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://ganhavel.com",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Content-Type": "application/json",
-};
+  "Access-Control-Allow-Credentials": "true",
+} as const;
 
 const securityHeaders = {
   "X-Frame-Options": "DENY",
@@ -19,15 +20,15 @@ const securityHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
-  }
+if (req.method === "OPTIONS") {
+  return new Response("ok", { headers: corsHeaders });
+}
 
   try {
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ success: false, message: "Method not allowed" }), {
         status: 405,
-        headers: { ...corsHeaders, ...securityHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -36,7 +37,7 @@ serve(async (req) => {
     if (!token) {
       return new Response(JSON.stringify({ success: false, message: "Missing token" }), {
         status: 400,
-        headers: { ...corsHeaders, ...securityHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -45,7 +46,7 @@ serve(async (req) => {
       console.error("TURNSTILE_SECRET_KEY is not set");
       return new Response(JSON.stringify({ success: false, message: "Server misconfiguration" }), {
         status: 500,
-        headers: { ...corsHeaders, ...securityHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -70,19 +71,19 @@ serve(async (req) => {
       console.warn("Turnstile verification failed", { errorCodes });
       return new Response(JSON.stringify({ success: false, errorCodes }), {
         status: 400,
-        headers: { ...corsHeaders, ...securityHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { ...corsHeaders, ...securityHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (e) {
     console.error("Unexpected error in verify-turnstile:", e);
     return new Response(JSON.stringify({ success: false, message: "Internal server error" }), {
       status: 500,
-      headers: { ...corsHeaders, ...securityHeaders },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
 });
