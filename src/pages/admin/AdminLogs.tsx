@@ -96,13 +96,9 @@ export default function AdminLogs() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_admin_logs', { p_limit: 500 } as any);
+      const { data, error } = await supabase.rpc('get_admin_logs', { p_limit: 5 } as any);
       if (error) throw error;
-      if (error) {
-        console.error('Error fetching logs:', error);
-        toast.error('Erro ao carregar logs');
-        return;
-      }
+      console.log('Test logs:', data);
 
       setLogs(data || []);
       setFilteredLogs(data || []);
