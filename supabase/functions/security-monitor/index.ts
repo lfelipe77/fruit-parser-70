@@ -11,7 +11,51 @@ Deno.serve(withCORS(async (req: Request) => {
       auth: { persistSession: false }
     })
 
-    // Parse request body
+    // Handle CORS preflight (may also be handled by withCORS)
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Authorization: require Bearer JWT and admin role
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.slice(7);
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const userClient = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, detectSessionInUrl: false }
+    });
+
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      console.error('JWT validation failed:', userErr);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = userData.user.id;
+    const { data: profile, error: profileErr } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profileErr || !profile || profile.role !== 'admin') {
+      console.warn('Forbidden: user is not admin', { userId, profileErr, role: profile?.role });
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse request body after auth
     const body = await req.json()
     const { action } = body
 
@@ -54,13 +98,13 @@ Deno.serve(withCORS(async (req: Request) => {
         severity = 'medium' 
       } = body
 
-      const { data, error } = await supabase.rpc('create_security_alert', {
-        alert_type: type,
-        alert_description: description,
-        alert_ip_address: ip_address,
-        alert_user_id: user_id,
-        alert_context: context,
-        alert_severity: severity
+      const { data, error } = await supabase.rpc('create_security_alert_admin', {
+        p_type: type,
+        p_description: description,
+        p_severity: severity,
+        p_context: context,
+        p_ip_address: ip_address,
+        p_user_id: user_id
       })
 
       if (error) {
