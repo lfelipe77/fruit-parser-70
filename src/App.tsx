@@ -26,6 +26,7 @@ import PagamentoSucesso from "./pages/PagamentoSucesso";
 import PagamentoErro from "./pages/PagamentoErro";
 import NotFound from "./pages/NotFound";
 import AccessDenied from "./pages/AccessDenied";
+import TestAudit from "./pages/TestAudit";
 import LanceSeuGanhavel from "./pages/LanceSeuGanhavel";
 import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
@@ -135,6 +136,8 @@ const AppContent = () => {
           <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
           <Route path="/pagamento-erro" element={<PagamentoErro />} />
           <Route path="/access-denied" element={<AccessDenied />} />
+          {/* Temporary test route - remove after verifying */}
+          <Route path="/test-audit" element={<TestAudit />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
