@@ -18,7 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // TODO: Remove temporary admin Turnstile bypass after testing
 const ADMIN_BYPASS_EMAILS = new Set(['felipfl@gmail.com']);
-const REQUIRE_TURNSTILE = import.meta.env?.VITE_REQUIRE_TURNSTILE !== 'false';
+const requireTurnstile = import.meta.env.MODE === 'production' && import.meta.env.VITE_REQUIRE_TURNSTILE !== 'false';
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -69,7 +69,7 @@ export default function Login() {
     const ADMIN_TURNSTILE_BYPASS = import.meta.env?.VITE_ADMIN_TURNSTILE_BYPASS === 'true';
     const normalizedEmail = email.trim().toLowerCase();
     const adminBypass = ADMIN_TURNSTILE_BYPASS && ADMIN_BYPASS_EMAILS.has(normalizedEmail);
-    const shouldSkipTurnstile = adminBypass || !REQUIRE_TURNSTILE;
+    const shouldSkipTurnstile = adminBypass || !requireTurnstile;
 
     if (!shouldSkipTurnstile) {
       // Verificar proteção anti-bot
@@ -232,7 +232,7 @@ export default function Login() {
               </div>
 
                 {/* Anti-bot protection */}
-                {REQUIRE_TURNSTILE && (
+                {requireTurnstile && (
                   <div className="space-y-4">
                     <TurnstileProtection
                       onVerify={(token) => {
