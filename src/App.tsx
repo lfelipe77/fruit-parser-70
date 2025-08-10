@@ -27,6 +27,7 @@ import PagamentoErro from "./pages/PagamentoErro";
 import NotFound from "./pages/NotFound";
 import AccessDenied from "./pages/AccessDenied";
 import TestAudit from "./pages/TestAudit";
+import DebugToken from "./pages/DebugToken";
 import LanceSeuGanhavel from "./pages/LanceSeuGanhavel";
 import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
@@ -139,7 +140,10 @@ const AppContent = () => {
           {/* Temporary test route - remove after verifying */}
           <Route path="/test-audit" element={<TestAudit />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
+          {import.meta.env.MODE !== 'production' && (
+            <Route path="/debug-token" element={<DebugToken />} />
+          )}
+         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );
