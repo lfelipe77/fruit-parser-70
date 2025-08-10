@@ -15,6 +15,8 @@ import { useRateLimit } from "@/hooks/useRateLimit";
 import { TurnstileProtection } from "@/components/TurnstileProtection";
 import { supabase } from "@/integrations/supabase/client";
 
+const REQUIRE_TURNSTILE = import.meta.env?.VITE_REQUIRE_TURNSTILE !== 'false';
+
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -112,20 +114,22 @@ export default function SignUp() {
     }
 
     // Verificar proteção anti-bot
-    if (!turnstileToken) {
-      toast.error('Please complete verification');
-      return;
-    }
+    if (REQUIRE_TURNSTILE) {
+      if (!turnstileToken) {
+        toast.error('Please complete verification');
+        return;
+      }
 
-    // Validar token no servidor
-    const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-      body: { token: turnstileToken },
-    });
-    console.log('verify-turnstile result', { verifyData, verifyError });
-    if (verifyError || !verifyData?.success) {
-      toast.error('Please complete verification');
-      setTurnstileToken('');
-      return;
+      // Validar token no servidor
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
+        body: { token: turnstileToken },
+      });
+      console.log('verify-turnstile result', { verifyData, verifyError });
+      if (verifyError || !verifyData?.success) {
+        toast.error('Please complete verification');
+        setTurnstileToken('');
+        return;
+      }
     }
 
     // Verificar rate limiting
@@ -372,19 +376,21 @@ export default function SignUp() {
                 {!user && (
                   <>
                     {/* Proteção Anti-Bot */}
-                    <div className="space-y-4">
-                      <TurnstileProtection
-                        onVerify={(token) => {
-                          console.log('Turnstile token obtained', token);
-                          setTurnstileToken(token);
-                        }}
-                        onError={() => setTurnstileToken("")}
-                        onExpire={() => setTurnstileToken("")}
-                        action="signup"
-                        theme="auto"
-                        size="compact"
-                      />
-                    </div>
+                    {REQUIRE_TURNSTILE && (
+                      <div className="space-y-4">
+                        <TurnstileProtection
+                          onVerify={(token) => {
+                            console.log('Turnstile token obtained', token);
+                            setTurnstileToken(token);
+                          }}
+                          onError={() => setTurnstileToken("")}
+                          onExpire={() => setTurnstileToken("")}
+                          action="signup"
+                          theme="auto"
+                          size="compact"
+                        />
+                      </div>
+                    )}
 
                     {/* Security information */}
                     <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">

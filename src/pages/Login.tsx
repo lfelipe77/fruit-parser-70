@@ -18,7 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // TODO: Remove temporary admin Turnstile bypass after testing
 const ADMIN_BYPASS_EMAILS = new Set(['felipfl@gmail.com']);
-
+const REQUIRE_TURNSTILE = import.meta.env?.VITE_REQUIRE_TURNSTILE !== 'false';
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -68,9 +68,10 @@ export default function Login() {
     // Temporary admin bypass for Turnstile - TODO: remove after testing
     const ADMIN_TURNSTILE_BYPASS = import.meta.env?.VITE_ADMIN_TURNSTILE_BYPASS === 'true';
     const normalizedEmail = email.trim().toLowerCase();
-    const shouldBypass = ADMIN_TURNSTILE_BYPASS && ADMIN_BYPASS_EMAILS.has(normalizedEmail);
+    const adminBypass = ADMIN_TURNSTILE_BYPASS && ADMIN_BYPASS_EMAILS.has(normalizedEmail);
+    const shouldSkipTurnstile = adminBypass || !REQUIRE_TURNSTILE;
 
-    if (!shouldBypass) {
+    if (!shouldSkipTurnstile) {
       // Verificar proteção anti-bot
       if (!turnstileToken) {
         toast.error('Please complete verification');
@@ -88,8 +89,10 @@ export default function Login() {
         return;
       }
     } else {
-      setBypassActive(true);
-      console.warn('Temporary admin bypass: Turnstile skipped');
+      if (adminBypass) {
+        setBypassActive(true);
+        console.warn('Temporary admin bypass: Turnstile skipped');
+      }
     }
 
     // Verificar rate limiting para tentativas de login
@@ -229,18 +232,20 @@ export default function Login() {
               </div>
 
                 {/* Anti-bot protection */}
-                <div className="space-y-4">
-                  <TurnstileProtection
-                    onVerify={(token) => {
-                      console.log('Turnstile token obtained', token);
-                      setTurnstileToken(token);
-                    }}
-                    onError={() => setTurnstileToken("")}
-                    onExpire={() => setTurnstileToken("")}
-                    action="login"
-                    theme="auto"
-                  />
-                </div>
+                {REQUIRE_TURNSTILE && (
+                  <div className="space-y-4">
+                    <TurnstileProtection
+                      onVerify={(token) => {
+                        console.log('Turnstile token obtained', token);
+                        setTurnstileToken(token);
+                      }}
+                      onError={() => setTurnstileToken("")}
+                      onExpire={() => setTurnstileToken("")}
+                      action="login"
+                      theme="auto"
+                    />
+                  </div>
+                )}
 
                 {bypassActive && (
                   <Alert className="mt-2">
