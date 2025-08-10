@@ -1,16 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCORS } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+Deno.serve(withCORS(async (req: Request) => {
   try {
     // Create supabase client with service role for database access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -36,7 +27,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Failed to run security checks' }),
           { 
             status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: { 'Content-Type': 'application/json' }
           }
         )
       }
@@ -47,7 +38,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: true, message: 'Security checks completed' }),
         { 
           status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 'Content-Type': 'application/json' }
         }
       )
     }
@@ -78,7 +69,7 @@ Deno.serve(async (req) => {
           JSON.stringify({ error: 'Failed to create security alert' }),
           { 
             status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: { 'Content-Type': 'application/json' }
           }
         )
       }
@@ -89,7 +80,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: true, alert_id: data }),
         { 
           status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 'Content-Type': 'application/json' }
         }
       )
     }
@@ -98,7 +89,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Invalid action' }),
       { 
         status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      headers: { 'Content-Type': 'application/json' }
       }
     )
 
@@ -108,8 +99,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Internal server error' }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 'Content-Type': 'application/json' } 
       }
     )
   }
-})
+}));
