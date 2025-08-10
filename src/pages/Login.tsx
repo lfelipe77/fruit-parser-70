@@ -14,6 +14,10 @@ import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { TurnstileProtection } from "@/components/TurnstileProtection";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+// TODO: Remove temporary admin Turnstile bypass after testing
+const ADMIN_BYPASS_EMAILS = new Set(['felipfl@gmail.com']);
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +26,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const [bypassActive, setBypassActive] = useState(false);
   const { checkRateLimit, isChecking } = useRateLimit();
   const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -60,21 +65,31 @@ export default function Login() {
       return;
     }
 
-    // Verificar proteção anti-bot
-    if (!turnstileToken) {
-      toast.error('Please complete verification');
-      return;
-    }
+    // Temporary admin bypass for Turnstile - TODO: remove after testing
+    const ADMIN_TURNSTILE_BYPASS = import.meta.env?.VITE_ADMIN_TURNSTILE_BYPASS === 'true';
+    const normalizedEmail = email.trim().toLowerCase();
+    const shouldBypass = ADMIN_TURNSTILE_BYPASS && ADMIN_BYPASS_EMAILS.has(normalizedEmail);
 
-    // Validar token no servidor
-    const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-      body: { token: turnstileToken },
-    });
-    console.log('verify-turnstile result', { verifyData, verifyError });
-    if (verifyError || !verifyData?.success) {
-      toast.error('Please complete verification');
-      setTurnstileToken('');
-      return;
+    if (!shouldBypass) {
+      // Verificar proteção anti-bot
+      if (!turnstileToken) {
+        toast.error('Please complete verification');
+        return;
+      }
+
+      // Validar token no servidor
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
+        body: { token: turnstileToken },
+      });
+      console.log('verify-turnstile result', { verifyData, verifyError });
+      if (verifyError || !verifyData?.success) {
+        toast.error('Please complete verification');
+        setTurnstileToken('');
+        return;
+      }
+    } else {
+      setBypassActive(true);
+      console.warn('Temporary admin bypass: Turnstile skipped');
     }
 
     // Verificar rate limiting para tentativas de login
@@ -226,6 +241,12 @@ export default function Login() {
                     theme="auto"
                   />
                 </div>
+
+                {bypassActive && (
+                  <Alert className="mt-2">
+                    <AlertDescription>Temporary admin bypass: Turnstile skipped</AlertDescription>
+                  </Alert>
+                )}
 
                 {/* Security information */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
