@@ -1,16 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0'
+import { withCORS } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+Deno.serve(withCORS(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -44,7 +35,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ success: true, data }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 200 
       }
     )
@@ -54,13 +45,13 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: (error as Error).message,
         success: false 
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 400 
       }
     )
   }
-})
+}))
