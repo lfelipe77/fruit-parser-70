@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { withCORS } from "../_shared/cors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +19,7 @@ const securityHeaders = {
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
 };
 
-serve(async (req) => {
+serve(withCORS(async (req: Request) => {
 if (req.method === "OPTIONS") {
   return new Response("ok", { headers: corsHeaders });
 }
@@ -85,4 +86,4 @@ if (req.method === "OPTIONS") {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
-});
+}));
