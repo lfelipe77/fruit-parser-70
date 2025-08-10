@@ -1,20 +1,15 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCORS } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
 
 const securityHeaders = {
-  ...corsHeaders,
   'Content-Security-Policy': "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src *; frame-ancestors 'none';",
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'X-XSS-Protection': '1; mode=block',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
 }
 
 // Rate limiting rules
@@ -30,12 +25,7 @@ interface RateLimitCheck {
   userAgent?: string
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: securityHeaders });
-  }
-
+Deno.serve(withCORS(async (req: Request) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -138,7 +128,7 @@ serve(async (req) => {
       { status: 500, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
     )
   }
-})
+}));
 
 function getClientIP(req: Request): string {
   return req.headers.get('cf-connecting-ip') || 
