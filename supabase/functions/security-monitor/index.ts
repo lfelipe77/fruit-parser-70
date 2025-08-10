@@ -62,71 +62,51 @@ Deno.serve(withCORS(async (req: Request) => {
     console.log('Security monitor triggered with action:', action)
 
     if (action === 'run_checks') {
-      // Run all security checks
-      const { error } = await supabase.rpc('run_security_checks')
-      
-      if (error) {
-        console.error('Error running security checks:', error)
-        return new Response(
-          JSON.stringify({ error: 'Failed to run security checks' }),
-          { 
-            status: 500, 
-            headers: { 'Content-Type': 'application/json' }
-          }
-        )
-      }
-
-      console.log('Security checks completed successfully')
-      
-      return new Response(
-        JSON.stringify({ success: true, message: 'Security checks completed' }),
-        { 
-          status: 200, 
-          headers: { 'Content-Type': 'application/json' }
+      try {
+        const { error } = await supabase.rpc('run_security_checks');
+        
+        if (error) {
+          console.error('Error running security checks:', error);
+          return new Response(
+            JSON.stringify({ ok: false, error: 'run_checks_failed' }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
         }
-      )
+
+        console.log('Security checks completed successfully');
+        return new Response(
+          JSON.stringify({ ok: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      } catch (err) {
+        console.error('Exception while running security checks:', err);
+        return new Response(
+          JSON.stringify({ ok: false, error: 'run_checks_failed' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Manual alert creation
     if (action === 'create_alert') {
-      const { 
-        type, 
-        description, 
-        ip_address, 
-        user_id, 
-        context = {}, 
-        severity = 'medium' 
-      } = body
+      const { error: alertErr } = await supabase.rpc('create_security_alert_admin_v2', {
+        p_type: body.type,
+        p_message: body.message ?? '',
+        p_meta: body.meta ?? {}
+      });
 
-      const { data, error } = await supabase.rpc('create_security_alert_admin', {
-        p_type: type,
-        p_description: description,
-        p_severity: severity,
-        p_context: context,
-        p_ip_address: ip_address,
-        p_user_id: user_id
-      })
-
-      if (error) {
-        console.error('Error creating security alert:', error)
+      if (alertErr) {
+        console.error('create_alert failed:', alertErr);
         return new Response(
           JSON.stringify({ error: 'Failed to create security alert' }),
-          { 
-            status: 500, 
-            headers: { 'Content-Type': 'application/json' }
-          }
-        )
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
       }
 
-      console.log('Security alert created with ID:', data)
-
       return new Response(
-        JSON.stringify({ success: true, alert_id: data }),
-        { 
-          status: 200, 
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
+        JSON.stringify({ ok: true }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
