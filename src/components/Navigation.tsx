@@ -102,11 +102,9 @@ export default function Navigation() {
                 <Link to="/como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('howItWorks')}
                 </Link>
-                {import.meta.env.MODE !== 'production' && (
-                  <Link to="/debug-token" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Debug Token
-                  </Link>
-                )}
+                <Link to="/debug-token" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Debug Token
+                </Link>
                 {/* Admin link - only visible to admin users */}
                 {isAdmin && (
                   <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">
