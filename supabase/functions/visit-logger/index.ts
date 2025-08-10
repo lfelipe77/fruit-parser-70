@@ -1,9 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { withCORS } from "../_shared/cors.ts"
 
 const securityHeaders = {
   'X-Frame-Options': 'DENY',
@@ -16,12 +12,7 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
-  }
-
+Deno.serve(withCORS(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -54,29 +45,29 @@ Deno.serve(async (req) => {
 
     console.log('Visit logged successfully:', data)
 
-return new Response(
-  JSON.stringify({ 
-    success: true, 
-    visit_id: data 
-  }),
-  { 
-    headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
-    status: 200 
-  }
-)
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        visit_id: data 
+      }),
+      { 
+        headers: { ...securityHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
 
   } catch (error) {
     console.error('Error in visit-logger:', error)
     
-return new Response(
-  JSON.stringify({ 
-    error: error.message,
-    success: false 
-  }),
-  { 
-    headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
-    status: 400 
+    return new Response(
+      JSON.stringify({ 
+        error: (error as Error).message,
+        success: false 
+      }),
+      { 
+        headers: { ...securityHeaders, 'Content-Type': 'application/json' },
+        status: 400 
+      }
+    )
   }
-)
-  }
-})
+}))
