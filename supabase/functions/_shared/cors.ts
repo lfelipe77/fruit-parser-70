@@ -8,7 +8,7 @@ function parseAllowedOrigins(envValue?: string | null): string[] | null {
   if (!envValue || envValue.trim() === "") return ["*"]; // default allow all
   const list = envValue
     .split(",")
-    .map((o) => o.trim())
+    .map((o) => o.trim().toLowerCase())
     .filter(Boolean);
   return list.length ? list : ["*"];
 }
@@ -20,7 +20,19 @@ export function withCORS(handler: Handler): Handler {
     const origin = req.headers.get("origin") ?? "";
 
     const wildcard = allowedList?.includes("*") ?? true;
-    const isAllowed = wildcard || (origin && allowedList?.includes(origin));
+    const origins = allowedList ?? ["*"];
+    const isAllowedOrigin = (orig: string) => {
+      if (!orig) return false;
+      const o = orig.toLowerCase();
+      return origins.some((rule) => {
+        if (rule.startsWith("https://*.")) {
+          const root = rule.replace("https://*.", "");
+          return o.startsWith("https://") && o.endsWith("." + root);
+        }
+        return o === rule;
+      });
+    };
+    const isAllowed = wildcard || isAllowedOrigin(origin);
 
     const baseHeaders: HeadersInit = {
       "Vary": "Origin",
