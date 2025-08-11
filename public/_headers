@@ -1,24 +1,9 @@
-# Security headers for all builds (including previews)
 /*
   X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; script-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com https://*.supabase.co https://whqxpuyjxoiufzhvqneg.functions.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; object-src 'none'
-  X-XSS-Protection: 1; mode=block
-  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-site
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
-# Additional security for API endpoints
-/api/*
-  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-  Cache-Control: no-store, no-cache, must-revalidate
-
-# Security for static assets
-/assets/*
-  Cache-Control: public, max-age=31536000, immutable
-
-# Security for service worker and manifest
-/sw.js
-  Cache-Control: no-cache, no-store, must-revalidate
-  
-/manifest.json
-  Cache-Control: public, max-age=86400
+  Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; script-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://whqxpuyjxoiufzhvqneg.functions.supabase.co; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'
