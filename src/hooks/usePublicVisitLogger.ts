@@ -1,50 +1,24 @@
-import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // Hook para registrar visitas em páginas públicas
 export const usePublicVisitLogger = () => {
   const location = useLocation();
+  const lastLoggedPath = useRef<string | null>(null);
 
   useEffect(() => {
-    const logVisit = async () => {
-      try {
-        // Capturar dados da visita
-        const visitData = {
-          url: location.pathname, // only path, no querystring
-          user_agent: navigator.userAgent,
-          referer: document.referrer || undefined,
-        };
+    // Client-side only
+    if (typeof window === 'undefined') return;
 
-        // Chamar a edge function para registrar a visita
-        const { data, error } = await supabase.functions.invoke('visit-logger', {
-          body: visitData
-        });
+    // Avoid duplicates (React StrictMode double-invoke and quick re-renders)
+    if (lastLoggedPath.current === location.pathname) return;
+    lastLoggedPath.current = location.pathname;
 
-        if (error) {
-          console.warn('Failed to log visit:', error);
-          return;
-        }
+    const url = `https://whqxpuyjxoiufzhvqneg.functions.supabase.co/visit-logger?p=${encodeURIComponent(location.pathname)}`;
 
-        // Log apenas para debug (remover em produção)
-        if (data?.logged) {
-          console.log('Visit logged successfully:', data.visit_id);
-        } else {
-          console.log('Visit not logged (rate limited)');
-        }
-
-      } catch (error) {
-        console.warn('Error logging visit:', error);
-      }
-    };
-
-    // Fazer log apenas se estivermos no browser
-    if (typeof window !== 'undefined') {
-      // Adicionar um pequeno delay para garantir que a página carregou
-      const timer = setTimeout(logVisit, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [location.pathname, location.search]);
+    // Fire-and-forget; ignore errors and send no PII; keepalive for unload navigations
+    fetch(url, { method: 'POST', keepalive: true }).catch(() => {});
+  }, [location.pathname]);
 };
 
 // Páginas que devem registrar visitas
