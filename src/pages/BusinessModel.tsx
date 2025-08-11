@@ -159,20 +159,31 @@ const BusinessModel: React.FC = () => {
               Fontes de Receita
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              'Taxa por transação confirmada',
-              'Margem sobre valor do prêmio',
-              'Prêmios e produtos afiliados',
-              'Destaques e promoções internas',
-              'Comissões de parceiros (em conformidade legal)',
-              'Marketing viral e gamificação na comunidade de ganhadores',
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-border/50">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <span className="text-sm">{item}</span>
+          <CardContent className="p-8 space-y-6">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+              <DollarSign className="w-5 h-5 text-primary mt-0.5" />
+              <div className="text-sm text-foreground/90">
+                <span className="font-semibold">Destaque:</span> Não retemos qualquer valor sobre os valores ou prêmios. Contamos com parceiro regulamentado que recebe: taxa por transação, taxa do valor / API money release — 2% (com potencial de ajuste no futuro).
+                <div className="mt-2">
+                  <Badge variant="outline" className="border-accent/40 text-accent">Produtos próprios & Afiliados</Badge>
+                </div>
               </div>
-            ))}
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                'Taxa por transação confirmada',
+                'Margem sobre valor do prêmio',
+                'Prêmios e produtos afiliados',
+                'Destaques e promoções internas',
+                'Comissões de parceiros (em conformidade legal)',
+                'Marketing viral e gamificação na comunidade de ganhadores',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-border/50">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  <span className="text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
