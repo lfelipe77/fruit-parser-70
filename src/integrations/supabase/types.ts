@@ -41,21 +41,7 @@ export type Database = {
             foreignKeyName: "action_logs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_profile_preview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "action_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "action_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -162,21 +148,7 @@ export type Database = {
             foreignKeyName: "ganhaveis_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
-            referencedRelation: "user_profile_preview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ganhaveis_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ganhaveis_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -238,21 +210,7 @@ export type Database = {
             foreignKeyName: "logs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_profile_preview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -417,6 +375,8 @@ export type Database = {
           description: string
           id: string
           ip_address: string | null
+          message: string | null
+          meta: Json
           resolved_at: string | null
           resolved_by: string | null
           severity: string | null
@@ -430,6 +390,8 @@ export type Database = {
           description: string
           id?: string
           ip_address?: string | null
+          message?: string | null
+          meta?: Json
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string | null
@@ -443,6 +405,8 @@ export type Database = {
           description?: string
           id?: string
           ip_address?: string | null
+          message?: string | null
+          meta?: Json
           resolved_at?: string | null
           resolved_by?: string | null
           severity?: string | null
@@ -511,21 +475,7 @@ export type Database = {
             foreignKeyName: "tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_profile_preview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tickets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tickets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -594,21 +544,7 @@ export type Database = {
             foreignKeyName: "transactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_profile_preview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -679,82 +615,14 @@ export type Database = {
             foreignKeyName: "user_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "user_profile_preview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_roles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_roles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
         ]
       }
     }
     Views: {
-      admin_log_view: {
-        Row: {
-          action: string | null
-          context: Json | null
-          created_at: string | null
-          full_name: string | null
-          id: string | null
-          user_id: string | null
-          user_role: string | null
-          username: string | null
-        }
-        Relationships: []
-      }
-      user_profile_preview: {
-        Row: {
-          id: string | null
-          username: string | null
-        }
-        Insert: {
-          id?: string | null
-          username?: string | null
-        }
-        Update: {
-          id?: string | null
-          username?: string | null
-        }
-        Relationships: []
-      }
-      user_profiles_public: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          id: string | null
-          rating: number | null
-          total_ganhaveis: number | null
-          username: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          id?: string | null
-          rating?: number | null
-          total_ganhaveis?: number | null
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          id?: string | null
-          rating?: number | null
-          total_ganhaveis?: number | null
-          username?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_login_abuse: {
@@ -780,18 +648,45 @@ export type Database = {
         }
         Returns: string
       }
+      create_security_alert_admin: {
+        Args:
+          | {
+              p_type: string
+              p_description: string
+              p_severity?: string
+              p_context?: Json
+              p_ip_address?: string
+              p_user_id?: string
+            }
+          | { p_type: string; p_message: string; p_meta: Json }
+        Returns: undefined
+      }
+      create_security_alert_admin_v2: {
+        Args: { p_type: string; p_message: string; p_meta: Json }
+        Returns: undefined
+      }
       example_function: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       get_admin_logs: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { p_limit?: number }
+        Returns: {
+          action: string
+          created_at: string | null
+          details: string | null
+          id: string
+          user_id: string | null
+        }[]
+      }
+      get_audit_logs_recent: {
+        Args: { p_limit?: number; p_minutes?: number; p_action?: string }
         Returns: {
           id: string
+          created_at: string
           user_id: string
           action: string
           context: Json
-          created_at: string
         }[]
       }
       get_audit_statistics: {
@@ -808,6 +703,23 @@ export type Database = {
       get_current_user_role: {
         Args: { user_id: string }
         Returns: string
+      }
+      get_my_audit_logs: {
+        Args: { p_limit?: number; p_minutes?: number; p_action?: string }
+        Returns: {
+          id: string
+          created_at: string
+          action: string
+          context: Json
+        }[]
+      }
+      hello_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_admin: {
+        Args: { p_uid: string }
+        Returns: boolean
       }
       log_audit_event: {
         Args: { action: string; context?: Json }
@@ -844,6 +756,18 @@ export type Database = {
       log_user_action: {
         Args: { p_user_id: string; p_action_type: string; p_context?: Json }
         Returns: undefined
+      }
+      mask_audit_pii_row: {
+        Args: { _ctx: Json }
+        Returns: Json
+      }
+      purge_old_audit_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      purge_old_public_visits: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       run_security_checks: {
         Args: Record<PropertyKey, never>

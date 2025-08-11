@@ -1,7 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { withCORS } from "../_shared/cors.ts"
 
-
 const securityHeaders = {
   'Content-Security-Policy': "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src *; frame-ancestors 'none';",
   'X-Frame-Options': 'DENY',
@@ -15,13 +14,15 @@ const securityHeaders = {
 // Rate limiting rules
 const RATE_LIMITS = {
   'raffle_creation': { limit: 5, windowMs: 60 * 60 * 1000 }, // 5 per hour
-  'login_attempt': { limit: 5, windowMs: 15 * 60 * 1000 }, // 5 per 15 minutes
-  'signup_attempt': { limit: 3, windowMs: 60 * 60 * 1000 }, // 3 per hour
-}
+  'login_attempt': { limit: 5, windowMs: 15 * 60 * 1000 },   // 5 per 15 minutes
+  'signup_attempt': { limit: 3, windowMs: 60 * 60 * 1000 },  // 3 per hour
+} as const
 
-interface RateLimitCheck {
-  action: keyof typeof RATE_LIMITS
-  email?: string // optional for login/signup to improve correlation
+type RateLimitAction = keyof typeof RATE_LIMITS
+
+interface RateLimitCheckBody {
+  action: RateLimitAction
+  email?: string
   userAgent?: string
 }
 
@@ -32,96 +33,83 @@ Deno.serve(withCORS(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { action, email, userAgent }: RateLimitCheck = await req.json()
+    const body = (await req.json().catch(() => ({}))) as Partial<RateLimitCheckBody>
+    const action = body.action as RateLimitAction
+    const email = (body.email || '').toLowerCase().trim()
+    const userAgent = body.userAgent || null
 
-    if (!action) {
+    if (!action || !(action in RATE_LIMITS)) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Missing required parameters' }),
-        { status: 400, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const rule = RATE_LIMITS[action]
-    if (!rule) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid action type' }),
+        JSON.stringify({ ok: false, error: 'Invalid or missing action' }),
         { status: 400, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const ip = getClientIP(req)
-    const idIp = await sha256(`${ip}|${action}`)
-    const idsToInsert: string[] = [idIp]
+    const now = new Date()
+    const windowMs = RATE_LIMITS[action].windowMs
+    const windowStart = new Date(now.getTime() - windowMs)
 
-    // For login/signup, also log per IP+email key if provided
-    const normalizedEmail = (email || '').toLowerCase().trim()
-    if (normalizedEmail && (action === 'login_attempt' || action === 'signup_attempt')) {
-      const idIpEmail = await sha256(`${ip}|${normalizedEmail}|${action}`)
-      idsToInsert.push(idIpEmail)
+    // Build identifiers (server-side only)
+    const idIp = await sha256(`${ip}|${action}`)
+    const identifiersToInsert: string[] = [idIp]
+
+    if (email && (action === 'login_attempt' || action === 'signup_attempt')) {
+      const idIpEmail = await sha256(`${ip}|${email}|${action}`)
+      identifiersToInsert.push(idIpEmail)
     }
 
-    const rule = RATE_LIMITS[action]
-    if (!rule) {
+    // Enforce per-IP ceilings
+    const { data: attemptsIp, error: fetchError } = await supabase
+      .from('rate_limit_attempts')
+      .select('created_at')
+      .eq('action', action)
+      .eq('identifier', idIp)
+      .gte('created_at', windowStart.toISOString())
+
+    if (fetchError) {
       console.error('Error fetching rate limit attempts:', fetchError)
       return new Response(
-        JSON.stringify({ error: 'Database error' }),
+        JSON.stringify({ ok: false, error: 'Database error' }),
         { status: 500, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const currentAttempts = attempts?.length || 0
-    
-    // Check if rate limit exceeded
-    if (currentAttempts >= rule.limit) {
-      const lastAttempt = attempts?.[0]
-      const resetTime = new Date(new Date(lastAttempt.created_at).getTime() + rule.windowMs)
-      
+    const currentAttempts = attemptsIp?.length || 0
+    if (currentAttempts >= RATE_LIMITS[action].limit) {
+      const lastAttempt = attemptsIp?.[0]
+      const resetTime = new Date(new Date(lastAttempt.created_at as string).getTime() + windowMs)
       return new Response(
-        JSON.stringify({
-          allowed: false,
-          remaining: 0,
-          resetTime: resetTime.toISOString(),
-          message: getRateLimitMessage(action)
-        }),
+        JSON.stringify({ ok: false, reason: 'rate_limited', resetTime: resetTime.toISOString() }),
         { status: 429, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Log the attempt for each identifier we generated
-    for (const ident of idsToInsert) {
+    // Log the attempt (both identifiers if applicable)
+    for (const ident of identifiersToInsert) {
       const { error: insertError } = await supabase
         .from('rate_limit_attempts')
         .insert({
           action,
           identifier: ident,
-          user_agent: userAgent || null,
+          user_agent: userAgent,
           ip_address: ip,
-          created_at: now.toISOString()
+          created_at: now.toISOString(),
         })
-      if (insertError) {
-        console.error('Error logging rate limit attempt:', insertError)
-      }
+      if (insertError) console.error('Error logging rate limit attempt:', insertError)
     }
 
     // Clean up old attempts (older than 24 hours)
     const cleanupTime = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    await supabase
-      .from('rate_limit_attempts')
-      .delete()
-      .lt('created_at', cleanupTime.toISOString())
+    await supabase.from('rate_limit_attempts').delete().lt('created_at', cleanupTime.toISOString())
 
     const remaining = RATE_LIMITS[action].limit - currentAttempts - 1
-    const resetTime = new Date(now.getTime() + RATE_LIMITS[action].windowMs)
+    const resetTime = new Date(now.getTime() + windowMs)
 
     return new Response(
-      JSON.stringify({
-        ok: true,
-        remaining,
-        resetTime: resetTime.toISOString()
-      }),
+      JSON.stringify({ ok: true, remaining, resetTime: resetTime.toISOString() }),
       { headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
     console.error('Error in rate-limiter function:', error)
     return new Response(
@@ -129,13 +117,15 @@ Deno.serve(withCORS(async (req: Request) => {
       { status: 500, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
     )
   }
-}));
+}))
 
 function getClientIP(req: Request): string {
-  return req.headers.get('cf-connecting-ip') || 
-         req.headers.get('x-forwarded-for')?.split(',')[0] || 
-         req.headers.get('x-real-ip') || 
-         'unknown'
+  return (
+    req.headers.get('cf-connecting-ip') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0] ||
+    req.headers.get('x-real-ip') ||
+    'unknown'
+  )
 }
 
 async function sha256(input: string): Promise<string> {
