@@ -18,16 +18,9 @@ export default function TurnstileTest() {
   };
 
   useEffect(() => {
-    // Ensure the script is only added once
-    if (!document.getElementById("cf-turnstile-script")) {
-      const s = document.createElement("script");
-      s.id = "cf-turnstile-script";
-      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      s.async = true; s.defer = true;
-      document.head.appendChild(s);
-    }
+    // Turnstile script is centrally loaded via index.html; avoid double-loading here.
+    // If the script is not yet ready, the widget will initialize once Turnstile invokes the global callback.
   }, []);
-
   return (
     <main style={{ padding: 24 }}>
       <h3>Turnstile Token Test</h3>

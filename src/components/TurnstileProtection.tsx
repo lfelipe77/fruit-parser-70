@@ -37,25 +37,42 @@ export const TurnstileProtection: React.FC<TurnstileProps> = ({
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAAiL8E8eEjkFr4Yr';
 
   useEffect(() => {
-    // Load Turnstile script
+    // Avoid double loading: if Turnstile is already present (e.g., loaded in index.html), just mark as loaded
+    if ((window as any).turnstile) {
+      setIsLoaded(true);
+      return;
+    }
+
+    // If script tag already exists (likely from index.html), wait until it initializes
+    const existing = document.querySelector('script[src*="challenges.cloudflare.com/turnstile/v0/api.js"]') as HTMLScriptElement | null;
+    if (existing) {
+      const timer = window.setInterval(() => {
+        if ((window as any).turnstile) {
+          setIsLoaded(true);
+          window.clearInterval(timer);
+        }
+      }, 50);
+      return () => window.clearInterval(timer);
+    }
+
     const script = document.createElement('script');
+    script.id = 'cf-turnstile-script';
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
     script.async = true;
     script.defer = true;
-    
-    script.onload = () => {
-      setIsLoaded(true);
-    };
 
-    document.head.appendChild(script);
+    script.onload = () => setIsLoaded(true);
+
+    document.body.appendChild(script);
 
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
+      // Only remove if we injected it
+      const el = document.getElementById('cf-turnstile-script');
+      if (el && el === script && el.parentNode) {
+        el.parentNode.removeChild(el);
       }
     };
   }, []);
-
   useEffect(() => {
     if (isLoaded && window.turnstile && turnstileRef.current && !widgetId) {
       const id = window.turnstile.render(turnstileRef.current, {
