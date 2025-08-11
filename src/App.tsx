@@ -44,6 +44,7 @@ import AdminLogs from "./pages/admin/AdminLogs";
 import AdminVisits from "./pages/admin/AdminVisits";
 import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
+import TurnstileTest from "./pages/TurnstileTest";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
 
@@ -99,10 +100,11 @@ const AppContent = () => {
           <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
           <Route path="/investment" element={<Investment />} />
           <Route path="/proposta-de-investimento" element={<Investment />} />
+          <Route path="/turnstile-test" element={<TurnstileTest />} />
           <Route path="/perfil/:username" element={<PerfilPublico />} />
           {/* User dashboard - requires auth but not admin */}
           <Route path="/dashboard" element={<Dashboard />} />
-          
+
           {/* Admin routes - all protected with AdminProtectedRoute */}
           <Route path="/admin" element={
             <AdminProtectedRoute>
