@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <body>
+    <h3>Turnstile Token Test</h3>
+    <div id="cf" class="cf-turnstile"
+         data-sitekey="0x4AAAAAABpqGDEenRovXaTv"
+         data-callback="onToken"></div>
+
+    <pre id="out" style="padding:12px;border:1px solid #ddd;"></pre>
+
+    <script>
+      const out = (m)=>document.getElementById('out').textContent += m + "\n";
+      function onToken(token) {
+        console.log("Token:", token); out("Token: " + token);
+        fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ token })
+        })
+        .then(r => r.json())
+        .then(j => { console.log("Verify response:", j); out("Verify response: " + JSON.stringify(j)); })
+        .catch(e => { console.error(e); out("Error: " + e.message); });
+      }
+    </script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  </body>
+</html>
