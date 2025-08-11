@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,27 +10,86 @@ import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { loginSchema, type LoginFormData } from "@/lib/validations";
+import { loginSchema } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
-import { TurnstileProtection } from "@/components/TurnstileProtection";
 import { supabase } from "@/integrations/supabase/client";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// TODO: Remove temporary admin Turnstile bypass after testing
-const ADMIN_BYPASS_EMAILS = new Set(['felipfl@gmail.com']);
-const requireTurnstile = import.meta.env.MODE === 'production' && import.meta.env.VITE_REQUIRE_TURNSTILE !== 'false';
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
-  const [bypassActive, setBypassActive] = useState(false);
   const { checkRateLimit, isChecking } = useRateLimit();
   const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
 
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+  const widgetIdRef = useRef<string | null>(null);
+  const tokenRef = useRef<string | null>(null);
+  const pendingResolveRef = useRef<((t: string) => void) | null>(null);
+
+  const ensureWidget = async () => {
+    const el = document.getElementById('turnstile-login');
+    if (!el) throw new Error('Elemento Turnstile não encontrado');
+    const renderNow = () => {
+      if (!widgetIdRef.current) {
+        const id = (window as any).turnstile.render(el, {
+          sitekey: siteKey,
+          size: 'invisible',
+          action: 'login',
+          callback: (token: string) => {
+            tokenRef.current = token;
+            if (pendingResolveRef.current) {
+              pendingResolveRef.current(token);
+              pendingResolveRef.current = null;
+            }
+          },
+          'error-callback': () => {
+            pendingResolveRef.current = null;
+          },
+          'expired-callback': () => {
+            tokenRef.current = null;
+          },
+        });
+        widgetIdRef.current = id;
+      }
+    };
+    if ((window as any).turnstile) {
+      renderNow();
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const start = Date.now();
+      const int = setInterval(() => {
+        if ((window as any).turnstile) {
+          clearInterval(int);
+          renderNow();
+          resolve();
+        } else if (Date.now() - start > 5000) {
+          clearInterval(int);
+          reject(new Error('Turnstile não carregado'));
+        }
+      }, 100);
+    });
+  };
+
+  const getTurnstileToken = async () => {
+    await ensureWidget();
+    return new Promise<string>((resolve, reject) => {
+      if (!widgetIdRef.current) return reject(new Error('Widget ausente'));
+      pendingResolveRef.current = resolve;
+      try {
+        (window as any).turnstile.execute(widgetIdRef.current);
+      } catch {
+        reject(new Error('Falha ao executar Turnstile'));
+      }
+      setTimeout(() => {
+        if (tokenRef.current) resolve(tokenRef.current);
+        else reject(new Error('Timeout ao obter token'));
+      }, 8000);
+    });
+  };
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
@@ -65,34 +124,18 @@ export default function Login() {
       return;
     }
 
-    // Temporary admin bypass for Turnstile - TODO: remove after testing
-    const ADMIN_TURNSTILE_BYPASS = import.meta.env?.VITE_ADMIN_TURNSTILE_BYPASS === 'true';
-    const normalizedEmail = email.trim().toLowerCase();
-    const adminBypass = ADMIN_TURNSTILE_BYPASS && ADMIN_BYPASS_EMAILS.has(normalizedEmail);
-    const shouldSkipTurnstile = adminBypass || !requireTurnstile;
-
-    if (!shouldSkipTurnstile) {
-      // Verificar proteção anti-bot
-      if (!turnstileToken) {
-        toast.error('Please complete verification');
-        return;
-      }
-
-      // Validar token no servidor
+    try {
+      const token = await getTurnstileToken();
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-        body: { token: turnstileToken },
+        body: { token, action: 'login' },
       });
-      console.log('verify-turnstile result', { verifyData, verifyError });
       if (verifyError || !verifyData?.success) {
-        toast.error('Please complete verification');
-        setTurnstileToken('');
+        toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
-    } else {
-      if (adminBypass) {
-        setBypassActive(true);
-        console.warn('Temporary admin bypass: Turnstile skipped');
-      }
+    } catch {
+      toast.error('Falha na verificação anti-bot. Tente novamente.');
+      return;
     }
 
     // Verificar rate limiting para tentativas de login
@@ -231,28 +274,14 @@ export default function Login() {
                 </Link>
               </div>
 
-                {/* Anti-bot protection */}
-                {requireTurnstile && (
-                  <div className="space-y-4">
-                    <TurnstileProtection
-                      onVerify={(token) => {
-                        console.log('Turnstile token obtained', token);
-                        setTurnstileToken(token);
-                      }}
-                      onError={() => setTurnstileToken("")}
-                      onExpire={() => setTurnstileToken("")}
-                      action="login"
-                      theme="auto"
-                    />
-                  </div>
-                )}
-
-                {bypassActive && (
-                  <Alert className="mt-2">
-                    <AlertDescription>Temporary admin bypass: Turnstile skipped</AlertDescription>
-                  </Alert>
-                )}
-
+                {/* Turnstile (invisible) container */}
+                <div
+                  id="turnstile-login"
+                  className="hidden"
+                  data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                  data-size="invisible"
+                  data-action="login"
+                />
                 {/* Security information */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
-import { TurnstileProtection } from "@/components/TurnstileProtection";
 import { supabase } from "@/integrations/supabase/client";
-
-const REQUIRE_TURNSTILE = import.meta.env?.VITE_REQUIRE_TURNSTILE !== 'false';
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,11 +28,77 @@ export default function SignUp() {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const { checkRateLimit, isChecking } = useRateLimit();
   
   const { user, signInWithGoogle, signUp } = useAuth();
   const navigate = useNavigate();
+
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
+  const widgetIdRef = useRef<string | null>(null);
+  const tokenRef = useRef<string | null>(null);
+  const pendingResolveRef = useRef<((t: string) => void) | null>(null);
+
+  const ensureWidget = async () => {
+    const el = document.getElementById('turnstile-signup');
+    if (!el) throw new Error('Elemento Turnstile não encontrado');
+    const renderNow = () => {
+      if (!widgetIdRef.current) {
+        const id = (window as any).turnstile.render(el, {
+          sitekey: siteKey,
+          size: 'invisible',
+          action: 'signup',
+          callback: (token: string) => {
+            tokenRef.current = token;
+            if (pendingResolveRef.current) {
+              pendingResolveRef.current(token);
+              pendingResolveRef.current = null;
+            }
+          },
+          'error-callback': () => {
+            pendingResolveRef.current = null;
+          },
+          'expired-callback': () => {
+            tokenRef.current = null;
+          },
+        });
+        widgetIdRef.current = id;
+      }
+    };
+    if ((window as any).turnstile) {
+      renderNow();
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const start = Date.now();
+      const int = setInterval(() => {
+        if ((window as any).turnstile) {
+          clearInterval(int);
+          renderNow();
+          resolve();
+        } else if (Date.now() - start > 5000) {
+          clearInterval(int);
+          reject(new Error('Turnstile não carregado'));
+        }
+      }, 100);
+    });
+  };
+
+  const getTurnstileToken = async () => {
+    await ensureWidget();
+    return new Promise<string>((resolve, reject) => {
+      if (!widgetIdRef.current) return reject(new Error('Widget ausente'));
+      pendingResolveRef.current = resolve;
+      try {
+        (window as any).turnstile.execute(widgetIdRef.current);
+      } catch {
+        reject(new Error('Falha ao executar Turnstile'));
+      }
+      setTimeout(() => {
+        if (tokenRef.current) resolve(tokenRef.current);
+        else reject(new Error('Timeout ao obter token'));
+      }, 8000);
+    });
+  };
 
   // Redirect if already logged in
   useEffect(() => {
@@ -113,24 +176,20 @@ export default function SignUp() {
       return;
     }
 
-    // Verificar proteção anti-bot
-    if (REQUIRE_TURNSTILE) {
-      if (!turnstileToken) {
-        toast.error('Please complete verification');
-        return;
-      }
-
-      // Validar token no servidor
+    try {
+      const token = await getTurnstileToken();
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-        body: { token: turnstileToken },
+        body: { token, action: 'signup' },
       });
-      console.log('verify-turnstile result', { verifyData, verifyError });
       if (verifyError || !verifyData?.success) {
-        toast.error('Please complete verification');
-        setTurnstileToken('');
+        toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
+    } catch {
+      toast.error('Falha na verificação anti-bot. Tente novamente.');
+      return;
     }
+
 
     // Verificar rate limiting
     const identifier = `signup_${Date.now()}_${Math.random()}`;
@@ -375,22 +434,14 @@ export default function SignUp() {
 
                 {!user && (
                   <>
-                    {/* Proteção Anti-Bot */}
-                    {REQUIRE_TURNSTILE && (
-                      <div className="space-y-4">
-                        <TurnstileProtection
-                          onVerify={(token) => {
-                            console.log('Turnstile token obtained', token);
-                            setTurnstileToken(token);
-                          }}
-                          onError={() => setTurnstileToken("")}
-                          onExpire={() => setTurnstileToken("")}
-                          action="signup"
-                          theme="auto"
-                          size="compact"
-                        />
-                      </div>
-                    )}
+                    {/* Turnstile (invisible) container */}
+                    <div
+                      id="turnstile-signup"
+                      className="hidden"
+                      data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                      data-size="invisible"
+                      data-action="signup"
+                    />
 
                     {/* Security information */}
                     <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
