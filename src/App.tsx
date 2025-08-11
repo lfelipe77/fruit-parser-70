@@ -100,7 +100,7 @@ const AppContent = () => {
           <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
           <Route path="/investment" element={<Investment />} />
           <Route path="/proposta-de-investimento" element={<Investment />} />
-          <Route path="/turnstile-test" element={<TurnstileTest />} />
+          {import.meta.env.DEV && (<Route path="/turnstile-test" element={<TurnstileTest />} />)}
           <Route path="/perfil/:username" element={<PerfilPublico />} />
           {/* User dashboard - requires auth but not admin */}
           <Route path="/dashboard" element={<Dashboard />} />
@@ -140,17 +140,17 @@ const AppContent = () => {
           <Route path="/pagamento-erro" element={<PagamentoErro />} />
           <Route path="/access-denied" element={<AccessDenied />} />
           {/* Dev-only test route, admin-protected */}
-          {import.meta.env.MODE !== 'production' && (
-            <Route path="/test-audit" element={
-              <AdminProtectedRoute>
-                <TestAudit />
-              </AdminProtectedRoute>
-            } />
-          )}
+{import.meta.env.DEV && (
+  <Route path="/test-audit" element={
+    <AdminProtectedRoute>
+      <TestAudit />
+    </AdminProtectedRoute>
+  } />
+)}
           {/* Dev-only debug token */}
-          {import.meta.env.MODE !== 'production' && (
-            <Route path="/debug-token" element={<DebugToken />} />
-          )}
+{import.meta.env.DEV && (
+  <Route path="/debug-token" element={<DebugToken />} />
+)}
          <Route path="*" element={<NotFound />} />
       </Routes>
     </>
