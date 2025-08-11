@@ -1,86 +1,49 @@
-// Shared CORS middleware for Supabase Edge Functions
-// Reads allowed origins from the ALLOWED_ORIGINS secret (comma-separated or "*")
-// Ensures CORS headers on all responses, including OPTIONS
+// supabase/functions/_shared/cors.ts
 
-export type Handler = (req: Request) => Promise<Response> | Response;
+type Handler = (req: Request) => Promise<Response> | Response;
 
-function parseAllowedOrigins(envValue?: string | null): string[] | null {
-  if (!envValue || envValue.trim() === "") return ["*"]; // default allow all
-  const list = envValue
-    .split(",")
-    .map((o) => o.trim().toLowerCase())
-    .filter(Boolean);
-  return list.length ? list : ["*"];
+function parseAllowed(): string[] {
+  const raw = Deno.env.get("ALLOWED_ORIGINS") ?? "";
+  return raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
+function wildcardMatch(rule: string, origin: string): boolean {
+  // supports rules like: https://*.lovable.app (https only)
+  if (!rule.startsWith("https://*.")) return false;
+  const root = rule.slice("https://*.".length); // "lovable.app"
+  return origin.startsWith("https://") && origin.endsWith("." + root);
+}
+
+function isAllowedOrigin(originHeader: string | null, allowed: string[]): boolean {
+  if (!originHeader) return true;              // non-browser/server-to-server
+  if (allowed.length === 0) return true;       // preview/dev: allow all
+  const origin = originHeader.toLowerCase();
+  return allowed.some(rule => wildcardMatch(rule, origin) || origin === rule);
 }
 
 export function withCORS(handler: Handler): Handler {
-  const allowedList = parseAllowedOrigins(Deno.env.get("ALLOWED_ORIGINS"));
-
   return async (req: Request) => {
-    const origin = req.headers.get("origin") ?? "";
+    const origin = req.headers.get("Origin");
+    const allowed = parseAllowed();
 
-    const wildcard = allowedList?.includes("*") ?? true;
-    const origins = allowedList ?? ["*"];
-    const isAllowedOrigin = (orig: string) => {
-      if (!orig) return false;
-      const o = orig.toLowerCase();
-      return origins.some((rule) => {
-        if (rule.startsWith("https://*.")) {
-          const root = rule.replace("https://*.", "");
-          return o.startsWith("https://") && o.endsWith("." + root);
-        }
-        return o === rule;
-      });
-    };
-    const isAllowed = wildcard || isAllowedOrigin(origin);
-
-    const baseHeaders: HeadersInit = {
-      "Vary": "Origin",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    };
-
-    // Preflight
     if (req.method === "OPTIONS") {
-      if (!isAllowed) {
-        return new Response("CORS origin not allowed", {
-          status: 403,
-          headers: baseHeaders,
-        });
-      }
-      const headers: HeadersInit = {
-        ...baseHeaders,
-        "Access-Control-Allow-Origin": wildcard ? "*" : origin,
+      const ok = isAllowedOrigin(origin, allowed);
+      const headers = new Headers({
+        "Vary": "Origin",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
         "Access-Control-Max-Age": "86400",
-      };
-      return new Response("ok", { headers });
-    }
-
-    // Non-OPTIONS
-    if (!isAllowed) {
-      // Block disallowed origins explicitly
-      return new Response(JSON.stringify({ error: "CORS origin not allowed" }), {
-        status: 403,
-        headers: {
-          ...baseHeaders,
-          "Content-Type": "application/json",
-        },
       });
+      if (ok && origin) headers.set("Access-Control-Allow-Origin", origin);
+      return new Response(null, { status: 204, headers });
     }
 
     const res = await handler(req);
-
-    // Merge/override CORS headers
-    const newHeaders = new Headers(res.headers);
-    newHeaders.set("Vary", "Origin");
-    newHeaders.set("Access-Control-Allow-Headers", "authorization, x-client-info, apikey, content-type");
-    newHeaders.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    newHeaders.set("Access-Control-Allow-Origin", wildcard ? "*" : origin);
-
-    return new Response(res.body, {
-      status: res.status,
-      statusText: res.statusText,
-      headers: newHeaders,
-    });
+    const hdrs = new Headers(res.headers);
+    if (isAllowedOrigin(origin, allowed) && origin) {
+      hdrs.set("Access-Control-Allow-Origin", origin);
+      hdrs.append("Vary", "Origin");
+    }
+    return new Response(res.body, { status: res.status, headers: hdrs });
   };
 }
