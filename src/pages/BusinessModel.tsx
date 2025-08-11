@@ -172,7 +172,6 @@ const BusinessModel: React.FC = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
                 'Taxa por transação confirmada',
-                'Margem sobre valor do prêmio',
                 'Prêmios e produtos afiliados',
                 'Destaques e promoções internas',
                 'Comissões de parceiros (em conformidade legal)',
