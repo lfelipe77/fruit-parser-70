@@ -50,8 +50,8 @@ const Investment: React.FC = () => {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <a 
-              href="/" 
+            <Link 
+              to="/" 
               className="flex items-center gap-3 hover-scale group"
             >
               <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow">
@@ -67,7 +67,7 @@ const Investment: React.FC = () => {
                 </h2>
                 <p className="text-xs text-muted-foreground">Sorteios Reais</p>
               </div>
-            </a>
+            </Link>
             <Badge variant="outline" className="border-primary/30 text-primary">
               Proposta de Investimento
             </Badge>

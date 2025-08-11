@@ -93,12 +93,12 @@ export default function Navigation() {
                 <Link to="/descobrir" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('discover')}
                 </Link>
-                <a href="/categorias" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/categorias" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('categories')}
-                </a>
-                <a href="/resultados" className="text-muted-foreground hover:text-foreground transition-colors">
+                </Link>
+                <Link to="/resultados" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('results')}
-                </a>
+                </Link>
                 <Link to="/como-funciona" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('howItWorks')}
                 </Link>

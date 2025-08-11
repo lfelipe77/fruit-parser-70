@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User } from "lucide-react";
-
+import { Link } from "react-router-dom";
 export default function Dashboard() {
   const { user, signOut } = useAuth();
 
@@ -109,7 +109,7 @@ export default function Dashboard() {
                 </p>
                 <div className="mt-4">
                   <Button asChild>
-                    <a href="/descobrir">Explorar Ganhaveis</a>
+                    <Link to="/descobrir">Explorar Ganhaveis</Link>
                   </Button>
                 </div>
               </CardContent>
