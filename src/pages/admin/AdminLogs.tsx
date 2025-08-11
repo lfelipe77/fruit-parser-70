@@ -49,20 +49,21 @@ export default function AdminLogs() {
       const last24h = subHours(now, 24);
       const lastWeek = subDays(now, 7);
 
+      const sb = supabase as any;
       // Get logs from last 24h
-      const { data: last24hLogs, error: error24h } = await supabase
+      const { data: last24hLogs, error: error24h } = await sb
         .from('admin_log_view')
         .select('*')
         .gte('created_at', last24h.toISOString());
 
       // Get logs from last week
-      const { data: lastWeekLogs, error: errorWeek } = await supabase
+      const { data: lastWeekLogs, error: errorWeek } = await sb
         .from('admin_log_view')
         .select('*')
         .gte('created_at', lastWeek.toISOString());
 
       // Get all logs for top actions
-      const { data: allLogs, error: errorAll } = await supabase
+      const { data: allLogs, error: errorAll } = await sb
         .from('admin_log_view')
         .select('action');
 
@@ -100,8 +101,15 @@ export default function AdminLogs() {
       if (error) throw error;
       console.log('Test logs:', data);
 
-      setLogs(data || []);
-      setFilteredLogs(data || []);
+      const mapped = (data || []).map((row: any) => ({
+        id: row.id,
+        user_id: row.user_id ?? null,
+        action: row.action,
+        context: row.context ?? (row.details ? { details: row.details } : null),
+        created_at: row.created_at,
+      })) as AdminLogEntry[];
+      setLogs(mapped);
+      setFilteredLogs(mapped);
       
     } catch (error) {
       console.error('Error fetching logs:', error);

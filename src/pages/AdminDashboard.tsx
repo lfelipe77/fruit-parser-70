@@ -139,7 +139,8 @@ export default function AdminDashboard() {
       .gte("created_at", yesterday);
 
     // Total de ações de auditoria nas últimas 24h
-    const { data: auditData, error: auditError } = await supabase
+    const anySb = supabase as any;
+    const { data: auditData, error: auditError } = await anySb
       .from("admin_log_view")
       .select("id")
       .gte("created_at", yesterday);
@@ -158,7 +159,8 @@ export default function AdminDashboard() {
   const fetchTopActions = async () => {
     const yesterday = format(new Date(selectedDate.getTime() - 24 * 60 * 60 * 1000), "yyyy-MM-dd HH:mm:ss");
     
-    const { data, error } = await supabase
+    const anySb = supabase as any;
+    const { data, error } = await anySb
       .from("admin_log_view")
       .select("action")
       .gte("created_at", yesterday);
@@ -186,7 +188,8 @@ export default function AdminDashboard() {
   };
 
   const fetchRecentActions = async () => {
-    const { data, error } = await supabase
+    const anySb = supabase as any;
+    const { data, error } = await anySb
       .from("admin_log_view")
       .select("id, created_at, user_id, action, context")
       .order("created_at", { ascending: false })
