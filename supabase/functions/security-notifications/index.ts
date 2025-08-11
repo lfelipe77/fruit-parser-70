@@ -1,9 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withCORS } from "../_shared/cors.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
 
 interface SecurityAlert {
   alert_id: string
@@ -152,11 +149,7 @@ async function sendEmailNotification(alert: SecurityAlert) {
   }
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+Deno.serve(withCORS(async (req: Request) => {
 
   try {
     const alert: SecurityAlert = await req.json()
@@ -173,7 +166,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: true, message: 'Notifications sent' }),
       { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 'Content-Type': 'application/json' } 
       }
     )
 
@@ -183,8 +176,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Failed to send notifications' }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 'Content-Type': 'application/json' } 
       }
     )
   }
-})
+}))
