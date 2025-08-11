@@ -361,8 +361,8 @@ export default function Resultados() {
                 <ExternalLink className="w-5 h-5 mr-2" />
                 Ver no Site da Caixa
               </Button>
-              <Button variant="outline" size="lg">
-                Como Funciona o Sorteio
+              <Button asChild variant="outline" size="lg">
+                <Link to="/como-funciona">Como Funciona</Link>
               </Button>
             </div>
           </div>
