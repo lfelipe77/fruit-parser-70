@@ -19,6 +19,7 @@ import CentralDeAjuda from "./pages/CentralDeAjuda";
 import SobreNos from "./pages/SobreNos";
 import TrabalheConosco from "./pages/TrabalheConosco";
 import Investment from "./pages/Investment";
+import BusinessModel from "./pages/BusinessModel";
 import ConfiancaSeguranca from "./pages/ConfiancaSeguranca";
 import PerfilPublico from "./pages/PerfilPublico";
 import ConfirmacaoPagamento from "./pages/ConfirmacaoPagamento";
@@ -100,6 +101,7 @@ const AppContent = () => {
           <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
           <Route path="/investment" element={<Investment />} />
           <Route path="/proposta-de-investimento" element={<Investment />} />
+          <Route path="/business-model" element={<BusinessModel />} />
           {import.meta.env.DEV && (<Route path="/turnstile-test" element={<TurnstileTest />} />)}
           <Route path="/perfil/:username" element={<PerfilPublico />} />
           {/* User dashboard - requires auth but not admin */}
