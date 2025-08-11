@@ -4,7 +4,7 @@ project_id = "whqxpuyjxoiufzhvqneg"
 verify_jwt = true
 
 [functions.visit-logger]
-verify_jwt = true
+verify_jwt = false
 
 [functions.rate-limiter]
 verify_jwt = false
