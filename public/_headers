@@ -6,4 +6,19 @@
   Cross-Origin-Resource-Policy: same-site
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
-  Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; script-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co wss://*.supabase.in https://whqxpuyjxoiufzhvqneg.functions.supabase.co; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'
+  Content-Security-Policy:
+    default-src 'self';
+    frame-ancestors 'none';
+    script-src 'self' https://challenges.cloudflare.com;
+    connect-src 'self'
+      https://*.supabase.co
+      https://*.supabase.in
+      https://whqxpuyjxoiufzhvqneg.functions.supabase.co
+      wss://*.supabase.co
+      wss://*.supabase.in;
+    img-src 'self' data: blob:;
+    style-src 'self' 'unsafe-inline';
+    font-src 'self' data:;
+    frame-src https://challenges.cloudflare.com;
+    worker-src 'self' blob:;
+    base-uri 'self';
