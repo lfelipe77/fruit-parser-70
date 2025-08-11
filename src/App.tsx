@@ -139,9 +139,15 @@ const AppContent = () => {
           <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
           <Route path="/pagamento-erro" element={<PagamentoErro />} />
           <Route path="/access-denied" element={<AccessDenied />} />
-          {/* Temporary test route - remove after verifying */}
-          <Route path="/test-audit" element={<TestAudit />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {/* Dev-only test route, admin-protected */}
+          {import.meta.env.MODE !== 'production' && (
+            <Route path="/test-audit" element={
+              <AdminProtectedRoute>
+                <TestAudit />
+              </AdminProtectedRoute>
+            } />
+          )}
+          {/* Dev-only debug token */}
           {import.meta.env.MODE !== 'production' && (
             <Route path="/debug-token" element={<DebugToken />} />
           )}

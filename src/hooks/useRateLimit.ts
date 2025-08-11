@@ -5,10 +5,12 @@ import { toast } from 'sonner';
 type RateLimitAction = 'raffle_creation' | 'login_attempt' | 'signup_attempt';
 
 interface RateLimitResponse {
-  allowed: boolean;
+  allowed?: boolean;
+  ok?: boolean;
   remaining?: number;
   resetTime?: string;
   message?: string;
+  reason?: string;
 }
 
 export const useRateLimit = () => {
@@ -16,7 +18,7 @@ export const useRateLimit = () => {
 
   const checkRateLimit = async (
     action: RateLimitAction,
-    identifier: string // IP será obtido automaticamente, mas pode passar user ID também
+    emailOrIdentifier?: string
   ): Promise<boolean> => {
     setIsChecking(true);
     
@@ -24,32 +26,32 @@ export const useRateLimit = () => {
       const { data, error } = await supabase.functions.invoke('rate-limiter', {
         body: {
           action,
-          identifier,
-          userAgent: navigator.userAgent
-        }
+          // Send email when relevant; server computes identifiers using IP
+          email: emailOrIdentifier && typeof emailOrIdentifier === 'string' ? emailOrIdentifier : undefined,
+          userAgent: navigator.userAgent,
+        },
       });
 
       if (error) {
         console.error('Rate limit check error:', error);
-        // Em caso de erro na verificação, permita a ação (fail open)
-        return true;
+        toast.error('Tente novamente em instantes.');
+        return false; // fail closed
       }
 
-      const response: RateLimitResponse = data;
+      const response: RateLimitResponse = data || {};
 
-      if (!response.allowed) {
-        // Mostrar mensagem de rate limit excedido
-        const resetTime = response.resetTime ? new Date(response.resetTime) : null;
-        const timeUntilReset = resetTime ? 
-          Math.ceil((resetTime.getTime() - Date.now()) / (1000 * 60)) : 0;
-        
-        const message = response.message || 
-          `Você atingiu o limite de ações. Tente novamente em ${timeUntilReset} minutos.`;
-        
-        toast.error(message, {
-          duration: 5000,
-        });
-        
+      const allowed = typeof response.allowed === 'boolean' ? response.allowed : (response.ok ?? false);
+
+      if (!allowed) {
+        if (response.reason === 'rate_limited') {
+          // Specific rate limit case
+          toast.error('Você atingiu o limite de tentativas. Tente novamente em instantes.');
+        } else {
+          const resetTime = response.resetTime ? new Date(response.resetTime) : null;
+          const timeUntilReset = resetTime ? Math.ceil((resetTime.getTime() - Date.now()) / (1000 * 60)) : 0;
+          const message = response.message || `Você atingiu o limite de ações. Tente novamente em ${timeUntilReset} minutos.`;
+          toast.error(message, { duration: 5000 });
+        }
         return false;
       }
 
@@ -63,8 +65,8 @@ export const useRateLimit = () => {
       return true;
     } catch (error) {
       console.error('Rate limit check failed:', error);
-      // Em caso de erro, permita a ação (fail open)
-      return true;
+      toast.error('Tente novamente em instantes.');
+      return false; // fail closed on error
     } finally {
       setIsChecking(false);
     }

@@ -138,9 +138,9 @@ export default function Login() {
       return;
     }
 
-    // Verificar rate limiting para tentativas de login
-    const identifier = `login_${email}_${Date.now()}`;
-    const rateLimitPassed = await checkRateLimit('login_attempt', identifier);
+    // Verificar rate limiting para tentativas de login (per IP on server; email used for correlation)
+    const identifierEmail = email.trim().toLowerCase();
+    const rateLimitPassed = await checkRateLimit('login_attempt', identifierEmail);
     
     if (!rateLimitPassed) {
       return; // Mensagem já foi exibida pelo hook

@@ -191,9 +191,9 @@ export default function SignUp() {
     }
 
 
-    // Verificar rate limiting
-    const identifier = `signup_${Date.now()}_${Math.random()}`;
-    const rateLimitPassed = await checkRateLimit('signup_attempt', identifier);
+    // Verificar rate limiting (per IP on server; email used for correlation)
+    const identifierEmail = (formData.email || '').trim().toLowerCase();
+    const rateLimitPassed = await checkRateLimit('signup_attempt', identifierEmail);
     
     if (!rateLimitPassed) {
       return; // Mensagem já foi exibida pelo hook

@@ -11,7 +11,7 @@ export const usePublicVisitLogger = () => {
       try {
         // Capturar dados da visita
         const visitData = {
-          url: location.pathname + location.search,
+          url: location.pathname, // only path, no querystring
           user_agent: navigator.userAgent,
           referer: document.referrer || undefined,
         };

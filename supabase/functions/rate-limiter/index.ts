@@ -21,7 +21,7 @@ const RATE_LIMITS = {
 
 interface RateLimitCheck {
   action: keyof typeof RATE_LIMITS
-  identifier: string // IP or user ID
+  email?: string // optional for login/signup to improve correlation
   userAgent?: string
 }
 
@@ -32,11 +32,11 @@ Deno.serve(withCORS(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { action, identifier, userAgent }: RateLimitCheck = await req.json()
-    
-    if (!action || !identifier) {
+    const { action, email, userAgent }: RateLimitCheck = await req.json()
+
+    if (!action) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
+        JSON.stringify({ ok: false, error: 'Missing required parameters' }),
         { status: 400, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -49,19 +49,19 @@ Deno.serve(withCORS(async (req: Request) => {
       )
     }
 
-    const now = new Date()
-    const windowStart = new Date(now.getTime() - rule.windowMs)
+    const ip = getClientIP(req)
+    const idIp = await sha256(`${ip}|${action}`)
+    const idsToInsert: string[] = [idIp]
 
-    // Check current attempts in the time window
-    const { data: attempts, error: fetchError } = await supabase
-      .from('rate_limit_attempts')
-      .select('*')
-      .eq('action', action)
-      .eq('identifier', identifier)
-      .gte('created_at', windowStart.toISOString())
-      .order('created_at', { ascending: false })
+    // For login/signup, also log per IP+email key if provided
+    const normalizedEmail = (email || '').toLowerCase().trim()
+    if (normalizedEmail && (action === 'login_attempt' || action === 'signup_attempt')) {
+      const idIpEmail = await sha256(`${ip}|${normalizedEmail}|${action}`)
+      idsToInsert.push(idIpEmail)
+    }
 
-    if (fetchError) {
+    const rule = RATE_LIMITS[action]
+    if (!rule) {
       console.error('Error fetching rate limit attempts:', fetchError)
       return new Response(
         JSON.stringify({ error: 'Database error' }),
@@ -87,19 +87,20 @@ Deno.serve(withCORS(async (req: Request) => {
       )
     }
 
-    // Log the attempt
-    const { error: insertError } = await supabase
-      .from('rate_limit_attempts')
-      .insert({
-        action,
-        identifier,
-        user_agent: userAgent || null,
-        ip_address: getClientIP(req),
-        created_at: now.toISOString()
-      })
-
-    if (insertError) {
-      console.error('Error logging rate limit attempt:', insertError)
+    // Log the attempt for each identifier we generated
+    for (const ident of idsToInsert) {
+      const { error: insertError } = await supabase
+        .from('rate_limit_attempts')
+        .insert({
+          action,
+          identifier: ident,
+          user_agent: userAgent || null,
+          ip_address: ip,
+          created_at: now.toISOString()
+        })
+      if (insertError) {
+        console.error('Error logging rate limit attempt:', insertError)
+      }
     }
 
     // Clean up old attempts (older than 24 hours)
@@ -109,12 +110,12 @@ Deno.serve(withCORS(async (req: Request) => {
       .delete()
       .lt('created_at', cleanupTime.toISOString())
 
-    const remaining = rule.limit - currentAttempts - 1
-    const resetTime = new Date(now.getTime() + rule.windowMs)
+    const remaining = RATE_LIMITS[action].limit - currentAttempts - 1
+    const resetTime = new Date(now.getTime() + RATE_LIMITS[action].windowMs)
 
     return new Response(
       JSON.stringify({
-        allowed: true,
+        ok: true,
         remaining,
         resetTime: resetTime.toISOString()
       }),
@@ -124,7 +125,7 @@ Deno.serve(withCORS(async (req: Request) => {
   } catch (error) {
     console.error('Error in rate-limiter function:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ ok: false, error: 'Internal server error' }),
       { status: 500, headers: { ...securityHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -137,15 +138,9 @@ function getClientIP(req: Request): string {
          'unknown'
 }
 
-function getRateLimitMessage(action: keyof typeof RATE_LIMITS): string {
-  switch (action) {
-    case 'raffle_creation':
-      return 'Você atingiu o limite de criação de rifas por hora. Tente novamente mais tarde.'
-    case 'login_attempt':
-      return 'Muitas tentativas de login inválidas. Sua conta foi temporariamente bloqueada por 15 minutos.'
-    case 'signup_attempt':
-      return 'Você atingiu o limite de cadastros por hora. Tente novamente mais tarde.'
-    default:
-      return 'Você atingiu o limite de ações por hora. Tente novamente mais tarde.'
-  }
+async function sha256(input: string): Promise<string> {
+  const buffer = new TextEncoder().encode(input)
+  const hash = await crypto.subtle.digest('SHA-256', buffer)
+  const bytes = Array.from(new Uint8Array(hash))
+  return bytes.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
