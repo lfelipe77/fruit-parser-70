@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { loginSchema } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
+import { runTurnstileDiagnostics } from "@/lib/turnstileDebug";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -90,6 +91,11 @@ export default function Login() {
       }, 8000);
     });
   };
+
+  useEffect(() => {
+    runTurnstileDiagnostics('#turnstile-login', 'login');
+  }, []);
+
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {

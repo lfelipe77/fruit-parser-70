@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
+import { runTurnstileDiagnostics } from "@/lib/turnstileDebug";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -99,6 +100,10 @@ export default function SignUp() {
       }, 8000);
     });
   };
+
+  useEffect(() => {
+    runTurnstileDiagnostics('#turnstile-signup', 'signup');
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
