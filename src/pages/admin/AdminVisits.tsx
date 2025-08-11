@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Globe, 
   Eye, 
@@ -27,6 +29,7 @@ interface PublicVisit {
   ip_address: string;
   user_agent?: string;
   url: string;
+  pathname?: string;
   referer?: string;
   country?: string;
   city?: string;
@@ -52,6 +55,13 @@ export default function AdminVisits() {
     topPages: [],
     recentVisits: []
   });
+
+  const PAGE_SIZE = 50;
+  const [loadingTable, setLoadingTable] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [dateRange, setDateRange] = useState<'all'|'24h'|'7d'|'30d'>('all');
+  const [pathFilter, setPathFilter] = useState("");
 
   // Verificar se é admin
   useEffect(() => {
@@ -156,23 +166,45 @@ export default function AdminVisits() {
     }));
   };
 
-  const fetchRecentVisits = async () => {
-    const { data, error } = await supabase
-      .from("public_visits")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(500);
+const fetchRecentVisits = async () => {
+  if (!user || userRole !== "admin") return;
+  setLoadingTable(true);
 
-    if (error) {
-      console.error("Error fetching recent visits:", error);
-      return;
-    }
+  let query = supabase
+    .from("public_visits")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false });
 
+  if (dateRange !== 'all') {
+    const now = new Date();
+    let start = new Date();
+    if (dateRange === '24h') start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    if (dateRange === '7d') start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (dateRange === '30d') start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    query = query.gte("created_at", start.toISOString());
+  }
+
+  if (pathFilter) {
+    query = query.ilike("pathname", `%${pathFilter}%`);
+  }
+
+  const from = (page - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data, error, count } = await query.range(from, to);
+
+  if (error) {
+    console.error("Error fetching recent visits:", error);
+  } else {
     setStats(prev => ({
       ...prev,
-      recentVisits: data || []
+      recentVisits: (data as PublicVisit[]) || []
     }));
-  };
+    setTotal(count || 0);
+  }
+
+  setLoadingTable(false);
+};
 
   const getBrowserFromUserAgent = (userAgent: string): string => {
     if (!userAgent) return "Desconhecido";
