@@ -96,7 +96,7 @@ export default function PagamentoSucesso() {
               Pagamento Aprovado!
             </h1>
             <p className="text-muted-foreground text-lg">
-              Sua participação na rifa foi confirmada com sucesso
+              Sua participação foi confirmada com sucesso
             </p>
           </div>
 
