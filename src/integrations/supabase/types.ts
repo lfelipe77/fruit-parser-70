@@ -70,6 +70,33 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_rate_limit_attempts: {
+        Row: {
+          action: string | null
+          created_at: string | null
+          id: string | null
+          identifier: string | null
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string | null
+          id?: string | null
+          identifier?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string | null
+          id?: string | null
+          identifier?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       ganhaveis: {
         Row: {
           affiliate_link: string | null
@@ -267,9 +294,11 @@ export type Database = {
           created_at: string
           id: string
           ip_address: string
+          pathname: string
           referer: string | null
           url: string
           user_agent: string | null
+          user_id: string | null
         }
         Insert: {
           city?: string | null
@@ -277,9 +306,11 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address: string
+          pathname?: string
           referer?: string | null
           url: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Update: {
           city?: string | null
@@ -287,9 +318,11 @@ export type Database = {
           created_at?: string
           id?: string
           ip_address?: string
+          pathname?: string
           referer?: string | null
           url?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -465,6 +498,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "ganhaveis"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: false
@@ -486,7 +526,7 @@ export type Database = {
           created_at: string | null
           customer_email: string | null
           due_date: string | null
-          ganhavel_id: string | null
+          ganhavel_id: string
           id: string
           payment_id: string | null
           payment_provider: string | null
@@ -496,14 +536,14 @@ export type Database = {
           status: string | null
           ticket_numbers: Json | null
           type: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           amount?: number | null
           created_at?: string | null
           customer_email?: string | null
           due_date?: string | null
-          ganhavel_id?: string | null
+          ganhavel_id: string
           id?: string
           payment_id?: string | null
           payment_provider?: string | null
@@ -513,14 +553,14 @@ export type Database = {
           status?: string | null
           ticket_numbers?: Json | null
           type?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           amount?: number | null
           created_at?: string | null
           customer_email?: string | null
           due_date?: string | null
-          ganhavel_id?: string | null
+          ganhavel_id?: string
           id?: string
           payment_id?: string | null
           payment_provider?: string | null
@@ -530,9 +570,16 @@ export type Database = {
           status?: string | null
           ticket_numbers?: Json | null
           type?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_ganhavel_fk"
+            columns: ["ganhavel_id"]
+            isOneToOne: false
+            referencedRelation: "ganhaveis"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_ganhavel_id_fkey"
             columns: ["ganhavel_id"]
@@ -625,6 +672,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_ping: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       check_login_abuse: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -632,6 +683,15 @@ export type Database = {
       check_raffle_spam: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      check_rate_limit: {
+        Args: {
+          p_ip: string
+          p_action: string
+          window_seconds: number
+          max_count: number
+        }
+        Returns: boolean
       }
       check_suspicious_actions: {
         Args: Record<PropertyKey, never>
@@ -680,13 +740,15 @@ export type Database = {
         }[]
       }
       get_audit_logs_recent: {
-        Args: { p_limit?: number; p_minutes?: number; p_action?: string }
+        Args:
+          | { p_limit?: number }
+          | { p_limit?: number; p_minutes?: number; p_action?: string }
         Returns: {
+          action: string | null
+          context: Json | null
+          created_at: string | null
           id: string
-          created_at: string
-          user_id: string
-          action: string
-          context: Json
+          user_id: string | null
         }[]
       }
       get_audit_statistics: {
@@ -722,7 +784,13 @@ export type Database = {
         Returns: boolean
       }
       log_audit_event: {
-        Args: { action: string; context?: Json }
+        Args:
+          | { action: string; context: Json; actor_id: string }
+          | { action: string; context?: Json }
+        Returns: undefined
+      }
+      log_audit_event_json: {
+        Args: { payload: Json }
         Returns: undefined
       }
       log_bulk_admin_action: {
@@ -734,15 +802,23 @@ export type Database = {
         Returns: undefined
       }
       log_public_visit: {
-        Args: {
-          visit_ip: string
-          visit_user_agent?: string
-          visit_url?: string
-          visit_referer?: string
-          visit_country?: string
-          visit_city?: string
-        }
-        Returns: string
+        Args:
+          | {
+              visit_ip: string
+              visit_user_agent?: string
+              visit_url?: string
+              visit_referer?: string
+              visit_country?: string
+              visit_city?: string
+            }
+          | {
+              visit_url: string
+              visit_ip: string
+              visit_user_agent?: string
+              visit_user_id?: string
+              dedup_minutes?: number
+            }
+        Returns: undefined
       }
       log_ticket_purchase: {
         Args: {
@@ -758,7 +834,7 @@ export type Database = {
         Returns: undefined
       }
       mask_audit_pii_row: {
-        Args: { _ctx: Json }
+        Args: { ctx: Json }
         Returns: Json
       }
       purge_old_audit_logs: {

@@ -88,12 +88,16 @@ export default function GerenciarRifa() {
   const handleMarkTicketPaid = async (ticketId: string, participantId: string) => {
     try {
       // Log audit event for marking ticket as paid
-      const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
-        action: 'marked_ticket_paid',
-        context: {
-          page: 'PaginaDaRifa',
-          ticket_id: ticketId,
-          organizer_id: 'current_user_id' // This would be the real organizer ID
+      const { data: authUser } = await supabase.auth.getUser();
+      const { error: auditError } = await supabase.rpc('log_audit_event_json', {
+        payload: {
+          action: 'marked_ticket_paid',
+          context: {
+            page: 'PaginaDaRifa',
+            ticket_id: ticketId,
+            organizer_id: 'current_user_id' // This would be the real organizer ID
+          },
+          actor_id: authUser?.user?.id || null
         }
       });
 
@@ -123,14 +127,18 @@ export default function GerenciarRifa() {
       const oldStatus = rifa.status;
       
       // Log audit event for raffle status update
-      const { error: auditError } = await supabase.rpc('log_audit_event', {
-        action: 'edited_raffle',
-        context: {
-          raffle_id: rifa.id.toString(),
-          updated_fields: ['status'],
-          old_status: oldStatus,
-          new_status: newStatus,
-          page: 'GerenciarGanhavel'
+      const { data: authUser } = await supabase.auth.getUser();
+      const { error: auditError } = await supabase.rpc('log_audit_event_json', {
+        payload: {
+          action: 'edited_raffle',
+          context: {
+            raffle_id: rifa.id.toString(),
+            updated_fields: ['status'],
+            old_status: oldStatus,
+            new_status: newStatus,
+            page: 'GerenciarGanhavel'
+          },
+          actor_id: authUser?.user?.id || null
         }
       });
 
@@ -158,19 +166,23 @@ export default function GerenciarRifa() {
   const handleEditRaffle = async (updatedData: any, changedFields: string[]) => {
     try {
       // Log audit event for raffle editing
-      await supabase.rpc('log_audit_event', {
-        action: 'edited_raffle',
-        context: {
-          raffle_id: rifa.id.toString(),
-          updated_fields: changedFields,
-          page: 'GerenciarGanhavel',
-          changes: changedFields.reduce((acc, field) => {
-            acc[field] = {
-              old: rifa[field as keyof typeof rifa],
-              new: updatedData[field]
-            };
-            return acc;
-          }, {} as any)
+      const { data: authUser } = await supabase.auth.getUser();
+      await supabase.rpc('log_audit_event_json', {
+        payload: {
+          action: 'edited_raffle',
+          context: {
+            raffle_id: rifa.id.toString(),
+            updated_fields: changedFields,
+            page: 'GerenciarGanhavel',
+            changes: changedFields.reduce((acc, field) => {
+              acc[field] = {
+                old: rifa[field as keyof typeof rifa],
+                new: updatedData[field]
+              };
+              return acc;
+            }, {} as any)
+          },
+          actor_id: authUser?.user?.id || null
         }
       });
 

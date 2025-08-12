@@ -25,14 +25,18 @@ export default function GanhavesCancelButton({
   const handleCancelGanhavel = async (reason: string) => {
     try {
       // Log audit event for raffle cancellation
-      await supabase.rpc('log_audit_event', {
-        action: 'cancelled_raffle',
-        context: {
-          raffle_id: ganhaveisId,
-          cancellation_reason: reason,
-          participant_count: participantCount,
-          page: 'GerenciarGanhavel',
-          action_type: 'cancellation'
+      const { data: authUser } = await supabase.auth.getUser();
+      await supabase.rpc('log_audit_event_json', {
+        payload: {
+          action: 'cancelled_raffle',
+          context: {
+            raffle_id: ganhaveisId,
+            cancellation_reason: reason,
+            participant_count: participantCount,
+            page: 'GerenciarGanhavel',
+            action_type: 'cancellation'
+          },
+          actor_id: authUser?.user?.id || null
         }
       });
 

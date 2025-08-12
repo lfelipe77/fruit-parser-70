@@ -73,12 +73,16 @@ export const useAuditLogger = () => {
         ip_address: null, // Will be populated by edge function if needed
       };
 
-      // Use existing log_audit_event function if user is authenticated
+      // Use JSON wrapper to include actor_id when available
       const { data: authUser } = await supabase.auth.getUser();
+      const actorId = userId || authUser?.user?.id || null;
       if (userId || authUser?.user) {
-        await supabase.rpc('log_audit_event', {
-          action,
-          context: enrichedContext
+        await supabase.rpc('log_audit_event_json', {
+          payload: {
+            action,
+            context: enrichedContext,
+            actor_id: actorId
+          }
         });
       } else {
         // For unauthenticated events, call edge function directly
