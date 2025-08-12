@@ -324,6 +324,23 @@ const Investment: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Missão */}
+        <Card className="mb-12 overflow-hidden bg-gradient-to-br from-background to-muted/20 border-border/50">
+          <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Target className="w-6 h-6 text-primary" />
+              </div>
+              Missão
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
+            <p className="text-foreground/90">
+              Missão - fonte de renda onde milhões, podem de forma responsável, lançar seus afiliados como prêmios, etc
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Blindagem e Observações Legais */}
         <Card className="mb-12 overflow-hidden bg-gradient-to-br from-background to-muted/20 border-border/50">
           <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
