@@ -35,22 +35,32 @@ export default function Login() {
 
     const renderWidget = () => {
       if (!(window as any).turnstile) return;
-      const id = (window as any).turnstile.render('#ts-widget', {
-        sitekey,
-        callback: (t: string) => {
-          (window as any)._tsToken = t;
-          console.info('TS token received', t?.slice(0, 10) + '…');
-        },
-        'expired-callback': () => {
-          (window as any)._tsToken = null;
-          console.warn('TS expired');
-        },
-        'error-callback': () => {
-          (window as any)._tsToken = null;
-          console.error('TS error');
-        },
-      });
-      (window as any)._tsWidgetId = id;
+      const container = document.getElementById('ts-widget');
+      if (!container) {
+        console.warn('TS container not found, retrying...');
+        try { requestAnimationFrame(renderWidget); } catch { /* no-op */ }
+        return;
+      }
+      try {
+        const id = (window as any).turnstile.render('#ts-widget', {
+          sitekey,
+          callback: (t: string) => {
+            (window as any)._tsToken = t;
+            console.info('TS token received', t?.slice(0, 10) + '…');
+          },
+          'expired-callback': () => {
+            (window as any)._tsToken = null;
+            console.warn('TS expired');
+          },
+          'error-callback': () => {
+            (window as any)._tsToken = null;
+            console.error('TS error');
+          },
+        });
+        (window as any)._tsWidgetId = id;
+      } catch (err) {
+        console.error('TS render error', err);
+      }
     };
 
     // If script is already present, render immediately; otherwise, wait or inject it
