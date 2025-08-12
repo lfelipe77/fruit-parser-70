@@ -336,7 +336,7 @@ const Investment: React.FC = () => {
           </CardHeader>
           <CardContent className="p-6 space-y-3">
             <p className="text-foreground/90">
-              Missão - fonte de renda onde milhões, podem de forma responsável, lançar seus afiliados como prêmios, etc
+              Transformar milhões em protagonistas da própria renda, permitindo que, de forma responsável e segura, lancem prêmios — inclusive de afiliados — e alcancem novas oportunidades de ganho e conexão.
             </p>
           </CardContent>
         </Card>
