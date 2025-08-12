@@ -39,7 +39,12 @@ export default function SignUp() {
   const tokenRef = useRef<string | null>(null);
   const pendingResolveRef = useRef<((t: string) => void) | null>(null);
 
+  const PROD_HOSTS = ['ganhavel.com', 'www.ganhavel.com'];
+  const isProdHost = PROD_HOSTS.includes(window.location.hostname);
+  const previewBypassToken = 'PREVIEW_BYPASS';
+
   const ensureWidget = async () => {
+    if (!isProdHost) return; // Bypass: do not render widget on non-prod hosts
     const el = document.getElementById('turnstile-signup');
     if (!el) throw new Error('Elemento Turnstile não encontrado');
     const renderNow = () => {
@@ -85,6 +90,9 @@ export default function SignUp() {
   };
 
   const getTurnstileToken = async () => {
+    if (!isProdHost) {
+      return previewBypassToken;
+    }
     await ensureWidget();
     return new Promise<string>((resolve, reject) => {
       if (!widgetIdRef.current) return reject(new Error('Widget ausente'));
@@ -182,9 +190,10 @@ export default function SignUp() {
     }
 
     try {
-      const token = await getTurnstileToken();
+      const realTurnstileToken = await getTurnstileToken();
+      const tokenToSend = isProdHost ? realTurnstileToken : previewBypassToken;
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-        body: { token, action: 'signup' },
+        body: { token: tokenToSend, action: 'signup' },
       });
       if (verifyError || !verifyData?.success) {
         toast.error('Falha na verificação anti-bot. Tente novamente.');

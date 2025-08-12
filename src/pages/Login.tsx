@@ -30,7 +30,12 @@ export default function Login() {
   const tokenRef = useRef<string | null>(null);
   const pendingResolveRef = useRef<((t: string) => void) | null>(null);
 
+  const PROD_HOSTS = ['ganhavel.com', 'www.ganhavel.com'];
+  const isProdHost = PROD_HOSTS.includes(window.location.hostname);
+  const previewBypassToken = 'PREVIEW_BYPASS';
+
   const ensureWidget = async () => {
+    if (!isProdHost) return; // Bypass: do not render widget on non-prod hosts
     const el = document.getElementById('turnstile-login');
     if (!el) throw new Error('Elemento Turnstile não encontrado');
     const renderNow = () => {
@@ -76,6 +81,9 @@ export default function Login() {
   };
 
   const getTurnstileToken = async () => {
+    if (!isProdHost) {
+      return previewBypassToken;
+    }
     await ensureWidget();
     return new Promise<string>((resolve, reject) => {
       if (!widgetIdRef.current) return reject(new Error('Widget ausente'));
@@ -131,9 +139,10 @@ export default function Login() {
     }
 
     try {
-      const token = await getTurnstileToken();
+      const realTurnstileToken = await getTurnstileToken();
+      const tokenToSend = isProdHost ? realTurnstileToken : previewBypassToken;
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-        body: { token, action: 'login' },
+        body: { token: tokenToSend, action: 'login' },
       });
       if (verifyError || !verifyData?.success) {
         toast.error('Falha na verificação anti-bot. Tente novamente.');
@@ -295,6 +304,12 @@ export default function Login() {
                     <span className="font-medium">🔐 Protegido por Verificação Anti-Bot + Rate Limiting</span>
                   </div>
                 </div>
+                {!isProdHost && (
+                  <p className="mt-2 text-xs text-muted-foreground italic">
+                    Turnstile bypassed in preview
+                  </p>
+                )}
+
 
                 <Button 
                   type="submit" 
