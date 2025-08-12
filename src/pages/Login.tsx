@@ -29,18 +29,46 @@ export default function Login() {
 
   useEffect(() => {
     (window as any)._tsToken = null;
-    (window as any).onTsOk = (t: string) => {
-      console.info("TS token received", t?.slice(0, 10) + "…");
-      (window as any)._tsToken = t;
+    (window as any)._tsWidgetId = null;
+
+    const sitekey = SITE_KEY;
+
+    const renderWidget = () => {
+      if (!(window as any).turnstile) return;
+      const id = (window as any).turnstile.render('#ts-widget', {
+        sitekey,
+        callback: (t: string) => {
+          (window as any)._tsToken = t;
+          console.info('TS token received', t?.slice(0, 10) + '…');
+        },
+        'expired-callback': () => {
+          (window as any)._tsToken = null;
+          console.warn('TS expired');
+        },
+        'error-callback': () => {
+          (window as any)._tsToken = null;
+          console.error('TS error');
+        },
+      });
+      (window as any)._tsWidgetId = id;
     };
-    (window as any).onTsExpired = () => {
-      console.warn("TS expired");
-      (window as any)._tsToken = null;
-    };
-    (window as any).onTsError = () => {
-      console.error("TS error");
-      (window as any)._tsToken = null;
-    };
+
+    // If script is already present, render immediately; otherwise, wait or inject it
+    if ((window as any).turnstile) {
+      renderWidget();
+    } else {
+      const existing = document.querySelector('script[src*="turnstile/v0/api.js"]') as HTMLScriptElement | null;
+      if (existing) {
+        existing.addEventListener('load', renderWidget, { once: true });
+      } else {
+        const s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+        s.async = true;
+        s.defer = true;
+        s.addEventListener('load', renderWidget, { once: true });
+        document.head.appendChild(s);
+      }
+    }
   }, []);
 
   // Redirect if already logged in
@@ -75,7 +103,7 @@ export default function Login() {
     const tsToken = (window as any)._tsToken;
     if (!tsToken) {
       console.warn("No TS token; resetting");
-      (window as any).turnstile?.reset();
+      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
       toast.error('Verificação necessária.');
       return;
     }
@@ -91,13 +119,13 @@ export default function Login() {
 
       if (!json.success) {
         console.warn("Turnstile verification failed:", json);
-        (window as any).turnstile?.reset();
+         try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
         toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
     } catch (err) {
       console.warn('Turnstile verify error:', err);
-      (window as any).turnstile?.reset();
+       try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
       toast.error('Falha na verificação anti-bot. Tente novamente.');
       return;
     }
@@ -114,7 +142,7 @@ export default function Login() {
     const rateLimitPassed = await checkRateLimit('login_attempt', identifierEmail);
     
     if (!rateLimitPassed) {
-      (window as any).turnstile?.reset();
+      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
       return; // Mensagem já foi exibida pelo hook
     }
 
@@ -130,7 +158,7 @@ export default function Login() {
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
-      (window as any).turnstile?.reset();
+       try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
     }
   };
 
@@ -247,14 +275,8 @@ export default function Login() {
                 </Link>
               </div>
 
-                {/* Turnstile widget */}
-                <div
-                  className="cf-turnstile"
-                  data-sitekey={SITE_KEY}
-                  data-callback="onTsOk"
-                  data-expired-callback="onTsExpired"
-                  data-error-callback="onTsError"
-                />
+                {/* Turnstile widget (explicit render container) */}
+                <div id="ts-widget" />
                 {/* Security information */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
