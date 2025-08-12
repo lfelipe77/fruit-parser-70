@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface AuditLogRow {
   id: string;
@@ -17,6 +18,7 @@ export default function AuditLogs() {
   const [limit, setLimit] = useState<number>(100);
   const [rows, setRows] = useState<AuditLogRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pingLoading, setPingLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchLogs = async () => {
@@ -46,6 +48,22 @@ export default function AuditLogs() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onAdminPing = async () => {
+    setPingLoading(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("admin_ping");
+      if (error) {
+        throw error;
+      }
+      toast({ title: "Sucesso", description: String(data ?? "ok") });
+    } catch (err: any) {
+      const msg = String(err?.message || err || "Erro inesperado");
+      toast({ title: "Erro", description: msg, variant: "destructive" });
+    } finally {
+      setPingLoading(false);
     }
   };
 
@@ -84,9 +102,15 @@ export default function AuditLogs() {
 
   return (
     <main className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Audit Logs (Admin)</h1>
-        <p className="text-sm text-muted-foreground">Verifique e pesquise eventos recentes de auditoria.</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Audit Logs (Admin)</h1>
+          <p className="text-sm text-muted-foreground">Verifique e pesquise eventos recentes de auditoria.</p>
+        </div>
+        <Button size="sm" onClick={onAdminPing} disabled={pingLoading}>
+          {pingLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+          Admin Ping
+        </Button>
       </header>
 
       <section aria-label="Filtros" className="flex items-end gap-3">
