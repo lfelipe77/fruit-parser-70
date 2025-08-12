@@ -34,7 +34,7 @@ const Investment: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SEOHead 
-        title="Oportunidade de Investimento — Ganhavel + Finteck / partners"
+        title="Oportunidade de Investimento — Ganhavel + Fintec / partners"
         description="Invista na próxima revolução dos sorteios digitais no Brasil. MVP pronto, modelo validado e segurança via Loteria Federal."
         canonical={versionedPath}
         ogImage={ogImage}
@@ -85,7 +85,7 @@ const Investment: React.FC = () => {
               Oportunidade de Investimento
             </div>
             <h1 className="text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Ganhavel + Finteck / partners
+              Ganhavel + Fintec / partners
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Invista na próxima revolução dos sorteios digitais no Brasil
