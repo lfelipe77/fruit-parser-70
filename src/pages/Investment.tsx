@@ -209,7 +209,7 @@ const Investment: React.FC = () => {
               </div>
               <div className="p-4 rounded-xl bg-white/60 dark:bg-black/20 border">
                 <div className="font-semibold mb-2">Shares</div>
-                <p className="text-sm text-muted-foreground">3–5% (fase inicial) conforme aporte e metas.</p>
+                <p className="text-sm text-muted-foreground">A discutir conforme aporte, metas e avaliações futuras.</p>
               </div>
             </div>
           </CardContent>
