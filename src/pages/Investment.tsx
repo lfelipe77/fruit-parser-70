@@ -34,7 +34,7 @@ const Investment: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SEOHead 
-        title="Oportunidade de Investimento — Ganhavel + Monew (Partners)"
+        title="Oportunidade de Investimento — Ganhavel + Fintec API (Partners)"
         description="Invista na próxima revolução dos sorteios digitais no Brasil. MVP pronto, modelo validado e segurança via Loteria Federal."
         canonical={versionedPath}
         ogImage={ogImage}
@@ -85,7 +85,7 @@ const Investment: React.FC = () => {
               Oportunidade de Investimento
             </div>
             <h1 className="text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Ganhavel + Monew (Partners)
+              Ganhavel + Fintec API (Partners)
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Invista na próxima revolução dos sorteios digitais no Brasil
@@ -158,14 +158,14 @@ const Investment: React.FC = () => {
             <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover-scale">
               <CardContent className="p-6 text-center">
                 <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
-                <div className="text-3xl font-bold text-primary">15%</div>
+                <div className="text-3xl font-bold text-primary">3–5%</div>
                 <div className="text-sm text-muted-foreground">Equity Fase 1</div>
               </CardContent>
             </Card>
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200/50 hover-scale">
               <CardContent className="p-6 text-center">
                 <Building className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-3xl font-bold text-blue-600">R$ 30/60K</div>
+                <div className="text-3xl font-bold text-blue-600">R$ 1M–3M</div>
                 <div className="text-sm text-muted-foreground">Bootstrap</div>
               </CardContent>
             </Card>
@@ -241,7 +241,7 @@ const Investment: React.FC = () => {
                   </div>
                   <div className="ml-20">
                     <Badge variant="secondary" className="text-lg px-6 py-3 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300">
-                      Investimento inicial: R$ 30K–60K (3 meses) • Equity: 15% + suporte estratégico
+                      Investimento inicial: R$ 1M–3M (3 meses) • Equity: 3–5% + suporte estratégico
                     </Badge>
                   </div>
                   <div className="ml-20 mt-4 text-sm text-muted-foreground">
@@ -288,13 +288,13 @@ const Investment: React.FC = () => {
                         <Rocket className="w-8 h-8 text-primary" />
                       </div>
                       <div className="text-2xl font-bold text-primary mb-2">
-                        30K a 60K Reais - Launch
+                        R$ 1M a R$ 3M - Launch
                       </div>
                       <div className="text-lg font-medium text-primary">
                         + Support
                       </div>
                       <div className="text-2xl font-semibold text-accent mt-1">
-                        15%
+                        3–5%
                       </div>
                     </div>
                   </div>
@@ -550,7 +550,7 @@ const Investment: React.FC = () => {
                 <div className="text-xs text-muted-foreground">(Fundador)</div>
               </div>
               <div className="text-center bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-                <div className="text-3xl font-bold text-green-600">15%</div>
+                <div className="text-3xl font-bold text-green-600">3–5%</div>
                 <div className="text-sm font-medium">Investidor</div>
                 <div className="text-xs text-muted-foreground">Fase 1</div>
               </div>
@@ -656,7 +656,7 @@ const Investment: React.FC = () => {
                 <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-black/20 rounded-xl border border-primary/20">
                   <span className="text-3xl">📌</span>
                   <div>
-                    <div className="font-bold text-lg">Investimento inicial: R$ 30K a R$ 60K por 15% equity + suporte estratégico</div>
+                    <div className="font-bold text-lg">Investimento inicial: R$ 1M a R$ 3M por 3–5% equity + suporte estratégico</div>
                     <div className="text-sm text-muted-foreground">Fase 1</div>
                   </div>
                 </div>
