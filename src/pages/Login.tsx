@@ -28,55 +28,44 @@ export default function Login() {
   const SITE_KEY = (import.meta as any).env?.VITE_TURNSTILE_SITEKEY || '0x4AAAAAABpqGDEenRovXaTv';
 
   useEffect(() => {
+    const sitekey = import.meta.env.VITE_TURNSTILE_SITEKEY || "0x4AAAAAABpqGDEenRovXaTv";
     (window as any)._tsToken = null;
     (window as any)._tsWidgetId = null;
 
-    const sitekey = SITE_KEY;
+    const render = () => {
+      const turn = (window as any).turnstile;
+      if (!turn) return false;
+      if (!document.querySelector("#ts-widget")) return false;
 
-    const renderWidget = () => {
-      if (!(window as any).turnstile) return;
-      const container = document.getElementById('ts-widget');
-      if (!container) {
-        console.warn('TS container not found, retrying...');
-        try { requestAnimationFrame(renderWidget); } catch { /* no-op */ }
-        return;
-      }
-      try {
-        const id = (window as any).turnstile.render('#ts-widget', {
-          sitekey,
-          callback: (t: string) => {
-            (window as any)._tsToken = t;
-            console.info('TS token received', t?.slice(0, 10) + '…');
-          },
-          'expired-callback': () => {
-            (window as any)._tsToken = null;
-            console.warn('TS expired');
-          },
-          'error-callback': () => {
-            (window as any)._tsToken = null;
-            console.error('TS error');
-          },
-        });
-        (window as any)._tsWidgetId = id;
-      } catch (err) {
-        console.error('TS render error', err);
-      }
+      const id = turn.render("#ts-widget", {
+        sitekey,
+        callback: (t: string) => { (window as any)._tsToken = t; console.info('TS token received', t?.slice(0, 10) + '…'); },
+        "expired-callback": () => { (window as any)._tsToken = null; },
+        "error-callback": () => { (window as any)._tsToken = null; },
+      });
+      (window as any)._tsWidgetId = id;
+      return true;
     };
 
-    // If script is already present, render immediately; otherwise, wait or inject it
-    if ((window as any).turnstile) {
-      renderWidget();
-    } else {
-      const existing = document.querySelector('script[src*="turnstile/v0/api.js"]') as HTMLScriptElement | null;
-      if (existing) {
-        existing.addEventListener('load', renderWidget, { once: true });
-      } else {
-        const s = document.createElement('script');
-        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        s.async = true;
-        s.defer = true;
-        s.addEventListener('load', renderWidget, { once: true });
-        document.head.appendChild(s);
+    // wait for script + container quietly (no console warnings)
+    const start = Date.now();
+    const tick = () => {
+      if (render()) return;
+      if (Date.now() - start < 4000) requestAnimationFrame(tick);
+    };
+
+    if ((window as any).turnstile) tick();
+    else {
+      const s = document.querySelector('script[src*="turnstile/v0/api.js"]') as HTMLScriptElement | null;
+      const onLoad = () => tick();
+      if (s) s.addEventListener("load", onLoad, { once: true });
+      else {
+        const script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        script.async = true;
+        script.defer = true;
+        script.addEventListener("load", onLoad, { once: true });
+        document.head.appendChild(script);
       }
     }
   }, []);
