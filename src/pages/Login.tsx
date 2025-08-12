@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { loginSchema } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
-import { runTurnstileDiagnostics } from "@/lib/turnstileDebug";
+
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,83 +25,13 @@ export default function Login() {
   const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
 
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
-  const widgetIdRef = useRef<string | null>(null);
-  const tokenRef = useRef<string | null>(null);
-  const pendingResolveRef = useRef<((t: string) => void) | null>(null);
-
-  const PROD_HOSTS = ['ganhavel.com', 'www.ganhavel.com'];
-  const isProdHost = PROD_HOSTS.includes(window.location.hostname);
-  const previewBypassToken = 'PREVIEW_BYPASS';
-
-  const ensureWidget = async () => {
-    if (!isProdHost) return; // Bypass: do not render widget on non-prod hosts
-    const el = document.getElementById('turnstile-login');
-    if (!el) throw new Error('Elemento Turnstile não encontrado');
-    const renderNow = () => {
-      if (!widgetIdRef.current) {
-        const id = (window as any).turnstile.render(el, {
-          sitekey: siteKey,
-          size: 'invisible',
-          action: 'login',
-          callback: (token: string) => {
-            tokenRef.current = token;
-            if (pendingResolveRef.current) {
-              pendingResolveRef.current(token);
-              pendingResolveRef.current = null;
-            }
-          },
-          'error-callback': () => {
-            pendingResolveRef.current = null;
-          },
-          'expired-callback': () => {
-            tokenRef.current = null;
-          },
-        });
-        widgetIdRef.current = id;
-      }
-    };
-    if ((window as any).turnstile) {
-      renderNow();
-      return;
-    }
-    await new Promise<void>((resolve, reject) => {
-      const start = Date.now();
-      const int = setInterval(() => {
-        if ((window as any).turnstile) {
-          clearInterval(int);
-          renderNow();
-          resolve();
-        } else if (Date.now() - start > 5000) {
-          clearInterval(int);
-          reject(new Error('Turnstile não carregado'));
-        }
-      }, 100);
-    });
-  };
-
-  const getTurnstileToken = async () => {
-    if (!isProdHost) {
-      return previewBypassToken;
-    }
-    await ensureWidget();
-    return new Promise<string>((resolve, reject) => {
-      if (!widgetIdRef.current) return reject(new Error('Widget ausente'));
-      pendingResolveRef.current = resolve;
-      try {
-        (window as any).turnstile.execute(widgetIdRef.current);
-      } catch {
-        reject(new Error('Falha ao executar Turnstile'));
-      }
-      setTimeout(() => {
-        if (tokenRef.current) resolve(tokenRef.current);
-        else reject(new Error('Timeout ao obter token'));
-      }, 8000);
-    });
-  };
+  const SITE_KEY = (import.meta as any).env?.VITE_TURNSTILE_SITEKEY || '0x4AAAAAABpqGDEenRovXaTv';
 
   useEffect(() => {
-    runTurnstileDiagnostics('#turnstile-login', 'login');
+    (window as any)._tsToken = null;
+    (window as any).onTsOk = (t: string) => { (window as any)._tsToken = t; };
+    (window as any).onTsExpired = () => { (window as any)._tsToken = null; (window as any).turnstile?.reset(); };
+    (window as any).onTsError = () => { (window as any)._tsToken = null; };
   }, []);
 
   // Redirect if already logged in
@@ -130,26 +60,40 @@ export default function Login() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validação completa com Zod
-    const validatedData = validateForm();
-    if (!validatedData) {
-      toast.error('Por favor, corrija os erros nos campos destacados');
+
+    // Turnstile gate BEFORE existing login logic
+    const tsToken = (window as any)._tsToken;
+    if (!tsToken) {
+      (window as any).turnstile?.reset();
+      toast.error('Verificação necessária. Tente novamente.');
       return;
     }
 
     try {
-      const realTurnstileToken = await getTurnstileToken();
-      const tokenToSend = isProdHost ? realTurnstileToken : previewBypassToken;
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-        body: { token: tokenToSend, action: 'login' },
+      const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "cf-turnstile-response": tsToken })
       });
-      if (verifyError || !verifyData?.success) {
+      const json = await res.json();
+
+      if (!json.success) {
+        console.warn("Turnstile verification failed:", json);
+        (window as any).turnstile?.reset();
         toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
-    } catch {
+    } catch (err) {
+      console.warn('Turnstile verify error:', err);
+      (window as any).turnstile?.reset();
       toast.error('Falha na verificação anti-bot. Tente novamente.');
+      return;
+    }
+
+    // Validação completa com Zod
+    const validatedData = validateForm();
+    if (!validatedData) {
+      toast.error('Por favor, corrija os erros nos campos destacados');
       return;
     }
 
@@ -158,6 +102,7 @@ export default function Login() {
     const rateLimitPassed = await checkRateLimit('login_attempt', identifierEmail);
     
     if (!rateLimitPassed) {
+      (window as any).turnstile?.reset();
       return; // Mensagem já foi exibida pelo hook
     }
 
@@ -173,6 +118,7 @@ export default function Login() {
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
+      (window as any).turnstile?.reset();
     }
   };
 
@@ -289,13 +235,13 @@ export default function Login() {
                 </Link>
               </div>
 
-                {/* Turnstile (invisible) container */}
+                {/* Turnstile widget */}
                 <div
-                  id="turnstile-login"
-                  className="hidden"
-                  data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                  data-size="invisible"
-                  data-action="login"
+                  className="cf-turnstile"
+                  data-sitekey={SITE_KEY}
+                  data-callback="onTsOk"
+                  data-expired-callback="onTsExpired"
+                  data-error-callback="onTsError"
                 />
                 {/* Security information */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -304,11 +250,6 @@ export default function Login() {
                     <span className="font-medium">🔐 Protegido por Verificação Anti-Bot + Rate Limiting</span>
                   </div>
                 </div>
-                {!isProdHost && (
-                  <p className="mt-2 text-xs text-muted-foreground italic">
-                    Turnstile bypassed in preview
-                  </p>
-                )}
 
 
                 <Button 

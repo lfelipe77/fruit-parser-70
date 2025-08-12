@@ -24,7 +24,9 @@ serve(withCORS(async (req: Request) => {
       });
     }
 
-    const { token } = await req.json().catch(() => ({ token: undefined }));
+    const body = await req.json().catch(() => ({}));
+    // Accept both 'token' and Cloudflare's 'cf-turnstile-response' keys
+    const token = (body as any)?.token ?? (body as any)?.["cf-turnstile-response"] ?? (body as any)?.cf_turnstile_response;
 
     if (!token) {
       return new Response(JSON.stringify({ success: false, message: "Missing token" }), {
