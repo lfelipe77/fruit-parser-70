@@ -21,11 +21,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null); // Added to surface general errors
   const { checkRateLimit, isChecking } = useRateLimit();
-  const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
+  const { signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
 
-  const SITE_KEY = (import.meta as any).env?.VITE_TURNSTILE_SITEKEY || '0x4AAAAAABpqGDEenRovXaTv';
+  
 
   useEffect(() => {
     const sitekey = import.meta.env.VITE_TURNSTILE_SITEKEY || "0x4AAAAAABpqGDEenRovXaTv";
@@ -161,19 +162,28 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        console.error('Google login error:', error);
-      }
-      // Success handling is done in useAuth hook with redirect
-    } catch (error) {
-      console.error('Google login error:', error);
-    } finally {
-      setIsLoading(false);
+  const onGoogleSignIn = async () => {
+    const token = (window as any)._tsToken;
+    if (!token) {
+      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+      setError("Verificação necessária.");
+      return;
     }
+    const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "cf-turnstile-response": token })
+    });
+    const json = await res.json();
+    if (!json.success) {
+      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+      setError("Falha na verificação anti-bot. Tente novamente.");
+      return;
+    }
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/#/dashboard" }
+    });
   };
 
   if (loading) {
@@ -311,7 +321,7 @@ export default function Login() {
                 variant="outline" 
                 className="w-full" 
                 size="lg"
-                onClick={handleGoogleLogin}
+                onClick={onGoogleSignIn}
                 disabled={isLoading}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
