@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const SITE_VERSION = "2025-08-09-2";
 const PROPOSTA_PATH = "/proposta-de-investimento";
@@ -188,6 +189,71 @@ const Investment: React.FC = () => {
             <p className="text-foreground/90">
               Demanda e Potencial: A regulamentação de 2025 (Lei 14.790) abre espaço para plataformas legais como Ganhavel, que pode migrar usuários de mercados ilegais (R$100B TAM estimado para rifas + slots) para um modelo validado pela Loteria Federal, com segurança e escalabilidade via marketing viral e comunidade gamificada.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Concorrentes e Diferenciais */}
+        <Card className="mb-12 overflow-hidden bg-gradient-to-br from-background to-muted/20 border-border/50">
+          <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              Concorrentes e Diferenciais
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <p className="text-foreground/90">
+              Plataformas como 123Rifas, Rifa Tech, Rife-me e Rifa 321 dominam as rifas online no Brasil, porém atuam em zona cinzenta legal, com prêmios limitados e pouca automação. A Ganhavel resolve esses pontos com validação pela Loteria Federal e fluxo 100% automatizado.
+            </p>
+            <div className="rounded-xl border overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Aspecto</TableHead>
+                    <TableHead>Plataformas existentes</TableHead>
+                    <TableHead>Ganhavel</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>Legal</TableCell>
+                    <TableCell>Frequentemente sem SPA/MF; risco.</TableCell>
+                    <TableCell>Validação Loteria Federal + pagamento só após entrega.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Prêmios</TableCell>
+                    <TableCell>Principalmente físicos/beneficentes.</TableCell>
+                    <TableCell>Físicos, digitais, afiliados e virais — sem estoque.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Receita</TableCell>
+                    <TableCell>Taxas fixas ou comissões altas.</TableCell>
+                    <TableCell>Taxa + % afiliados + rifas de créditos de mídia.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Transparência</TableCell>
+                    <TableCell>Baseada na confiança, sem prova.</TableCell>
+                    <TableCell>Comprovantes, confirmação de entrega, validação por loteria.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Automação</TableCell>
+                    <TableCell>Pagamentos básicos.</TableCell>
+                    <TableCell>Onboarding no‑code, IA e antifraude integrados.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Mercado</TableCell>
+                    <TableCell>Foco Brasil.</TableCell>
+                    <TableCell>Pronta para BRL/USD/EUR e multi‑idiomas.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Marketing</TableCell>
+                    <TableCell>Divulgação por organizador.</TableCell>
+                    <TableCell>Viralização, rifas de afiliados e recompensas sociais.</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
