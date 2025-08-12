@@ -29,9 +29,18 @@ export default function Login() {
 
   useEffect(() => {
     (window as any)._tsToken = null;
-    (window as any).onTsOk = (t: string) => { (window as any)._tsToken = t; };
-    (window as any).onTsExpired = () => { (window as any)._tsToken = null; (window as any).turnstile?.reset(); };
-    (window as any).onTsError = () => { (window as any)._tsToken = null; };
+    (window as any).onTsOk = (t: string) => {
+      console.info("TS token received", t?.slice(0, 10) + "…");
+      (window as any)._tsToken = t;
+    };
+    (window as any).onTsExpired = () => {
+      console.warn("TS expired");
+      (window as any)._tsToken = null;
+    };
+    (window as any).onTsError = () => {
+      console.error("TS error");
+      (window as any)._tsToken = null;
+    };
   }, []);
 
   // Redirect if already logged in
@@ -60,12 +69,14 @@ export default function Login() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.info("Login submit fired");
 
     // Turnstile gate BEFORE existing login logic
     const tsToken = (window as any)._tsToken;
     if (!tsToken) {
+      console.warn("No TS token; resetting");
       (window as any).turnstile?.reset();
-      toast.error('Verificação necessária. Tente novamente.');
+      toast.error('Verificação necessária.');
       return;
     }
 
@@ -76,6 +87,7 @@ export default function Login() {
         body: JSON.stringify({ "cf-turnstile-response": tsToken })
       });
       const json = await res.json();
+      console.info("verify-turnstile response", json);
 
       if (!json.success) {
         console.warn("Turnstile verification failed:", json);
