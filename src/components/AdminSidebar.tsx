@@ -57,6 +57,11 @@ const mainItems = [
     icon: BarChart3,
   },
   {
+    title: "Audit Logs",
+    url: "/admin/audit-logs",
+    icon: FileText,
+  },
+  {
     title: "Logs de Auditoria",
     url: "/admin/logs",
     icon: FileText,

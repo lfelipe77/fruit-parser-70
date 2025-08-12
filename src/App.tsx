@@ -43,6 +43,7 @@ import Analytics from "./pages/admin/Analytics";
 import Settings from "./pages/admin/Settings";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminVisits from "./pages/admin/AdminVisits";
+import AuditLogs from "./pages/admin/AuditLogs";
 import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
 import TurnstileTest from "./pages/TurnstileTest";
@@ -120,6 +121,7 @@ const AppContent = () => {
             <Route path="financeiro" element={<FinancialControl />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="logs" element={<AdminLogs />} />
+            <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="painel" element={<AdminDashboard />} />
             <Route path="configuracoes" element={<Settings />} />
             <Route path="visits" element={<AdminVisits />} />
