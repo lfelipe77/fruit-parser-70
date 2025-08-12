@@ -34,7 +34,7 @@ const Investment: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SEOHead 
-        title="Oportunidade de Investimento — Ganhavel + Monew (Partners)"
+        title="Oportunidade de Investimento — Ganhavel + Finteck / partners"
         description="Invista na próxima revolução dos sorteios digitais no Brasil. MVP pronto, modelo validado e segurança via Loteria Federal."
         canonical={versionedPath}
         ogImage={ogImage}
@@ -85,7 +85,7 @@ const Investment: React.FC = () => {
               Oportunidade de Investimento
             </div>
             <h1 className="text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Ganhavel + Monew (Partners)
+              Ganhavel + Finteck / partners
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Invista na próxima revolução dos sorteios digitais no Brasil
@@ -202,7 +202,7 @@ const Investment: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6">
               <div className="p-4 rounded-xl bg-white/60 dark:bg-black/20 border">
                 <div className="font-semibold mb-2">Exclusividade transações x tempo</div>
                 <p className="text-sm text-muted-foreground">A definir em comum acordo (parceria estratégica).</p>
@@ -211,19 +211,30 @@ const Investment: React.FC = () => {
                 <div className="font-semibold mb-2">Shares</div>
                 <p className="text-sm text-muted-foreground">3–5% (fase inicial) conforme aporte e metas.</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/60 dark:bg-black/20 border">
-                <div className="font-semibold mb-2">Fontes de Receita</div>
-                <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li>Taxa fixa por transação: R$2,00 por venda confirmada</li>
-                  <li>Margem sobre valor do prêmio: 2% inicial, com possibilidade de aumento até 8–15% conforme escala</li>
-                  <li>Prêmios e produtos afiliados: Produtos próprios ou de parceiros integrados à plataforma</li>
-                  <li>Destaques e promoções internas: Posição privilegiada nas páginas e vitrines de categorias</li>
-                  <li>Comissões de parceiros: Somente em conformidade legal (avaliar formatos permitidos)</li>
-                  <li>Marketing viral: Monetização via conteúdos, campanhas e rankings de usuários</li>
-                  <li>Rede Social de Ganhadores: Comunidade gamificada com rankings, interações e engajamento social</li>
-                </ul>
-              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Fontes de Receita */}
+        <Card className="mb-12 overflow-hidden bg-gradient-to-br from-background to-muted/20 border-border/50">
+          <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <DollarSign className="w-6 h-6 text-primary" />
+              </div>
+              Fontes de Receita
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <ul className="list-disc pl-5 space-y-1 text-sm">
+              <li>Taxa fixa por transação: R$2,00 por venda confirmada</li>
+              <li>Margem sobre valor do prêmio: 2% inicial, com possibilidade de aumento até 8–15% conforme escala</li>
+              <li>Prêmios e produtos afiliados: Produtos próprios ou de parceiros integrados à plataforma</li>
+              <li>Destaques e promoções internas: Posição privilegiada nas páginas e vitrines de categorias</li>
+              <li>Comissões de parceiros: Somente em conformidade legal (avaliar formatos permitidos)</li>
+              <li>Marketing viral: Monetização via conteúdos, campanhas e rankings de usuários</li>
+              <li>Rede Social de Ganhadores: Comunidade gamificada com rankings, interações e engajamento social</li>
+            </ul>
           </CardContent>
         </Card>
 
