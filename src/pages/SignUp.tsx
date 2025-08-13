@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
-import { runTurnstileDiagnostics } from "@/lib/turnstileDebug";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -46,16 +45,33 @@ export default function SignUp() {
 
     const render = () => {
       const turn = (window as any).turnstile;
-      if (!turn) return false;
-      if (!document.querySelector("#ts-widget")) return false;
+      if (!turn) {
+        console.log("Turnstile not yet loaded");
+        return false;
+      }
+      if (!document.querySelector("#ts-widget")) {
+        console.log("Turnstile container not found");
+        return false;
+      }
 
+      console.log("Rendering Turnstile widget with sitekey:", sitekey);
       const id = turn.render("#ts-widget", {
         sitekey,
-        callback: (t: string) => { (window as any)._tsToken = t; console.info('TS token received', t?.slice(0, 10) + '…'); },
-        "expired-callback": () => { (window as any)._tsToken = null; },
-        "error-callback": () => { (window as any)._tsToken = null; },
+        callback: (t: string) => { 
+          (window as any)._tsToken = t; 
+          console.info('TS token received', t?.slice(0, 10) + '…'); 
+        },
+        "expired-callback": () => { 
+          (window as any)._tsToken = null; 
+          console.warn('Turnstile token expired');
+        },
+        "error-callback": () => { 
+          (window as any)._tsToken = null; 
+          console.error('Turnstile error callback triggered');
+        },
       });
       (window as any)._tsWidgetId = id;
+      console.log("Turnstile widget rendered with ID:", id);
       return true;
     };
 
@@ -64,14 +80,24 @@ export default function SignUp() {
     const tick = () => {
       if (render()) return;
       if (Date.now() - start < 4000) requestAnimationFrame(tick);
+      else console.warn("Turnstile widget failed to render within 4 seconds");
     };
 
-    if ((window as any).turnstile) tick();
-    else {
+    console.log("Initializing Turnstile...");
+    if ((window as any).turnstile) {
+      console.log("Turnstile already loaded, rendering immediately");
+      tick();
+    } else {
       const s = document.querySelector('script[src*="turnstile/v0/api.js"]') as HTMLScriptElement | null;
-      const onLoad = () => tick();
-      if (s) s.addEventListener("load", onLoad, { once: true });
-      else {
+      const onLoad = () => {
+        console.log("Turnstile script loaded");
+        tick();
+      };
+      if (s) {
+        console.log("Turnstile script found, adding load listener");
+        s.addEventListener("load", onLoad, { once: true });
+      } else {
+        console.log("Loading Turnstile script");
         const script = document.createElement("script");
         script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
         script.async = true;
@@ -168,6 +194,7 @@ export default function SignUp() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Email signup initiated with form data:", formData);
     
     if (!acceptedTerms) {
       toast.error('Você deve aceitar os termos para continuar');
@@ -176,15 +203,19 @@ export default function SignUp() {
 
     // Turnstile gate BEFORE existing signup logic (skip if bypassed)
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
+      console.log("Checking Turnstile token...");
       const tsToken = (window as any)._tsToken;
+      console.log("Turnstile token:", tsToken ? "present" : "missing");
+      
       if (!tsToken) {
         console.warn("No TS token; resetting");
         try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-        toast.error('Verificação necessária.');
+        toast.error('Verificação anti-bot necessária. Aguarde um momento e tente novamente.');
         return;
       }
 
       try {
+        console.log("Verifying Turnstile token...");
         const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -199,34 +230,49 @@ export default function SignUp() {
           toast.error('Falha na verificação anti-bot. Tente novamente.');
           return;
         }
+        console.log("Turnstile verification successful");
       } catch (err) {
         console.warn('Turnstile verify error:', err);
          try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
         toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
+    } else {
+      console.log("Turnstile bypassed for development");
     }
 
     // Validação completa com Zod
+    console.log("Validating form data...");
     const validatedData = validateForm();
     if (!validatedData) {
+      console.log("Form validation failed, errors:", errors);
       toast.error('Por favor, corrija os erros nos campos destacados');
       return;
     }
+    console.log("Form validation successful");
 
     // Verificar rate limiting (per IP on server; email used for correlation)
     const identifierEmail = (formData.email || '').trim().toLowerCase();
+    console.log("Checking rate limit for:", identifierEmail);
     const rateLimitPassed = await checkRateLimit('signup_attempt', identifierEmail);
     
     if (!rateLimitPassed) {
+      console.log("Rate limit check failed");
       try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
       return; // Mensagem já foi exibida pelo hook
     }
+    console.log("Rate limit check passed");
 
     setLoading(true);
     try {
+      console.log("Attempting signup with email:", formData.email);
       const { error } = await signUp(formData.email, formData.password);
-      if (!error) {
+      
+      if (error) {
+        console.error('Signup error from useAuth:', error);
+        // Error handling is already done in useAuth hook
+      } else {
+        console.log('Signup successful');
         toast.success('Cadastro realizado! Verifique seu email para confirmar a conta.');
         // Optionally redirect to login page after successful signup
         setTimeout(() => {
@@ -234,8 +280,8 @@ export default function SignUp() {
         }, 2000);
       }
     } catch (error) {
-      toast.error('Erro no cadastro');
-      console.error('Signup error:', error);
+      console.error('Unexpected signup error:', error);
+      toast.error('Erro inesperado no cadastro. Tente novamente.');
     } finally {
       setLoading(false);
       try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
