@@ -5,7 +5,7 @@ export default function AuthCallback() {
   useEffect(() => {
     (async () => {
       try {
-        await supabase.auth.getSession();
+        await supabase.auth.exchangeCodeForSession(window.location.href);
       } catch (e) {
         // ignore; if the session already exists, this can throw a benign error
       } finally {
