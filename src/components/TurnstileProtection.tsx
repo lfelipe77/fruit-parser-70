@@ -34,7 +34,7 @@ export const TurnstileProtection: React.FC<TurnstileProps> = ({
   const turnstileRef = useRef<HTMLDivElement>(null);
   const [widgetId, setWidgetId] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(false);
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAAiL8E8eEjkFr4Yr';
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITEKEY || '0x4AAAAAABpqGDEenRovXaTv';
 
   useEffect(() => {
     // Avoid double loading: if Turnstile is already present (e.g., loaded in index.html), just mark as loaded
