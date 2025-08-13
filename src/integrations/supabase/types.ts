@@ -702,6 +702,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      anonymize_ip: {
+        Args: { ip_address: string }
+        Returns: string
+      }
       check_login_abuse: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -868,6 +872,10 @@ export type Database = {
         Returns: number
       }
       purge_old_public_visits: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      purge_old_visit_data: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
