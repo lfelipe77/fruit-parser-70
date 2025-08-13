@@ -879,6 +879,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      request_password_reset: {
+        Args: { user_email: string }
+        Returns: string
+      }
       run_security_checks: {
         Args: Record<PropertyKey, never>
         Returns: undefined
