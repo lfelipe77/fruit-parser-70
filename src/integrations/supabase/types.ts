@@ -669,7 +669,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ganhavel_categories_public: {
+        Row: {
+          descricao: string | null
+          destaque: boolean | null
+          icone_url: string | null
+          id: string | null
+          nome: string | null
+          slug: string | null
+        }
+        Insert: {
+          descricao?: string | null
+          destaque?: boolean | null
+          icone_url?: string | null
+          id?: string | null
+          nome?: string | null
+          slug?: string | null
+        }
+        Update: {
+          descricao?: string | null
+          destaque?: boolean | null
+          icone_url?: string | null
+          id?: string | null
+          nome?: string | null
+          slug?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_ping: {
