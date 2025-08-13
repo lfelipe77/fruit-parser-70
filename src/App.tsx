@@ -31,6 +31,7 @@ import PagamentoSucesso from "./pages/PagamentoSucesso";
 import PagamentoErro from "./pages/PagamentoErro";
 import NotFound from "./pages/NotFound";
 import AccessDenied from "./pages/AccessDenied";
+import AuthCallback from "./pages/AuthCallback";
 import TestAudit from "./pages/TestAudit";
 import DebugToken from "./pages/DebugToken";
 import LanceSeuGanhavel from "./pages/LanceSeuGanhavel";
@@ -82,6 +83,7 @@ const AppContent = () => {
       <ScrollToTop />
       <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/lance-seu-ganhavel" element={<LanceSeuGanhavel />} />
           <Route path="/descobrir" element={<Descobrir />} />
           <Route path="/resultados" element={<Resultados />} />
