@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, Shield } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -34,83 +34,52 @@ export default function SignUp() {
   const { user, signInWithGoogle, signUp } = useAuth();
   const navigate = useNavigate();
 
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string;
-  const widgetIdRef = useRef<string | null>(null);
-  const tokenRef = useRef<string | null>(null);
-  const pendingResolveRef = useRef<((t: string) => void) | null>(null);
-
-  const PROD_HOSTS = ['ganhavel.com', 'www.ganhavel.com'];
-  const isProdHost = PROD_HOSTS.includes(window.location.hostname);
-  const previewBypassToken = 'PREVIEW_BYPASS';
-
-  const ensureWidget = async () => {
-    if (!isProdHost || import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') return; // Bypass: do not render widget on non-prod hosts or if bypassed
-    const el = document.getElementById('turnstile-signup');
-    if (!el) throw new Error('Elemento Turnstile não encontrado');
-    const renderNow = () => {
-      if (!widgetIdRef.current) {
-        const id = (window as any).turnstile.render(el, {
-          sitekey: siteKey,
-          size: 'invisible',
-          action: 'signup',
-          callback: (token: string) => {
-            tokenRef.current = token;
-            if (pendingResolveRef.current) {
-              pendingResolveRef.current(token);
-              pendingResolveRef.current = null;
-            }
-          },
-          'error-callback': () => {
-            pendingResolveRef.current = null;
-          },
-          'expired-callback': () => {
-            tokenRef.current = null;
-          },
-        });
-        widgetIdRef.current = id;
-      }
-    };
-    if ((window as any).turnstile) {
-      renderNow();
-      return;
-    }
-    await new Promise<void>((resolve, reject) => {
-      const start = Date.now();
-      const int = setInterval(() => {
-        if ((window as any).turnstile) {
-          clearInterval(int);
-          renderNow();
-          resolve();
-        } else if (Date.now() - start > 5000) {
-          clearInterval(int);
-          reject(new Error('Turnstile não carregado'));
-        }
-      }, 100);
-    });
-  };
-
-  const getTurnstileToken = async () => {
-    if (!isProdHost || import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') {
-      return previewBypassToken;
-    }
-    await ensureWidget();
-    return new Promise<string>((resolve, reject) => {
-      if (!widgetIdRef.current) return reject(new Error('Widget ausente'));
-      pendingResolveRef.current = resolve;
-      try {
-        (window as any).turnstile.execute(widgetIdRef.current);
-      } catch {
-        reject(new Error('Falha ao executar Turnstile'));
-      }
-      setTimeout(() => {
-        if (tokenRef.current) resolve(tokenRef.current);
-        else reject(new Error('Timeout ao obter token'));
-      }, 8000);
-    });
-  };
-
   useEffect(() => {
-    runTurnstileDiagnostics('#turnstile-signup', 'signup');
+    // Check if Turnstile should be bypassed
+    if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') {
+      return; // Skip Turnstile initialization
+    }
+
+    const sitekey = import.meta.env.VITE_TURNSTILE_SITEKEY || "0x4AAAAAABpqGDEenRovXaTv";
+    (window as any)._tsToken = null;
+    (window as any)._tsWidgetId = null;
+
+    const render = () => {
+      const turn = (window as any).turnstile;
+      if (!turn) return false;
+      if (!document.querySelector("#ts-widget")) return false;
+
+      const id = turn.render("#ts-widget", {
+        sitekey,
+        callback: (t: string) => { (window as any)._tsToken = t; console.info('TS token received', t?.slice(0, 10) + '…'); },
+        "expired-callback": () => { (window as any)._tsToken = null; },
+        "error-callback": () => { (window as any)._tsToken = null; },
+      });
+      (window as any)._tsWidgetId = id;
+      return true;
+    };
+
+    // wait for script + container quietly (no console warnings)
+    const start = Date.now();
+    const tick = () => {
+      if (render()) return;
+      if (Date.now() - start < 4000) requestAnimationFrame(tick);
+    };
+
+    if ((window as any).turnstile) tick();
+    else {
+      const s = document.querySelector('script[src*="turnstile/v0/api.js"]') as HTMLScriptElement | null;
+      const onLoad = () => tick();
+      if (s) s.addEventListener("load", onLoad, { once: true });
+      else {
+        const script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        script.async = true;
+        script.defer = true;
+        script.addEventListener("load", onLoad, { once: true });
+        document.head.appendChild(script);
+      }
+    }
   }, []);
 
   // Redirect if already logged in
@@ -143,6 +112,29 @@ export default function SignUp() {
   };
 
   const handleGoogleSignUp = async () => {
+    console.log("Google signup initiated");
+    
+    // Skip Turnstile verification if bypassed
+    if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
+      const token = (window as any)._tsToken;
+      if (!token) {
+        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        toast.error("Verificação necessária.");
+        return;
+      }
+      const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "cf-turnstile-response": token })
+      });
+      const json = await res.json();
+      if (!json.success) {
+        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        toast.error("Falha na verificação anti-bot. Tente novamente.");
+        return;
+      }
+    }
+    
     setLoading(true);
     try {
       const { error } = await signInWithGoogle();
@@ -182,6 +174,39 @@ export default function SignUp() {
       return;
     }
 
+    // Turnstile gate BEFORE existing signup logic (skip if bypassed)
+    if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
+      const tsToken = (window as any)._tsToken;
+      if (!tsToken) {
+        console.warn("No TS token; resetting");
+        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        toast.error('Verificação necessária.');
+        return;
+      }
+
+      try {
+        const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "cf-turnstile-response": tsToken })
+        });
+        const json = await res.json();
+        console.info("verify-turnstile response", json);
+
+        if (!json.success) {
+          console.warn("Turnstile verification failed:", json);
+           try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+          toast.error('Falha na verificação anti-bot. Tente novamente.');
+          return;
+        }
+      } catch (err) {
+        console.warn('Turnstile verify error:', err);
+         try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        toast.error('Falha na verificação anti-bot. Tente novamente.');
+        return;
+      }
+    }
+
     // Validação completa com Zod
     const validatedData = validateForm();
     if (!validatedData) {
@@ -189,27 +214,12 @@ export default function SignUp() {
       return;
     }
 
-    try {
-      const realTurnstileToken = await getTurnstileToken();
-      const tokenToSend = isProdHost ? realTurnstileToken : previewBypassToken;
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
-        body: { token: tokenToSend, action: 'signup' },
-      });
-      if (verifyError || !verifyData?.success) {
-        toast.error('Falha na verificação anti-bot. Tente novamente.');
-        return;
-      }
-    } catch {
-      toast.error('Falha na verificação anti-bot. Tente novamente.');
-      return;
-    }
-
-
     // Verificar rate limiting (per IP on server; email used for correlation)
     const identifierEmail = (formData.email || '').trim().toLowerCase();
     const rateLimitPassed = await checkRateLimit('signup_attempt', identifierEmail);
     
     if (!rateLimitPassed) {
+      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
       return; // Mensagem já foi exibida pelo hook
     }
 
@@ -228,6 +238,7 @@ export default function SignUp() {
       console.error('Signup error:', error);
     } finally {
       setLoading(false);
+      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
     }
   };
 
@@ -448,22 +459,16 @@ export default function SignUp() {
 
                 {!user && (
                   <>
-                    {/* Turnstile (invisible) container */}
+                    {/* Turnstile widget (explicit render container) */}
                     {import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true' && (
-                      <div
-                        id="turnstile-signup"
-                        className="hidden"
-                        data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                        data-size="invisible"
-                        data-action="signup"
-                      />
+                      <div id="ts-widget" />
                     )}
-
+                    
                     {/* Security information */}
                     <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
-                        <Lock className="w-4 h-4" />
-                        <span className="font-medium">🔐 Protegido por Senha Forte + Verificação de E-mail</span>
+                        <Shield className="w-4 h-4" />
+                        <span className="font-medium">🔐 Protegido por Verificação Anti-Bot + Rate Limiting</span>
                       </div>
                     </div>
 
