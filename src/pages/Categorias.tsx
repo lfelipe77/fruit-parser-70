@@ -15,6 +15,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { CategoriasSEO } from "@/components/SEOPages";
+import { useEffect } from "react";
 
 import { getAllCategoriesData } from "@/data/categoriesData";
 
@@ -23,6 +24,10 @@ const categoriesData = getAllCategoriesData();
 export default function Categorias() {
   const { categoria } = useParams();
   const categoryData = categoria ? categoriesData[categoria as keyof typeof categoriesData] : null;
+
+  useEffect(() => {
+    console.info('[cats] using view ganhavel_categories_public');
+  }, []);
 
   if (categoria && !categoryData) {
     return (
