@@ -904,6 +904,10 @@ export type Database = {
           user_email: string
         }[]
       }
+      set_payment_context: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       should_log_visit: {
         Args: { visit_ip: string; visit_url: string }
         Returns: boolean
