@@ -2,10 +2,72 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, CreditCard, Trophy, History } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+interface DashboardStats {
+  totalTickets: number;
+  totalSpent: number;
+  activeGanhaveis: number;
+  recentTransactions: any[];
+}
+
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalTickets: 0,
+    totalSpent: 0,
+    activeGanhaveis: 0,
+    recentTransactions: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch user tickets
+      const { data: tickets, error: ticketsError } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (ticketsError) throw ticketsError;
+
+      // Fetch user transactions
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (transactionsError) throw transactionsError;
+
+      // Calculate stats
+      const totalTickets = tickets?.length || 0;
+      const totalSpent = transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      const activeGanhaveis = new Set(tickets?.map(t => t.ganhavel_id)).size || 0;
+
+      setStats({
+        totalTickets,
+        totalSpent: totalSpent / 100, // Convert from cents
+        activeGanhaveis,
+        recentTransactions: transactions || []
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Erro ao carregar dados do dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -65,36 +127,59 @@ export default function Dashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Meus Ganhaveis</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Meus Tickets
+                </CardTitle>
                 <CardDescription>
-                  Ganhaveis que você está participando
+                  Total de tickets comprados
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{loading ? "..." : stats.totalTickets}</p>
                 <p className="text-sm text-muted-foreground">
-                  Nenhum ganhavel ativo
+                  {stats.totalTickets === 0 ? "Nenhum ticket comprado" : `${stats.totalTickets} ticket${stats.totalTickets > 1 ? 's' : ''} ativo${stats.totalTickets > 1 ? 's' : ''}`}
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Prêmios Ganhos</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5" />
+                  Ganhaveis Ativos
+                </CardTitle>
                 <CardDescription>
-                  Total de prêmios conquistados
+                  Ganhaveis que você está participando
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{loading ? "..." : stats.activeGanhaveis}</p>
                 <p className="text-sm text-muted-foreground">
-                  Nenhum prêmio ganho ainda
+                  {stats.activeGanhaveis === 0 ? "Nenhum ganhavel ativo" : `Participando de ${stats.activeGanhaveis} ganhavel${stats.activeGanhaveis > 1 ? 'eis' : ''}`}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Total Investido</CardTitle>
+                <CardDescription>
+                  Valor total gasto em participações
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {loading ? "..." : `R$ ${stats.totalSpent.toFixed(2)}`}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.totalSpent === 0 ? "Nenhum gasto registrado" : "Valor acumulado"}
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="mt-8">
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Bem-vindo ao Ganhavel!</CardTitle>
@@ -103,15 +188,63 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-4">
                   Explore os ganhaveis disponíveis e comece a participar para ter a chance de ganhar 
                   carros, motos, dinheiro e muito mais!
                 </p>
-                <div className="mt-4">
-                  <Button asChild>
-                    <Link to="/descobrir">Explorar Ganhaveis</Link>
-                  </Button>
-                </div>
+                <Button asChild>
+                  <Link to="/descobrir">Explorar Ganhaveis</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5" />
+                  Histórico Recente
+                </CardTitle>
+                <CardDescription>
+                  Suas últimas transações
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                  </div>
+                ) : stats.recentTransactions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma transação encontrada
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {stats.recentTransactions.slice(0, 3).map((transaction) => (
+                      <div key={transaction.id} className="flex justify-between items-center py-2 border-b border-border/50">
+                        <div>
+                          <p className="text-sm font-medium">
+                            Pagamento #{transaction.id.slice(0, 8)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">
+                            R$ {((transaction.amount || 0) / 100).toFixed(2)}
+                          </p>
+                          <p className={`text-xs ${
+                            transaction.status === 'completed' ? 'text-green-600' : 
+                            transaction.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                          }`}>
+                            {transaction.status === 'completed' ? 'Pago' : 
+                             transaction.status === 'pending' ? 'Pendente' : 'Falhou'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

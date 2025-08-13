@@ -12,6 +12,10 @@ import SubcategoriaGanhaveis from "./pages/SubcategoriaGanhaveis";
 import Descobrir from "./pages/Descobrir";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
+import EsqueciSenha from "./pages/EsqueciSenha";
+import ResetPassword from "./pages/ResetPassword";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import TestPayment from "./pages/TestPayment";
 import MinhaConta from "./pages/MinhaConta";
 import ComoFunciona from "./pages/ComoFunciona";
 import GuiaDoCriador from "./pages/GuiaDoCriador";
@@ -90,6 +94,10 @@ const AppContent = () => {
           <Route path="/ganhavel/:ganhaveisId/pagamento-erro" element={<PagamentoErro />} />
           <Route path="/cadastro" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/test-payment" element={<TestPayment />} />
           <Route path="/minha-conta" element={<MinhaConta />} />
           <Route path="/alterar-senha" element={<AlterarSenha />} />
           <Route path="/gerenciar-cartoes-e-pix" element={<GerenciarCartoesEPix />} />

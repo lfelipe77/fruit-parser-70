@@ -56,7 +56,7 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${window.location.origin}/#/dashboard`
         }
       });
 
@@ -101,7 +101,7 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/#/dashboard`;
       
       const { error } = await supabase.auth.signUp({
         email,
