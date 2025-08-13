@@ -3,16 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 
 export default function AuthCallback() {
   useEffect(() => {
-    (async () => {
+    const handleAuthCallback = async () => {
       try {
-        await supabase.auth.getSession();
-      } catch (e) {
-        // ignore; if the session already exists, this can throw a benign error
-      } finally {
-        // send the user into the app (HashRouter)
+        // Handle the OAuth callback with hash fragments
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Auth callback error:', error);
+        }
+        // Always redirect to dashboard via hash routing
+        window.location.replace('/#/dashboard');
+      } catch (error) {
+        console.error('Auth callback error:', error);
         window.location.replace('/#/dashboard');
       }
-    })();
+    };
+
+    handleAuthCallback();
   }, []);
   return <p>Conectando…</p>;
 }
