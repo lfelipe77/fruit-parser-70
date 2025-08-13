@@ -243,29 +243,48 @@ export default function SignUp() {
           "cf-turnstile-response": `${tsToken.slice(0, 10)}...(${tsToken.length} chars total)` 
         });
         
-        const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "cf-turnstile-response": tsToken })
-        }).catch(fetchErr => {
-          const errorTime = new Date().toISOString();
-          console.error(`[${errorTime}] Fetch error after ${Date.now() - fetchStartTime}ms:`, fetchErr);
-          throw new Error(`Network error: ${fetchErr.message}`);
-        });
-
-        const fetchEndTime = Date.now();
-        const fetchDuration = fetchEndTime - fetchStartTime;
-        console.log(`[${new Date(fetchEndTime).toISOString()}] Fetch completed in ${fetchDuration}ms`);
-
-        if (!res.ok) {
-          console.error(`[${new Date().toISOString()}] HTTP error:`, res.status, res.statusText);
-          console.error(`[${new Date().toISOString()}] Response headers:`, Object.fromEntries(res.headers.entries()));
+        let res;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          console.log(`[${new Date().toISOString()}] Verification attempt ${attempt}/3`);
           
-          const errorText = await res.text().catch(() => 'Unable to read response');
-          console.error(`[${new Date().toISOString()}] Response body:`, errorText);
-          console.error(`[${new Date().toISOString()}] Total verification time:`, Date.now() - fetchStartTime, 'ms');
-          
-          throw new Error(`HTTP ${res.status}: ${errorText}`);
+          res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "cf-turnstile-response": tsToken })
+          }).catch(fetchErr => {
+            const errorTime = new Date().toISOString();
+            console.error(`[${errorTime}] Fetch error on attempt ${attempt} after ${Date.now() - fetchStartTime}ms:`, fetchErr);
+            throw new Error(`Network error: ${fetchErr.message}`);
+          });
+
+          const fetchEndTime = Date.now();
+          const fetchDuration = fetchEndTime - fetchStartTime;
+          console.log(`[${new Date(fetchEndTime).toISOString()}] Attempt ${attempt} fetch completed in ${fetchDuration}ms`);
+
+          if (res.ok) {
+            console.log(`[${new Date().toISOString()}] Verification successful on attempt ${attempt}`);
+            break;
+          } else if (res.status === 429) {
+            const errorText = await res.text().catch(() => 'Unable to read response');
+            console.warn(`[${new Date().toISOString()}] Rate limit hit on attempt ${attempt}. Status: ${res.status}, Text: ${errorText}`);
+            
+            if (attempt < 3) {
+              console.warn(`[${new Date().toISOString()}] Waiting 2s before retry...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            } else {
+              console.error(`[${new Date().toISOString()}] All retry attempts exhausted, final status: ${res.status}`);
+              throw new Error(`Rate limit exceeded after 3 attempts: ${errorText}`);
+            }
+          } else {
+            console.error(`[${new Date().toISOString()}] HTTP error on attempt ${attempt}:`, res.status, res.statusText);
+            console.error(`[${new Date().toISOString()}] Response headers:`, Object.fromEntries(res.headers.entries()));
+            
+            const errorText = await res.text().catch(() => 'Unable to read response');
+            console.error(`[${new Date().toISOString()}] Response body:`, errorText);
+            console.error(`[${new Date().toISOString()}] Total verification time:`, Date.now() - fetchStartTime, 'ms');
+            
+            throw new Error(`HTTP ${res.status}: ${errorText}`);
+          }
         }
 
         const json = await res.json().catch(jsonErr => {
