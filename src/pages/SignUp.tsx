@@ -201,39 +201,87 @@ export default function SignUp() {
       return;
     }
 
-    // Turnstile gate BEFORE existing signup logic (skip if bypassed)
+    // Turnstile verification with enhanced debugging
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
       console.log("Checking Turnstile token...");
       const tsToken = (window as any)._tsToken;
-      console.log("Turnstile token:", tsToken ? "present" : "missing");
+      const widgetId = (window as any)._tsWidgetId;
+      
+      console.log("Turnstile debug info:", {
+        token: tsToken ? `${tsToken.slice(0, 10)}...` : "missing",
+        widgetId: widgetId,
+        turnstileLoaded: !!(window as any).turnstile,
+        widgetElement: !!document.querySelector('#ts-widget')
+      });
       
       if (!tsToken) {
-        console.warn("No TS token; resetting");
-        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        console.error('Turnstile token not found, widget may not be loaded or verified');
+        try { 
+          (window as any).turnstile?.reset(widgetId); 
+          console.log('Turnstile widget reset');
+        } catch (resetErr) {
+          console.error('Failed to reset Turnstile widget:', resetErr);
+        }
         toast.error('Verificação anti-bot necessária. Aguarde um momento e tente novamente.');
         return;
       }
 
       try {
-        console.log("Verifying Turnstile token...");
+        console.log('Sending Turnstile token to backend:', tsToken.slice(0, 10) + '...');
         const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ "cf-turnstile-response": tsToken })
+        }).catch(fetchErr => {
+          console.error('Fetch error:', fetchErr);
+          throw new Error(`Network error: ${fetchErr.message}`);
         });
-        const json = await res.json();
-        console.info("verify-turnstile response", json);
+
+        if (!res.ok) {
+          console.error('HTTP error:', res.status, res.statusText);
+          const errorText = await res.text().catch(() => 'Unable to read response');
+          console.error('Response body:', errorText);
+          throw new Error(`HTTP ${res.status}: ${errorText}`);
+        }
+
+        const json = await res.json().catch(jsonErr => {
+          console.error('JSON parse error:', jsonErr);
+          throw new Error('Invalid JSON response from server');
+        });
+
+        console.log('Turnstile verified, proceeding with signup:', json);
 
         if (!json.success) {
-          console.warn("Turnstile verification failed:", json);
-           try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+          console.error('Turnstile verification failed:', json);
+          const errorCodes = json['error-codes'] || json.errorCodes || [];
+          console.error('Error codes:', errorCodes);
+          
+          try { 
+            (window as any).turnstile?.reset(widgetId); 
+            console.log('Turnstile widget reset after failed verification');
+          } catch (resetErr) {
+            console.error('Failed to reset Turnstile widget:', resetErr);
+          }
+          
           toast.error('Falha na verificação anti-bot. Tente novamente.');
           return;
         }
         console.log("Turnstile verification successful");
       } catch (err) {
-        console.warn('Turnstile verify error:', err);
-         try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        console.error('Turnstile verification error:', err);
+        console.error('Error details:', {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
+        
+        try { 
+          (window as any).turnstile?.reset(widgetId); 
+          console.log('Turnstile widget reset after error');
+        } catch (resetErr) {
+          console.error('Failed to reset Turnstile widget:', resetErr);
+        }
+        
         toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
