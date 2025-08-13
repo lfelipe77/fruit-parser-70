@@ -194,99 +194,131 @@ export default function SignUp() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Email signup initiated with form data:", formData);
+    const startTime = Date.now();
+    const startTimestamp = new Date(startTime).toISOString();
+    console.log(`[${startTimestamp}] Email signup initiated with form data:`, formData);
     
     if (!acceptedTerms) {
       toast.error('Você deve aceitar os termos para continuar');
       return;
     }
 
-    // Turnstile verification with enhanced debugging
+    // Turnstile verification with enhanced timing and debugging
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
-      console.log("Checking Turnstile token...");
+      const checkStartTime = Date.now();
+      console.log(`[${new Date(checkStartTime).toISOString()}] Checking Turnstile token...`);
+      
       const tsToken = (window as any)._tsToken;
       const widgetId = (window as any)._tsWidgetId;
       
-      console.log("Turnstile debug info:", {
+      console.log(`[${new Date().toISOString()}] Turnstile debug info:`, {
         token: tsToken ? `${tsToken.slice(0, 10)}...` : "missing",
+        tokenLength: tsToken ? tsToken.length : 0,
         widgetId: widgetId,
         turnstileLoaded: !!(window as any).turnstile,
-        widgetElement: !!document.querySelector('#ts-widget')
+        widgetElement: !!document.querySelector('#ts-widget'),
+        timeSinceStart: Date.now() - startTime + 'ms'
       });
       
       if (!tsToken) {
-        console.error('Turnstile token not found, widget may not be loaded or verified');
+        const errorTime = new Date().toISOString();
+        console.error(`[${errorTime}] Turnstile token not found at, widget may not be loaded or verified`);
+        console.error(`[${errorTime}] Total time elapsed:`, Date.now() - startTime, 'ms');
+        
         try { 
           (window as any).turnstile?.reset(widgetId); 
-          console.log('Turnstile widget reset');
+          console.log(`[${new Date().toISOString()}] Turnstile widget reset`);
         } catch (resetErr) {
-          console.error('Failed to reset Turnstile widget:', resetErr);
+          console.error(`[${new Date().toISOString()}] Failed to reset Turnstile widget:`, resetErr);
         }
         toast.error('Verificação anti-bot necessária. Aguarde um momento e tente novamente.');
         return;
       }
 
       try {
-        console.log('Sending Turnstile token to backend:', tsToken.slice(0, 10) + '...');
+        const fetchStartTime = Date.now();
+        const fetchStartTimestamp = new Date(fetchStartTime).toISOString();
+        console.log(`[${fetchStartTimestamp}] Sending Turnstile token to backend. Token: ${tsToken.slice(0, 10)}...`);
+        console.log(`[${fetchStartTimestamp}] Request payload:`, { 
+          "cf-turnstile-response": `${tsToken.slice(0, 10)}...(${tsToken.length} chars total)` 
+        });
+        
         const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ "cf-turnstile-response": tsToken })
         }).catch(fetchErr => {
-          console.error('Fetch error:', fetchErr);
+          const errorTime = new Date().toISOString();
+          console.error(`[${errorTime}] Fetch error after ${Date.now() - fetchStartTime}ms:`, fetchErr);
           throw new Error(`Network error: ${fetchErr.message}`);
         });
 
+        const fetchEndTime = Date.now();
+        const fetchDuration = fetchEndTime - fetchStartTime;
+        console.log(`[${new Date(fetchEndTime).toISOString()}] Fetch completed in ${fetchDuration}ms`);
+
         if (!res.ok) {
-          console.error('HTTP error:', res.status, res.statusText);
+          console.error(`[${new Date().toISOString()}] HTTP error:`, res.status, res.statusText);
+          console.error(`[${new Date().toISOString()}] Response headers:`, Object.fromEntries(res.headers.entries()));
+          
           const errorText = await res.text().catch(() => 'Unable to read response');
-          console.error('Response body:', errorText);
+          console.error(`[${new Date().toISOString()}] Response body:`, errorText);
+          console.error(`[${new Date().toISOString()}] Total verification time:`, Date.now() - fetchStartTime, 'ms');
+          
           throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
 
         const json = await res.json().catch(jsonErr => {
-          console.error('JSON parse error:', jsonErr);
+          const errorTime = new Date().toISOString();
+          console.error(`[${errorTime}] JSON parse error after ${Date.now() - fetchStartTime}ms:`, jsonErr);
           throw new Error('Invalid JSON response from server');
         });
 
-        console.log('Turnstile verified, proceeding with signup:', json);
+        const successTime = new Date().toISOString();
+        const totalDuration = Date.now() - fetchStartTime;
+        console.log(`[${successTime}] Turnstile verified, proceeding with signup. Response:`, json);
+        console.log(`[${successTime}] Verification completed in ${totalDuration}ms`);
 
         if (!json.success) {
-          console.error('Turnstile verification failed:', json);
+          console.error(`[${new Date().toISOString()}] Turnstile verification failed:`, json);
           const errorCodes = json['error-codes'] || json.errorCodes || [];
-          console.error('Error codes:', errorCodes);
+          console.error(`[${new Date().toISOString()}] Error codes:`, errorCodes);
+          console.error(`[${new Date().toISOString()}] Full response structure:`, Object.keys(json));
           
           try { 
             (window as any).turnstile?.reset(widgetId); 
-            console.log('Turnstile widget reset after failed verification');
+            console.log(`[${new Date().toISOString()}] Turnstile widget reset after failed verification`);
           } catch (resetErr) {
-            console.error('Failed to reset Turnstile widget:', resetErr);
+            console.error(`[${new Date().toISOString()}] Failed to reset Turnstile widget:`, resetErr);
           }
           
           toast.error('Falha na verificação anti-bot. Tente novamente.');
           return;
         }
-        console.log("Turnstile verification successful");
+        console.log(`[${new Date().toISOString()}] Turnstile verification successful`);
       } catch (err) {
-        console.error('Turnstile verification error:', err);
-        console.error('Error details:', {
+        const errorTime = new Date().toISOString();
+        const errorDuration = Date.now() - startTime;
+        console.error(`[${errorTime}] Turnstile verification error after ${errorDuration}ms:`, err);
+        console.error(`[${errorTime}] Error details:`, {
           message: err.message,
           stack: err.stack,
-          name: err.name
+          name: err.name,
+          cause: err.cause
         });
         
         try { 
           (window as any).turnstile?.reset(widgetId); 
-          console.log('Turnstile widget reset after error');
+          console.log(`[${new Date().toISOString()}] Turnstile widget reset after error`);
         } catch (resetErr) {
-          console.error('Failed to reset Turnstile widget:', resetErr);
+          console.error(`[${new Date().toISOString()}] Failed to reset Turnstile widget:`, resetErr);
         }
         
         toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
     } else {
-      console.log("Turnstile bypassed for development");
+      console.log(`[${new Date().toISOString()}] Turnstile bypassed for development`);
     }
 
     // Validação completa com Zod
