@@ -1,17 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchFeaturedCategories, type CategoryPublic } from "@/lib/categories";
 import { Home } from "lucide-react";
 
-export type CategoryPublic = {
-  id: string;
-  nome: string;
-  slug: string;
-  icone_url: string | null;
-  descricao: string | null;
-  destaque: boolean;
-};
 
 export default function CategoriesSection() {
   const [categories, setCategories] = useState<CategoryPublic[]>([]);
@@ -19,16 +11,8 @@ export default function CategoriesSection() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const { data, error } = await (supabase as any)
-        .from("ganhavel_categories_public")
-        .select("*");
-      if (error) {
-        console.error("Failed to load categories from public view:", error.message);
-        return;
-      }
-      if (mounted && Array.isArray(data)) {
-        setCategories(data as CategoryPublic[]);
-      }
+      const rows = await fetchFeaturedCategories();
+      if (mounted) setCategories(rows);
     })();
     return () => {
       mounted = false;
