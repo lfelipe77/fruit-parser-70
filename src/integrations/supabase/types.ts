@@ -887,6 +887,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      sanitize_audit_context: {
+        Args: { input_context: Json }
+        Returns: Json
+      }
       search_audit_logs: {
         Args: {
           search_user_id?: string
