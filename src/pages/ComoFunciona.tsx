@@ -359,7 +359,7 @@ export default function ComoFunciona() {
                   <Shield className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold mb-2 text-green-700 dark:text-green-400">Produtos Próprios</h3>
-                    <p className="text-muted-foreground">Qualquer pessoa pode vender seus bens, desde que comprove a entrega ao ganhador para validar a liberação do valor perante a Monew.</p>
+                    <p className="text-muted-foreground">Qualquer pessoa pode vender seus bens, desde que comprove a entrega ao ganhador para validar a liberação do valor perante a Asaas.</p>
                   </div>
                 </div>
                 
@@ -580,7 +580,7 @@ export default function ComoFunciona() {
         </div>
       </section>
 
-      {/* Monew Partnership Section */}
+      {/* Asaas Partnership Section */}
       <section className="py-20 bg-gradient-to-br from-blue-500/5 to-green-500/5">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
@@ -593,11 +593,15 @@ export default function ComoFunciona() {
               </div>
               
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Pagamentos 100% Seguros
+                🔐 Segurança Digital pela Asaas
               </h2>
               
               <p className="text-xl text-muted-foreground max-w-4xl mx-auto mb-8">
-                Contamos com parceiro financeiro licenciado que faz a custódia dos valores arrecadados, 
+                Contamos com a 
+                <a href="https://www.asaas.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mx-1">
+                  Asaas
+                </a>
+                , fintech licenciada que faz a custódia dos valores arrecadados, 
                 libera os pagamentos somente após a entrega dos prêmios e garante segurança total via PIX.
               </p>
             </div>
@@ -650,12 +654,14 @@ export default function ComoFunciona() {
                   <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Building2 className="w-6 h-6 text-orange-600" />
                   </div>
-                  <h3 className="font-semibold mb-2 text-orange-700 dark:text-orange-400">
-                    Fintech Licenciada
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Regulamentada e confiável
-                  </p>
+                   <h3 className="font-semibold mb-2 text-orange-700 dark:text-orange-400">
+                     Asaas - Fintech Licenciada
+                   </h3>
+                   <p className="text-sm text-muted-foreground">
+                     <a href="https://www.asaas.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                       Regulamentada e confiável
+                     </a>
+                   </p>
                 </CardContent>
               </Card>
             </div>
@@ -893,8 +899,8 @@ export default function ComoFunciona() {
                 <h3 className="text-lg font-semibold mb-2">Como funcionam os valores?</h3>
                 <p className="text-muted-foreground">
                   Os valores são pagos diretamente para nosso parceiro financeiro seguro 
-                  <a href="https://monew.com.br" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mx-1">
-                    Monew
+                  <a href="https://www.asaas.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mx-1">
+                    Asaas
                   </a>
                   - uma fintech licenciada que retém o valor em segurança e autoriza a compra final do prêmio quando o ganhador for definido. 
                   A Ganhavel não movimenta dinheiro diretamente, garantindo total transparência e segurança nas transações.
@@ -917,7 +923,7 @@ export default function ComoFunciona() {
                 <h3 className="text-lg font-semibold mb-2">E se o prêmio não for entregue?</h3>
                 <p className="text-muted-foreground">
                   Se o prêmio não for comprovado como entregue até 7 dias após o sorteio, o ganhador poderá escolher outro produto do mesmo valor. 
-                  A plataforma em parceria com a Monew sempre fará a compra diretamente para garantir que o ganhador receba seu prêmio, 
+                  A plataforma em parceria com a Asaas sempre fará a compra diretamente para garantir que o ganhador receba seu prêmio, 
                   independentemente de qualquer problema com o organizador original.
                 </p>
               </CardContent>
@@ -937,7 +943,7 @@ export default function ComoFunciona() {
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold mb-2">A plataforma movimenta o dinheiro do ganhavel?</h3>
                 <p className="text-muted-foreground">
-                  Não. Os valores ficam sob custódia de parceiros de pagamento (como Monew). 
+                  Não. Os valores ficam sob custódia de parceiros de pagamento (como Asaas). 
                   Só são liberados após a confirmação da entrega do prêmio, trazendo mais segurança para todos.
                 </p>
               </CardContent>
@@ -1013,7 +1019,11 @@ export default function ComoFunciona() {
             <div className="flex items-center justify-center gap-2 text-muted-foreground">
               <CreditCard className="w-4 h-4" />
               <span className="text-sm">
-                💳 Pagamentos com segurança por Monew – Fintech Parceira Oficial da Ganhavel
+                💳 Pagamentos com segurança por 
+                <a href="https://www.asaas.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mx-1">
+                  Asaas
+                </a>
+                – Fintech Parceira Oficial da Ganhavel
               </span>
             </div>
             

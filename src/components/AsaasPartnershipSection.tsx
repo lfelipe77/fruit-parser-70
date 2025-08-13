@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 
-export default function MonewPartnershipSection() {
+export default function AsaasPartnershipSection() {
   const features = [
     {
       icon: Shield,
@@ -40,11 +40,11 @@ export default function MonewPartnershipSection() {
           </div>
           
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-            🔐 Parcerias Financeiras Regulamentadas
+            🔐 Segurança Digital pela Asaas
           </h2>
           
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
-            Parceiros Financeiros Licenciados.
+            Fintech licenciada e regulamentada para máxima segurança nas transações.
           </p>
         </div>
 
@@ -72,7 +72,11 @@ export default function MonewPartnershipSection() {
           <div className="text-center lg:text-left">
             <div className="flex items-center justify-center lg:justify-start gap-3 mb-4">
               <Building2 className="w-6 h-6 text-blue-400" />
-              <span className="text-white font-semibold text-lg">Infraestrutura de Pagamentos Licenciada</span>
+              <span className="text-white font-semibold text-lg">
+                <a href="https://www.asaas.com/" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                  Asaas - Infraestrutura de Pagamentos Licenciada
+                </a>
+              </span>
             </div>
             <p className="text-slate-400 text-xs mt-2">
               Fintech licenciada e regulamentada
