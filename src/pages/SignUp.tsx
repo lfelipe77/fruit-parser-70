@@ -44,7 +44,7 @@ export default function SignUp() {
   const previewBypassToken = 'PREVIEW_BYPASS';
 
   const ensureWidget = async () => {
-    if (!isProdHost) return; // Bypass: do not render widget on non-prod hosts
+    if (!isProdHost || import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') return; // Bypass: do not render widget on non-prod hosts or if bypassed
     const el = document.getElementById('turnstile-signup');
     if (!el) throw new Error('Elemento Turnstile não encontrado');
     const renderNow = () => {
@@ -90,7 +90,7 @@ export default function SignUp() {
   };
 
   const getTurnstileToken = async () => {
-    if (!isProdHost) {
+    if (!isProdHost || import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') {
       return previewBypassToken;
     }
     await ensureWidget();
@@ -449,13 +449,15 @@ export default function SignUp() {
                 {!user && (
                   <>
                     {/* Turnstile (invisible) container */}
-                    <div
-                      id="turnstile-signup"
-                      className="hidden"
-                      data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                      data-size="invisible"
-                      data-action="signup"
-                    />
+                    {import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true' && (
+                      <div
+                        id="turnstile-signup"
+                        className="hidden"
+                        data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                        data-size="invisible"
+                        data-action="signup"
+                      />
+                    )}
 
                     {/* Security information */}
                     <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">

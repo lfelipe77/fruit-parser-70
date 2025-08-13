@@ -29,6 +29,11 @@ export default function Login() {
   
 
   useEffect(() => {
+    // Check if Turnstile should be bypassed
+    if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') {
+      return; // Skip Turnstile initialization
+    }
+
     const sitekey = import.meta.env.VITE_TURNSTILE_SITEKEY || "0x4AAAAAABpqGDEenRovXaTv";
     (window as any)._tsToken = null;
     (window as any)._tsWidgetId = null;
@@ -99,35 +104,37 @@ export default function Login() {
     e.preventDefault();
     console.info("Login submit fired");
 
-    // Turnstile gate BEFORE existing login logic
-    const tsToken = (window as any)._tsToken;
-    if (!tsToken) {
-      console.warn("No TS token; resetting");
-      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-      toast.error('Verificação necessária.');
-      return;
-    }
+    // Turnstile gate BEFORE existing login logic (skip if bypassed)
+    if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
+      const tsToken = (window as any)._tsToken;
+      if (!tsToken) {
+        console.warn("No TS token; resetting");
+        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        toast.error('Verificação necessária.');
+        return;
+      }
 
-    try {
-      const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "cf-turnstile-response": tsToken })
-      });
-      const json = await res.json();
-      console.info("verify-turnstile response", json);
+      try {
+        const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "cf-turnstile-response": tsToken })
+        });
+        const json = await res.json();
+        console.info("verify-turnstile response", json);
 
-      if (!json.success) {
-        console.warn("Turnstile verification failed:", json);
+        if (!json.success) {
+          console.warn("Turnstile verification failed:", json);
+           try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+          toast.error('Falha na verificação anti-bot. Tente novamente.');
+          return;
+        }
+      } catch (err) {
+        console.warn('Turnstile verify error:', err);
          try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
         toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
       }
-    } catch (err) {
-      console.warn('Turnstile verify error:', err);
-       try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-      toast.error('Falha na verificação anti-bot. Tente novamente.');
-      return;
     }
 
     // Validação completa com Zod
@@ -163,23 +170,27 @@ export default function Login() {
   };
 
   const onGoogleSignIn = async () => {
-    const token = (window as any)._tsToken;
-    if (!token) {
-      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-      setError("Verificação necessária.");
-      return;
+    // Skip Turnstile verification if bypassed
+    if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
+      const token = (window as any)._tsToken;
+      if (!token) {
+        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        setError("Verificação necessária.");
+        return;
+      }
+      const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "cf-turnstile-response": token })
+      });
+      const json = await res.json();
+      if (!json.success) {
+        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+        setError("Falha na verificação anti-bot. Tente novamente.");
+        return;
+      }
     }
-    const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ "cf-turnstile-response": token })
-    });
-    const json = await res.json();
-    if (!json.success) {
-      try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-      setError("Falha na verificação anti-bot. Tente novamente.");
-      return;
-    }
+    
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { 
@@ -288,7 +299,9 @@ export default function Login() {
               </div>
 
                 {/* Turnstile widget (explicit render container) */}
-                <div id="ts-widget" />
+                {import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true' && (
+                  <div id="ts-widget" />
+                )}
                 {/* Security information */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
