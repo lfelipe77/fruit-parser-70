@@ -16,7 +16,8 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  console.log('[dash] mounted');
+  const { user, loading: authLoading, signOut } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalTickets: 0,
     totalSpent: 0,
@@ -26,13 +27,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    console.log('[dash] user state:', { user: !!user, authLoading });
+    if (user && !authLoading) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchDashboardData = async () => {
     try {
+      console.log('[dash] fetching data for user:', user?.id);
+      
+      // For now, just set loading to false and show the dashboard
+      // We'll add real data fetching later when the tables exist
+      setStats({
+        totalTickets: 0,
+        totalSpent: 0,
+        activeGanhaveis: 0,
+        recentTransactions: []
+      });
+      
+      /* TODO: Uncomment when tables exist
       // Fetch user tickets
       const { data: tickets, error: ticketsError } = await supabase
         .from('tickets')
@@ -62,6 +76,7 @@ export default function Dashboard() {
         activeGanhaveis,
         recentTransactions: transactions || []
       });
+      */
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erro ao carregar dados do dashboard');
@@ -70,7 +85,21 @@ export default function Dashboard() {
     }
   };
 
+  // Show loading state while auth is loading
+  if (authLoading) {
+    console.log('[dash] showing loading state');
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // RequireAuth should handle this, but just in case
   if (!user) {
+    console.log('[dash] no user, should not happen with RequireAuth');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -79,6 +108,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  console.log('[dash] rendering dashboard for user:', user.email);
 
   return (
     <>
