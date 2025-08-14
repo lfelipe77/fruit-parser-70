@@ -56,6 +56,7 @@ export default function GlobalAuthDebugOverlay() {
       <div><b>Session:</b> {String(state.hasSession)}</div>
       <div><b>UID:</b> {state.uid || '—'}</div>
       <div><b>Email:</b> {state.email || '—'}</div>
+      <div><b>Storage keys:</b> {Object.keys(window.localStorage || {}).filter(k => k.includes('sb-') || k.includes('supabase')).join(', ') || '—'}</div>
       <div style={{marginTop:6}}><b>Profile:</b></div>
       <pre style={{whiteSpace:'pre-wrap', margin:0}}>{JSON.stringify(state.profile, null, 2)}</pre>
       {state.profileError && (

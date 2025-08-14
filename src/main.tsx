@@ -28,20 +28,26 @@ async function oauthEarly(): Promise<boolean> {
         return true; // handled (we navigated)
       }
       console.log('[oauth-early] exchange success');
+      // Update URL without reloading and let React boot
+      history.replaceState(null, '', `${window.location.origin}/#/dashboard`);
+      return false; // let app boot with stored session
     } else if (hasAccessToken) {
       // Implicit flow with access_token (fallback)
-      const { error } = await supabase.auth.getSession();
-      if (error) {
+      // The session should already be detected via detectSessionInUrl: true
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
         console.error('[oauth-early] session from URL error:', error);
         window.location.replace(`${window.location.origin}/#/login`);
         return true; // handled (we navigated)
       }
       console.log('[oauth-early] session from URL success');
+      // Update URL without reloading and let React boot
+      history.replaceState(null, '', `${window.location.origin}/#/dashboard`);
+      return false; // let app boot with stored session
     }
     
-    // success → go to dashboard
-    window.location.replace(`${window.location.origin}/#/dashboard`);
-    return true; // handled
+    // This shouldn't be reached now, but keeping as fallback
+    return false;
   } catch (e) {
     console.warn('[oauth-early] exchange threw:', e);
     window.location.replace(`${window.location.origin}/#/login`);
