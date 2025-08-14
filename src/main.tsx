@@ -7,48 +7,43 @@ import './i18n'
 // --- EARLY OAUTH HANDLER (runs before router/guards) ---
 import { supabase } from '@/integrations/supabase/client';
 
-(function earlyOAuth() {
+async function oauthEarly(): Promise<boolean> {
+  const href = window.location.href;
+  const hasCode   = href.includes('code=');
+  const cbHash    = href.includes('#/auth-callback');
+  const cbNonHash = href.includes('/auth/callback');
+  console.log('[oauth-early] href:', href, { hasCode, cbHash, cbNonHash });
+
+  if (!hasCode || (!cbHash && !cbNonHash)) return false;
+
+  console.log('[oauth-early] exchanging code before app boot…');
   try {
-    const href = window.location.href;
-
-    // Detect a callback on either /auth/callback?code=... or #/auth-callback?code=...
-    const isNonHashCb = href.includes('/auth/callback') && href.includes('code=');
-    const isHashCb    = href.includes('#/auth-callback') && href.includes('code=');
-
-    if (!isNonHashCb && !isHashCb) return; // nothing to do
-
-    console.log('[oauth] early handler: detected callback', { href });
-
-    // Exchange *before* rendering the app, to avoid guard races
-    supabase.auth.exchangeCodeForSession(href)
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('[oauth] exchange error', error);
-          // If exchange failed, send to login
-          window.location.replace(`${window.location.origin}/#/login`);
-          return;
-        }
-        console.log('[oauth] exchange success', { user: data?.user?.id });
-        // Send user to dashboard (hash or non-hash dashboard both acceptable if route exists)
-        window.location.replace(`${window.location.origin}/#/dashboard`);
-      })
-      .catch((e) => {
-        console.warn('[oauth] exchange threw', e);
-        window.location.replace(`${window.location.origin}/#/login`);
-      });
-
-    // IMPORTANT: prevent the rest of the app from booting under the callback URL
-    // The page will navigate after exchange.
-    throw new Error('STOP_BOOTSTRAP_UNTIL_OAUTH_EXCHANGE');
-  } catch (e) {
-    if ((e as Error).message !== 'STOP_BOOTSTRAP_UNTIL_OAUTH_EXCHANGE') {
-      console.warn('[oauth] early handler wrapper', e);
+    const { error } = await supabase.auth.exchangeCodeForSession(href);
+    if (error) {
+      console.error('[oauth-early] exchange error:', error);
+      window.location.replace(`${window.location.origin}/#/login`);
+      return true; // handled (we navigated)
     }
+    // success → go to dashboard
+    console.log('[oauth-early] exchange success');
+    window.location.replace(`${window.location.origin}/#/dashboard`);
+    return true; // handled
+  } catch (e) {
+    console.warn('[oauth-early] exchange threw:', e);
+    window.location.replace(`${window.location.origin}/#/login`);
+    return true; // handled
   }
-})();
+}
 
-createRoot(document.getElementById("root")!).render(
-  <HelmetProvider>
-    <App />
-  </HelmetProvider>
-);
+// Wrap existing React render
+(async function boot() {
+  const handled = await oauthEarly();
+  if (handled) return; // don't render the app under callback URL
+
+  // ↓ keep existing render exactly as it was ↓
+  createRoot(document.getElementById("root")!).render(
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  );
+})();

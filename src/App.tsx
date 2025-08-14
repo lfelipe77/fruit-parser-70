@@ -25,6 +25,7 @@ import EsqueciSenha from "./pages/EsqueciSenha";
 import ResetPassword from "./pages/ResetPassword";
 import AlterarSenha from "./pages/AlterarSenha";
 import AuthCallback from "./pages/AuthCallback";
+import AuthHashCallback from "./pages/AuthHashCallback";
 import MinhaConta from "./pages/MinhaConta";
 import LanceSeuGanhavel from "./pages/LanceSeuGanhavel";
 import GerenciarGanhavel from "./pages/GerenciarGanhavel";
@@ -179,8 +180,9 @@ const AppContent = () => {
         <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
         <Route path="/pagamento-erro" element={<PagamentoErro />} />
         <Route path="/access-denied" element={<AccessDenied />} />
-        {/* OAuth callback route (non-hash path for Supabase) */}
+        {/* OAuth callback routes */}
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/auth-callback" element={<AuthHashCallback />} />
         {/* Dev-only test route, admin-protected */}
         {import.meta.env.DEV && (
           <Route path="/test-audit" element={
