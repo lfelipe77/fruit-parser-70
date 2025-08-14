@@ -2,10 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Play, TrendingUp, Users, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useHeroCopy } from "@/hooks/useHeroCopy";
+import { FadeText } from "@/components/FadeText";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
+  // Stable per session; auto-rotate every 7s
+  const { headline, subline } = useHeroCopy({ persist: "session", autoRotateMs: 7000 });
   
   return (
     <section className="relative bg-gradient-hero py-12 md:py-20 lg:py-32 overflow-hidden">
@@ -13,12 +17,20 @@ export default function HeroSection() {
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="space-y-6 md:space-y-8 animate-fade-in text-center lg:text-left">
             <div className="space-y-4 max-w-xl mx-auto lg:mx-0">
-              <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold leading-tight">
-                {t('heroTitle')}
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-                {t('heroSubtitle')}
-              </p>
+              <FadeText 
+                as="h1" 
+                duration={450}
+                className="text-3xl md:text-4xl lg:text-6xl font-bold leading-tight"
+              >
+                {headline}
+              </FadeText>
+              <FadeText 
+                as="p" 
+                duration={450}
+                className="text-lg md:text-xl text-muted-foreground leading-relaxed"
+              >
+                {subline}
+              </FadeText>
             </div>
             
             {/* Mobile image - shown right after title on mobile only */}
