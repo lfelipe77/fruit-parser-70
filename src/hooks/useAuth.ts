@@ -76,7 +76,6 @@ export const useAuth = () => {
           options: {
             redirectTo: `${window.location.origin}/#/auth-callback`,
             queryParams: {
-              // optional but nice: force account chooser
               prompt: 'select_account',
             },
           }

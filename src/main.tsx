@@ -10,22 +10,36 @@ import { supabase } from '@/integrations/supabase/client';
 async function oauthEarly(): Promise<boolean> {
   const href = window.location.href;
   const hasCode   = href.includes('code=');
+  const hasAccessToken = href.includes('access_token=');
   const cbHash    = href.includes('#/auth-callback');
   const cbNonHash = href.includes('/auth/callback');
-  console.log('[oauth-early] href:', href, { hasCode, cbHash, cbNonHash });
+  console.log('[oauth-early] href:', href, { hasCode, hasAccessToken, cbHash, cbNonHash });
 
-  if (!hasCode || (!cbHash && !cbNonHash)) return false;
+  if ((!hasCode && !hasAccessToken) || (!cbHash && !cbNonHash)) return false;
 
-  console.log('[oauth-early] exchanging code before app boot…');
+  console.log('[oauth-early] exchanging code/token before app boot…');
   try {
-    const { error } = await supabase.auth.exchangeCodeForSession(href);
-    if (error) {
-      console.error('[oauth-early] exchange error:', error);
-      window.location.replace(`${window.location.origin}/#/login`);
-      return true; // handled (we navigated)
+    if (hasCode) {
+      // PKCE flow with code
+      const { error } = await supabase.auth.exchangeCodeForSession(href);
+      if (error) {
+        console.error('[oauth-early] exchange error:', error);
+        window.location.replace(`${window.location.origin}/#/login`);
+        return true; // handled (we navigated)
+      }
+      console.log('[oauth-early] exchange success');
+    } else if (hasAccessToken) {
+      // Implicit flow with access_token (fallback)
+      const { error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('[oauth-early] session from URL error:', error);
+        window.location.replace(`${window.location.origin}/#/login`);
+        return true; // handled (we navigated)
+      }
+      console.log('[oauth-early] session from URL success');
     }
+    
     // success → go to dashboard
-    console.log('[oauth-early] exchange success');
     window.location.replace(`${window.location.origin}/#/dashboard`);
     return true; // handled
   } catch (e) {
