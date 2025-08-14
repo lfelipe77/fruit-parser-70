@@ -317,6 +317,64 @@ export type Database = {
           },
         ]
       }
+      payouts: {
+        Row: {
+          commission_amount: number
+          commission_pct: number
+          created_at: string
+          gross_amount: number
+          id: string
+          net_amount: number
+          provider_fee_total: number
+          raffle_id: string
+          settled_at: string | null
+        }
+        Insert: {
+          commission_amount: number
+          commission_pct?: number
+          created_at?: string
+          gross_amount: number
+          id?: string
+          net_amount: number
+          provider_fee_total?: number
+          raffle_id: string
+          settled_at?: string | null
+        }
+        Update: {
+          commission_amount?: number
+          commission_pct?: number
+          created_at?: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          provider_fee_total?: number
+          raffle_id?: string
+          settled_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+        ]
+      }
       public_visits: {
         Row: {
           city: string | null
@@ -625,6 +683,9 @@ export type Database = {
           created_at: string | null
           customer_email: string | null
           due_date: string | null
+          fee_amount: number | null
+          fee_fixed: number | null
+          fee_pct: number | null
           ganhavel_id: string
           id: string
           payment_id: string | null
@@ -634,6 +695,7 @@ export type Database = {
           source: string | null
           status: string | null
           ticket_numbers: Json | null
+          total_amount_computed: number | null
           type: string | null
           user_id: string
         }
@@ -642,6 +704,9 @@ export type Database = {
           created_at?: string | null
           customer_email?: string | null
           due_date?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_pct?: number | null
           ganhavel_id: string
           id?: string
           payment_id?: string | null
@@ -651,6 +716,7 @@ export type Database = {
           source?: string | null
           status?: string | null
           ticket_numbers?: Json | null
+          total_amount_computed?: number | null
           type?: string | null
           user_id: string
         }
@@ -659,6 +725,9 @@ export type Database = {
           created_at?: string | null
           customer_email?: string | null
           due_date?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_pct?: number | null
           ganhavel_id?: string
           id?: string
           payment_id?: string | null
@@ -668,6 +737,7 @@ export type Database = {
           source?: string | null
           status?: string | null
           ticket_numbers?: Json | null
+          total_amount_computed?: number | null
           type?: string | null
           user_id?: string
         }
@@ -868,12 +938,14 @@ export type Database = {
       }
       raffles_public: {
         Row: {
+          amount_collected: number | null
           category: string | null
           category_id: number | null
           created_at: string | null
           description: string | null
           draw_date: string | null
           draw_timestamp: string | null
+          goal_amount: number | null
           id: string | null
           image_url: string | null
           organizer_id: string | null
@@ -882,6 +954,7 @@ export type Database = {
           prize_value: number | null
           product_name: string | null
           product_value: number | null
+          progress_pct: number | null
           slug: string | null
           status: string | null
           ticket_price: number | null
@@ -1030,6 +1103,10 @@ export type Database = {
       example_function: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      finalize_payout: {
+        Args: { p_raffle_id: string }
+        Returns: string
       }
       get_admin_logs: {
         Args: Record<PropertyKey, never> | { p_limit?: number }

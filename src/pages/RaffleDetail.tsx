@@ -89,6 +89,8 @@ export default function RaffleDetail() {
 
   const userId = useMemo(() => session?.user?.id ?? null, [session]);
   const totalAmount = useMemo(() => (raffle ? (qty || 0) * (raffle.ticket_price ?? 0) : 0), [qty, raffle]);
+  const feeAmount = useMemo(() => provider === "asaas" ? 2.00 : 0.00, [provider]);
+  const grandTotal = useMemo(() => totalAmount + feeAmount, [totalAmount, feeAmount]);
 
   async function handleBuy() {
     try {
@@ -139,19 +141,22 @@ export default function RaffleDetail() {
         const t = await res.text();
         throw new Error(`Falha ao iniciar pagamento: ${t}`);
       }
-      const { provider: retProv, provider_payment_id, redirect_url } = await res.json();
+      const { provider: retProv, provider_payment_id, redirect_url, fee_fixed, fee_pct, fee_amount, amount: baseAmount, total_amount } = await res.json();
       if (!provider_payment_id || !redirect_url) {
         throw new Error("Resposta inválida do provedor de pagamento.");
       }
 
-      // 3) insert pending transaction (RLS: user inserts own)
+      // 3) insert pending transaction (store fees & base amount)
       const { error: txErr } = await supabase.from("transactions").insert({
         user_id: userId,
-        ganhavel_id: raffle.id, // Use ganhavel_id instead of raffle_id
-        amount: totalAmount,
+        ganhavel_id: raffle.id,
+        amount: baseAmount,     // base ticket revenue (qty * ticket_price)
         payment_provider: retProv,
         payment_id: provider_payment_id,
         status: "pending",
+        fee_fixed: fee_fixed ?? 0,
+        fee_pct: fee_pct ?? 0,
+        fee_amount: fee_amount ?? 0
       });
       if (txErr) throw txErr;
 
@@ -233,7 +238,13 @@ export default function RaffleDetail() {
           </div>
 
           <div className="text-sm text-gray-600">
-            Total: <span className="font-semibold">R$ {totalAmount.toFixed(2)}</span>
+            <div>Subtotal: <span className="font-medium">R$ {totalAmount.toFixed(2)}</span></div>
+            {provider === "asaas" && (
+              <div>Taxa Asaas: <span className="font-medium">R$ {feeAmount.toFixed(2)}</span></div>
+            )}
+            <div className="font-semibold text-base pt-1 border-t mt-1">
+              Total: <span className="font-semibold">R$ {grandTotal.toFixed(2)}</span>
+            </div>
           </div>
 
           <button
