@@ -21,13 +21,18 @@ export const usePublicVisitLogger = () => {
     const url = `https://whqxpuyjxoiufzhvqneg.functions.supabase.co/visit-logger?p=${encodeURIComponent(location.pathname)}`;
 
     // Fire-and-forget with timeout and error handling
-    try {
-      safeFetch(url, { method: 'POST', keepalive: true }, 3000, 'visit-logger')
-        .catch((error) => {
-          console.warn('visit logger failed', error);
-        });
-    } catch (error) {
-      console.warn('visit logger failed', error);
+    if (import.meta.env.VITE_ENABLE_VISIT_LOGGER === 'true') {
+      try {
+        safeFetch(url, { method: 'POST', keepalive: true }, 4000, 'visit-logger')
+          .then(res => {
+            if (!res.ok) console.warn('[visit-logger] non-ok', res.status);
+          })
+          .catch((error) => {
+            console.warn('[visit-logger] failed', error);
+          });
+      } catch (error) {
+        console.warn('[visit-logger] failed', error);
+      }
     }
   }, [location.pathname]);
 };

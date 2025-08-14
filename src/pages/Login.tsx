@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { loginSchema } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
-import { safeFetch } from "@/lib/net";
+import { safeFetch, withTimeout } from "@/lib/net";
 
 
 export default function Login() {
@@ -125,21 +125,26 @@ export default function Login() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ "cf-turnstile-response": tsToken })
           },
-          8000,
-          'turnstile-verify'
+          5000,
+          'verify-turnstile'
         );
         
-        const json = await res.json();
-        console.info("verify-turnstile response", json);
+        if (!res) {
+          console.warn('[turnstile] skipped due to timeout');
+          // For now, proceed anyway on timeout to prevent blocking
+        } else {
+          const json = await res.json();
+          console.info("verify-turnstile response", json);
 
-        if (!json.success) {
-          console.warn("Turnstile verification failed:", json);
-           try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-          toast.error('Falha na verificação anti-bot. Tente novamente.');
-          return;
+          if (!json.success) {
+            console.warn("Turnstile verification failed:", json);
+             try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+            toast.error('Falha na verificação anti-bot. Tente novamente.');
+            return;
+          }
         }
       } catch (err) {
-        console.warn('Turnstile verify error:', err);
+        console.warn('[turnstile] timeout/non-fatal', err);
          try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
         toast.error('Falha na verificação anti-bot. Tente novamente.');
         return;
@@ -187,21 +192,33 @@ export default function Login() {
         setError("Verificação necessária.");
         return;
       }
-      const res = await safeFetch(
-        "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "cf-turnstile-response": token })
-        },
-        8000,
-        'turnstile-verify-google'
-      );
-      const json = await res.json();
-      if (!json.success) {
-        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-        setError("Falha na verificação anti-bot. Tente novamente.");
-        return;
+      try {
+        const res = await safeFetch(
+          "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "cf-turnstile-response": token })
+          },
+          5000,
+          'verify-turnstile'
+        );
+        
+        if (!res) {
+          console.warn('[turnstile] skipped due to timeout');
+          // For now, proceed anyway on timeout to prevent blocking
+        } else {
+          const json = await res.json();
+          if (!json.success) {
+            try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+            setError("Falha na verificação anti-bot. Tente novamente.");
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('[turnstile] timeout/non-fatal', err);
+        // For now, proceed anyway on timeout to prevent blocking
+        console.warn('[turnstile] skipped due to timeout');
       }
     }
     

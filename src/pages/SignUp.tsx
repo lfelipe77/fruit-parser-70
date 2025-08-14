@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
-import { safeFetch } from "@/lib/net";
+import { safeFetch, withTimeout } from "@/lib/net";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -152,21 +152,33 @@ export default function SignUp() {
         toast.error("Verificação necessária.");
         return;
       }
-      const res = await safeFetch(
-        "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "cf-turnstile-response": token })
-        },
-        8000,
-        'turnstile-verify-google'
-      );
-      const json = await res.json();
-      if (!json.success) {
-        try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
-        toast.error("Falha na verificação anti-bot. Tente novamente.");
-        return;
+      try {
+        const res = await safeFetch(
+          "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "cf-turnstile-response": token })
+          },
+          5000,
+          'verify-turnstile'
+        );
+        
+        if (!res) {
+          console.warn('[turnstile] skipped due to timeout');
+          // For now, proceed anyway on timeout to prevent blocking
+        } else {
+          const json = await res.json();
+          if (!json.success) {
+            try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
+            toast.error("Falha na verificação anti-bot. Tente novamente.");
+            return;
+          }
+        }
+      } catch (error) {
+        console.warn('[turnstile] timeout/non-fatal', error);
+        // For now, proceed anyway on timeout to prevent blocking
+        console.warn('[turnstile] skipped due to timeout');
       }
     } else {
       console.log('[TS] Turnstile bypassed for Google signup');
@@ -255,93 +267,51 @@ export default function SignUp() {
           "cf-turnstile-response": `${tsToken.slice(0, 10)}...(${tsToken.length} chars total)` 
         });
         
-        let res;
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          console.log(`[${new Date().toISOString()}] Verification attempt ${attempt}/3`);
-          
-          res = await safeFetch(
-            "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ "cf-turnstile-response": tsToken })
-            },
-            8000,
-            `turnstile-verify-attempt-${attempt}`
-          ).catch(fetchErr => {
-            const errorTime = new Date().toISOString();
-            console.error(`[${errorTime}] Fetch error on attempt ${attempt} after ${Date.now() - fetchStartTime}ms:`, fetchErr);
-            throw new Error(`Network error: ${fetchErr.message}`);
-          });
-
-          const fetchEndTime = Date.now();
-          const fetchDuration = fetchEndTime - fetchStartTime;
-          console.log(`[${new Date(fetchEndTime).toISOString()}] Attempt ${attempt} fetch completed in ${fetchDuration}ms`);
-
-          if (res.ok) {
-            console.log(`[${new Date().toISOString()}] Verification successful on attempt ${attempt}`);
-            break;
-          } else if (res.status === 429) {
-            const errorText = await res.text().catch(() => 'Unable to read response');
-            console.warn(`[${new Date().toISOString()}] Rate limit hit on attempt ${attempt}. Status: ${res.status}, Text: ${errorText}`);
-            
-            if (attempt < 3) {
-              console.warn(`[${new Date().toISOString()}] Waiting 2s before retry...`);
-              await new Promise(resolve => setTimeout(resolve, 2000));
-            } else {
-              console.error(`[${new Date().toISOString()}] All retry attempts exhausted, final status: ${res.status}`);
-              throw new Error(`Rate limit exceeded after 3 attempts: ${errorText}`);
-            }
-          } else {
-            console.error(`[${new Date().toISOString()}] HTTP error on attempt ${attempt}:`, res.status, res.statusText);
-            console.error(`[${new Date().toISOString()}] Response headers:`, Object.fromEntries(res.headers.entries()));
-            
-            const errorText = await res.text().catch(() => 'Unable to read response');
-            console.error(`[${new Date().toISOString()}] Response body:`, errorText);
-            console.error(`[${new Date().toISOString()}] Total verification time:`, Date.now() - fetchStartTime, 'ms');
-            
-            throw new Error(`HTTP ${res.status}: ${errorText}`);
-          }
-        }
-
-        const json = await res.json().catch(jsonErr => {
-          const errorTime = new Date().toISOString();
-          console.error(`[${errorTime}] JSON parse error after ${Date.now() - fetchStartTime}ms:`, jsonErr);
-          throw new Error('Invalid JSON response from server');
+        const res = await safeFetch(
+          "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "cf-turnstile-response": tsToken })
+          },
+          5000,
+          'verify-turnstile'
+        ).catch(fetchErr => {
+          console.warn('[turnstile] timeout/non-fatal', fetchErr);
+          return null;
         });
 
-        const successTime = new Date().toISOString();
-        const totalDuration = Date.now() - fetchStartTime;
-        console.log(`[${successTime}] Turnstile verified, proceeding with signup. Response:`, json);
-        console.log(`[${successTime}] Verification completed in ${totalDuration}ms`);
+        if (!res) {
+          console.warn('[turnstile] skipped due to timeout');
+          // For now, proceed anyway on timeout to prevent blocking
+        } else {
+          const json = await res.json().catch(jsonErr => {
+            const errorTime = new Date().toISOString();
+            console.error(`[${errorTime}] JSON parse error:`, jsonErr);
+            throw new Error('Invalid JSON response from server');
+          });
 
-        if (!json.success) {
-          console.error(`[${new Date().toISOString()}] Turnstile verification failed:`, json);
-          const errorCodes = json['error-codes'] || json.errorCodes || [];
-          console.error(`[${new Date().toISOString()}] Error codes:`, errorCodes);
-          console.error(`[${new Date().toISOString()}] Full response structure:`, Object.keys(json));
-          
-          try { 
-            (window as any).turnstile?.reset(widgetId); 
-            console.log(`[${new Date().toISOString()}] Turnstile widget reset after failed verification`);
-          } catch (resetErr) {
-            console.error(`[${new Date().toISOString()}] Failed to reset Turnstile widget:`, resetErr);
+          console.log(`[${new Date().toISOString()}] Turnstile verified, proceeding with signup. Response:`, json);
+
+          if (!json.success) {
+            console.error(`[${new Date().toISOString()}] Turnstile verification failed:`, json);
+            
+            try { 
+              (window as any).turnstile?.reset(widgetId); 
+              console.log(`[${new Date().toISOString()}] Turnstile widget reset after failed verification`);
+            } catch (resetErr) {
+              console.error(`[${new Date().toISOString()}] Failed to reset Turnstile widget:`, resetErr);
+            }
+            
+            toast.error('Falha na verificação anti-bot. Tente novamente.');
+            return;
           }
-          
-          toast.error('Falha na verificação anti-bot. Tente novamente.');
-          return;
+          console.log(`[${new Date().toISOString()}] Turnstile verification successful`);
         }
-        console.log(`[${new Date().toISOString()}] Turnstile verification successful`);
       } catch (err) {
         const errorTime = new Date().toISOString();
         const errorDuration = Date.now() - startTime;
         console.error(`[${errorTime}] Turnstile verification error after ${errorDuration}ms:`, err);
-        console.error(`[${errorTime}] Error details:`, {
-          message: err.message,
-          stack: err.stack,
-          name: err.name,
-          cause: err.cause
-        });
         
         try { 
           (window as any).turnstile?.reset(widgetId); 
@@ -355,7 +325,6 @@ export default function SignUp() {
       }
     } else {
       console.log('[TS] Turnstile bypassed for email signup');
-      console.log(`[${new Date().toISOString()}] Turnstile bypassed for development`);
     }
 
     // Validação completa com Zod

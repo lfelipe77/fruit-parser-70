@@ -74,7 +74,7 @@ const DebugBanner = () => {
 
   return (
     <div style={{position:'fixed',top:0,left:0,right:0,zIndex:9999,fontSize:12,padding:'6px 10px',background:'#111',color:'#9ef'}}>
-      TS BYPASS: {String(bypass)} &nbsp;|&nbsp; SUPABASE: {supa}
+      TS BYPASS: {String(bypass)} | SUPABASE: {supa}
     </div>
   );
 };

@@ -54,13 +54,13 @@ export const useAuth = () => {
 
     // Check for existing session in background (non-blocking)
     setTimeout(() => {
-      withTimeout(supabase.auth.getSession(), 3000, 'auth-session')
+      withTimeout(supabase.auth.getSession(), 1500, 'auth-session')
         .then(({ data: { session } }) => {
           setSession(session);
           setUser(session?.user ?? null);
         })
         .catch((error) => {
-          console.warn('Error getting session:', error);
+          console.warn('[auth:init] non-fatal', error);
           // Continue with null session - don't block
         });
     }, 0);

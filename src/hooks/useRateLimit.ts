@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { withTimeout } from '@/lib/net';
 
 type RateLimitAction = 'raffle_creation' | 'login_attempt' | 'signup_attempt';
 
@@ -23,20 +24,18 @@ export const useRateLimit = () => {
     setIsChecking(true);
     
     try {
-      // Add timeout to prevent hanging
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const { data, error } = await supabase.functions.invoke('rate-limiter', {
-        body: {
-          action,
-          // Send email when relevant; server computes identifiers using IP
-          email: emailOrIdentifier && typeof emailOrIdentifier === 'string' ? emailOrIdentifier : undefined,
-          userAgent: navigator.userAgent,
-        },
-      });
-
-      clearTimeout(timeoutId);
+      const { data, error } = await withTimeout(
+        supabase.functions.invoke('rate-limiter', {
+          body: {
+            action,
+            // Send email when relevant; server computes identifiers using IP
+            email: emailOrIdentifier && typeof emailOrIdentifier === 'string' ? emailOrIdentifier : undefined,
+            userAgent: navigator.userAgent,
+          },
+        }),
+        3000,
+        'rate-limit'
+      );
 
       if (error) {
         console.error('Rate limit check error:', error);
@@ -70,7 +69,7 @@ export const useRateLimit = () => {
 
       return true;
     } catch (error) {
-      console.error('Rate limit check failed:', error);
+      console.warn('[rate-limit] non-fatal', error);
       // On network or timeout errors, allow the action to proceed
       // This prevents the app from breaking if rate limiting service is down
       return true;
