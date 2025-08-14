@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import DebugDashboardPanel from '@/components/DebugDashboardPanel';
 interface DashboardStats {
   totalTickets: number;
   totalSpent: number;
@@ -83,6 +84,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          <div className="p-4">
+            <DebugDashboardPanel />
+          </div>
+          
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <Button variant="outline" onClick={signOut}>

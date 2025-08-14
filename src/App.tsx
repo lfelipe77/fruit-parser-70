@@ -60,6 +60,7 @@ import AdminVisits from "./pages/admin/AdminVisits";
 import TurnstileTest from "./pages/TurnstileTest";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
+import { DevErrorBoundary } from '@/components/DevErrorBoundary';
 
 const queryClient = new QueryClient();
 
@@ -206,9 +207,11 @@ const App = () => (
     <I18nextProvider i18n={i18n}>
       <TooltipProvider>
         <Toaster />
-        <Router>
-          <AppContent />
-        </Router>
+        <DevErrorBoundary>
+          <Router>
+            <AppContent />
+          </Router>
+        </DevErrorBoundary>
       </TooltipProvider>
     </I18nextProvider>
   </QueryClientProvider>
