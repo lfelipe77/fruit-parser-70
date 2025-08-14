@@ -76,65 +76,59 @@ export default function Profile() {
   const uploadCroppedBlob = async (blob: Blob) => {
     if (!profile) return;
     
+    const uid = profile.id;
+    const path = `${uid}/avatar.webp`;
+
     setUploading(true);
     try {
-      // Fixed filename (overwrites previous), path complies with RLS (first folder = uid)
-      const filePath = `${profile.id}/avatar.webp`;
 
-      // 1) Upload with UPSERT (overwrite)
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, blob, { 
-          upsert: true,                       // <-- important
-          cacheControl: "0",                  // no-cache on storage object
+      // 1) upload (overwrite same path)
+      const upRes = await supabase.storage
+        .from("avatars")
+        .upload(path, blob, {
+          upsert: true,
+          cacheControl: "0",
           contentType: "image/webp",
         });
+      if (upRes.error) throw upRes.error;
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      // 2) public URL
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública");
+      const baseUrl = pub.publicUrl;
 
-      // 2) Public URL
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      if (!urlData?.publicUrl) {
-        throw new Error("Falha ao obter URL pública");
-      }
-
-      // 3) Update profile row with BASE URL (no query params)
-      const baseUrl = urlData.publicUrl;
-
-      // Try update first
-      const { data: updData, error: updErr } = await supabase
+      // 3) try UPDATE first
+      const updRes = await supabase
         .from("user_profiles")
         .update({ avatar_url: baseUrl })
-        .eq("id", profile.id)
-        .select("id");                    // <-- so we can see if row exists
-      if (updErr) throw updErr;
+        .eq("id", uid)
+        .select("id");
+      if (updRes.error) throw updRes.error;
 
-      if (!updData || updData.length === 0) {
-        // no row to update → create it
-        const { error: insErr } = await supabase
+      // 4) if no row was updated, INSERT (RLS needs the policy from Step 1)
+      if (!updRes.data || updRes.data.length === 0) {
+        const insRes = await supabase
           .from("user_profiles")
-          .insert({ id: profile.id, avatar_url: baseUrl });
-        if (insErr) throw insErr;
+          .insert({ id: uid, avatar_url: baseUrl })
+          .select("id");
+        if (insRes.error) throw insRes.error;
       }
 
-      // 4) Trigger a refresh by updating with cache buster
-      // The useMyProfile hook will handle the state update
-      await updateProfile({ avatar_url: `${baseUrl}?t=${Date.now()}` });
+      // 5) cache‑bust locally so it refreshes immediately
+      const bust = `${baseUrl}?t=${Date.now()}`;
+      await updateProfile({ avatar_url: bust });
 
       toast({
         title: 'Avatar atualizado',
         description: 'Seu avatar foi atualizado com sucesso.',
       });
-    } catch (error: any) {
-      console.error('Error uploading avatar:', error);
+    } catch (e: any) {
+      console.error("[avatar upload/save] error:", e);
+      // show the actual Supabase error message if present
+      const msg = e?.message || e?.error_description || "Erro ao enviar avatar.";
       toast({
         title: 'Erro',
-        description: `Erro ao fazer upload do avatar: ${error.message}`,
+        description: msg,
         variant: 'destructive',
       });
     } finally {
