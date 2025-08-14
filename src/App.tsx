@@ -67,8 +67,9 @@ import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
 import MinimalDashboard from '@/pages/MinimalDashboard';
 
 function RouteBadge() {
+  if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
+  
   const loc = useLocation();
-  if (import.meta.env.VITE_DEBUG_BANNER !== 'true') return null;
   return (
     <div style={{
       position: 'fixed',

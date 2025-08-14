@@ -10,6 +10,8 @@ type DebugState = {
 };
 
 export default function DebugDashboardPanel() {
+  if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
+  
   const [s, setS] = useState<DebugState>({ loading: true });
 
   useEffect(() => {

@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function GlobalAuthDebugOverlay() {
+  if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
+  
   const loc = useLocation();
   const [state, setState] = useState<any>({
     route: '', lastEvent: 'none',
