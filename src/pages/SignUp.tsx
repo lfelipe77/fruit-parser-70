@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { signUpSchema, type SignUpFormData } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
+import { safeFetch } from "@/lib/net";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -151,11 +152,16 @@ export default function SignUp() {
         toast.error("Verificação necessária.");
         return;
       }
-      const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "cf-turnstile-response": token })
-      });
+      const res = await safeFetch(
+        "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "cf-turnstile-response": token })
+        },
+        8000,
+        'turnstile-verify-google'
+      );
       const json = await res.json();
       if (!json.success) {
         try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
@@ -253,11 +259,16 @@ export default function SignUp() {
         for (let attempt = 1; attempt <= 3; attempt++) {
           console.log(`[${new Date().toISOString()}] Verification attempt ${attempt}/3`);
           
-          res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ "cf-turnstile-response": tsToken })
-          }).catch(fetchErr => {
+          res = await safeFetch(
+            "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ "cf-turnstile-response": tsToken })
+            },
+            8000,
+            `turnstile-verify-attempt-${attempt}`
+          ).catch(fetchErr => {
             const errorTime = new Date().toISOString();
             console.error(`[${errorTime}] Fetch error on attempt ${attempt} after ${Date.now() - fetchStartTime}ms:`, fetchErr);
             throw new Error(`Network error: ${fetchErr.message}`);

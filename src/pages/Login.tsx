@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { loginSchema } from "@/lib/validations";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { supabase } from "@/integrations/supabase/client";
+import { safeFetch } from "@/lib/net";
 
 
 export default function Login() {
@@ -117,18 +118,16 @@ export default function Login() {
       }
 
       try {
-        // Add timeout to prevent hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-        
-        const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "cf-turnstile-response": tsToken }),
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
+        const res = await safeFetch(
+          "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "cf-turnstile-response": tsToken })
+          },
+          8000,
+          'turnstile-verify'
+        );
         
         const json = await res.json();
         console.info("verify-turnstile response", json);
@@ -188,12 +187,16 @@ export default function Login() {
         setError("Verificação necessária.");
         return;
       }
-      const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "cf-turnstile-response": token }),
-        signal: AbortSignal.timeout(8000) // 8 second timeout
-      });
+      const res = await safeFetch(
+        "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "cf-turnstile-response": token })
+        },
+        8000,
+        'turnstile-verify-google'
+      );
       const json = await res.json();
       if (!json.success) {
         try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { safeFetch } from '@/lib/net';
 
 // Hook para registrar visitas em páginas públicas
 export const usePublicVisitLogger = () => {
@@ -19,11 +20,12 @@ export const usePublicVisitLogger = () => {
 
     const url = `https://whqxpuyjxoiufzhvqneg.functions.supabase.co/visit-logger?p=${encodeURIComponent(location.pathname)}`;
 
-    // Fire-and-forget with error handling; ignore errors and send no PII; keepalive for unload navigations
+    // Fire-and-forget with timeout and error handling
     try {
-      fetch(url, { method: 'POST', keepalive: true }).catch((error) => {
-        console.warn('visit logger failed', error);
-      });
+      safeFetch(url, { method: 'POST', keepalive: true }, 3000, 'visit-logger')
+        .catch((error) => {
+          console.warn('visit logger failed', error);
+        });
     } catch (error) {
       console.warn('visit logger failed', error);
     }

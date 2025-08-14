@@ -62,19 +62,19 @@ import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogge
 
 const queryClient = new QueryClient();
 
-// Debug Banner Component
+// Debug Banner Component - minimal styling for immediate render
 const DebugBanner = () => {
-  // Only show if VITE_DEBUG_BANNER is 'true'
-  if (import.meta.env.VITE_DEBUG_BANNER !== 'true') {
-    return null;
-  }
+  const showBanner = import.meta.env.VITE_DEBUG_BANNER === 'true';
+  const bypass = import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS;
+  const supa = import.meta.env.VITE_SUPABASE_URL;
+  
+  console.log('[BOOT] debug flags', { showBanner, bypass, supa });
+  
+  if (!showBanner) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-black text-xs p-2 font-mono">
-      <div className="flex flex-wrap gap-4">
-        <span>BYPASS: {import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS}</span>
-        <span>SUPABASE: {import.meta.env.VITE_SUPABASE_URL}</span>
-      </div>
+    <div style={{position:'fixed',top:0,left:0,right:0,zIndex:9999,fontSize:12,padding:'6px 10px',background:'#111',color:'#9ef'}}>
+      TS BYPASS: {String(bypass)} &nbsp;|&nbsp; SUPABASE: {supa}
     </div>
   );
 };
