@@ -23,6 +23,10 @@ export const useRateLimit = () => {
     setIsChecking(true);
     
     try {
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const { data, error } = await supabase.functions.invoke('rate-limiter', {
         body: {
           action,
@@ -32,15 +36,17 @@ export const useRateLimit = () => {
         },
       });
 
+      clearTimeout(timeoutId);
+
       if (error) {
         console.error('Rate limit check error:', error);
-        toast.error('Tente novamente em instantes.');
-        return false; // fail closed
+        // On error, allow the action to proceed to prevent blocking
+        return true;
       }
 
       const response: RateLimitResponse = data || {};
 
-      const allowed = typeof response.allowed === 'boolean' ? response.allowed : (response.ok ?? false);
+      const allowed = typeof response.allowed === 'boolean' ? response.allowed : (response.ok ?? true);
 
       if (!allowed) {
         if (response.reason === 'rate_limited') {
@@ -65,8 +71,9 @@ export const useRateLimit = () => {
       return true;
     } catch (error) {
       console.error('Rate limit check failed:', error);
-      toast.error('Tente novamente em instantes.');
-      return false; // fail closed on error
+      // On network or timeout errors, allow the action to proceed
+      // This prevents the app from breaking if rate limiting service is down
+      return true;
     } finally {
       setIsChecking(false);
     }

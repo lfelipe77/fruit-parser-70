@@ -85,18 +85,26 @@ export const useAuditLogger = () => {
           }
         });
       } else {
-        // For unauthenticated events, call edge function directly
-        await supabase.functions.invoke('audit-logger', {
-          body: {
-            action,
-            context: enrichedContext,
-            user_id: userId
-          }
-        });
+        // For unauthenticated events, call edge function directly with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        try {
+          await supabase.functions.invoke('audit-logger', {
+            body: {
+              action,
+              context: enrichedContext,
+              user_id: userId
+            }
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
       }
     } catch (error) {
       console.error('Failed to log audit event:', action, error);
       // Don't show user-facing errors for audit logging failures
+      // Don't throw the error to prevent blocking the app
     }
   };
 

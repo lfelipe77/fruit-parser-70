@@ -117,11 +117,19 @@ export default function Login() {
       }
 
       try {
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        
         const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "cf-turnstile-response": tsToken })
+          body: JSON.stringify({ "cf-turnstile-response": tsToken }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
+        
         const json = await res.json();
         console.info("verify-turnstile response", json);
 
@@ -183,7 +191,8 @@ export default function Login() {
       const res = await fetch("https://whqxpuyjxoiufzhvqneg.functions.supabase.co/verify-turnstile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "cf-turnstile-response": token })
+        body: JSON.stringify({ "cf-turnstile-response": token }),
+        signal: AbortSignal.timeout(8000) // 8 second timeout
       });
       const json = await res.json();
       if (!json.success) {

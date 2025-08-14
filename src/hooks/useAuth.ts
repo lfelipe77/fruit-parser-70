@@ -20,12 +20,16 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Log audit events for auth changes
+        // Log audit events for auth changes with error handling
         if (event === 'SIGNED_IN' && session) {
-          // Log successful login
+          // Non-blocking audit logging
           setTimeout(() => {
-            const loginMethod = session.user.app_metadata?.provider || 'email';
-            logLogin(loginMethod as 'email' | 'google', true, session.user.email);
+            try {
+              const loginMethod = session.user.app_metadata?.provider || 'email';
+              logLogin(loginMethod as 'email' | 'google', true, session.user.email);
+            } catch (error) {
+              console.warn('Failed to log login event:', error);
+            }
           }, 0);
           
           navigate('/dashboard');
@@ -33,20 +37,29 @@ export const useAuth = () => {
         }
 
         if (event === 'SIGNED_OUT') {
-          // Log logout event
+          // Non-blocking audit logging
           setTimeout(() => {
-            logLogout();
+            try {
+              logLogout();
+            } catch (error) {
+              console.warn('Failed to log logout event:', error);
+            }
           }, 0);
         }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Check for existing session with error handling
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error getting session:', error);
+        setLoading(false); // Don't let auth errors block the app
+      });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
