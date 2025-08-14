@@ -8,8 +8,7 @@ import './i18n'
 import { supabase } from '@/integrations/supabase/client';
 
 function parseFragmentParams(href: string) {
-  // HashRouter produces /#/auth-callback#access_token=...
-  // so the fragment we want is after the *second* '#'
+  // HashRouter yields "/#/auth-callback#access_token=..."
   const parts = href.split('#');
   const fragment = parts.length >= 3 ? parts[2] : parts[1] || '';
   return new URLSearchParams(fragment);
@@ -21,10 +20,10 @@ async function oauthEarly() {
   const isNonHashCb = href.includes('/auth/callback');
   if (!isHashCb && !isNonHashCb) return;
 
-  const params = parseFragmentParams(href);
-  const hasAT   = params.has('access_token');
-  const hasRT   = params.has('refresh_token');
-  const hasCode = href.includes('code=');
+  const params      = parseFragmentParams(href);
+  const hasAT       = params.has('access_token');
+  const hasRT       = params.has('refresh_token');
+  const hasCode     = href.includes('code=');
 
   console.log('[oauth-early] href:', href, { hasCode, hasAT, cbHash: isHashCb, cbNonHash: isNonHashCb });
   console.log('[oauth-early] exchanging code/token before app boot…');
@@ -33,15 +32,20 @@ async function oauthEarly() {
     if (hasAT && hasRT) {
       const access_token  = params.get('access_token')!;
       const refresh_token = params.get('refresh_token')!;
-      const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
-      if (error) throw error;
-      console.log('[oauth-early] setSession success', { user: data.session?.user?.id });
+      const r = await supabase.auth.setSession({ access_token, refresh_token });
+      console.log('[oauth-early] setSession result', { error: r.error, user: r.data?.user?.id });
+      if (r.error) throw r.error;
+
+      // Double-check we actually have a session now
+      const s = await supabase.auth.getSession();
+      console.log('[oauth-early] session after set', { hasSession: !!s.data.session });
     } else if (hasCode) {
-      const { error } = await supabase.auth.exchangeCodeForSession(href);
-      if (error) throw error;
-      console.log('[oauth-early] code exchange success');
+      const r = await supabase.auth.exchangeCodeForSession(href);
+      console.log('[oauth-early] code exchange result', { error: r.error, user: r.data?.user?.id });
+      if (r.error) throw r.error;
     }
-    // Clean URL without reloading; then let the app boot
+
+    // Clean URL without reloading; then let React boot with the stored session.
     history.replaceState(null, '', `${window.location.origin}/#/dashboard`);
   } catch (e) {
     console.error('[oauth-early] failed', e);
@@ -49,7 +53,7 @@ async function oauthEarly() {
   }
 }
 
-// Boot after handling OAuth (no STOP_BOOTSTRAP throws, no window.location.replace)
+// Boot AFTER handling OAuth. Do not hard-redirect.
 (async () => {
   await oauthEarly();
   // existing React render here (unchanged):
