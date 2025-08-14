@@ -1,579 +1,259 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Upload, Calculator, HelpCircle, AlertCircle, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import React, { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
-import Navigation from "@/components/Navigation";
 
-interface Category {
-  id: string;
+type Category = {
+  id: number;
   nome: string;
-  slug: string;
-  icone_url: string;
-  descricao: string;
-}
-
-interface FormData {
-  title: string;
-  description: string;
-  category_id: string | null;
-  prize_value: string;
-  total_tickets: string;
-  ticket_price: string;
-  draw_date: string;
-  image: File | null;
-}
+};
 
 export default function LanceSeuGanhavel() {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState<FormData>({
-    title: "",
-    description: "",
-    category_id: null,
-    prize_value: "",
-    total_tickets: "",
-    ticket_price: "",
-    draw_date: "",
-    image: null,
-  });
+  const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]>(null);
+
+  // form state
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState<number | "">("");
+  const [prizeValue, setPrizeValue] = useState<number | "">("");
+  const [totalTickets, setTotalTickets] = useState<number | "">("");
+  const [ticketPrice, setTicketPrice] = useState<number | "">("");
+  const [drawDate, setDrawDate] = useState<string>(""); // ISO local datetime
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // load auth session
   useEffect(() => {
-    fetchCategories();
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setSession(data.session);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => setSession(sess));
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ganhavel_categories')
-        .select('*')
-        .order('nome');
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar categorias",
-        variant: "destructive",
+  // load categories (public select allowed by RLS)
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("categories")
+      .select("id, nome")
+      .order("nome", { ascending: true })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("Load categories error:", error);
+        } else if (data) {
+          setCategories(data as Category[]);
+        }
       });
-    }
-  };
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const handleInputChange = (field: keyof FormData, value: string | number | File | null) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
-    }
-  };
+  const userId = useMemo(() => session?.user?.id ?? null, [session]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function uploadImageAndGetUrl(file: File, uid: string) {
+    const path = `${uid}/${Date.now()}-${file.name}`;
+    // 1) upload
+    const { error: upErr } = await supabase.storage.from("raffle-images").upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (upErr) throw upErr;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Erro",
-        description: "Por favor, selecione apenas arquivos de imagem",
-        variant: "destructive",
-      });
-      return;
-    }
+    // 2) get public url
+    const { data: pub } = supabase.storage.from("raffle-images").getPublicUrl(path);
+    if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública da imagem");
+    return pub.publicUrl;
+  }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Erro",
-        description: "A imagem deve ter no máximo 5MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    handleInputChange('image', file);
-  };
-
-  const uploadImage = async (file: File): Promise<string> => {
-    if (!user) throw new Error('User not authenticated');
-
-    setIsUploading(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('raffle-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('raffle-images')
-        .getPublicUrl(filePath);
-
-      return publicUrlData.publicUrl;
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = "Título é obrigatório";
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "Descrição é obrigatória";
-    }
-
-    if (!formData.category_id) {
-      newErrors.category_id = "Categoria é obrigatória";
-    }
-
-    if (!formData.prize_value || parseFloat(formData.prize_value) <= 0) {
-      newErrors.prize_value = "Valor do prêmio deve ser maior que zero";
-    }
-
-    if (!formData.total_tickets || parseInt(formData.total_tickets) <= 0) {
-      newErrors.total_tickets = "Número total de tickets deve ser maior que zero";
-    }
-
-    if (!formData.ticket_price || parseFloat(formData.ticket_price) <= 0) {
-      newErrors.ticket_price = "Preço do ticket deve ser maior que zero";
-    }
-
-    if (!formData.draw_date) {
-      newErrors.draw_date = "Data do sorteio é obrigatória";
-    } else {
-      const drawDate = new Date(formData.draw_date);
-      const now = new Date();
-      if (drawDate <= now) {
-        newErrors.draw_date = "Data do sorteio deve ser no futuro";
-      }
-    }
-
-    if (!formData.image) {
-      newErrors.image = "Imagem é obrigatória";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const calculateCommission = () => {
-    const prizeValue = parseFloat(formData.prize_value) || 0;
-    const commissionRate = 0.05; // 5%
-    return prizeValue * commissionRate;
-  };
-
-  const calculateTotalRevenue = () => {
-    const totalTickets = parseInt(formData.total_tickets) || 0;
-    const ticketPrice = parseFloat(formData.ticket_price) || 0;
-    return totalTickets * ticketPrice;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
-    if (!user) {
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para criar um ganhavel",
-        variant: "destructive",
-      });
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (!userId) {
+      setErrorMsg("Você precisa estar logado para criar um Ganhavel.");
+      return;
+    }
+    if (!imageFile) {
+      setErrorMsg("Selecione uma imagem do prêmio.");
+      return;
+    }
+    if (!categoryId || !title || !totalTickets || !ticketPrice) {
+      setErrorMsg("Preencha os campos obrigatórios.");
       return;
     }
 
-    if (!validateForm()) {
-      toast({
-        title: "Erro",
-        description: "Por favor, corrija os erros no formulário",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    setSubmitting(true);
     try {
-      // Upload image first
-      let imageUrl = "";
-      if (formData.image) {
-        imageUrl = await uploadImage(formData.image);
-      }
+      const imageUrl = await uploadImageAndGetUrl(imageFile, userId);
 
-      // Create raffle using direct insert
-      const { data: raffleData, error: raffleError } = await supabase
-        .from('raffles')
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          category_id: parseInt(formData.category_id || '0'),
-          image_url: imageUrl,
-          prize_value: parseFloat(formData.prize_value),
-          total_tickets: parseInt(formData.total_tickets),
-          ticket_price: parseFloat(formData.ticket_price),
-          draw_date: new Date(formData.draw_date).toISOString(),
-          status: 'draft'
-        })
-        .select()
-        .single();
+      // draw_date in UTC (optional): if user provided local datetime, convert to ISO
+      const drawDateIso = drawDate ? new Date(drawDate).toISOString() : null;
 
-      if (raffleError) throw raffleError;
-
-      toast({
-        title: "Sucesso!",
-        description: "Seu ganhavel foi criado e está aguardando aprovação",
+      // call RPC to create raffle (status = under_review)
+      const { data: newId, error: rpcErr } = await supabase.rpc("create_raffle", {
+        p_title: title,
+        p_description: description || null,
+        p_category_id: Number(categoryId),
+        p_image_url: imageUrl,
+        p_prize_value: prizeValue === "" ? null : Number(prizeValue),
+        p_total_tickets: Number(totalTickets),
+        p_ticket_price: Number(ticketPrice),
+        p_draw_date: drawDateIso,
       });
 
-      // Navigate to user's raffles or dashboard
-      navigate('/dashboard');
+      if (rpcErr) throw rpcErr;
 
-    } catch (error) {
-      console.error('Error creating raffle:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao criar ganhavel. Tente novamente.",
-        variant: "destructive",
-      });
+      setSuccessMsg("Ganhavel criado! Enviado para revisão.");
+      // optional: redirect to dashboard or raffle detail
+      setTimeout(() => {
+        navigate("/minha-conta"); // ajuste a rota desejada
+      }, 800);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err?.message ?? "Erro ao criar Ganhavel.");
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
-  };
+  }
 
-  const commission = calculateCommission();
-  const totalRevenue = calculateTotalRevenue();
-  const netProfit = totalRevenue - commission;
+  if (!session) {
+    return (
+      <div className="max-w-xl mx-auto p-6">
+        <h1 className="text-2xl font-semibold mb-4">Lançar Ganhavel</h1>
+        <p>Faça login para lançar um Ganhavel.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">Criar Novo Ganhavel</h1>
-            <p className="text-muted-foreground">
-              Preencha as informações abaixo para criar seu ganhavel
-            </p>
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-4">Lançar Ganhavel</h1>
+
+      {errorMsg && <div className="mb-4 p-3 rounded bg-red-100 text-red-800">{errorMsg}</div>}
+      {successMsg && <div className="mb-4 p-3 rounded bg-green-100 text-green-800">{successMsg}</div>}
+
+      <form onSubmit={onSubmit} className="grid gap-4">
+        <div>
+          <label className="block text-sm font-medium">Título*</label>
+          <input
+            className="mt-1 w-full border rounded p-2"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex.: iPhone 15 Pro"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Descrição</label>
+          <textarea
+            className="mt-1 w-full border rounded p-2"
+            rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Detalhes do prêmio, regras, etc."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Categoria*</label>
+          <select
+            className="mt-1 w-full border rounded p-2"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : "")}
+            required
+          >
+            <option value="">Selecione...</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium">Valor do Prêmio (R$)</label>
+            <input
+              type="number"
+              className="mt-1 w-full border rounded p-2"
+              value={prizeValue}
+              onChange={(e) => setPrizeValue(e.target.value === "" ? "" : Number(e.target.value))}
+              min={0}
+              step="0.01"
+              placeholder="Opcional"
+            />
           </div>
-
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Form */}
-            <div className="lg:col-span-2">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informações Básicas</CardTitle>
-                    <CardDescription>
-                      Dados principais do seu ganhavel
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="title">Título *</Label>
-                      <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => handleInputChange('title', e.target.value)}
-                        placeholder="Ex: iPhone 15 Pro Max 256GB"
-                        className={errors.title ? "border-red-500" : ""}
-                      />
-                      {errors.title && (
-                        <p className="text-sm text-red-500 mt-1">{errors.title}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="description">Descrição *</Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => handleInputChange('description', e.target.value)}
-                        placeholder="Descreva detalhadamente o prêmio..."
-                        rows={4}
-                        className={errors.description ? "border-red-500" : ""}
-                      />
-                      {errors.description && (
-                        <p className="text-sm text-red-500 mt-1">{errors.description}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="category">Categoria *</Label>
-                      <Select
-                        value={formData.category_id?.toString() || ""}
-                        onValueChange={(value) => handleInputChange('category_id', parseInt(value))}
-                      >
-                        <SelectTrigger className={errors.category_id ? "border-red-500" : ""}>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id.toString()}>
-                              <div className="flex items-center gap-2">
-                                <span>{category.icone_url}</span>
-                                <span>{category.nome}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.category_id && (
-                        <p className="text-sm text-red-500 mt-1">{errors.category_id}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Configuração do Ganhavel</CardTitle>
-                    <CardDescription>
-                      Defina os valores e quantidade de tickets
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="prize_value">Valor do Prêmio (R$) *</Label>
-                        <Input
-                          id="prize_value"
-                          type="number"
-                          step="0.01"
-                          value={formData.prize_value}
-                          onChange={(e) => handleInputChange('prize_value', e.target.value)}
-                          placeholder="0,00"
-                          className={errors.prize_value ? "border-red-500" : ""}
-                        />
-                        {errors.prize_value && (
-                          <p className="text-sm text-red-500 mt-1">{errors.prize_value}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label htmlFor="total_tickets">Total de Tickets *</Label>
-                        <Input
-                          id="total_tickets"
-                          type="number"
-                          value={formData.total_tickets}
-                          onChange={(e) => handleInputChange('total_tickets', e.target.value)}
-                          placeholder="100"
-                          className={errors.total_tickets ? "border-red-500" : ""}
-                        />
-                        {errors.total_tickets && (
-                          <p className="text-sm text-red-500 mt-1">{errors.total_tickets}</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="ticket_price">Preço por Ticket (R$) *</Label>
-                        <Input
-                          id="ticket_price"
-                          type="number"
-                          step="0.01"
-                          value={formData.ticket_price}
-                          onChange={(e) => handleInputChange('ticket_price', e.target.value)}
-                          placeholder="0,00"
-                          className={errors.ticket_price ? "border-red-500" : ""}
-                        />
-                        {errors.ticket_price && (
-                          <p className="text-sm text-red-500 mt-1">{errors.ticket_price}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label htmlFor="draw_date">Data do Sorteio *</Label>
-                        <Input
-                          id="draw_date"
-                          type="datetime-local"
-                          value={formData.draw_date}
-                          onChange={(e) => handleInputChange('draw_date', e.target.value)}
-                          className={errors.draw_date ? "border-red-500" : ""}
-                        />
-                        {errors.draw_date && (
-                          <p className="text-sm text-red-500 mt-1">{errors.draw_date}</p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Imagem do Prêmio</CardTitle>
-                    <CardDescription>
-                      Adicione uma imagem atrativa do prêmio
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div>
-                      <Label htmlFor="image">Imagem *</Label>
-                      <div className="mt-2">
-                        <Input
-                          id="image"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className={errors.image ? "border-red-500" : ""}
-                        />
-                        {formData.image && (
-                          <div className="mt-2 p-2 bg-muted rounded">
-                            <p className="text-sm">{formData.image.name}</p>
-                          </div>
-                        )}
-                        {errors.image && (
-                          <p className="text-sm text-red-500 mt-1">{errors.image}</p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="flex gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate('/dashboard')}
-                    className="flex-1"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting || isUploading}
-                    className="flex-1"
-                  >
-                    {isSubmitting || isUploading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {isUploading ? 'Enviando imagem...' : 'Criando...'}
-                      </>
-                    ) : (
-                      'Criar Ganhavel'
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calculator className="w-5 h-5" />
-                    Calculadora
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Receita Total:</span>
-                      <span className="font-medium">R$ {totalRevenue.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Comissão (5%):</span>
-                      <span className="font-medium text-red-500">-R$ {commission.toFixed(2)}</span>
-                    </div>
-                    <div className="border-t pt-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Lucro Líquido:</span>
-                        <span className="font-bold text-green-500">R$ {netProfit.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <HelpCircle className="w-5 h-5" />
-                    Como Funciona
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <Badge variant="outline" className="w-full justify-start">
-                      1. Criar Ganhavel
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      Preencha todas as informações e envie para análise
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Badge variant="outline" className="w-full justify-start">
-                      2. Aprovação
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      Nossa equipe irá revisar e aprovar seu ganhavel
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Badge variant="outline" className="w-full justify-start">
-                      3. Venda de Tickets
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      Usuários podem comprar tickets para participar
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Badge variant="outline" className="w-full justify-start">
-                      4. Sorteio
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      O sorteio acontece na data programada
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5" />
-                    Importante
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Todos os ganhaveis passam por análise</li>
-                    <li>• Não é permitido alterar valores após aprovação</li>
-                    <li>• Você deve entregar o prêmio ao vencedor</li>
-                    <li>• Taxa de 5% sobre o valor arrecadado</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
+          <div>
+            <label className="block text-sm font-medium">Preço por Bilhete (R$)*</label>
+            <input
+              type="number"
+              className="mt-1 w-full border rounded p-2"
+              value={ticketPrice}
+              onChange={(e) => setTicketPrice(e.target.value === "" ? "" : Number(e.target.value))}
+              min={0}
+              step="0.01"
+              required
+            />
           </div>
         </div>
-      </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium">Total de Bilhetes*</label>
+            <input
+              type="number"
+              className="mt-1 w-full border rounded p-2"
+              value={totalTickets}
+              onChange={(e) => setTotalTickets(e.target.value === "" ? "" : Number(e.target.value))}
+              min={1}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Data do Sorteio</label>
+            <input
+              type="datetime-local"
+              className="mt-1 w-full border rounded p-2"
+              value={drawDate}
+              onChange={(e) => setDrawDate(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Imagem do Prêmio*</label>
+          <input
+            type="file"
+            accept="image/*"
+            className="mt-1 w-full"
+            onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex items-center justify-center rounded bg-black text-white px-4 py-2 disabled:opacity-60"
+        >
+          {submitting ? "Enviando..." : "Criar Ganhavel"}
+        </button>
+      </form>
     </div>
   );
 }
