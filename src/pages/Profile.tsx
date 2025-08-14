@@ -40,22 +40,41 @@ export default function Profile() {
     const file = event.target.files?.[0];
     if (!file || !profile) return;
 
+    console.log('Starting avatar upload for user:', profile.id);
+    console.log('File details:', { name: file.name, size: file.size, type: file.type });
+
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
       const filePath = `${profile.id}/avatar.${fileExt}`;
+      
+      console.log('Upload path:', filePath);
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      await updateProfile({ avatar_url: urlData.publicUrl });
+      console.log('Public URL:', urlData.publicUrl);
+
+      const { error: updateError } = await updateProfile({ avatar_url: urlData.publicUrl });
+
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('Profile updated successfully');
 
       toast({
         title: 'Avatar atualizado',
@@ -65,7 +84,7 @@ export default function Profile() {
       console.error('Error uploading avatar:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao fazer upload do avatar.',
+        description: `Erro ao fazer upload do avatar: ${error.message}`,
         variant: 'destructive',
       });
     } finally {
