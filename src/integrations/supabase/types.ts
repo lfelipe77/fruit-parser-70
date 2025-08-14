@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -599,7 +599,7 @@ export type Database = {
       user_profiles: {
         Row: {
           avatar_url: string | null
-          banned: boolean
+          banned: boolean | null
           bio: string | null
           created_at: string | null
           full_name: string | null
@@ -614,7 +614,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
-          banned?: boolean
+          banned?: boolean | null
           bio?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -629,7 +629,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
-          banned?: boolean
+          banned?: boolean | null
           bio?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -716,10 +716,10 @@ export type Database = {
       }
       check_rate_limit: {
         Args: {
-          p_ip: string
-          p_action: string
-          window_seconds: number
           max_count: number
+          p_action: string
+          p_ip: string
+          window_seconds: number
         }
         Returns: boolean
       }
@@ -729,30 +729,30 @@ export type Database = {
       }
       create_security_alert: {
         Args: {
-          alert_type: string
+          alert_context?: Json
           alert_description: string
           alert_ip_address?: string
-          alert_user_id?: string
-          alert_context?: Json
           alert_severity?: string
+          alert_type: string
+          alert_user_id?: string
         }
         Returns: string
       }
       create_security_alert_admin: {
         Args:
           | {
-              p_type: string
-              p_description: string
-              p_severity?: string
               p_context?: Json
+              p_description: string
               p_ip_address?: string
+              p_severity?: string
+              p_type: string
               p_user_id?: string
             }
-          | { p_type: string; p_message: string; p_meta: Json }
+          | { p_message: string; p_meta: Json; p_type: string }
         Returns: undefined
       }
       create_security_alert_admin_v2: {
-        Args: { p_type: string; p_message: string; p_meta: Json }
+        Args: { p_message: string; p_meta: Json; p_type: string }
         Returns: undefined
       }
       example_function: {
@@ -771,8 +771,8 @@ export type Database = {
       }
       get_audit_logs_recent: {
         Args:
+          | { p_action?: string; p_limit?: number; p_minutes?: number }
           | { p_limit?: number }
-          | { p_limit?: number; p_minutes?: number; p_action?: string }
         Returns: {
           action: string | null
           context: Json | null
@@ -784,12 +784,12 @@ export type Database = {
       get_audit_statistics: {
         Args: { days_back?: number }
         Returns: {
-          total_events: number
-          login_events: number
           admin_actions: number
+          login_events: number
           payment_events: number
           security_events: number
           top_actions: Json
+          total_events: number
         }[]
       }
       get_current_user_role: {
@@ -797,12 +797,12 @@ export type Database = {
         Returns: string
       }
       get_my_audit_logs: {
-        Args: { p_limit?: number; p_minutes?: number; p_action?: string }
+        Args: { p_action?: string; p_limit?: number; p_minutes?: number }
         Returns: {
-          id: string
-          created_at: string
           action: string
           context: Json
+          created_at: string
+          id: string
         }[]
       }
       hello_secure: {
@@ -815,7 +815,7 @@ export type Database = {
       }
       log_audit_event: {
         Args:
-          | { action: string; context: Json; actor_id: string }
+          | { action: string; actor_id: string; context: Json }
           | { action: string; context?: Json }
         Returns: undefined
       }
@@ -828,39 +828,39 @@ export type Database = {
         Returns: undefined
       }
       log_event: {
-        Args: { user_id: string; action: string; context?: Json }
+        Args: { action: string; context?: Json; user_id: string }
         Returns: undefined
       }
       log_public_visit: {
         Args:
           | {
+              dedup_minutes?: number
               visit_ip: string
-              visit_user_agent?: string
-              visit_url?: string
-              visit_referer?: string
-              visit_country?: string
-              visit_city?: string
-            }
-          | {
               visit_url: string
-              visit_ip: string
               visit_user_agent?: string
               visit_user_id?: string
-              dedup_minutes?: number
+            }
+          | {
+              visit_city?: string
+              visit_country?: string
+              visit_ip: string
+              visit_referer?: string
+              visit_url?: string
+              visit_user_agent?: string
             }
         Returns: undefined
       }
       log_ticket_purchase: {
         Args: {
-          p_user_id: string
           p_raffle_id: string
           p_ticket_count: number
           p_total_amount: number
+          p_user_id: string
         }
         Returns: undefined
       }
       log_user_action: {
-        Args: { p_user_id: string; p_action_type: string; p_context?: Json }
+        Args: { p_action_type: string; p_context?: Json; p_user_id: string }
         Returns: undefined
       }
       mask_audit_pii_row: {
@@ -893,19 +893,19 @@ export type Database = {
       }
       search_audit_logs: {
         Args: {
-          search_user_id?: string
-          search_action?: string
-          search_context?: string
           days_back?: number
           limit_results?: number
+          search_action?: string
+          search_context?: string
+          search_user_id?: string
         }
         Returns: {
-          id: string
-          user_id: string
           action: string
           context: Json
           created_at: string
+          id: string
           user_email: string
+          user_id: string
         }[]
       }
       set_payment_context: {
@@ -921,15 +921,15 @@ export type Database = {
         Returns: undefined
       }
       update_user_role: {
-        Args: { user_id: string; new_role: string }
+        Args: { new_role: string; user_id: string }
         Returns: undefined
       }
       validate_rate_limit_before_action: {
         Args: {
           action_type: string
-          user_identifier: string
           max_attempts?: number
           time_window_minutes?: number
+          user_identifier: string
         }
         Returns: boolean
       }
