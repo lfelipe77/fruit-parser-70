@@ -11,6 +11,7 @@ interface UserProfile {
   location?: string;
   role?: string;
   banned?: boolean;
+  total_ganhaveis?: number;
 }
 
 export const useMyProfile = () => {

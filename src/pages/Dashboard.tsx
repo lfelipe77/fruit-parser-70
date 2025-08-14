@@ -121,7 +121,15 @@ export default function Dashboard() {
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
+                <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">G</span>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-foreground">Ganhavel</h1>
+                    <p className="text-sm text-muted-foreground">Sua plataforma de ganhaveis</p>
+                  </div>
+                </Link>
             <Button variant="outline" onClick={signOut}>
               <LogOut className="w-4 h-4 mr-2" />
               Sair
