@@ -132,7 +132,7 @@ export default function Dashboard() {
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
-              onClick={() => navigate('/#/profile')}
+              onClick={() => navigate('/profile')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export default function Dashboard() {
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
-              onClick={() => navigate('/#/my-tickets')}
+              onClick={() => navigate('/my-tickets')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function Dashboard() {
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
-              onClick={() => navigate('/#/raffles')}
+              onClick={() => navigate('/raffles')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -242,7 +242,7 @@ export default function Dashboard() {
                   carros, motos, dinheiro e muito mais!
                 </p>
                 <Button asChild>
-                  <Link to="/#/raffles">Explorar Rifas</Link>
+                  <Link to="/raffles">Explorar Rifas</Link>
                 </Button>
               </CardContent>
             </Card>

@@ -178,6 +178,23 @@ const AppContent = () => {
             {import.meta.env.VITE_DASH_MINIMAL === 'true' ? <MinimalDashboard /> : <Dashboard />}
           </RequireAuth>
         } />
+        
+        {/* User profile and related pages - requires auth */}
+        <Route path="/profile" element={
+          <RequireAuth>
+            <Profile />
+          </RequireAuth>
+        } />
+        <Route path="/my-tickets" element={
+          <RequireAuth>
+            <MyTickets />
+          </RequireAuth>
+        } />
+        <Route path="/raffles" element={
+          <RequireAuth>
+            <Raffles />
+          </RequireAuth>
+        } />
 
         {/* Admin routes - all protected with AdminProtectedRoute */}
         <Route path="/admin" element={
