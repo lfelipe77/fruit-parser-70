@@ -97,6 +97,36 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          destaque: boolean
+          icone_url: string | null
+          id: number
+          nome: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          destaque?: boolean
+          icone_url?: string | null
+          id?: number
+          nome: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          destaque?: boolean
+          icone_url?: string | null
+          id?: number
+          nome?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       ganhaveis: {
         Row: {
           affiliate_link: string | null
@@ -329,50 +359,96 @@ export type Database = {
       raffles: {
         Row: {
           category: string | null
+          category_id: number | null
           created_at: string | null
           description: string | null
+          draw_date: string | null
+          draw_timestamp: string | null
           id: string
           image_url: string | null
           organizer_id: string | null
+          owner_user_id: string | null
+          prize_value: number | null
           product_name: string | null
           product_value: number | null
+          slug: string | null
           status: string | null
           ticket_price: number | null
           title: string | null
           total_tickets: number | null
+          updated_at: string
           user_id: string
+          winner_user_id: string | null
         }
         Insert: {
           category?: string | null
+          category_id?: number | null
           created_at?: string | null
           description?: string | null
+          draw_date?: string | null
+          draw_timestamp?: string | null
           id?: string
           image_url?: string | null
           organizer_id?: string | null
+          owner_user_id?: string | null
+          prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
+          slug?: string | null
           status?: string | null
           ticket_price?: number | null
           title?: string | null
           total_tickets?: number | null
+          updated_at?: string
           user_id?: string
+          winner_user_id?: string | null
         }
         Update: {
           category?: string | null
+          category_id?: number | null
           created_at?: string | null
           description?: string | null
+          draw_date?: string | null
+          draw_timestamp?: string | null
           id?: string
           image_url?: string | null
           organizer_id?: string | null
+          owner_user_id?: string | null
+          prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
+          slug?: string | null
           status?: string | null
           ticket_price?: number | null
           title?: string | null
           total_tickets?: number | null
+          updated_at?: string
           user_id?: string
+          winner_user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rate_limit_attempts: {
         Row: {
@@ -455,12 +531,15 @@ export type Database = {
           ganhavel_id: string | null
           id: string
           is_paid: boolean | null
+          number: number | null
           payment_session_id: string | null
           payment_status: string | null
           quantity: number | null
           raffle_id: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
           ticket_number: number | null
           total_amount: number | null
+          transaction_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -468,12 +547,15 @@ export type Database = {
           ganhavel_id?: string | null
           id?: string
           is_paid?: boolean | null
+          number?: number | null
           payment_session_id?: string | null
           payment_status?: string | null
           quantity?: number | null
           raffle_id?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
           ticket_number?: number | null
           total_amount?: number | null
+          transaction_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -481,12 +563,15 @@ export type Database = {
           ganhavel_id?: string | null
           id?: string
           is_paid?: boolean | null
+          number?: number | null
           payment_session_id?: string | null
           payment_status?: string | null
           quantity?: number | null
           raffle_id?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
           ticket_number?: number | null
           total_amount?: number | null
+          transaction_id?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -596,12 +681,67 @@ export type Database = {
           },
         ]
       }
+      transactions_raffle: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          provider: Database["public"]["Enums"]["payment_provider"]
+          provider_payment_id: string
+          raffle_id: string
+          raw_payload: Json | null
+          status: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          provider: Database["public"]["Enums"]["payment_provider"]
+          provider_payment_id: string
+          raffle_id: string
+          raw_payload?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          provider_payment_id?: string
+          raffle_id?: string
+          raw_payload?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
           banned: boolean | null
           bio: string | null
           created_at: string | null
+          display_name: string | null
           full_name: string | null
           id: string
           location: string | null
@@ -617,6 +757,7 @@ export type Database = {
           banned?: boolean | null
           bio?: string | null
           created_at?: string | null
+          display_name?: string | null
           full_name?: string | null
           id: string
           location?: string | null
@@ -632,6 +773,7 @@ export type Database = {
           banned?: boolean | null
           bio?: string | null
           created_at?: string | null
+          display_name?: string | null
           full_name?: string | null
           id?: string
           location?: string | null
@@ -726,6 +868,30 @@ export type Database = {
       check_suspicious_actions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      citext: {
+        Args: { "": boolean } | { "": string } | { "": unknown }
+        Returns: string
+      }
+      citext_hash: {
+        Args: { "": string }
+        Returns: number
+      }
+      citextin: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextout: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      citextrecv: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextsend: {
+        Args: { "": string }
+        Returns: string
       }
       create_security_alert: {
         Args: {
@@ -935,7 +1101,16 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      payment_provider: "asaas" | "stripe"
+      payment_status: "pending" | "paid" | "failed" | "refunded" | "canceled"
+      raffle_status:
+        | "draft"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "closed"
+        | "delivered"
+      ticket_status: "reserved" | "paid" | "canceled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1062,6 +1237,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      payment_provider: ["asaas", "stripe"],
+      payment_status: ["pending", "paid", "failed", "refunded", "canceled"],
+      raffle_status: [
+        "draft",
+        "under_review",
+        "approved",
+        "rejected",
+        "closed",
+        "delivered",
+      ],
+      ticket_status: ["reserved", "paid", "canceled"],
+    },
   },
 } as const
