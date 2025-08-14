@@ -119,11 +119,66 @@ export default function AdminPayouts() {
   if (loading) return <div className="p-6">Carregando…</div>;
   if (err) return <div className="p-6 text-destructive">{err}</div>;
 
+  const exportCSV = (type: 'transactions' | 'payouts', params?: Record<string, string>) => {
+    const baseUrl = `https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/export-csv/${type}`;
+    const url = new URL(baseUrl);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+    }
+    window.open(url.toString(), '_blank');
+  };
+
+  const syncToAirtable = async () => {
+    if (!isAdmin) return;
+    try {
+      const response = await fetch('https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/airtable-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          rows: raffles.map(r => ({
+            id: r.id,
+            title: r.title,
+            status: r.status,
+            paid_tickets: r.paid_tickets,
+            total_tickets: r.total_tickets,
+            amount_collected: r.amount_collected
+          }))
+        })
+      });
+      if (!response.ok) throw new Error('Sync failed');
+      alert('Sincronizado com Airtable com sucesso!');
+    } catch (e: any) {
+      alert(e?.message ?? 'Erro ao sincronizar com Airtable.');
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 grid gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Payouts</h1>
-        <button className="text-sm underline" onClick={() => navigate(-1)}>← Voltar</button>
+        <div className="flex gap-2 items-center">
+          <button 
+            onClick={() => exportCSV('transactions', { status: 'paid' })}
+            className="px-3 py-1 rounded bg-secondary text-secondary-foreground text-sm"
+          >
+            Exportar TX (Paid)
+          </button>
+          <button 
+            onClick={() => exportCSV('payouts')}
+            className="px-3 py-1 rounded bg-secondary text-secondary-foreground text-sm"
+          >
+            Exportar Payouts
+          </button>
+          {isAdmin && (
+            <button 
+              onClick={syncToAirtable}
+              className="px-3 py-1 rounded bg-accent text-accent-foreground text-sm"
+            >
+              Sync Airtable
+            </button>
+          )}
+          <button className="text-sm underline" onClick={() => navigate(-1)}>← Voltar</button>
+        </div>
       </div>
 
       <div className="rounded-lg border">
