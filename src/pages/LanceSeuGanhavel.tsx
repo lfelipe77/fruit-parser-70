@@ -1,840 +1,576 @@
-import Navigation from "@/components/Navigation";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Calendar, Upload, DollarSign, Users, Shield, Clock, MapPin, Globe, AlertTriangle, Package, Info } from "lucide-react";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { rifaFormSchema, type RifaFormData } from "@/lib/validations";
-import { useRateLimit } from "@/hooks/useRateLimit";
-import { TurnstileProtection } from "@/components/TurnstileProtection";
-import { brazilStates } from "@/data/locations";
-import CountryRegionSelector from "@/components/CountryRegionSelector";
+import { Calendar, Upload, Calculator, HelpCircle, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import Navigation from "@/components/Navigation";
 
-const categoriesData = {
-  "eletronicos": {
-    name: "Eletrônicos",
-    subcategories: ["Celulares", "Tablets", "TVs", "Notebooks", "Acessórios", "Outros"]
-  },
-  "celulares-smartwatches": {
-    name: "Celulares & Smartwatches",
-    subcategories: ["iPhone", "Samsung Galaxy", "Apple Watch", "Smartwatches Android", "Acessórios", "Outros"]
-  },
-  "games-consoles": {
-    name: "Games & Consoles",
-    subcategories: ["PlayStation", "Xbox", "Nintendo", "Jogos", "Acessórios", "Outros"]
-  },
-  "eletrodomesticos": {
-    name: "Eletrodomésticos",
-    subcategories: ["Cozinha", "Limpeza", "Climatização", "Pequenos Eletrodomésticos", "Outros"]
-  },
-  "gift-cards": {
-    name: "Gift Cards",
-    subcategories: ["Gift Cards Lojas", "Cartões Pré-pagos", "Investimentos", "Outros"]
-  },
-  "carros-motos": {
-    name: "Carros & Motos",
-    subcategories: ["Carros Populares", "Carros Premium", "Motos", "Elétricos", "Outros"]
-  },
-  "produtos-virais": {
-    name: "Produtos Virais",
-    subcategories: ["Tech Viral", "Casa & Decoração", "Fitness", "Beleza", "Outros"]
-  },
-  "diversos": {
-    name: "Diversos",
-    subcategories: ["Imóveis", "Experiências", "Cursos", "Serviços", "Outros"]
-  }
-};
+interface Category {
+  id: string;
+  nome: string;
+  slug: string;
+  icone_url: string;
+  descricao: string;
+}
 
-export default function LanceSuaRifa() {
+interface FormData {
+  title: string;
+  description: string;
+  category_id: string | null;
+  prize_value: string;
+  total_tickets: string;
+  ticket_price: string;
+  draw_date: string;
+  image: File | null;
+}
+
+export default function LanceSeuGanhavel() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { checkRateLimit, isChecking } = useRateLimit();
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+  
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
-    category: "",
-    subcategory: "",
-    prizeValue: "",
-    ticketPrice: "",
-    countryRegion: "",
-    state: "",
-    city: "",
-    affiliateLink: "",
-    images: [] as File[]
+    category_id: null,
+    prize_value: "",
+    total_tickets: "",
+    ticket_price: "",
+    draw_date: "",
+    image: null,
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
 
-  // Função para obter moeda baseada no país/região
-  const getCurrency = () => {
-    switch (formData.countryRegion) {
-      case 'brasil':
-        return 'R$';
-      case 'usa':
-        return '$';
-      case 'uk':
-        return '£';
-      case 'europe':
-        return '€';
-      default:
-        return 'R$'; // Default para Brasil
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ganhavel_categories')
+        .select('*')
+        .order('nome');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar categorias",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string | number | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Limpar erro do campo quando o usuário digitar
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
   };
 
-  // Função para detectar país/região baseado no link
-  const detectCountryFromLink = (url: string) => {
-    if (!url) return null;
-    
-    try {
-      const domain = new URL(url).hostname.toLowerCase();
-      
-      if (domain.includes('.com.br') || domain.includes('mercadolivre.com.br') || domain.includes('amazon.com.br')) {
-        return 'brasil';
-      } else if (domain.includes('.co.uk') || domain.includes('amazon.co.uk')) {
-        return 'uk';
-      } else if (domain.includes('amazon.com') || domain.includes('.com')) {
-        return 'usa';
-      } else if (domain.includes('.eu') || domain.includes('amazon.de') || domain.includes('amazon.fr')) {
-        return 'europe';
-      }
-      
-      return 'online';
-    } catch {
-      return null;
-    }
-  };
-
-  const handleAffiliateLinkChange = (value: string) => {
-    setFormData(prev => ({ ...prev, affiliateLink: value }));
-    
-    // Auto-detectar país/região baseado no link
-    const detectedCountry = detectCountryFromLink(value);
-    if (detectedCountry && !formData.countryRegion) {
-      setFormData(prev => ({ ...prev, countryRegion: detectedCountry }));
-    }
-  };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
-    // File validation
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    const maxFiles = 1; // Limit to 1 file
-    
-    // Check if trying to upload more than 1 file
-    if (files.length > maxFiles) {
-      toast({
-        title: "Limite de arquivos excedido",
-        description: `Você pode enviar no máximo ${maxFiles} arquivo.`,
-        variant: "destructive"
-      });
-      e.target.value = ''; // Clear the input
-      return;
-    }
-    
-    // Check if already has files and trying to add more
-    if (formData.images.length > 0) {
-      toast({
-        title: "Limite de arquivos excedido",
-        description: "Você já enviou um arquivo. Remova o arquivo atual para enviar outro.",
-        variant: "destructive"
-      });
-      e.target.value = ''; // Clear the input
-      return;
-    }
-    
-    const validFiles: File[] = [];
-    
-    for (const file of files) {
-      // Check file type
-      if (!allowedTypes.includes(file.type)) {
-        toast({
-          title: "Tipo de arquivo não permitido",
-          description: `O arquivo "${file.name}" não é um tipo de imagem válido. Use apenas JPG, JPEG, PNG, WEBP ou GIF.`,
-          variant: "destructive"
-        });
-        continue;
-      }
-      
-      // Check file size
-      if (file.size > maxSize) {
-        toast({
-          title: "Arquivo muito grande",
-          description: `O arquivo "${file.name}" excede o limite de 5MB.`,
-          variant: "destructive"
-        });
-        continue;
-      }
-      
-      // Sanitize filename
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-      
-      // Create new file with sanitized name
-      const sanitizedFile = new File([file], sanitizedName, {
-        type: file.type,
-        lastModified: file.lastModified,
-      });
-      
-      validFiles.push(sanitizedFile);
-    }
-    
-    if (validFiles.length > 0) {
-      setFormData(prev => ({ ...prev, images: validFiles }));
-      
-      // Log audit event for image upload
-      try {
-        const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
-          action: 'uploaded_raffle_image',
-          context: {
-            page: 'LanceSeuGanhavel',
-            filename: validFiles[0].name
-          }
-        });
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-        if (auditError) {
-          console.error('Error logging audit event:', auditError);
-        }
-      } catch (error) {
-        console.error('Error logging image upload audit:', error);
-      }
-      
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
       toast({
-        title: "Arquivo enviado com sucesso",
-        description: `${validFiles.length} arquivo válido foi carregado.`,
+        title: "Erro",
+        description: "Por favor, selecione apenas arquivos de imagem",
+        variant: "destructive",
       });
+      return;
     }
-    
-    // Clear the input regardless
-    e.target.value = '';
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Erro",
+        description: "A imagem deve ter no máximo 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    handleInputChange('image', file);
   };
 
-  const calculateCommission = () => {
-    const prizeValue = parseFloat(formData.prizeValue) || 0;
-    const processingFee = prizeValue * 0.02; // 2% taxa de processamento
-    return { prizeValue, processingFee, totalAmount: prizeValue + processingFee };
+  const uploadImage = async (file: File): Promise<string> => {
+    if (!user) throw new Error('User not authenticated');
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('raffle-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('raffle-images')
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const validateForm = () => {
-    try {
-      const validatedData = rifaFormSchema.parse(formData);
-      setErrors({});
-      return validatedData;
-    } catch (error: any) {
-      const newErrors: Record<string, string> = {};
-      error.errors?.forEach((err: any) => {
-        if (err.path && err.path.length > 0) {
-          newErrors[err.path[0]] = err.message;
-        }
-      });
-      setErrors(newErrors);
-      return null;
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = "Título é obrigatório";
     }
+
+    if (!formData.description.trim()) {
+      newErrors.description = "Descrição é obrigatória";
+    }
+
+    if (!formData.category_id) {
+      newErrors.category_id = "Categoria é obrigatória";
+    }
+
+    if (!formData.prize_value || parseFloat(formData.prize_value) <= 0) {
+      newErrors.prize_value = "Valor do prêmio deve ser maior que zero";
+    }
+
+    if (!formData.total_tickets || parseInt(formData.total_tickets) <= 0) {
+      newErrors.total_tickets = "Número total de tickets deve ser maior que zero";
+    }
+
+    if (!formData.ticket_price || parseFloat(formData.ticket_price) <= 0) {
+      newErrors.ticket_price = "Preço do ticket deve ser maior que zero";
+    }
+
+    if (!formData.draw_date) {
+      newErrors.draw_date = "Data do sorteio é obrigatória";
+    } else {
+      const drawDate = new Date(formData.draw_date);
+      const now = new Date();
+      if (drawDate <= now) {
+        newErrors.draw_date = "Data do sorteio deve ser no futuro";
+      }
+    }
+
+    if (!formData.image) {
+      newErrors.image = "Imagem é obrigatória";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const calculateCommission = () => {
+    const prizeValue = parseFloat(formData.prize_value) || 0;
+    const commissionRate = 0.05; // 5%
+    return prizeValue * commissionRate;
+  };
+
+  const calculateTotalRevenue = () => {
+    const totalTickets = parseInt(formData.total_tickets) || 0;
+    const ticketPrice = parseFloat(formData.ticket_price) || 0;
+    return totalTickets * ticketPrice;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação completa com Zod
-    const validatedData = validateForm();
-    if (!validatedData) {
+    if (!user) {
       toast({
-        title: "Dados inválidos",
-        description: "Por favor, corrija os erros nos campos destacados.",
-        variant: "destructive"
+        title: "Erro",
+        description: "Você precisa estar logado para criar um ganhavel",
+        variant: "destructive",
       });
       return;
     }
 
-    // Verificar proteção anti-bot
-    if (!turnstileToken) {
+    if (!validateForm()) {
       toast({
-        title: "Verificação necessária",
-        description: "Por favor, complete a verificação anti-bot.",
-        variant: "destructive"
+        title: "Erro",
+        description: "Por favor, corrija os erros no formulário",
+        variant: "destructive",
       });
       return;
     }
 
-    // Verificar rate limiting
-    const identifier = `${Date.now()}_${Math.random()}`; // Fallback se não tiver user ID
-    const rateLimitPassed = await checkRateLimit('raffle_creation', identifier);
-    
-    if (!rateLimitPassed) {
-      return; // Mensagem já foi exibida pelo hook
-    }
+    setIsSubmitting(true);
 
     try {
-      // Log audit event for raffle creation
-      const { error: auditError } = await (supabase as any).rpc('log_audit_event', {
-        action: 'launched_new_raffle',
-        context: {
-          raffle_name: formData.title,
-          page: 'LanceSeuGanhavel'
-        }
-      });
-
-      if (auditError) {
-        console.error('Error logging audit event:', auditError);
+      // Upload image first
+      let imageUrl = "";
+      if (formData.image) {
+        imageUrl = await uploadImage(formData.image);
       }
 
-      // Notificação de sucesso com evento registrado
+      // Create raffle using direct insert
+      const { data: raffleData, error: raffleError } = await supabase
+        .from('raffles')
+        .insert({
+          title: formData.title,
+          description: formData.description,
+          category_id: parseInt(formData.category_id || '0'),
+          image_url: imageUrl,
+          prize_value: parseFloat(formData.prize_value),
+          total_tickets: parseInt(formData.total_tickets),
+          ticket_price: parseFloat(formData.ticket_price),
+          draw_date: new Date(formData.draw_date).toISOString(),
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (raffleError) throw raffleError;
+
       toast({
-        title: "🎉 Sua rifa foi lançada com sucesso!",
-        description: "Evento registrado para segurança. Sua rifa será analisada em até 24 horas.",
+        title: "Sucesso!",
+        description: "Seu ganhavel foi criado e está aguardando aprovação",
       });
-      
-      console.log("Dados da rifa:", formData);
+
+      // Navigate to user's raffles or dashboard
+      navigate('/dashboard');
+
     } catch (error) {
-      console.error('Error submitting raffle:', error);
+      console.error('Error creating raffle:', error);
       toast({
-        title: "Erro ao enviar rifa",
-        description: "Ocorreu um erro ao processar sua solicitação. Tente novamente.",
-        variant: "destructive"
+        title: "Erro",
+        description: "Erro ao criar ganhavel. Tente novamente.",
+        variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const { prizeValue, processingFee, totalAmount } = calculateCommission();
+  const commission = calculateCommission();
+  const totalRevenue = calculateTotalRevenue();
+  const netProfit = totalRevenue - commission;
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      {/* Hero Section */}
-      <div className="bg-gradient-hero py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl lg:text-6xl font-bold mb-4">
-              Lance seu Ganhavel
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Transforme seus sonhos em realidade e ajude outros a realizarem os deles
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-4">Criar Novo Ganhavel</h1>
+            <p className="text-muted-foreground">
+              Preencha as informações abaixo para criar seu ganhavel
             </p>
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <Badge variant="secondary" className="flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                100% Seguro
-              </Badge>
-              <Badge variant="secondary" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                +50.000 Criadores
-              </Badge>
-              <Badge variant="secondary" className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Análise em 24h
-              </Badge>
-            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Formulário Principal */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Informações Básicas */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações Básicas</CardTitle>
-                  <CardDescription>
-                    Conte sobre o prêmio do seu ganhavel
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título do Ganhavel *</Label>
-                    <Input
-                      id="title"
-                      placeholder="Ex: iPhone 15 Pro Max 256GB"
-                      value={formData.title}
-                      onChange={(e) => handleInputChange("title", e.target.value)}
-                      className={errors.title ? "border-destructive" : ""}
-                      required
-                    />
-                    {errors.title && (
-                      <p className="text-sm text-destructive">{errors.title}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descrição *</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Descreva detalhadamente o prêmio, suas condições, especificações..."
-                      rows={4}
-                      value={formData.description}
-                      onChange={(e) => handleInputChange("description", e.target.value)}
-                      className={errors.description ? "border-destructive" : ""}
-                      required
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{formData.description.length}/1000 caracteres</span>
-                      {errors.description && (
-                        <span className="text-destructive">{errors.description}</span>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Form */}
+            <div className="lg:col-span-2">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informações Básicas</CardTitle>
+                    <CardDescription>
+                      Dados principais do seu ganhavel
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="title">Título *</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
+                        placeholder="Ex: iPhone 15 Pro Max 256GB"
+                        className={errors.title ? "border-red-500" : ""}
+                      />
+                      {errors.title && (
+                        <p className="text-sm text-red-500 mt-1">{errors.title}</p>
                       )}
                     </div>
-                  </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div>
+                      <Label htmlFor="description">Descrição *</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder="Descreva detalhadamente o prêmio..."
+                        rows={4}
+                        className={errors.description ? "border-red-500" : ""}
+                      />
+                      {errors.description && (
+                        <p className="text-sm text-red-500 mt-1">{errors.description}</p>
+                      )}
+                    </div>
+
+                    <div>
                       <Label htmlFor="category">Categoria *</Label>
-                      <Select onValueChange={(value) => handleInputChange("category", value)}>
-                        <SelectTrigger className={errors.category ? "border-destructive" : ""}>
+                      <Select
+                        value={formData.category_id?.toString() || ""}
+                        onValueChange={(value) => handleInputChange('category_id', parseInt(value))}
+                      >
+                        <SelectTrigger className={errors.category_id ? "border-red-500" : ""}>
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(categoriesData).map(([key, category]) => (
-                            <SelectItem key={key} value={key}>
-                              {category.name}
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              <div className="flex items-center gap-2">
+                                <span>{category.icone_url}</span>
+                                <span>{category.nome}</span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.category && (
-                        <p className="text-sm text-destructive">{errors.category}</p>
+                      {errors.category_id && (
+                        <p className="text-sm text-red-500 mt-1">{errors.category_id}</p>
                       )}
                     </div>
+                  </CardContent>
+                </Card>
 
-                    {formData.category && (
-                      <div className="space-y-2">
-                        <Label htmlFor="subcategory">Subcategoria</Label>
-                        <Select onValueChange={(value) => handleInputChange("subcategory", value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma subcategoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categoriesData[formData.category as keyof typeof categoriesData]?.subcategories.map((subcategory) => (
-                              <SelectItem key={subcategory} value={subcategory}>
-                                {subcategory}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Configuração do Ganhavel</CardTitle>
+                    <CardDescription>
+                      Defina os valores e quantidade de tickets
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="prize_value">Valor do Prêmio (R$) *</Label>
+                        <Input
+                          id="prize_value"
+                          type="number"
+                          step="0.01"
+                          value={formData.prize_value}
+                          onChange={(e) => handleInputChange('prize_value', e.target.value)}
+                          placeholder="0,00"
+                          className={errors.prize_value ? "border-red-500" : ""}
+                        />
+                        {errors.prize_value && (
+                          <p className="text-sm text-red-500 mt-1">{errors.prize_value}</p>
+                        )}
                       </div>
+
+                      <div>
+                        <Label htmlFor="total_tickets">Total de Tickets *</Label>
+                        <Input
+                          id="total_tickets"
+                          type="number"
+                          value={formData.total_tickets}
+                          onChange={(e) => handleInputChange('total_tickets', e.target.value)}
+                          placeholder="100"
+                          className={errors.total_tickets ? "border-red-500" : ""}
+                        />
+                        {errors.total_tickets && (
+                          <p className="text-sm text-red-500 mt-1">{errors.total_tickets}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="ticket_price">Preço por Ticket (R$) *</Label>
+                        <Input
+                          id="ticket_price"
+                          type="number"
+                          step="0.01"
+                          value={formData.ticket_price}
+                          onChange={(e) => handleInputChange('ticket_price', e.target.value)}
+                          placeholder="0,00"
+                          className={errors.ticket_price ? "border-red-500" : ""}
+                        />
+                        {errors.ticket_price && (
+                          <p className="text-sm text-red-500 mt-1">{errors.ticket_price}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="draw_date">Data do Sorteio *</Label>
+                        <Input
+                          id="draw_date"
+                          type="datetime-local"
+                          value={formData.draw_date}
+                          onChange={(e) => handleInputChange('draw_date', e.target.value)}
+                          className={errors.draw_date ? "border-red-500" : ""}
+                        />
+                        {errors.draw_date && (
+                          <p className="text-sm text-red-500 mt-1">{errors.draw_date}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Imagem do Prêmio</CardTitle>
+                    <CardDescription>
+                      Adicione uma imagem atrativa do prêmio
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div>
+                      <Label htmlFor="image">Imagem *</Label>
+                      <div className="mt-2">
+                        <Input
+                          id="image"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className={errors.image ? "border-red-500" : ""}
+                        />
+                        {formData.image && (
+                          <div className="mt-2 p-2 bg-muted rounded">
+                            <p className="text-sm">{formData.image.name}</p>
+                          </div>
+                        )}
+                        {errors.image && (
+                          <p className="text-sm text-red-500 mt-1">{errors.image}</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate('/dashboard')}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || isUploading}
+                    className="flex-1"
+                  >
+                    {isSubmitting || isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {isUploading ? 'Enviando imagem...' : 'Criando...'}
+                      </>
+                    ) : (
+                      'Criar Ganhavel'
                     )}
-                  </div>
+                  </Button>
+                </div>
+              </form>
+            </div>
 
-                  <CountryRegionSelector
-                    value={formData.countryRegion}
-                    onValueChange={(value) => handleInputChange("countryRegion", value)}
-                  />
-
-                  {/* Seletor de Estado/Região (apenas para Brasil e USA) */}
-                  {(formData.countryRegion === 'brasil' || formData.countryRegion === 'usa') && (
-                    <div className="space-y-2">
-                      <Label>Estado/Região</Label>
-                      <Select
-                        value={formData.state || ""}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, state: value, city: "" }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Selecione um estado${formData.countryRegion === 'usa' ? ' (US)' : ''}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {formData.countryRegion === 'brasil' && brazilStates.map((stateData) => (
-                            <SelectItem key={stateData.state} value={stateData.state}>
-                              {stateData.state}
-                            </SelectItem>
-                          ))}
-                          {formData.countryRegion === 'usa' && [
-                            'California', 'Texas', 'Florida', 'New York', 'Pennsylvania', 
-                            'Illinois', 'Ohio', 'Georgia', 'North Carolina', 'Michigan'
-                          ].map((state) => (
-                            <SelectItem key={state} value={state}>
-                              {state}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* Input de Cidade */}
-                  {(formData.countryRegion === 'brasil' || formData.countryRegion === 'usa') && formData.state && (
-                    <div className="space-y-2">
-                      <Label>Cidade</Label>
-                      <Input
-                        placeholder="Digite o nome da cidade"
-                        value={formData.city}
-                        onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      />
-                      {formData.countryRegion === 'brasil' && formData.state && (
-                        <div className="text-xs text-muted-foreground">
-                          <p>Cidades principais em {formData.state}:</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {brazilStates.find(s => s.state === formData.state)?.cities.map((city) => (
-                              <Button
-                                key={city}
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-auto p-1 text-xs"
-                                onClick={() => setFormData(prev => ({ ...prev, city }))}
-                              >
-                                {city}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                   {/* Campo para Link de Afiliado */}
-                  {formData.countryRegion && (
-                    <div className="space-y-2">
-                      <Label htmlFor="affiliateLink">Link de Afiliado {formData.countryRegion === 'online' ? '*' : ''}</Label>
-                      <Input
-                        id="affiliateLink"
-                        type="url"
-                        placeholder="https://exemplo.com/produto?ref=seucodigo"
-                        value={formData.affiliateLink || ""}
-                        onChange={(e) => handleAffiliateLinkChange(e.target.value)}
-                        className={errors.affiliateLink ? "border-destructive" : ""}
-                        required={formData.countryRegion === 'online'}
-                      />
-                      {errors.affiliateLink && (
-                        <p className="text-sm text-destructive">{errors.affiliateLink}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        {formData.countryRegion === 'online' 
-                          ? "Cole aqui o link de afiliado do produto. Este link será usado para comprar o produto quando o sorteio acontecer."
-                          : "Link opcional de afiliado. Se fornecido, será usado para rastreamento e comissões."
-                        }
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Alertas informativos baseados na seleção */}
-                  {formData.countryRegion && (
-                    <div className="mt-4 space-y-3">
-                      {/* Alert para Produtos Online */}
-                      {formData.countryRegion === 'online' && (
-                        <Alert className="border-blue-200 bg-blue-50/50">
-                          <Package className="h-4 w-4 text-blue-600" />
-                          <AlertDescription className="text-sm">
-                            <strong>ONLINE - Produtos Afiliados:</strong> Uma vez que o valor completar e o sorteio acontecer, o site comprará o produto com o seu link de afiliado. O comprovante será enviado tanto para o ganhador quanto para você.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {/* Alert para Produtos Regionais */}
-                      {(formData.countryRegion !== 'online') && (
-                        <Alert className="border-orange-200 bg-orange-50/50">
-                          <AlertTriangle className="h-4 w-4 text-orange-600" />
-                          <AlertDescription className="text-sm">
-                            <strong>Produtos Regionais:</strong> Para ganhaveis específicos de país/região, será necessário comprovar disponibilidade local. O organizador é responsável pela entrega conforme regulamentação local.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {/* Alert especial para categorias específicas */}
-                      {(formData.category === "carros-motos" || formData.category === "diversos") && (
-                        <Alert className="border-amber-200 bg-amber-50/50">
-                          <AlertTriangle className="h-4 w-4 text-amber-600" />
-                          <AlertDescription className="text-sm">
-                            <strong>Produtos Especiais (Imóveis, Automóveis, etc.):</strong> Será necessário comprovarmos o recebimento pelo custo do vendedor, ou realizarmos a transferência no momento da transferência do bem. O vendedor deverá arcar com o envio até o recebimento final confirmado.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {/* Link para Como Funciona */}
-                      <div className="flex items-center gap-2 text-sm">
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Para maiores detalhes, consulte nossa página</span>
-                        <Button 
-                          variant="link" 
-                          className="p-0 h-auto text-sm text-primary hover:text-primary/80"
-                          onClick={() => window.open('/como-funciona', '_blank')}
-                        >
-                          Como Funciona
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                </CardContent>
-              </Card>
-
-              {/* Configurações da Rifa */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações</CardTitle>
-                  <CardDescription>
-                    Defina como seu ganhavel funcionará
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="ticketPrice">Preço do Bilhete ({getCurrency()}) *</Label>
-                      <Input
-                        id="ticketPrice"
-                        type="number"
-                        placeholder="5.00"
-                        step="0.01"
-                        min="0.1"
-                        max="1000"
-                        value={formData.ticketPrice}
-                        onChange={(e) => handleInputChange("ticketPrice", e.target.value)}
-                        className={errors.ticketPrice ? "border-destructive" : ""}
-                        required
-                      />
-                      {errors.ticketPrice && (
-                        <p className="text-sm text-destructive">{errors.ticketPrice}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">Entre {getCurrency()} 0,10 e {getCurrency()} 1.000,00</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="prizeValue">Valor do Prêmio ({getCurrency()}) *</Label>
-                      <Input
-                        id="prizeValue"
-                        type="number"
-                        placeholder="5000"
-                        min="1"
-                        value={formData.prizeValue}
-                        onChange={(e) => handleInputChange("prizeValue", e.target.value)}
-                        className={errors.prizeValue ? "border-destructive" : ""}
-                        required
-                      />
-                      {errors.prizeValue && (
-                        <p className="text-sm text-destructive">{errors.prizeValue}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">Valor total do prêmio</p>
-                    </div>
-                  </div>
-
-                </CardContent>
-              </Card>
-
-              {/* Upload de Imagens */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Imagens do Prêmio</CardTitle>
-                  <CardDescription>
-                    Adicione fotos do prêmio para atrair mais participantes
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                    <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <div className="space-y-2">
-                      <Label htmlFor="images" className="cursor-pointer">
-                        <span className="text-primary hover:text-primary/80">
-                          Clique para enviar imagens
-                        </span>
-                        <span className="text-muted-foreground"> ou arraste e solte</span>
-                      </Label>
-                      <Input
-                        id="images"
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.webp,.gif"
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        JPG, JPEG, PNG, WEBP, GIF até 5MB (máximo 1 imagem)
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {formData.images.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium mb-2">
-                        Imagem selecionada:
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.images.map((file, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <Badge variant="secondary">
-                              {file.name}
-                            </Badge>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setFormData(prev => ({ ...prev, images: [] }))}
-                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                            >
-                              ×
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Proteção Anti-Bot */}
+            {/* Sidebar */}
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    Verificação de Segurança
+                    <Calculator className="w-5 h-5" />
+                    Calculadora
                   </CardTitle>
-                  <CardDescription>
-                    Protegemos nossa plataforma contra spam e bots
-                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <TurnstileProtection
-                    onVerify={(token) => setTurnstileToken(token)}
-                    onError={() => setTurnstileToken("")}
-                    onExpire={() => setTurnstileToken("")}
-                    action="raffle_creation"
-                    theme="auto"
-                    size="normal"
-                  />
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Receita Total:</span>
+                      <span className="font-medium">R$ {totalRevenue.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Comissão (5%):</span>
+                      <span className="font-medium text-red-500">-R$ {commission.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t pt-2">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Lucro Líquido:</span>
+                        <span className="font-bold text-green-500">R$ {netProfit.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Botão de Envio */}
-              <div className="flex gap-4">
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  className="flex-1"
-                  disabled={isChecking || !turnstileToken}
-                >
-                  {isChecking ? "Verificando..." : "Enviar para Análise"}
-                </Button>
-                <Button type="button" variant="outline" size="lg">
-                  Salvar Rascunho
-                </Button>
-              </div>
-            </form>
-          </div>
-
-          {/* Sidebar com Resumo */}
-          <div className="space-y-6">
-            {/* Calculadora */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Calculadora
-                </CardTitle>
-              </CardHeader>
-               <CardContent className="space-y-4">
-                {formData.prizeValue && (
-                  <>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Valor do Prêmio:</span>
-                        <span className="font-medium">R$ {prizeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Taxa de Processamento (2%):</span>
-                        <span>+ R$ {processingFee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between font-medium">
-                        <span>Total a arrecadar:</span>
-                        <span className="text-primary">R$ {totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="mt-3 p-3 bg-muted rounded-lg">
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Sobre a taxa de processamento:</strong> Os 2% adicionais são destinados à instituição financeira para processar pagamentos via API SAAS e garantir a segurança das transações.
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                {!formData.prizeValue && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Preencha o valor do prêmio para ver os cálculos
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Como Funciona */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Como Funciona</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                      1
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Envie seu ganhavel</p>
-                      <p className="text-xs text-muted-foreground">Nossa equipe analisa em até 24h</p>
-                    </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <HelpCircle className="w-5 h-5" />
+                    Como Funciona
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <Badge variant="outline" className="w-full justify-start">
+                      1. Criar Ganhavel
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Preencha todas as informações e envie para análise
+                    </p>
                   </div>
                   
-                  <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                      2
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Aprovação</p>
-                      <p className="text-xs text-muted-foreground">Publicamos e promovemos seu ganhavel</p>
-                    </div>
+                  <div className="space-y-2">
+                    <Badge variant="outline" className="w-full justify-start">
+                      2. Aprovação
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Nossa equipe irá revisar e aprovar seu ganhavel
+                    </p>
                   </div>
                   
-                  <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                      3
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Sorteio transparente</p>
-                      <p className="text-xs text-muted-foreground">Baseado na loteria federal do país de origem</p>
-                    </div>
+                  <div className="space-y-2">
+                    <Badge variant="outline" className="w-full justify-start">
+                      3. Venda de Tickets
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Usuários podem comprar tickets para participar
+                    </p>
                   </div>
                   
-                  <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                      4
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Você recebe o prêmio completo</p>
-                      <p className="text-xs text-muted-foreground">Transferência após confirmação da entrega</p>
-                    </div>
+                  <div className="space-y-2">
+                    <Badge variant="outline" className="w-full justify-start">
+                      4. Sorteio
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      O sorteio acontece na data programada
+                    </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Suporte */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Precisa de Ajuda?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Nossa equipe está pronta para te ajudar a criar a rifa perfeita.
-                </p>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/central-de-ajuda">
-                    Falar com Suporte
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    Importante
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Todos os ganhaveis passam por análise</li>
+                    <li>• Não é permitido alterar valores após aprovação</li>
+                    <li>• Você deve entregar o prêmio ao vencedor</li>
+                    <li>• Taxa de 5% sobre o valor arrecadado</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
