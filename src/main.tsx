@@ -3,6 +3,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import App from './App.tsx'
 import './index.css'
 import './i18n'
+import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 
 // --- EARLY OAUTH HANDLER (runs before router/guards) ---
 import { supabase } from '@/integrations/supabase/client';
@@ -58,8 +59,10 @@ async function oauthEarly() {
   await oauthEarly();
   // existing React render here (unchanged):
   createRoot(document.getElementById("root")!).render(
-    <HelmetProvider>
-      <App />
-    </HelmetProvider>
+    <AppErrorBoundary>
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>
+    </AppErrorBoundary>
   );
 })();
