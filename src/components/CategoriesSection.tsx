@@ -50,7 +50,11 @@ export default function CategoriesSection() {
                             className="w-6 h-6 object-contain"
                           />
                         ) : (
-                          <Home className="w-6 h-6 text-primary" />
+                          <img 
+                            src="/lovable-uploads/ea91f109-b805-487c-986c-b701fbc76222.png" 
+                            alt="Ícone Ganhavel" 
+                            className="w-6 h-6 object-contain"
+                          />
                         )}
                       </div>
                     </div>
