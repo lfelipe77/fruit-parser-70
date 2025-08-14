@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMyProfile } from '@/hooks/useMyProfile';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -15,6 +16,7 @@ import { fileToDataUrl } from '@/lib/cropImage';
 
 export default function Profile() {
   const { profile, loading, updateProfile } = useMyProfile();
+  const { session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -28,6 +30,8 @@ export default function Profile() {
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [pendingFileExt, setPendingFileExt] = useState<string>("webp");
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [savingAvatar, setSavingAvatar] = useState(false);
 
   // Initialize form data when profile loads
   useEffect(() => {
@@ -40,6 +44,13 @@ export default function Profile() {
       });
     }
   }, [profile]);
+
+  // Debug auth session
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data, error }) => {
+      console.log("[AUTH] user at profile", data?.user?.id, error);
+    });
+  }, []);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -74,47 +85,57 @@ export default function Profile() {
   };
 
   const uploadCroppedBlob = async (blob: Blob) => {
-    if (!profile) return;
-    
-    const uid = profile.id;
-    const path = `${uid}/avatar.webp`;
+    const uid = session?.user?.id;
+    if (!uid) {
+      console.error("[avatar upload] missing session.user.id");
+      toast({
+        title: 'Erro',
+        description: 'Sessão expirada. Entre novamente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const path = `${uid}/avatar.webp`; // MUST start with UID for RLS
+
+    console.log("[avatar] starting upload", { uid, path, blobSize: blob.size });
 
     setUploading(true);
     try {
+      // 1) upload to Storage (overwrite)
+      const up = await supabase.storage.from("avatars").upload(path, blob, {
+        upsert: true,
+        cacheControl: "0",
+        contentType: "image/webp",
+      });
+      console.log("[avatar] storage.upload response", up);
+      if (up.error) throw up.error;
 
-      // 1) upload (overwrite same path)
-      const upRes = await supabase.storage
-        .from("avatars")
-        .upload(path, blob, {
-          upsert: true,
-          cacheControl: "0",
-          contentType: "image/webp",
-        });
-      if (upRes.error) throw upRes.error;
-
-      // 2) public URL
+      // 2) get public URL
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      console.log("[avatar] public url", pub);
       if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública");
       const baseUrl = pub.publicUrl;
 
-      // 3) try UPDATE first
-      const updRes = await supabase
+      // 3) UPDATE profile
+      const upd = await supabase
         .from("user_profiles")
         .update({ avatar_url: baseUrl })
         .eq("id", uid)
         .select("id");
-      if (updRes.error) throw updRes.error;
+      console.log("[avatar] profiles.update response", upd);
+      if (upd.error) throw upd.error;
 
-      // 4) if no row was updated, INSERT (RLS needs the policy from Step 1)
-      if (!updRes.data || updRes.data.length === 0) {
-        const insRes = await supabase
+      // 4) If 0 rows updated → INSERT (requires the insert policy)
+      if (!upd.data || upd.data.length === 0) {
+        const ins = await supabase
           .from("user_profiles")
           .insert({ id: uid, avatar_url: baseUrl })
           .select("id");
-        if (insRes.error) throw insRes.error;
+        console.log("[avatar] profiles.insert response", ins);
+        if (ins.error) throw ins.error;
       }
 
-      // 5) cache‑bust locally so it refreshes immediately
+      // 5) cache-bust locally
       const bust = `${baseUrl}?t=${Date.now()}`;
       await updateProfile({ avatar_url: bust });
 
@@ -122,17 +143,48 @@ export default function Profile() {
         title: 'Avatar atualizado',
         description: 'Seu avatar foi atualizado com sucesso.',
       });
+      console.log("[avatar] done");
     } catch (e: any) {
       console.error("[avatar upload/save] error:", e);
-      // show the actual Supabase error message if present
-      const msg = e?.message || e?.error_description || "Erro ao enviar avatar.";
       toast({
         title: 'Erro',
-        description: msg,
+        description: e?.message || e?.error_description || "Erro ao enviar avatar.",
         variant: 'destructive',
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Final "Salvar" button click inside cropper modal
+  const onConfirmCroppedAvatar = async () => {
+    try {
+      if (!session?.user?.id) {
+        console.error("[avatar] no session user id at save time");
+        toast({
+          title: 'Erro',
+          description: 'Faça login novamente para salvar o avatar.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!croppedBlob) {
+        toast({
+          title: 'Erro',
+          description: 'Selecione a área do recorte antes de salvar.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setSavingAvatar(true);
+      await uploadCroppedBlob(croppedBlob);
+      // close modal only after successful upload
+      setCropOpen(false);
+      setCroppedBlob(null);
+    } catch (e) {
+      console.error("[avatar] confirm error", e);
+    } finally {
+      setSavingAvatar(false);
     }
   };
 
@@ -344,8 +396,14 @@ export default function Profile() {
       <AvatarCropper
         src={cropSrc ?? ""}
         open={cropOpen}
-        onClose={() => setCropOpen(false)}
-        onCropped={(blob) => uploadCroppedBlob(blob)}
+        onClose={() => {
+          setCropOpen(false);
+          setCroppedBlob(null);
+        }}
+        onCropped={(blob) => {
+          setCroppedBlob(blob);
+          onConfirmCroppedAvatar();
+        }}
       />
     </div>
   );
