@@ -1100,6 +1100,10 @@ export type Database = {
         Args: { p_message: string; p_meta: Json; p_type: string }
         Returns: undefined
       }
+      ensure_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       example_function: {
         Args: Record<PropertyKey, never>
         Returns: undefined

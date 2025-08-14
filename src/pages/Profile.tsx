@@ -400,9 +400,18 @@ export default function Profile() {
           setCropOpen(false);
           setCroppedBlob(null);
         }}
-        onCropped={(blob) => {
+        onCropped={async (blob) => {
           setCroppedBlob(blob);
-          onConfirmCroppedAvatar();
+          setSavingAvatar(true);
+          try {
+            await uploadCroppedBlob(blob);
+            setCropOpen(false);
+            setCroppedBlob(null);
+          } catch (error) {
+            console.error("[avatar] save error", error);
+          } finally {
+            setSavingAvatar(false);
+          }
         }}
       />
     </div>
