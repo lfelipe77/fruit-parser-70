@@ -145,7 +145,7 @@ export default function PerfilPublico() {
     { 
       title: "iPhone 15 Pro Max", 
       description: "iPhone 15 Pro Max 256GB Titânio Natural",
-      image: "/src/assets/iphone-15-pro-max.jpg",
+      image: "/placeholder.svg",
       goal: 120,
       raised: 95,
       daysLeft: 5,
@@ -157,7 +157,7 @@ export default function PerfilPublico() {
     { 
       title: "R$ 50.000", 
       description: "Cinquenta mil reais em dinheiro",
-      image: "/src/assets/dinheiro-50k.jpg",
+      image: "/placeholder.svg",
       goal: 100,
       raised: 100,
       daysLeft: 0,
@@ -169,7 +169,7 @@ export default function PerfilPublico() {
     { 
       title: "Yamaha MT-03 2024", 
       description: "Yamaha MT-03 2024 zero quilômetro",
-      image: "/src/assets/yamaha-mt03-2024.jpg",
+      image: "/placeholder.svg",
       goal: 150,
       raised: 120,
       daysLeft: 8,
@@ -181,7 +181,7 @@ export default function PerfilPublico() {
     { 
       title: "PlayStation 5 + Setup", 
       description: "PS5 completo com jogos e acessórios",
-      image: "/src/assets/ps5-setup-gamer.jpg",
+      image: "/placeholder.svg",
       goal: 80,
       raised: 65,
       daysLeft: 12,
@@ -193,7 +193,7 @@ export default function PerfilPublico() {
     { 
       title: "R$ 25.000", 
       description: "Vinte e cinco mil reais em dinheiro",
-      image: "/src/assets/dinheiro-50k.jpg",
+      image: "/placeholder.svg",
       goal: 50,
       raised: 50,
       daysLeft: 0,
@@ -205,7 +205,7 @@ export default function PerfilPublico() {
     { 
       title: "Honda Civic 2024", 
       description: "Honda Civic Touring 2024 completo",
-      image: "/src/assets/honda-civic-2024-realistic.jpg",
+      image: "/placeholder.svg",
       goal: 200,
       raised: 45,
       daysLeft: 20,
@@ -217,7 +217,7 @@ export default function PerfilPublico() {
     { 
       title: "R$ 10.000", 
       description: "Dez mil reais em dinheiro",
-      image: "/src/assets/dinheiro-50k.jpg",
+      image: "/placeholder.svg",
       goal: 20,
       raised: 20,
       daysLeft: 0,
@@ -229,7 +229,7 @@ export default function PerfilPublico() {
     { 
       title: "Casa em Alphaville", 
       description: "Casa de 300m² em condomínio fechado",
-      image: "/src/assets/casa-alphaville.jpg",
+      image: "/placeholder.svg",
       goal: 800,
       raised: 200,
       daysLeft: 25,
@@ -254,7 +254,7 @@ export default function PerfilPublico() {
     { 
       title: "Honda Civic 2024", 
       description: "Honda Civic Touring 2024 completo",
-      image: "/src/assets/honda-civic-2024.jpg",
+      image: "/placeholder.svg",
       goal: 200,
       raised: 150,
       daysLeft: 12,
@@ -267,7 +267,7 @@ export default function PerfilPublico() {
     { 
       title: "Casa em Alphaville", 
       description: "Casa de 300m² em condomínio fechado",
-      image: "/src/assets/casa-alphaville.jpg",
+      image: "/placeholder.svg",
       goal: 800,
       raised: 650,
       daysLeft: 8,
@@ -280,7 +280,7 @@ export default function PerfilPublico() {
     { 
       title: "iPhone 15 Pro Max", 
       description: "iPhone 15 Pro Max 256GB Titânio Natural",
-      image: "/src/assets/iphone-15-pro-max.jpg",
+      image: "/placeholder.svg",
       goal: 120,
       raised: 95,
       daysLeft: 5,
@@ -293,7 +293,7 @@ export default function PerfilPublico() {
     { 
       title: "Yamaha MT-03 2024", 
       description: "Yamaha MT-03 2024 zero quilômetro",
-      image: "/src/assets/yamaha-mt03-2024.jpg",
+      image: "/placeholder.svg",
       goal: 150,
       raised: 120,
       daysLeft: 15,
@@ -306,7 +306,7 @@ export default function PerfilPublico() {
     { 
       title: "PlayStation 5 + Setup", 
       description: "PS5 completo com jogos e acessórios",
-      image: "/src/assets/ps5-setup-gamer.jpg",
+      image: "/placeholder.svg",
       goal: 80,
       raised: 80,
       daysLeft: 0,
@@ -319,7 +319,7 @@ export default function PerfilPublico() {
     { 
       title: "R$ 25.000", 
       description: "Vinte e cinco mil reais em dinheiro",
-      image: "/src/assets/dinheiro-50k.jpg",
+      image: "/placeholder.svg",
       goal: 50,
       raised: 50,
       daysLeft: 0,
@@ -332,7 +332,7 @@ export default function PerfilPublico() {
     { 
       title: "R$ 10.000", 
       description: "Dez mil reais em dinheiro",
-      image: "/src/assets/dinheiro-50k.jpg",
+      image: "/placeholder.svg",
       goal: 20,
       raised: 20,
       daysLeft: 0,
@@ -345,7 +345,7 @@ export default function PerfilPublico() {
     { 
       title: "Honda Civic 2023", 
       description: "Honda Civic Touring 2023 usado",
-      image: "/src/assets/honda-civic-2024-realistic.jpg",
+      image: "/placeholder.svg",
       goal: 180,
       raised: 180,
       daysLeft: 0,

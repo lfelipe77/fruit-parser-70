@@ -5,12 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import hondaCivic from "@/assets/honda-civic-2024.jpg";
-import iphone15ProMax from "@/assets/iphone-15-pro-max.jpg";
-import casaAlphaville from "@/assets/casa-alphaville.jpg";
-import yamahaMT03 from "@/assets/yamaha-mt03-2024.jpg";
-import dinheiro50k from "@/assets/dinheiro-50k.jpg";
-import ps5Setup from "@/assets/ps5-setup-gamer.jpg";
+// Demo assets removed - these will come from real data
 
 // Mock data para rifas de subcategorias
 const subcategoryRifas: Record<string, any[]> = {
@@ -18,7 +13,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "iPhone 15 Pro Max 256GB",
       description: "iPhone 15 Pro Max novo, lacrado, cor titânio natural com 256GB de armazenamento.",
-      image: iphone15ProMax,
+      image: "/placeholder.svg",
       goal: 500,
       raised: 312,
       daysLeft: 9,
@@ -30,7 +25,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "Samsung Galaxy S24 Ultra",
       description: "Samsung Galaxy S24 Ultra 256GB, cor preto, novo lacrado com garantia.",
-      image: iphone15ProMax,
+      image: "/placeholder.svg",
       goal: 450,
       raised: 278,
       daysLeft: 15,
@@ -42,7 +37,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "Xiaomi 14 Pro",
       description: "Xiaomi 14 Pro 512GB, cor branco, importado com garantia internacional.",
-      image: iphone15ProMax,
+      image: "/placeholder.svg",
       goal: 300,
       raised: 189,
       daysLeft: 22,
@@ -56,7 +51,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "iPad Pro M2 256GB",
       description: "iPad Pro com chip M2, tela de 12.9 polegadas, cor space gray.",
-      image: iphone15ProMax,
+      image: "/placeholder.svg",
       goal: 400,
       raised: 245,
       daysLeft: 12,
@@ -68,7 +63,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "Samsung Galaxy Tab S9",
       description: "Samsung Galaxy Tab S9 256GB com S Pen inclusa, cor grafite.",
-      image: iphone15ProMax,
+      image: "/placeholder.svg",
       goal: 350,
       raised: 198,
       daysLeft: 18,
@@ -82,7 +77,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "Honda Civic 0KM 2024",
       description: "Honda Civic LX CVT 2024 zero quilômetro, cor preta, com garantia de fábrica.",
-      image: hondaCivic,
+      image: "/placeholder.svg",
       goal: 1000,
       raised: 847,
       daysLeft: 18,
@@ -94,7 +89,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "Toyota Corolla XEI 2024",
       description: "Toyota Corolla XEI automático 2024, cor prata, zero quilômetro.",
-      image: hondaCivic,
+      image: "/placeholder.svg",
       goal: 950,
       raised: 623,
       daysLeft: 25,
@@ -108,7 +103,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "PlayStation 5 + Setup Gamer",
       description: "PS5 + TV 55' 4K + Headset + Controle extra + 5 jogos exclusivos.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 600,
       raised: 456,
       daysLeft: 28,
@@ -120,7 +115,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "PlayStation 5 Digital",
       description: "PlayStation 5 versão digital nova lacrada com garantia oficial.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 450,
       raised: 312,
       daysLeft: 14,
@@ -132,7 +127,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "PlayStation 5 Standard + DualSense",
       description: "PlayStation 5 padrão com leitor de disco + controle DualSense extra azul cosmic.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 550,
       raised: 423,
       daysLeft: 19,
@@ -144,7 +139,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "PlayStation Portal + Acessórios",
       description: "PlayStation Portal para Remote Play + case de proteção + película de vidro.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 250,
       raised: 187,
       daysLeft: 12,
@@ -156,7 +151,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "Kit Gamer PS5 Completo",
       description: "PS5 + 3 jogos (Spider-Man 2, God of War, FIFA 24) + headset + suporte.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 750,
       raised: 534,
       daysLeft: 21,
@@ -168,7 +163,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "PlayStation VR2 + Horizon",
       description: "PlayStation VR2 novo lacrado + jogo Horizon Call of the Mountain incluído.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 400,
       raised: 198,
       daysLeft: 16,
@@ -180,7 +175,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "DualSense Edge + Cabo",
       description: "Controle PlayStation DualSense Edge profissional + cabo USB-C 3 metros.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 150,
       raised: 89,
       daysLeft: 8,
@@ -192,7 +187,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "PS5 + Monitor Gamer 27'",
       description: "PlayStation 5 + Monitor gamer 27' 144Hz + suporte articulado.",
-      image: ps5Setup,
+      image: "/placeholder.svg",
       goal: 800,
       raised: 612,
       daysLeft: 25,
@@ -206,7 +201,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "R$ 50.000 em Dinheiro",
       description: "Prêmio de cinquenta mil reais depositados direto na sua conta bancária.",
-      image: dinheiro50k,
+      image: "/placeholder.svg",
       goal: 1000,
       raised: 835,
       daysLeft: 5,
@@ -218,7 +213,7 @@ const subcategoryRifas: Record<string, any[]> = {
     {
       title: "R$ 25.000 em Dinheiro",
       description: "Prêmio de vinte e cinco mil reais para realizar seus sonhos.",
-      image: dinheiro50k,
+      image: "/placeholder.svg",
       goal: 500,
       raised: 367,
       daysLeft: 11,

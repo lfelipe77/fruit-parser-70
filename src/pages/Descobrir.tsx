@@ -10,19 +10,14 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useLocationFilter } from "@/hooks/useLocationFilter";
-import hondaCivic from "@/assets/honda-civic-2024.jpg";
-import iphone15ProMax from "@/assets/iphone-15-pro-max.jpg";
-import casaAlphaville from "@/assets/casa-alphaville.jpg";
-import yamahaMT03 from "@/assets/yamaha-mt03-2024.jpg";
-import dinheiro50k from "@/assets/dinheiro-50k.jpg";
-import ps5Setup from "@/assets/ps5-setup-gamer.jpg";
+// Demo assets removed - these will come from real data
 
 // Mock data for all raffles - expandido com mais localizações
 const allRifas = [
   {
     title: "Honda Civic 0KM 2024",
     description: "Honda Civic LX CVT 2024 zero quilômetro, cor preta, com garantia de fábrica.",
-    image: hondaCivic,
+    image: "/placeholder.svg",
     goal: 1000,
     raised: 847,
     daysLeft: 18,
@@ -34,7 +29,7 @@ const allRifas = [
   {
     title: "iPhone 15 Pro Max 256GB",
     description: "iPhone 15 Pro Max novo, lacrado, cor titânio natural com 256GB de armazenamento.",
-    image: iphone15ProMax,
+    image: "/placeholder.svg",
     goal: 500,
     raised: 312,
     daysLeft: 9,
@@ -46,7 +41,7 @@ const allRifas = [
   {
     title: "Casa em Condomínio - Alphaville",
     description: "Casa nova de 3 quartos em condomínio fechado com área de lazer completa.",
-    image: casaAlphaville,
+    image: "/placeholder.svg",
     goal: 2000,
     raised: 1450,
     daysLeft: 22,
@@ -58,7 +53,7 @@ const allRifas = [
   {
     title: "Yamaha MT-03 0KM 2024",
     description: "Moto Yamaha MT-03 zero quilômetro, cor azul, com garantia de fábrica e documentação inclusa.",
-    image: yamahaMT03,
+    image: "/placeholder.svg",
     goal: 800,
     raised: 672,
     daysLeft: 14,
@@ -70,7 +65,7 @@ const allRifas = [
   {
     title: "R$ 50.000 em Dinheiro",
     description: "Prêmio de cinquenta mil reais depositados direto na sua conta bancária.",
-    image: dinheiro50k,
+    image: "/placeholder.svg",
     goal: 1000,
     raised: 835,
     daysLeft: 5,
@@ -82,7 +77,7 @@ const allRifas = [
   {
     title: "PlayStation 5 + Setup Gamer",
     description: "PS5 + TV 55' 4K + Headset + Controle extra + 5 jogos exclusivos.",
-    image: ps5Setup,
+    image: "/placeholder.svg",
     goal: 600,
     raised: 456,
     daysLeft: 28,
@@ -94,7 +89,7 @@ const allRifas = [
   {
     title: "Apartamento 2 Quartos",
     description: "Apartamento novo de 2 quartos em Belo Horizonte com área de lazer.",
-    image: casaAlphaville,
+    image: "/placeholder.svg",
     goal: 1500,
     raised: 890,
     daysLeft: 30,
@@ -106,7 +101,7 @@ const allRifas = [
   {
     title: "Notebook Gamer RTX 4070",
     description: "Notebook gamer com RTX 4070, 32GB RAM, ideal para games e trabalho.",
-    image: iphone15ProMax,
+    image: "/placeholder.svg",
     goal: 400,
     raised: 267,
     daysLeft: 12,

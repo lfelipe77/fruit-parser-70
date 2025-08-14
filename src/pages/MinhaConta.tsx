@@ -100,7 +100,7 @@ export default function MinhaConta() {
       title: "iPhone 15 Pro Max", 
       numbers: generateManyCombinations(100), // Maximum 100 combinations limit
       status: "Em andamento", 
-      image: "/src/assets/iphone-15-pro-max.jpg",
+      image: "/placeholder.svg",
       totalPaid: 500 // 100 combinations x 5 reais (maximum allowed)
     },
     { 
@@ -123,7 +123,7 @@ export default function MinhaConta() {
         "(45-67-89-23-56-78)"
       ],
       status: "Vencedor!", 
-      image: "/src/assets/dinheiro-50k.jpg",
+      image: "/placeholder.svg",
       totalPaid: 10 // 2 combinations x 5 reais
     },
   ];
@@ -190,8 +190,8 @@ export default function MinhaConta() {
   };
 
   const rifasLancadas = [
-    { id: 1, title: "PS5 Setup Gamer", numbers: "100", status: "Em andamento", image: "/src/assets/ps5-setup-gamer.jpg", vendidos: 75, precoUnitario: 5, totalPossivel: 500 },
-    { id: 2, title: "Yamaha MT-03 2024", numbers: "150", status: "Finalizada", image: "/src/assets/yamaha-mt03-2024.jpg", vendidos: 150, precoUnitario: 5, totalPossivel: 750 },
+    { id: 1, title: "PS5 Setup Gamer", numbers: "100", status: "Em andamento", image: "/placeholder.svg", vendidos: 75, precoUnitario: 5, totalPossivel: 500 },
+    { id: 2, title: "Yamaha MT-03 2024", numbers: "150", status: "Finalizada", image: "/placeholder.svg", vendidos: 150, precoUnitario: 5, totalPossivel: 750 },
   ];
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -568,7 +568,7 @@ export default function MinhaConta() {
                       {
                         id: 1,
                         title: "iPhone 15 Pro Max",
-                        image: "/src/assets/iphone-15-pro-max.jpg",
+                        image: "/placeholder.svg",
                         amount: 2500,
                         status: "paid",
                         paymentId: "pay_1O2K3L4M5N6P7Q8R",
@@ -577,7 +577,7 @@ export default function MinhaConta() {
                       {
                         id: 2,
                         title: "PlayStation 5 + Setup Gamer",
-                        image: "/src/assets/ps5-setup-gamer.jpg",
+                        image: "/placeholder.svg",
                         amount: 1800,
                         status: "in_progress",
                         paymentId: "pay_2P3Q4R5S6T7U8V9W",

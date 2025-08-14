@@ -37,7 +37,7 @@ export default function GerenciarRifa() {
     id: parseInt(id || "1"),
     title: "PS5 Setup Gamer Completo",
     description: "PlayStation 5 + controle extra + fone gamer + 3 jogos",
-    image: "/src/assets/ps5-setup-gamer.jpg",
+    image: "/placeholder.svg",
     status: "active" as const,
     totalTickets: 100,
     soldTickets: 75,
