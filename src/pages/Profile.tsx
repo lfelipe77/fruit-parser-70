@@ -204,12 +204,15 @@ export default function Profile() {
                   </AvatarFallback>
                 </Avatar>
                 
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                  <Button type="button" variant="outline" disabled={uploading}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Alterar Avatar'}
-                  </Button>
-                </Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  disabled={uploading}
+                  onClick={() => document.getElementById('avatar-upload')?.click()}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? 'Enviando...' : 'Alterar Avatar'}
+                </Button>
                 <input
                   id="avatar-upload"
                   type="file"
