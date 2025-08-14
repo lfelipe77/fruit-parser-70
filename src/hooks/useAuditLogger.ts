@@ -85,21 +85,27 @@ export const useAuditLogger = () => {
           }
         });
       } else {
-        // For unauthenticated events, call edge function directly with timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-        
-        try {
-          await supabase.functions.invoke('audit-logger', {
-            body: {
-              action,
-              context: enrichedContext,
-              user_id: userId
+        // For unauthenticated events, call edge function directly with 4s timeout (fire-and-forget)
+        setTimeout(async () => {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout
+            
+            try {
+              await supabase.functions.invoke('audit-logger', {
+                body: {
+                  action,
+                  context: enrichedContext,
+                  user_id: userId
+                }
+              });
+            } finally {
+              clearTimeout(timeoutId);
             }
-          });
-        } finally {
-          clearTimeout(timeoutId);
-        }
+          } catch (error) {
+            console.warn('Audit log failed (non-blocking):', error);
+          }
+        }, 0);
       }
     } catch (error) {
       console.error('Failed to log audit event:', action, error);
