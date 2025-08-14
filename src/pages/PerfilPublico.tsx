@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Trophy, 
   Heart, 
@@ -35,82 +36,110 @@ export default function PerfilPublico() {
   const [showAllGanhaveisParticipados, setShowAllGanhaveisParticipados] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   
-  // Mock users database
-  const users = {
-    joaosilva: {
-      name: "João Silva",
-      username: "joaosilva",
-      bio: "Empreendedor apaixonado por tecnologia e inovação. Ajudo pequenos negócios a crescerem através de rifas justas e transparentes.",
-      location: "São Paulo, SP",
-      memberSince: "Janeiro 2024",
-      totalGanhaveisLancados: 8,
-      totalGanhaveisParticipados: 15,
-      ganhaveisCompletos: 5,
-      avaliacaoMedia: 4.8,
-      totalAvaliacoes: 24,
-      seguidores: 1247,
-      seguindo: 89,
-      avatar: "",
-      website: "https://joaosilva.com.br",
-      videoApresentacao: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-      socialLinks: {
-        instagram: "@joaosilva_oficial",
-        facebook: "João Silva Oficial",
-        twitter: "@joaosilva",
-        linkedin: "joao-silva-empresario"
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!username) return;
+      
+      try {
+        // Try to find by username first, then by ID
+        let { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('username', username)
+          .single();
+          
+        if (error && error.code === 'PGRST116') {
+          // Not found by username, try by ID
+          const { data: dataById, error: errorById } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', username)
+            .single();
+            
+          data = dataById;
+          error = errorById;
+        }
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
       }
-    },
-    mariasantos: {
-      name: "Maria Santos",
-      username: "mariasantos",
-      bio: "Designer gráfica e organizadora de rifas beneficentes. Acredito no poder da comunidade para transformar vidas.",
-      location: "Rio de Janeiro, RJ",
-      memberSince: "Março 2024",
-      totalGanhaveisLancados: 6,
-      totalGanhaveisParticipados: 22,
-      ganhaveisCompletos: 4,
-      avaliacaoMedia: 4.9,
-      totalAvaliacoes: 18,
-      seguidores: 892,
-      seguindo: 156,
-      avatar: "",
-      website: "https://mariasantos.com",
-      videoApresentacao: "https://youtube.com/watch?v=abcd1234",
-      socialLinks: {
-        instagram: "@maria_designer",
-        facebook: "Maria Santos Design",
-        twitter: "@mariasantos",
-        linkedin: "maria-santos-design"
-      }
-    },
-    carlospereira: {
-      name: "Carlos Pereira",
-      username: "carlospereira",
-      bio: "Desenvolvedor e entusiasta de tecnologia. Organizo rifas de gadgets e equipamentos eletrônicos.",
-      location: "Belo Horizonte, MG",
-      memberSince: "Fevereiro 2024",
-      totalGanhaveisLancados: 12,
-      totalGanhaveisParticipados: 8,
-      ganhaveisCompletos: 9,
-      avaliacaoMedia: 4.7,
-      totalAvaliacoes: 31,
-      seguidores: 1534,
-      seguindo: 67,
-      avatar: "",
-      website: "",
-      videoApresentacao: "",
-      socialLinks: {
-        instagram: "@carlosdev",
-        facebook: "",
-        twitter: "@carlospereira",
-        linkedin: "carlos-pereira-dev"
-      }
+    };
+    
+    fetchProfile();
+  }, [username]);
+
+  // Fallback user data for display if profile not found
+  const user = profile ? {
+    name: profile.full_name || profile.display_name || 'Usuário',
+    username: profile.username || 'usuario',
+    bio: profile.bio || 'Usuário da plataforma',
+    location: profile.location || 'Localização não informada',
+    memberSince: new Date(profile.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
+    totalGanhaveisLancados: profile.total_ganhaveis || 0,
+    totalGanhaveisParticipados: 0,
+    ganhaveisCompletos: 0,
+    avaliacaoMedia: profile.rating || 0,
+    totalAvaliacoes: 0,
+    seguidores: 0,
+    seguindo: 0,
+    avatar: profile.avatar_url || '',
+    website: profile.social_links?.website || '',
+    videoApresentacao: '',
+    socialLinks: {
+      instagram: profile.social_links?.instagram || '',
+      facebook: profile.social_links?.facebook || '',
+      twitter: profile.social_links?.twitter || '',
+      linkedin: profile.social_links?.linkedin || ''
+    }
+  } : {
+    name: "Usuário não encontrado",
+    username: "usuario",
+    bio: "Este perfil não foi encontrado.",
+    location: "",
+    memberSince: "",
+    totalGanhaveisLancados: 0,
+    totalGanhaveisParticipados: 0,
+    ganhaveisCompletos: 0,
+    avaliacaoMedia: 0,
+    totalAvaliacoes: 0,
+    seguidores: 0,
+    seguindo: 0,
+    avatar: '',
+    website: '',
+    videoApresentacao: '',
+    socialLinks: {
+      instagram: '',
+      facebook: '',
+      twitter: '',
+      linkedin: ''
     }
   };
-
-  // Get user data based on username, fallback to joaosilva if not found
-  const user = users[username as keyof typeof users] || users.joaosilva;
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="animate-pulse space-y-4">
+              <div className="h-32 bg-muted rounded"></div>
+              <div className="h-8 bg-muted rounded w-48"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const ganhaveisLancados = [
     { 
