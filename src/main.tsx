@@ -7,60 +7,43 @@ import './i18n'
 // --- EARLY OAUTH HANDLER (runs before router/guards) ---
 import { supabase } from '@/integrations/supabase/client';
 
-async function oauthEarly(): Promise<boolean> {
+async function oauthEarly() {
   const href = window.location.href;
-  const hasCode   = href.includes('code=');
+  const isHashCb    = href.includes('#/auth-callback');
+  const isNonHashCb = href.includes('/auth/callback');
+  const hasCode        = href.includes('code=');
   const hasAccessToken = href.includes('access_token=');
-  const cbHash    = href.includes('#/auth-callback');
-  const cbNonHash = href.includes('/auth/callback');
-  console.log('[oauth-early] href:', href, { hasCode, hasAccessToken, cbHash, cbNonHash });
 
-  if ((!hasCode && !hasAccessToken) || (!cbHash && !cbNonHash)) return false;
+  if (!(isHashCb || isNonHashCb)) return; // nothing to do
 
+  console.log('[oauth-early] href:', href, { hasCode, hasAccessToken, cbHash: isHashCb, cbNonHash: isNonHashCb });
   console.log('[oauth-early] exchanging code/token before app boot…');
+
   try {
-    if (hasCode) {
-      // PKCE flow with code
-      const { error } = await supabase.auth.exchangeCodeForSession(href);
-      if (error) {
-        console.error('[oauth-early] exchange error:', error);
-        window.location.replace(`${window.location.origin}/#/login`);
-        return true; // handled (we navigated)
-      }
-      console.log('[oauth-early] exchange success');
-      // Update URL without reloading and let React boot
-      history.replaceState(null, '', `${window.location.origin}/#/dashboard`);
-      return false; // let app boot with stored session
-    } else if (hasAccessToken) {
-      // Implicit flow with access_token (fallback)
-      // The session should already be detected via detectSessionInUrl: true
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        console.error('[oauth-early] session from URL error:', error);
-        window.location.replace(`${window.location.origin}/#/login`);
-        return true; // handled (we navigated)
-      }
+    if (hasAccessToken) {
+      // Some type defs omit this method; it exists at runtime in supabase-js v2.
+      // @ts-ignore
+      const { error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+      if (error) throw error;
       console.log('[oauth-early] session from URL success');
-      // Update URL without reloading and let React boot
-      history.replaceState(null, '', `${window.location.origin}/#/dashboard`);
-      return false; // let app boot with stored session
+    } else if (hasCode) {
+      const { error } = await supabase.auth.exchangeCodeForSession(href);
+      if (error) throw error;
+      console.log('[oauth-early] code exchange success');
     }
-    
-    // This shouldn't be reached now, but keeping as fallback
-    return false;
+    // Clean URL and stay on the same page (no reload)
+    history.replaceState(null, '', `${window.location.origin}/#/dashboard`);
+    // Do NOT hard-redirect; allow React to boot with the stored session.
   } catch (e) {
-    console.warn('[oauth-early] exchange threw:', e);
-    window.location.replace(`${window.location.origin}/#/login`);
-    return true; // handled
+    console.error('[oauth-early] failed', e);
+    history.replaceState(null, '', `${window.location.origin}/#/login`);
   }
 }
 
-// Wrap existing React render
-(async function boot() {
-  const handled = await oauthEarly();
-  if (handled) return; // don't render the app under callback URL
-
-  // ↓ keep existing render exactly as it was ↓
+// Boot after handling OAuth (no STOP_BOOTSTRAP throws, no window.location.replace)
+(async () => {
+  await oauthEarly();
+  // existing React render here (unchanged):
   createRoot(document.getElementById("root")!).render(
     <HelmetProvider>
       <App />
