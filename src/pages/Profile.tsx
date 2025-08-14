@@ -105,12 +105,21 @@ export default function Profile() {
 
       // 3) Update profile row with BASE URL (no query params)
       const baseUrl = urlData.publicUrl;
-      const { error: updateError } = await updateProfile({ 
-        avatar_url: baseUrl 
-      });
 
-      if (updateError) {
-        throw updateError;
+      // Try update first
+      const { data: updData, error: updErr } = await supabase
+        .from("user_profiles")
+        .update({ avatar_url: baseUrl })
+        .eq("id", profile.id)
+        .select("id");                    // <-- so we can see if row exists
+      if (updErr) throw updErr;
+
+      if (!updData || updData.length === 0) {
+        // no row to update → create it
+        const { error: insErr } = await supabase
+          .from("user_profiles")
+          .insert({ id: profile.id, avatar_url: baseUrl });
+        if (insErr) throw insErr;
       }
 
       // 4) Trigger a refresh by updating with cache buster
