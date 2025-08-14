@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User, CreditCard, Trophy, History } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ interface DashboardStats {
 export default function Dashboard() {
   console.log('[dash] mounted');
   const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalTickets: 0,
     totalSpent: 0,
@@ -128,7 +129,11 @@ export default function Dashboard() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              role="button"
+              onClick={() => navigate('/#/profile')}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5" />
@@ -161,7 +166,11 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              role="button"
+              onClick={() => navigate('/#/my-tickets')}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
@@ -179,7 +188,11 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              role="button"
+              onClick={() => navigate('/#/raffles')}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="w-5 h-5" />
@@ -229,7 +242,7 @@ export default function Dashboard() {
                   carros, motos, dinheiro e muito mais!
                 </p>
                 <Button asChild>
-                  <Link to="/descobrir">Explorar Ganhaveis</Link>
+                  <Link to="/#/raffles">Explorar Rifas</Link>
                 </Button>
               </CardContent>
             </Card>

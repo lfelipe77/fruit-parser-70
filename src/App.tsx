@@ -65,6 +65,10 @@ import { DevErrorBoundary } from '@/components/DevErrorBoundary';
 import { useLocation } from 'react-router-dom';
 import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
 import MinimalDashboard from '@/pages/MinimalDashboard';
+import Profile from '@/pages/Profile';
+import MyTickets from '@/pages/MyTickets';
+import Raffles from '@/pages/Raffles';
+import AdminRaffles from '@/pages/admin/AdminRaffles';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
