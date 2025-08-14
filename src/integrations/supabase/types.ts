@@ -597,6 +597,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+          {
             foreignKeyName: "tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -727,6 +741,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+          {
             foreignKeyName: "transactions_raffle_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -838,6 +866,64 @@ export type Database = {
         }
         Relationships: []
       }
+      raffles_public: {
+        Row: {
+          category: string | null
+          category_id: number | null
+          created_at: string | null
+          description: string | null
+          draw_date: string | null
+          draw_timestamp: string | null
+          id: string | null
+          image_url: string | null
+          organizer_id: string | null
+          owner_user_id: string | null
+          paid_tickets: number | null
+          prize_value: number | null
+          product_name: string | null
+          product_value: number | null
+          slug: string | null
+          status: string | null
+          ticket_price: number | null
+          tickets_remaining: number | null
+          title: string | null
+          total_tickets: number | null
+          updated_at: string | null
+          user_id: string | null
+          winner_user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_raffle_ticket_stats: {
+        Row: {
+          paid_tickets: number | null
+          raffle_id: string | null
+          tickets_remaining: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_ping: {
@@ -891,6 +977,26 @@ export type Database = {
       }
       citextsend: {
         Args: { "": string }
+        Returns: string
+      }
+      confirm_payment: {
+        Args: {
+          p_provider: Database["public"]["Enums"]["payment_provider"]
+          p_provider_payment_id: string
+        }
+        Returns: undefined
+      }
+      create_raffle: {
+        Args: {
+          p_category_id: number
+          p_description: string
+          p_draw_date: string
+          p_image_url: string
+          p_prize_value: number
+          p_ticket_price: number
+          p_title: string
+          p_total_tickets: number
+        }
         Returns: string
       }
       create_security_alert: {
@@ -1049,6 +1155,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: string
       }
+      reserve_tickets: {
+        Args: { p_qty: number; p_raffle_id: string }
+        Returns: number[]
+      }
       run_security_checks: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1073,6 +1183,10 @@ export type Database = {
           user_email: string
           user_id: string
         }[]
+      }
+      select_winner: {
+        Args: { p_raffle_id: string }
+        Returns: string
       }
       set_payment_context: {
         Args: Record<PropertyKey, never>
