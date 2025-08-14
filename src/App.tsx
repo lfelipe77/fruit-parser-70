@@ -69,6 +69,7 @@ import Profile from '@/pages/Profile';
 import MyTickets from '@/pages/MyTickets';
 import Raffles from '@/pages/Raffles';
 import AdminRaffles from '@/pages/admin/AdminRaffles';
+import AdminPayouts from '@/pages/AdminPayouts';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -213,6 +214,7 @@ const AppContent = () => {
           <Route path="painel" element={<AdminDashboard />} />
           <Route path="configuracoes" element={<Settings />} />
           <Route path="visits" element={<AdminVisits />} />
+          <Route path="payouts" element={<AdminPayouts />} />
         </Route>
         
         {/* Standalone admin routes - also protected */}

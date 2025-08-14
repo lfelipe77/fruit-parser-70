@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PayoutSummary } from "@/components/PayoutSummary";
 
 type Raffle = {
   id: string;
@@ -14,6 +15,7 @@ type Raffle = {
   tickets_remaining: number;
   draw_date: string | null;
   status: string;
+  amount_collected?: number;
 };
 
 type Provider = "asaas" | "stripe";
@@ -209,6 +211,11 @@ export default function RaffleDetail() {
               </div>
             </div>
           </div>
+
+          <PayoutSummary 
+            raffleId={raffle.id} 
+            amountCollected={raffle.amount_collected ?? (raffle.paid_tickets * raffle.ticket_price)} 
+          />
 
           {errorMsg && <div className="p-3 rounded bg-red-100 text-red-700">{errorMsg}</div>}
 
