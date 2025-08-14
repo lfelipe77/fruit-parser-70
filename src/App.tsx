@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -59,6 +59,7 @@ import AdminRateLimits from "./pages/admin/AdminRateLimits";
 import AdminVisits from "./pages/admin/AdminVisits";
 import TurnstileTest from "./pages/TurnstileTest";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import RequireAuth from "./components/RequireAuth";
 import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
 import { DevErrorBoundary } from '@/components/DevErrorBoundary';
 import { useLocation } from 'react-router-dom';
@@ -165,7 +166,11 @@ const AppContent = () => {
         {import.meta.env.DEV && (<Route path="/turnstile-test" element={<TurnstileTest />} />)}
         <Route path="/perfil/:username" element={<PerfilPublico />} />
         {/* User dashboard - requires auth but not admin */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        } />
 
         {/* Admin routes - all protected with AdminProtectedRoute */}
         <Route path="/admin" element={
@@ -217,7 +222,7 @@ const AppContent = () => {
         {import.meta.env.DEV && (
           <Route path="/debug-token" element={<DebugToken />} />
         )}
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
