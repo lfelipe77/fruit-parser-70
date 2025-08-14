@@ -179,6 +179,8 @@ const AppContent = () => {
         <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
         <Route path="/pagamento-erro" element={<PagamentoErro />} />
         <Route path="/access-denied" element={<AccessDenied />} />
+        {/* OAuth callback route (non-hash path for Supabase) */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
         {/* Dev-only test route, admin-protected */}
         {import.meta.env.DEV && (
           <Route path="/test-audit" element={
