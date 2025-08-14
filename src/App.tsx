@@ -63,6 +63,8 @@ import RequireAuth from "./components/RequireAuth";
 import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
 import { DevErrorBoundary } from '@/components/DevErrorBoundary';
 import { useLocation } from 'react-router-dom';
+import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
+import MinimalDashboard from '@/pages/MinimalDashboard';
 
 function RouteBadge() {
   const loc = useLocation();
@@ -168,7 +170,7 @@ const AppContent = () => {
         {/* User dashboard - requires auth but not admin */}
         <Route path="/dashboard" element={
           <RequireAuth>
-            <Dashboard />
+            {import.meta.env.VITE_DASH_MINIMAL === 'true' ? <MinimalDashboard /> : <Dashboard />}
           </RequireAuth>
         } />
 
@@ -235,6 +237,7 @@ const App = () => (
         <Toaster />
         <DevErrorBoundary>
           <Router>
+            <GlobalAuthDebugOverlay />
             <RouteBadge />
             <AppContent />
           </Router>

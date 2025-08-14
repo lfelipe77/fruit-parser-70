@@ -22,7 +22,7 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   // Don't bounce while OAuth callback is in progress
   const isOAuthReturn = window.location.href.includes('code=') || window.location.href.includes('access_token=');
 
-  if (!ready) return null;
+  if (!ready) return <div style={{padding:16}}>Guard: checking session…</div>;
   if (!hasSession && !isOAuthReturn) return <Navigate to="/login" replace />;
 
   return <>{children}</>;
