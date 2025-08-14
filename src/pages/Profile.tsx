@@ -78,41 +78,44 @@ export default function Profile() {
     
     setUploading(true);
     try {
-      const filePath = `${profile.id}/avatar-${Date.now()}.${pendingFileExt}`;
-      
-      console.log('Upload path:', filePath);
+      // Fixed filename (overwrites previous), path complies with RLS (first folder = uid)
+      const filePath = `${profile.id}/avatar.webp`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // 1) Upload with UPSERT (overwrite)
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, blob, { 
-          cacheControl: "3600",
-          upsert: false,
+          upsert: true,                       // <-- important
+          cacheControl: "0",                  // no-cache on storage object
           contentType: "image/webp",
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
-      console.log('Upload successful:', uploadData);
-
+      // 2) Public URL
       const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      console.log('Public URL:', urlData.publicUrl);
+      if (!urlData?.publicUrl) {
+        throw new Error("Falha ao obter URL pública");
+      }
 
+      // 3) Update profile row with BASE URL (no query params)
+      const baseUrl = urlData.publicUrl;
       const { error: updateError } = await updateProfile({ 
-        avatar_url: `${urlData.publicUrl}?t=${Date.now()}` 
+        avatar_url: baseUrl 
       });
 
       if (updateError) {
-        console.error('Profile update error:', updateError);
         throw updateError;
       }
 
-      console.log('Profile updated successfully');
+      // 4) Trigger a refresh by updating with cache buster
+      // The useMyProfile hook will handle the state update
+      await updateProfile({ avatar_url: `${baseUrl}?t=${Date.now()}` });
 
       toast({
         title: 'Avatar atualizado',

@@ -25,6 +25,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Navigation() {
   const { t } = useTranslation();
@@ -32,16 +33,21 @@ export default function Navigation() {
   const { isAdmin } = useAdminCheck();
   const { user } = useAuth();
   const [userRole, setUserRole] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // Verificar role do usuário
+  // Verificar role do usuário e avatar
   useEffect(() => {
     const checkUserRole = async () => {
-      if (!user) return;
+      if (!user) {
+        setUserRole("");
+        setAvatarUrl(null);
+        return;
+      }
       
       try {
         const { data, error } = await supabase
           .from("user_profiles")
-          .select("role")
+          .select("role, avatar_url")
           .eq("id", user.id)
           .maybeSingle();
           
@@ -53,10 +59,18 @@ export default function Navigation() {
         if (!data) {
           console.warn("User profile not found, assuming no role");
           setUserRole("");
+          setAvatarUrl(null);
           return;
         }
         
         setUserRole(data.role || "");
+        
+        // Apply cache buster for avatar
+        if (data.avatar_url) {
+          setAvatarUrl(`${data.avatar_url}?t=${Date.now()}`);
+        } else {
+          setAvatarUrl(null);
+        }
       } catch (error) {
         console.error("Error checking user role:", error);
       }
@@ -159,12 +173,22 @@ export default function Navigation() {
                 </DropdownMenu>
               )}
               {user ? (
-                <Button variant="outline" size="sm" asChild className="hidden md:flex">
-                  <Link to="/dashboard">
-                    <User className="w-4 h-4 mr-2" />
-                    Dashboard
+                <div className="flex items-center space-x-3">
+                  <Link to="/profile">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={avatarUrl || ''} />
+                      <AvatarFallback>
+                        <User className="w-4 h-4" />
+                      </AvatarFallback>
+                    </Avatar>
                   </Link>
-                </Button>
+                  <Button variant="outline" size="sm" asChild className="hidden md:flex">
+                    <Link to="/dashboard">
+                      <User className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                </div>
               ) : (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
                   <Link to="/login">
