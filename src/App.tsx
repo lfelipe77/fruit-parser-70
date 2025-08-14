@@ -53,30 +53,12 @@ import ScrollToTop from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
 import TurnstileTest from "./pages/TurnstileTest";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
-import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
+// import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
 
 const queryClient = new QueryClient();
 
-// Component to handle visit logging
-function VisitLogger() {
-  const location = useLocation();
-  
-  // Only log if this is a public page
-  if (shouldLogPage(location.pathname)) {
-    usePublicVisitLogger();
-  }
-  
-  return null;
-}
-
-// App component with visit logging
+// App component without visit logging for now (debugging)
 const AppContent = () => {
-  const location = useLocation();
-  
-  // Only log if this is a public page
-  if (shouldLogPage(location.pathname)) {
-    usePublicVisitLogger();
-  }
 
   return (
     <>
