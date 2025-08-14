@@ -4,8 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Ticket, Calendar, DollarSign } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Ticket, Calendar, DollarSign, ArrowLeft, Search, Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface TicketWithRaffle {
   id: string;
@@ -26,6 +26,7 @@ interface TicketWithRaffle {
 
 export default function MyTickets() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<TicketWithRaffle[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -111,9 +112,26 @@ export default function MyTickets() {
   };
 
   if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Meus Tickets</h1>
+  return (
+    <div className="container mx-auto py-8">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">Meus Tickets</h1>
+        
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/raffles')}>
+            <Search className="w-4 h-4 mr-2" />
+            Explorar Ganhaveis
+          </Button>
+          <Button onClick={() => navigate('/lance-seu-ganhavel')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Lançar Ganhavel
+          </Button>
+        </div>
+      </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-32 bg-muted rounded-lg animate-pulse"></div>
@@ -126,16 +144,34 @@ export default function MyTickets() {
   if (tickets.length === 0) {
     return (
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Meus Tickets</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Meus Tickets</h1>
+          
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/raffles')}>
+              <Search className="w-4 h-4 mr-2" />
+              Explorar Ganhaveis
+            </Button>
+            <Button onClick={() => navigate('/lance-seu-ganhavel')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Lançar Ganhavel
+            </Button>
+          </div>
+        </div>
+        
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Ticket className="w-16 h-16 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">Nenhum ticket encontrado</h3>
             <p className="text-muted-foreground text-center mb-6">
-              Você ainda não participou de nenhuma rifa. Explore as rifas disponíveis e tente a sorte!
+              Você ainda não participou de nenhum ganhavel. Explore os ganhaveis disponíveis e tente a sorte!
             </p>
             <Button asChild>
-              <Link to="/#/raffles">Ver Rifas Disponíveis</Link>
+              <Link to="/raffles">Ver Ganhaveis Disponíveis</Link>
             </Button>
           </CardContent>
         </Card>
@@ -145,7 +181,24 @@ export default function MyTickets() {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Meus Tickets</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">Meus Tickets</h1>
+        
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/raffles')}>
+            <Search className="w-4 h-4 mr-2" />
+            Explorar Ganhaveis
+          </Button>
+          <Button onClick={() => navigate('/lance-seu-ganhavel')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Lançar Ganhavel
+          </Button>
+        </div>
+      </div>
       
       <div className="grid gap-4">
         {tickets.map((ticket) => (
@@ -155,7 +208,7 @@ export default function MyTickets() {
                 <div className="flex-1">
                   <CardTitle className="flex items-center gap-2">
                     <Ticket className="w-5 h-5" />
-                    {ticket.raffles?.title || 'Rifa Indisponível'}
+                    {ticket.raffles?.title || 'Ganhavel Indisponível'}
                     {ticket.ticket_number && (
                       <Badge variant="outline">#{ticket.ticket_number}</Badge>
                     )}
@@ -189,8 +242,8 @@ export default function MyTickets() {
               {ticket.raffles && (
                 <div className="mt-4">
                   <Button variant="outline" size="sm" asChild>
-                    <Link to={`/#/raffles/${ticket.raffles.id}`}>
-                      Ver Rifa
+                    <Link to={`/raffles/${ticket.raffles.id}`}>
+                      Ver Ganhavel
                     </Link>
                   </Button>
                 </div>

@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Gift, Users, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Gift, Users, Clock, ArrowLeft, Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface Raffle {
   id: string;
@@ -20,6 +20,7 @@ interface Raffle {
 }
 
 export default function Raffles() {
+  const navigate = useNavigate();
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +64,21 @@ export default function Raffles() {
   if (loading) {
     return (
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Rifas Ativas</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Ganhaveis Ativos</h1>
+          
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button onClick={() => navigate('/lance-seu-ganhavel')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Lançar Ganhavel
+            </Button>
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="h-80 bg-muted rounded-lg animate-pulse"></div>
@@ -76,13 +91,27 @@ export default function Raffles() {
   if (raffles.length === 0) {
     return (
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Rifas Ativas</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Ganhaveis Ativos</h1>
+          
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button onClick={() => navigate('/lance-seu-ganhavel')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Lançar Ganhavel
+            </Button>
+          </div>
+        </div>
+        
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Gift className="w-16 h-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Nenhuma rifa ativa</h3>
+            <h3 className="text-xl font-semibold mb-2">Nenhum ganhavel ativo</h3>
             <p className="text-muted-foreground text-center">
-              No momento não há rifas ativas. Volte em breve para conferir novas oportunidades!
+              No momento não há ganhaveis ativos. Volte em breve para conferir novas oportunidades!
             </p>
           </CardContent>
         </Card>
@@ -92,11 +121,24 @@ export default function Raffles() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Rifas Ativas</h1>
-        <p className="text-muted-foreground">
-          Participe das rifas e concorra a prêmios incríveis!
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Ganhaveis Ativos</h1>
+          <p className="text-muted-foreground">
+            Participe dos ganhaveis e concorra a prêmios incríveis!
+          </p>
+        </div>
+        
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <Button onClick={() => navigate('/lance-seu-ganhavel')}>
+            <Plus className="w-4 h-4 mr-2" />
+            Lançar Ganhavel
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -158,8 +200,8 @@ export default function Raffles() {
                   </div>
                   
                   <Button className="w-full" asChild>
-                    <Link to={`/#/raffles/${raffle.id}`}>
-                      Ver Rifa
+                    <Link to={`/raffles/${raffle.id}`}>
+                      Ver Ganhavel
                     </Link>
                   </Button>
                 </div>

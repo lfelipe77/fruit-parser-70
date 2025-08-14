@@ -115,7 +115,7 @@ export default function Profile() {
         {/* Call to Action Buttons */}
         <div className="flex gap-3">
           <Button variant="outline" asChild>
-            <Link to="/perfil-publico" className="flex items-center gap-2">
+            <Link to={`/perfil-publico/${profile?.username || profile?.id}`} className="flex items-center gap-2">
               <ExternalLink className="w-4 h-4" />
               Ver Perfil Público
             </Link>
