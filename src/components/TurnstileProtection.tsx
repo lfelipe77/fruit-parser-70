@@ -31,6 +31,13 @@ export const TurnstileProtection: React.FC<TurnstileProps> = ({
   size = 'normal',
   invisible = false
 }) => {
+  console.log('[TS] BYPASS:', import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS);
+  
+  // Skip Turnstile if bypassed
+  if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') {
+    return null;
+  }
+
   const turnstileRef = useRef<HTMLDivElement>(null);
   const [widgetId, setWidgetId] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(false);

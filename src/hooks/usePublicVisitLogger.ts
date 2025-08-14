@@ -10,14 +10,23 @@ export const usePublicVisitLogger = () => {
     // Client-side only
     if (typeof window === 'undefined') return;
 
+    // Gate behind environment flag
+    if (import.meta.env.VITE_ENABLE_VISIT_LOGGER !== 'true') return;
+
     // Avoid duplicates (React StrictMode double-invoke and quick re-renders)
     if (lastLoggedPath.current === location.pathname) return;
     lastLoggedPath.current = location.pathname;
 
     const url = `https://whqxpuyjxoiufzhvqneg.functions.supabase.co/visit-logger?p=${encodeURIComponent(location.pathname)}`;
 
-    // Fire-and-forget; ignore errors and send no PII; keepalive for unload navigations
-    fetch(url, { method: 'POST', keepalive: true }).catch(() => {});
+    // Fire-and-forget with error handling; ignore errors and send no PII; keepalive for unload navigations
+    try {
+      fetch(url, { method: 'POST', keepalive: true }).catch((error) => {
+        console.warn('visit logger failed', error);
+      });
+    } catch (error) {
+      console.warn('visit logger failed', error);
+    }
   }, [location.pathname]);
 };
 

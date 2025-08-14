@@ -34,6 +34,8 @@ export default function SignUp() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('[TS] BYPASS:', import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS);
+    
     // Check if Turnstile should be bypassed
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') {
       return; // Skip Turnstile initialization
@@ -142,6 +144,7 @@ export default function SignUp() {
     
     // Skip Turnstile verification if bypassed
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
+      console.log('[TS] Checking Turnstile token for Google signup...');
       const token = (window as any)._tsToken;
       if (!token) {
         try { (window as any).turnstile?.reset((window as any)._tsWidgetId ?? undefined); } catch {}
@@ -159,6 +162,8 @@ export default function SignUp() {
         toast.error("Falha na verificação anti-bot. Tente novamente.");
         return;
       }
+    } else {
+      console.log('[TS] Turnstile bypassed for Google signup');
     }
     
     setLoading(true);
@@ -205,6 +210,7 @@ export default function SignUp() {
 
     // Turnstile verification with enhanced timing and debugging
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
+      console.log('[TS] Checking Turnstile token for email signup...');
       const checkStartTime = Date.now();
       console.log(`[${new Date(checkStartTime).toISOString()}] Checking Turnstile token...`);
       
@@ -337,6 +343,7 @@ export default function SignUp() {
         return;
       }
     } else {
+      console.log('[TS] Turnstile bypassed for email signup');
       console.log(`[${new Date().toISOString()}] Turnstile bypassed for development`);
     }
 

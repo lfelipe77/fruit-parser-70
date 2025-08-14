@@ -29,6 +29,8 @@ export default function Login() {
   
 
   useEffect(() => {
+    console.log('[TS] BYPASS:', import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS);
+    
     // Check if Turnstile should be bypassed
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS === 'true') {
       return; // Skip Turnstile initialization
@@ -170,7 +172,7 @@ export default function Login() {
   };
 
   const onGoogleSignIn = async () => {
-    // Skip Turnstile verification if bypassed
+    // Turnstile verification (skip if bypassed)
     if (import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS !== 'true') {
       const token = (window as any)._tsToken;
       if (!token) {

@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     headers: mode === 'development' ? {
+      // TODO: CSP can be temporarily loosened for debugging by adding more to connect-src:
+      // connect-src * ws: wss: https://*.supabase.co https://*.functions.supabase.co https://challenges.cloudflare.com blob: data:
+      // frame-src https://challenges.cloudflare.com
+      // script-src 'self' https://challenges.cloudflare.com 'unsafe-eval' 'unsafe-inline'
       'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://www.gstatic.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src * ws: wss:; frame-ancestors *; object-src 'none'; base-uri 'self';",
       'X-Frame-Options': 'SAMEORIGIN',
       'X-Content-Type-Options': 'nosniff',
