@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import AvatarCropper from '@/components/AvatarCropper';
+import { fileToDataUrl } from '@/lib/cropImage';
 
 export default function Profile() {
   const { profile, loading, updateProfile } = useMyProfile();
@@ -23,6 +25,9 @@ export default function Profile() {
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [pendingFileExt, setPendingFileExt] = useState<string>("webp");
 
   // Initialize form data when profile loads
   useEffect(() => {
@@ -40,19 +45,50 @@ export default function Profile() {
     const file = event.target.files?.[0];
     if (!file || !profile) return;
 
-    console.log('Starting avatar upload for user:', profile.id);
-    console.log('File details:', { name: file.name, size: file.size, type: file.type });
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: 'Erro',
+        description: 'Imagem muito grande (máx. 5MB).',
+        variant: 'destructive',
+      });
+      return;
+    }
 
+    try {
+      // Open cropper
+      const dataUrl = await fileToDataUrl(file);
+      setPendingFileExt("webp"); // we will export to webp
+      setCropSrc(dataUrl);
+      setCropOpen(true);
+      // Clear file input
+      event.target.value = "";
+    } catch (error) {
+      console.error('Error preparing file for crop:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao preparar imagem para corte.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const uploadCroppedBlob = async (blob: Blob) => {
+    if (!profile) return;
+    
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${profile.id}/avatar.${fileExt}`;
+      const filePath = `${profile.id}/avatar-${Date.now()}.${pendingFileExt}`;
       
       console.log('Upload path:', filePath);
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, blob, { 
+          cacheControl: "3600",
+          upsert: false,
+          contentType: "image/webp",
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
@@ -67,7 +103,9 @@ export default function Profile() {
 
       console.log('Public URL:', urlData.publicUrl);
 
-      const { error: updateError } = await updateProfile({ avatar_url: urlData.publicUrl });
+      const { error: updateError } = await updateProfile({ 
+        avatar_url: `${urlData.publicUrl}?t=${Date.now()}` 
+      });
 
       if (updateError) {
         console.error('Profile update error:', updateError);
@@ -80,7 +118,7 @@ export default function Profile() {
         title: 'Avatar atualizado',
         description: 'Seu avatar foi atualizado com sucesso.',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast({
         title: 'Erro',
@@ -296,6 +334,13 @@ export default function Profile() {
         </Card>
         </div>
       </div>
+
+      <AvatarCropper
+        src={cropSrc ?? ""}
+        open={cropOpen}
+        onClose={() => setCropOpen(false)}
+        onCropped={(blob) => uploadCroppedBlob(blob)}
+      />
     </div>
   );
 }
