@@ -56,13 +56,21 @@ async function oauthEarly() {
 
 // Boot AFTER handling OAuth. Do not hard-redirect.
 (async () => {
-  await oauthEarly();
-  // existing React render here (unchanged):
-  createRoot(document.getElementById("root")!).render(
-    <AppErrorBoundary>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
-    </AppErrorBoundary>
-  );
+  console.log('[MAIN] Starting app boot...');
+  try {
+    await oauthEarly();
+    console.log('[MAIN] OAuth early completed, rendering app...');
+    // existing React render here (unchanged):
+    createRoot(document.getElementById("root")!).render(
+      <AppErrorBoundary>
+        <HelmetProvider>
+          <App />
+        </HelmetProvider>
+      </AppErrorBoundary>
+    );
+    console.log('[MAIN] App rendered successfully');
+  } catch (error) {
+    console.error('[MAIN] App boot failed:', error);
+    document.body.innerHTML = `<div style="padding: 20px; color: red;">App failed to start: ${error}</div>`;
+  }
 })();

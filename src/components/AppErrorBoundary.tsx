@@ -11,7 +11,8 @@ export class AppErrorBoundary extends React.Component<{children: React.ReactNode
   }
   
   componentDidCatch(error:Error, info:any){ 
-    console.error("App error:", error, info); 
+    console.error("App error:", error, info);
+    console.error("Error stack:", error.stack);
   }
   
   render(){

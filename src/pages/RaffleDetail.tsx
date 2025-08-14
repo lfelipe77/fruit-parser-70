@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 type Raffle = {
   id: string;
@@ -147,11 +147,10 @@ export default function RaffleDetail() {
       // 3) insert pending transaction (RLS: user inserts own)
       const { error: txErr } = await supabase.from("transactions").insert({
         user_id: userId,
-        raffle_id: raffle.id,
+        ganhavel_id: raffle.id, // Use ganhavel_id instead of raffle_id
         amount: totalAmount,
-        currency: "BRL",
-        provider: retProv,
-        provider_payment_id,
+        payment_provider: retProv,
+        payment_id: provider_payment_id,
         status: "pending",
       });
       if (txErr) throw txErr;
