@@ -81,15 +81,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="p-4">
-            <DebugDashboardPanel />
-          </div>
-          
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold">Dashboard</h1>
+    <>
+      <DebugDashboardPanel />
+      <div className="p-6">
+        <h1 className="text-lg font-semibold">Dashboard</h1>
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 py-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-8">
+                <h1 className="text-3xl font-bold">Dashboard</h1>
             <Button variant="outline" onClick={signOut}>
               <LogOut className="w-4 h-4 mr-2" />
               Sair
@@ -252,9 +252,11 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

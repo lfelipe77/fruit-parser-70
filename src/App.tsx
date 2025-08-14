@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -61,6 +61,27 @@ import TurnstileTest from "./pages/TurnstileTest";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
 import { DevErrorBoundary } from '@/components/DevErrorBoundary';
+import { useLocation } from 'react-router-dom';
+
+function RouteBadge() {
+  const loc = useLocation();
+  if (import.meta.env.VITE_DEBUG_BANNER !== 'true') return null;
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 10,
+      right: 12,
+      zIndex: 99999,
+      padding: '6px 10px',
+      background: '#111',
+      color: '#9ef',
+      borderRadius: 10,
+      fontSize: 12,
+    }}>
+      {loc.pathname}{loc.hash}
+    </div>
+  );
+}
 
 const queryClient = new QueryClient();
 
@@ -209,6 +230,7 @@ const App = () => (
         <Toaster />
         <DevErrorBoundary>
           <Router>
+            <RouteBadge />
             <AppContent />
           </Router>
         </DevErrorBoundary>

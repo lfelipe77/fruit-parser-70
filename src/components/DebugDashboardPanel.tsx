@@ -45,21 +45,42 @@ export default function DebugDashboardPanel() {
 
   if (s.loading) return <div className="text-xs text-gray-500">Carregando…</div>;
 
-  // Always show this panel until we finish debugging
   return (
-    <div className="text-xs p-3 rounded-xl shadow-md bg-white border border-gray-200 max-w-full overflow-auto">
-      <div style={{fontWeight:600, marginBottom:6}}>Debug do Dashboard</div>
+    <div
+      style={{
+        position: 'fixed',
+        top: 12,
+        right: 12,
+        zIndex: 99999,
+        fontSize: 12,
+        lineHeight: 1.3,
+        background: 'white',
+        color: '#111',
+        padding: 12,
+        borderRadius: 12,
+        boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+        border: '1px solid rgba(0,0,0,0.08)',
+        maxWidth: 420,
+        maxHeight: '70vh',
+        overflow: 'auto',
+      }}
+    >
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>Debug do Dashboard</div>
       <div><b>UID:</b> {s.uid || '—'}</div>
       <div><b>Email:</b> {s.email || '—'}</div>
-      <div style={{marginTop:6}}><b>Perfil:</b></div>
-      <pre style={{whiteSpace:'pre-wrap'}}>{JSON.stringify(s.profile, null, 2)}</pre>
+      <div style={{ marginTop: 6 }}><b>Perfil:</b></div>
+      <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify(s.profile, null, 2)}</pre>
       {s.error && (
         <>
-          <div style={{marginTop:6, color:'#b91c1c'}}><b>Erro:</b></div>
-          <pre style={{whiteSpace:'pre-wrap', color:'#b91c1c'}}>{JSON.stringify(s.error, null, 2)}</pre>
+          <div style={{ marginTop: 6, color: '#b91c1c' }}><b>Erro:</b></div>
+          <pre style={{ whiteSpace: 'pre-wrap', color: '#b91c1c', margin: 0 }}>
+            {JSON.stringify(s.error, null, 2)}
+          </pre>
         </>
       )}
-      <div style={{marginTop:6, opacity:.7}}>Quando tudo estiver ok, removemos este painel.</div>
+      <div style={{ marginTop: 6, opacity: 0.7 }}>
+        Quando tudo estiver ok, removemos este painel.
+      </div>
     </div>
   );
 }
