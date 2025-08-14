@@ -8,8 +8,8 @@ import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png
 
 export default function HeroSection() {
   const { t } = useTranslation();
-  // Stable per session; auto-rotate every 7s
-  const { headline, subline } = useHeroCopy({ persist: "session", autoRotateMs: 7000 });
+  // Stable per session; auto-rotate every 32s
+  const { headline, subline } = useHeroCopy({ persist: "session", autoRotateMs: 32000 });
   
   return (
     <section className="relative bg-gradient-hero py-12 md:py-20 lg:py-32 overflow-hidden">
@@ -19,14 +19,14 @@ export default function HeroSection() {
             <div className="space-y-4 max-w-xl mx-auto lg:mx-0">
               <FadeText 
                 as="h1" 
-                duration={450}
+                duration={600}
                 className="text-3xl md:text-4xl lg:text-6xl font-bold leading-tight"
               >
                 {headline}
               </FadeText>
               <FadeText 
                 as="p" 
-                duration={450}
+                duration={600}
                 className="text-lg md:text-xl text-muted-foreground leading-relaxed"
               >
                 {subline}
