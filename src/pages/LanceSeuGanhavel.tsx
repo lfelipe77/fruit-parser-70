@@ -1,56 +1,64 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+
+// util simples para BRL
+function brl(n: number | null | undefined) {
+  const v = Number(n ?? 0);
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+// helper de animação simples
+function Reveal({ show, children }: { show: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      className={[
+        "transition-all duration-300 ease-out overflow-hidden",
+        show ? "max-h-24 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+      ].join(" ")}
+      aria-hidden={!show}
+    >
+      {children}
+    </div>
+  );
+}
 
 type Category = { id: number; nome: string };
-
-const brl = (n: number | string | null | undefined) =>
-  Number(n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-// Subcategorias em memória (você pode popular isso depois conforme a categoria)
-const SUBCATS: Record<number, string[]> = {
-  // 1: ["Smartphones", "Notebooks", "Consoles"],
-};
 
 export default function LanceSeuGanhavel() {
   const navigate = useNavigate();
 
+  // auth
   const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]>(null);
-  const [cats, setCats] = useState<Category[]>([]);
 
-  // Básico
+  // form state
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(""); // vamos anexar "local/afiliado" aqui no submit (para não mudar o schema)
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [subcat, setSubcat] = useState<string>("");
-
-  // Local
-  const [locationMode, setLocationMode] = useState<"online" | "city">("online");
-  const [country, setCountry] = useState("");
+  const [subcategory, setSubcategory] = useState<string>("");
+  const [locationType, setLocationType] = useState<"online" | "cidade">("online");
   const [city, setCity] = useState("");
-
-  // Afiliado
   const [affiliateUrl, setAffiliateUrl] = useState("");
 
-  // Valores
-  const [prizeValue, setPrizeValue] = useState<number | "">("");
   const [ticketPrice, setTicketPrice] = useState<number | "">("");
+  const [prizeValue, setPrizeValue] = useState<number | "">("");
 
-  // Imagens
-  const [files, setFiles] = useState<File[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
-  // UI
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Sessão
+  // auth
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Categorias
+  // categorias
   useEffect(() => {
     supabase
       .from("categories")
@@ -58,332 +66,396 @@ export default function LanceSeuGanhavel() {
       .order("nome", { ascending: true })
       .then(({ data, error }) => {
         if (error) console.error(error);
-        if (data) setCats(data as Category[]);
+        if (data) setCategories(data as Category[]);
       });
   }, []);
 
-  const uid = session?.user?.id || null;
+  const userId = useMemo(() => session?.user?.id ?? null, [session]);
 
-  // Calculadora (sem data de sorteio)
-  const prize = Number(prizeValue || 0);
-  const price = Number(ticketPrice || 0);
-  const taxPct = 0.02;
-  const taxAmt = Math.round(prize * taxPct * 100) / 100;
-  const goal = prize + taxAmt;
-  const totalTicketsComputed = price > 0 ? Math.ceil(goal / price) : 0;
+  // Cálculo interno (não exibimos "bilhetes calculados" na UI)
+  const calc = useMemo(() => {
+    const pv = Number(prizeValue || 0);
+    const tp = Number(ticketPrice || 0);
+    const fee = Math.round(pv * 0.02 * 100) / 100; // 2% arredondado para centavos
+    const goal = Math.round((pv + fee) * 100) / 100;
 
-  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const list = Array.from(e.target.files || []);
-    setFiles(prev => [...prev, ...list].slice(0, 5)); // máx 5
+    // tickets = ceil(goal / ticketPrice) — apenas para salvar em p_total_tickets (não mostrar)
+    const tickets =
+      tp > 0 ? Math.max(1, Math.ceil(goal / tp)) : 0;
+
+    return { pv, tp, fee, goal, tickets };
+  }, [prizeValue, ticketPrice]);
+
+  function onFilesSelected(files: FileList | null) {
+    if (!files) return;
+    const list = Array.from(files).slice(0, 5); // até 5 imagens
+    setImages(list);
   }
 
-  async function uploadAllAndGetUrls(): Promise<string[]> {
-    if (!uid || files.length === 0) return [];
-    const urls: string[] = [];
-    for (const file of files) {
+  async function uploadCoverAndGetUrl(file: File, uid: string) {
+    setUploading(true);
+    try {
       const path = `${uid}/${Date.now()}-${file.name}`;
-      const { error: upErr } = await supabase.storage.from("raffle-images").upload(path, file, {
-        upsert: false,
-        cacheControl: "3600",
-      });
+      const { error: upErr } = await supabase.storage
+        .from("raffle-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
       if (upErr) throw upErr;
+
       const { data: pub } = supabase.storage.from("raffle-images").getPublicUrl(path);
       if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública da imagem");
-      urls.push(pub.publicUrl);
+      return pub.publicUrl as string;
+    } finally {
+      setUploading(false);
     }
-    return urls;
   }
 
-  function buildMetaBlock(gallery: string[]) {
-    const local = locationMode === "online" ? "Online" : `${city || ""}, ${country || ""}`.trim();
-    const md =
-`---
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
-**Meta**
-- Local: ${local || "-"}
-- Subcategoria: ${subcat || "-"}
-- Link do Vendedor: ${affiliateUrl || "-"}
-- Galeria: ${gallery.length ? gallery.join(", ") : "-"}
-
-> Observação: O sorteio será definido automaticamente quando a meta atingir 100% (baseado na Loteria Federal/algoritmo oficial).
-> Dica: Compartilhe seu Ganhavel para acelerar as vendas! 📣
-`;
-    return md;
-  }
-
-  async function submitUnderReview() {
-    if (!uid) return setMsg("Faça login para lançar um Ganhavel.");
-    if (!title || !categoryId || !ticketPrice || !prizeValue) {
-      return setMsg("Preencha os campos obrigatórios (*).");
+    if (!userId) return setErrorMsg("Você precisa estar logado para criar um Ganhavel.");
+    if (!title || !categoryId || ticketPrice === "" || prizeValue === "") {
+      return setErrorMsg("Preencha os campos obrigatórios.");
     }
-    if (files.length === 0) return setMsg("Envie pelo menos 1 imagem do prêmio.");
-
-    setBusy(true);
-    setMsg(null);
+    if (!images[0]) return setErrorMsg("Envie pelo menos uma imagem do prêmio.");
 
     try {
-      const gallery = await uploadAllAndGetUrls();
-      const primary = gallery[0];
-      const fullDesc = `${description || ""}\n\n${buildMetaBlock(gallery)}`;
-      const totalTickets = totalTicketsComputed > 0 ? totalTicketsComputed : 1;
+      setSubmitting(true);
 
-      // draw_date removido → sempre null
+      // 1) capa
+      const coverUrl = await uploadCoverAndGetUrl(images[0], userId);
+
+      // 2) compor descrição (anexando metadados não‑persistidos no schema)
+      const metaParts: string[] = [];
+      if (subcategory) metaParts.push(`Subcategoria: ${subcategory}`);
+      if (locationType === "online") metaParts.push(`Local: Online`);
+      if (locationType === "cidade" && city) metaParts.push(`Local: ${city}`);
+      if (affiliateUrl) metaParts.push(`Compre direto com o vendedor: ${affiliateUrl}`);
+
+      const finalDescription =
+        (description?.trim() || "") +
+        (metaParts.length ? `\n\n—\n${metaParts.join(" · ")}` : "");
+
+      // 3) criar via RPC (status = under_review). draw_date = null
       const { data: newId, error: rpcErr } = await supabase.rpc("create_raffle", {
         p_title: title,
-        p_description: fullDesc,
+        p_description: finalDescription || null,
         p_category_id: Number(categoryId),
-        p_image_url: primary,
+        p_image_url: coverUrl,
         p_prize_value: Number(prizeValue),
-        p_total_tickets: totalTickets,
+        p_total_tickets: calc.tickets || 1, // obrigatorio no schema; cálculo interno
         p_ticket_price: Number(ticketPrice),
-        p_draw_date: null,
+        p_draw_date: null, // removemos data de sorteio da UI
       });
+
       if (rpcErr) throw rpcErr;
 
-      setMsg("Enviado para análise! Você será notificado após a aprovação.");
-      setTimeout(() => navigate("/minha-conta"), 900);
-    } catch (e: any) {
-      console.error(e);
-      setMsg(e?.message ?? "Erro ao enviar para análise.");
+      setSuccessMsg("Ganhavel enviado para análise!");
+      // redirecionar para a conta ou detalhe
+      setTimeout(() => navigate("/minha-conta"), 800);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err?.message ?? "Erro ao criar Ganhavel.");
     } finally {
-      setBusy(false);
-    }
-  }
-
-  async function saveDraft() {
-    if (!uid) return setMsg("Faça login para salvar rascunho.");
-    if (files.length === 0) return setMsg("Envie pelo menos 1 imagem do prêmio.");
-
-    setBusy(true);
-    setMsg(null);
-
-    try {
-      const gallery = await uploadAllAndGetUrls();
-      const primary = gallery[0];
-      const fullDesc = `${description || ""}\n\n${buildMetaBlock(gallery)}`;
-      const totalTickets = totalTicketsComputed > 0 ? totalTicketsComputed : 1;
-
-      const { error: insErr } = await supabase.from("raffles").insert({
-        owner_user_id: uid,
-        title,
-        description: fullDesc,
-        category_id: categoryId ? Number(categoryId) : null,
-        image_url: primary,
-        prize_value: prize || null,
-        total_tickets: totalTickets,
-        ticket_price: price,
-        draw_date: null,      // sem data
-        status: "draft",
-      });
-      if (insErr) throw insErr;
-
-      setMsg("Rascunho salvo!");
-      setTimeout(() => navigate("/minha-conta"), 900);
-    } catch (e: any) {
-      console.error(e);
-      setMsg(e?.message ?? "Erro ao salvar rascunho.");
-    } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   }
 
   if (!session) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-2">Lance seu Ganhavel</h1>
-        <p className="text-gray-600">Faça login para criar um Ganhavel.</p>
+      <div className="max-w-5xl mx-auto p-6">
+        <h1 className="text-2xl font-semibold mb-3">Lance seu Ganhavel</h1>
+        <p>Faça login para criar um Ganhavel.</p>
       </div>
     );
   }
 
-  const activeSubcats = categoryId && SUBCATS[Number(categoryId)] ? SUBCATS[Number(categoryId)] : [];
-
   return (
-    <div className="max-w-6xl mx-auto p-6 grid lg:grid-cols-5 gap-8">
-      {/* ESQUERDA */}
-      <div className="lg:col-span-3 grid gap-6">
-        <header className="grid gap-1">
-          <h1 className="text-2xl font-semibold">Lance seu Ganhavel</h1>
-          <p className="text-gray-600">Transforme seus sonhos em realidade e ajude outros a realizarem os deles</p>
-          <div className="flex gap-4 text-xs text-gray-500">
-            <span>✅ 100% Seguro</span>
-            <span>👥 +50.000 Criadores</span>
-            <span>⏱️ Análise em 24h</span>
-          </div>
-        </header>
-
-        {msg && <div className="p-3 rounded bg-amber-50 text-amber-800">{msg}</div>}
-
-        {/* Informações Básicas */}
-        <section className="grid gap-3 border rounded-2xl p-4">
-          <h2 className="font-medium">Informações Básicas</h2>
-          <label className="text-sm">Título do Ganhavel *</label>
-          <input className="border rounded p-2" placeholder="Ex: iPhone 15 Pro Max 256GB"
-                 value={title} onChange={(e)=>setTitle(e.target.value)} />
-
-          <label className="text-sm">Descrição *</label>
-          <textarea className="border rounded p-2 min-h-[120px]"
-                    placeholder="Descreva o prêmio, condições, especificações..."
-                    value={description} onChange={(e)=>setDescription(e.target.value)} />
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm">Categoria *</label>
-              <select className="border rounded p-2 w-full"
-                      value={categoryId}
-                      onChange={(e)=>setCategoryId(e.target.value ? Number(e.target.value) : "")}>
-                <option value="">Selecione...</option>
-                {cats.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm">Subcategoria (opcional)</label>
-              <select className="border rounded p-2 w-full"
-                      value={subcat}
-                      onChange={(e)=>setSubcat(e.target.value)}
-                      disabled={!activeSubcats.length}>
-                <option value="">{activeSubcats.length ? "Selecione..." : "—"}</option>
-                {activeSubcats.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-        </section>
-
-        {/* Local e Afiliado */}
-        <section className="grid gap-3 border rounded-2xl p-4">
-          <h2 className="font-medium">Local</h2>
-          <div className="flex gap-6 text-sm">
-            <label className="flex items-center gap-2">
-              <input type="radio" checked={locationMode==="online"} onChange={()=>setLocationMode("online")} />
-              Online
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" checked={locationMode==="city"} onChange={()=>setLocationMode("city")} />
-              Cidade
-            </label>
-          </div>
-          {locationMode === "city" && (
-            <div className="grid md:grid-cols-2 gap-4">
-              <input className="border rounded p-2" placeholder="País"
-                     value={country} onChange={(e)=>setCountry(e.target.value)} />
-              <input className="border rounded p-2" placeholder="Cidade"
-                     value={city} onChange={(e)=>setCity(e.target.value)} />
-            </div>
-          )}
-
-          <div className="grid gap-2">
-            <label className="text-sm">Link do Vendedor (Afiliado) — "Comprar diretamente com o vendedor"</label>
-            <input className="border rounded p-2" placeholder="https://…"
-                   value={affiliateUrl} onChange={(e)=>setAffiliateUrl(e.target.value)} />
-          </div>
-        </section>
-
-        {/* Configurações */}
-        <section className="grid gap-3 border rounded-2xl p-4">
-          <h2 className="font-medium">Configurações</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm">Preço do Bilhete (R$) *</label>
-              <input type="number" min={0} step="0.01" className="border rounded p-2 w-full"
-                     value={ticketPrice}
-                     onChange={(e)=>setTicketPrice(e.target.value===""? "": Number(e.target.value))}/>
-            </div>
-            <div>
-              <label className="text-sm">Valor do Prêmio (R$) *</label>
-              <input type="number" min={0} step="0.01" className="border rounded p-2 w-full"
-                     value={prizeValue}
-                     onChange={(e)=>setPrizeValue(e.target.value===""? "": Number(e.target.value))}/>
-            </div>
-          </div>
-
-          {/* Número de bilhetes só exibe (final) */}
-          <div className="text-sm text-gray-600">
-            Bilhetes (calculado): <b>{totalTicketsComputed || "—"}</b>
-          </div>
-          <p className="text-xs text-gray-500">
-            O número de bilhetes é calculado automaticamente considerando 2% de taxa de processamento.
-            O sorteio será definido automaticamente quando a meta atingir 100%.
-          </p>
-        </section>
-
-        {/* Imagens */}
-        <section className="grid gap-3 border rounded-2xl p-4">
-          <h2 className="font-medium">Imagens do Prêmio</h2>
-          <label className="text-sm">PNG/JPG até 10MB cada (máx. 5 imagens). A primeira será a capa.</label>
-          <input type="file" accept="image/*" multiple onChange={onPickFiles} />
-          {!!files.length && (
-            <div className="grid grid-cols-5 gap-3 mt-2">
-              {files.map((f, i)=>(
-                <div key={i} className="text-xs">
-                  <div className="border rounded p-2 truncate">{f.name}</div>
-                  {i===0 && <div className="text-[11px] text-gray-500 mt-1">Imagem principal</div>}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Ações */}
-        <div className="flex flex-wrap gap-3">
-          <button
-            disabled={busy}
-            onClick={submitUnderReview}
-            className="px-4 py-2 rounded-2xl bg-black text-white disabled:opacity-60">
-            {busy ? "Enviando..." : "Enviar para Análise"}
-          </button>
-          <button
-            disabled={busy}
-            onClick={saveDraft}
-            className="px-4 py-2 rounded-2xl border disabled:opacity-60">
-            {busy ? "Salvando..." : "Salvar Rascunho"}
-          </button>
+    <div className="max-w-6xl mx-auto p-6">
+      <header className="mb-6">
+        <h1 className="text-3xl font-bold">Lance seu Ganhavel</h1>
+        <p className="text-gray-700 mt-1">
+          Transforme seus sonhos em realidade e ajude outros a realizarem os deles
+        </p>
+        <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-600">
+          <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">✅ 100% Seguro</span>
+          <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">👥 +50.000 Criadores</span>
+          <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">⏱️ Análise em 24h</span>
         </div>
-      </div>
+      </header>
 
-      {/* DIREITA */}
-      <aside className="lg:col-span-2 grid gap-6">
-        <section className="border rounded-2xl p-4">
-          <h3 className="font-medium mb-2">Calculadora</h3>
-          <div className="text-sm grid gap-1">
-            <div className="flex justify-between"><span>Valor do Prêmio:</span><b>{brl(prize)}</b></div>
-            <div className="flex justify-between"><span>Taxa de Processamento (2%):</span><b>+ {brl(taxAmt)}</b></div>
-            <div className="flex justify-between"><span>Total a arrecadar:</span><b>{brl(goal)}</b></div>
-            <div className="flex justify-between"><span>Preço por Bilhete:</span><b>{price>0? brl(price): "—"}</b></div>
-            <div className="flex justify-between"><span>Bilhetes (calculado):</span><b>{totalTicketsComputed || "—"}</b></div>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* COLUNA PRINCIPAL */}
+        <form onSubmit={onSubmit} className="lg:col-span-2 grid gap-6">
+          {/* Informações Básicas */}
+          <section className="bg-gray-50 rounded-xl border p-4 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2">Informações Básicas</h2>
+
+            {errorMsg && (
+              <div className="mb-3 p-3 rounded border border-red-200 bg-red-50 text-red-700">
+                {errorMsg}
+              </div>
+            )}
+            {successMsg && (
+              <div className="mb-3 p-3 rounded border border-green-200 bg-green-50 text-green-800">
+                {successMsg}
+              </div>
+            )}
+
+            <div className="grid gap-4">
+              <div>
+                <label className="block text-sm font-medium">Título do Ganhavel *</label>
+                <input
+                  className="mt-1 w-full border rounded-lg p-2"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex: iPhone 15 Pro Max 256GB"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">Descrição *</label>
+                <textarea
+                  className="mt-1 w-full border rounded-lg p-2"
+                  rows={5}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Descreva detalhadamente o prêmio, suas condições, especificações..."
+                  required
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium">Categoria *</label>
+                  <select
+                    className="mt-1 w-full border rounded-lg p-2"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : "")}
+                    required
+                  >
+                    <option value="">Selecione uma categoria</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium">Subcategoria (opcional)</label>
+                  <input
+                    className="mt-1 w-full border rounded-lg p-2"
+                    value={subcategory}
+                    onChange={(e) => setSubcategory(e.target.value)}
+                    placeholder="Ex: Smartphones, Sofás, Eletrônicos..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium">Local</label>
+                  <div className="mt-2 flex gap-4 text-sm">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="loc"
+                        checked={locationType === "online"}
+                        onChange={() => setLocationType("online")}
+                        aria-controls="campo-cidade"
+                        aria-expanded={false}
+                      />
+                      Online
+                    </label>
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="loc"
+                        checked={locationType === "cidade"}
+                        onChange={() => setLocationType("cidade")}
+                        aria-controls="campo-cidade"
+                        aria-expanded={true}
+                      />
+                      Cidade
+                    </label>
+                  </div>
+
+                  {/* Campo Cidade com animação suave */}
+                  <Reveal show={locationType === "cidade"}>
+                    <input
+                      id="campo-cidade"
+                      className="w-full border rounded-lg p-2"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Ex: São Paulo - SP"
+                      inputMode="text"
+                      autoComplete="address-level2"
+                    />
+                  </Reveal>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium">Link do Vendedor (Afiliado)</label>
+                  <input
+                    className="mt-1 w-full border rounded-lg p-2"
+                    value={affiliateUrl}
+                    onChange={(e) => setAffiliateUrl(e.target.value)}
+                    placeholder="Comprar diretamente com o vendedor (URL)"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Configurações (sem mostrar "bilhetes calculados") */}
+          <section className="bg-gray-50 rounded-xl border p-4 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2">Configurações</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium">Preço do Bilhete (R$) *</label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="mt-1 w-full border rounded-lg p-2"
+                  value={ticketPrice}
+                  onChange={(e) => setTicketPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Valor do Prêmio (R$) *</label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="mt-1 w-full border rounded-lg p-2"
+                  value={prizeValue}
+                  onChange={(e) => setPrizeValue(e.target.value === "" ? "" : Number(e.target.value))}
+                  required
+                />
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 mt-3">
+              A meta inclui 2% de taxa de processamento. O sorteio será definido automaticamente quando a meta for atingida.
+            </p>
+          </section>
+
+          {/* Imagens */}
+          <section className="bg-gray-50 rounded-xl border p-4 shadow-sm">
+            <h2 className="text-lg font-semibold mb-2">Imagens do Prêmio</h2>
+            <p className="text-sm text-gray-600 mb-3">
+              PNG/JPG até 10MB cada (máx. 5 imagens). A <b>primeira</b> será a capa exibida na listagem.
+            </p>
+            <label className="block">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => onFilesSelected(e.target.files)}
+              />
+            </label>
+
+            {images.length > 0 && (
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {images.map((f, i) => (
+                  <div key={i} className="border rounded-lg p-2 text-sm">
+                    <div className="text-xs text-gray-500 mb-1 truncate">{f.name}</div>
+                    <div className={`inline-block px-2 py-0.5 rounded ${i === 0 ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-gray-100 text-gray-700"}`}>
+                      {i === 0 ? "Imagem principal" : "Imagem"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Ações */}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={submitting || uploading}
+              className="inline-flex items-center justify-center rounded-lg bg-black text-white px-4 py-2 disabled:opacity-60"
+              title={uploading ? "Enviando imagem..." : "Enviar para análise"}
+            >
+              {submitting ? "Enviando..." : uploading ? "Processando imagens..." : "Enviar para Análise"}
+            </button>
+
+            <button
+              type="button"
+              disabled
+              className="inline-flex items-center justify-center rounded-lg bg-gray-200 text-gray-600 px-4 py-2 cursor-not-allowed"
+              title="Rascunho indisponível — o RPC cria como 'under_review'"
+            >
+              Salvar Rascunho
+            </button>
           </div>
-          <p className="text-[12px] text-gray-500 mt-2">
-            Os 2% adicionais cobrem o processamento via API e garantem a segurança das transações.
-          </p>
-        </section>
+        </form>
 
-        <section className="border rounded-2xl p-4">
-          <h3 className="font-medium mb-2">Como Funciona</h3>
-          <ol className="list-decimal pl-5 text-sm grid gap-1">
-            <li>Envie seu Ganhavel — analisamos em até 24h.</li>
-            <li>Aprovação — publicamos e promovemos.</li>
-            <li>Sorteio — definido automaticamente quando a meta atingir 100% (Loteria Federal/algoritmo oficial).</li>
-            <li>Recebimento — transferência após confirmação da entrega.</li>
-          </ol>
-        </section>
+        {/* COLUNA DIREITA */}
+        <aside className="grid gap-6">
+          {/* Calculadora */}
+          <section className="bg-white rounded-xl border p-4 shadow-sm">
+            <h3 className="text-lg font-semibold mb-2">Calculadora</h3>
+            <div className="grid gap-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Valor do Prêmio:</span>
+                <span className="font-medium">{brl(calc.pv)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Taxa de Processamento (2%):</span>
+                <span className="font-medium">+ {brl(calc.fee)}</span>
+              </div>
+              <div className="flex items-center justify-between border-t pt-2">
+                <span className="text-gray-800 font-medium">Total a arrecadar:</span>
+                <span className="font-semibold">{brl(calc.goal)}</span>
+              </div>
 
-        <section className="border rounded-2xl p-4">
-          <h3 className="font-medium mb-1">Compartilhe para fazer acontecer</h3>
-          <p className="text-sm text-gray-600">
-            A divulgação acelera a arrecadação. Compartilhe seu link com amigos, grupos e redes sociais para alcançar 100% mais rápido.
-          </p>
-        </section>
+              <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-green-800 font-semibold">
+                Meta a atingir: {brl(calc.goal)} — Quando atingida, o sorteio acontece automaticamente ✅
+              </div>
 
-        <section className="border rounded-2xl p-4">
-          <h3 className="font-medium mb-1">Precisa de Ajuda?</h3>
-          <p className="text-sm text-gray-600 mb-3">
-            Nossa equipe está pronta para te ajudar a criar a rifa perfeita.
-          </p>
-          <a href="mailto:suporte@ganhavel.com"
-             className="inline-flex px-3 py-2 rounded-2xl bg-emerald-600 text-white text-sm">
-            Falar com Suporte
-          </a>
-        </section>
-      </aside>
+              <p className="text-xs text-gray-600 mt-2">
+                Os 2% adicionais cobrem o processamento via API e garantem a segurança das transações.
+              </p>
+            </div>
+          </section>
+
+          {/* Como Funciona / Ajuda */}
+          <section className="bg-white rounded-xl border p-4 shadow-sm">
+            <h3 className="text-lg font-semibold mb-2">Como Funciona</h3>
+            <ol className="list-decimal pl-5 space-y-1 text-sm text-gray-700">
+              <li>Envie seu Ganhavel — analisamos em até 24h.</li>
+              <li>Aprovação — publicamos e promovemos.</li>
+              <li>Sorteio — definido automaticamente ao atingir 100% (Loteria Federal/algoritmo oficial).</li>
+              <li>Recebimento — transferência após confirmação da entrega.</li>
+            </ol>
+
+            <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <h4 className="font-medium text-blue-900 mb-1">Compartilhe para fazer acontecer</h4>
+              <p className="text-sm text-blue-900/90">
+                A divulgação acelera a arrecadação. Compartilhe seu link com amigos, grupos e redes sociais.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <h4 className="font-medium mb-1">Precisa de Ajuda?</h4>
+              <p className="text-sm text-gray-700 mb-2">
+                Nossa equipe está pronta para te ajudar a criar a rifa perfeita.
+              </p>
+              <a
+                href="mailto:suporte@ganhavel.com"
+                className="inline-flex items-center justify-center rounded-lg bg-black text-white px-4 py-2"
+              >
+                Falar com Suporte
+              </a>
+            </div>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }
