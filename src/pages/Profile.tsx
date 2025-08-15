@@ -1,25 +1,6 @@
 import * as React from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-
-const Guard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [uidChecked, setUidChecked] = React.useState(false);
-  const [uid, setUid] = React.useState<string | null>(null);
-  React.useEffect(() => { (async () => {
-    const { data } = await supabase.auth.getUser();
-    setUid(data.user?.id ?? null);
-    setUidChecked(true);
-  })(); }, []);
-  if (!uidChecked) return null; // or a small skeleton
-  if (!uid) return (
-    <section className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-2">Meu Perfil</h1>
-      <p className="text-gray-700">Você precisa estar autenticado.</p>
-      <Link to="/login" className="underline text-emerald-700">Entrar</Link>
-    </section>
-  );
-  return <>{children}</>;
-};
+import { supabase } from "@/integrations/supabase/client";
 
 type RaffleBase = {
   id: string;
@@ -29,7 +10,7 @@ type RaffleBase = {
   image_url: string | null;
   ticket_price: number | null;
   total_tickets: number | null;
-  status: "under_review" | "approved" | "scheduled" | "closed" | "delivered";
+  status: string; // accept any string to avoid TS blocking UI
 };
 
 type RaffleProg = {
@@ -55,22 +36,16 @@ function timeAgo(d: string | null) {
   return `${dys} d`;
 }
 
-function StatusBadge({ s }: { s: RaffleBase["status"] }) {
-  const map: Record<RaffleBase["status"], string> = {
-    under_review: "Em análise",
-    approved: "Aprovada",
-    scheduled: "Agendada",
-    closed: "Encerrada",
-    delivered: "Entregue",
+function StatusBadge({ s }: { s: string }) {
+  const map: Record<string, { label: string; tone: string }> = {
+    under_review: { label: "Em análise",   tone: "bg-amber-100 text-amber-800" },
+    approved:     { label: "Aprovada",     tone: "bg-emerald-100 text-emerald-800" },
+    scheduled:    { label: "Agendada",     tone: "bg-blue-100 text-blue-800" },
+    closed:       { label: "Encerrada",    tone: "bg-gray-100 text-gray-800" },
+    delivered:    { label: "Entregue",     tone: "bg-purple-100 text-purple-800" },
   };
-  const tone: Record<RaffleBase["status"], string> = {
-    under_review: "bg-amber-100 text-amber-800",
-    approved: "bg-emerald-100 text-emerald-800",
-    scheduled: "bg-blue-100 text-blue-800",
-    closed: "bg-gray-100 text-gray-800",
-    delivered: "bg-purple-100 text-purple-800",
-  };
-  return <span className={`px-2 py-0.5 rounded-full text-xs ${tone[s]}`}>{map[s]}</span>;
+  const f = map[s] ?? { label: s, tone: "bg-gray-100 text-gray-800" };
+  return <span className={`px-2 py-0.5 rounded-full text-xs ${f.tone}`}>{f.label}</span>;
 }
 
 function Card({ r, p }: { r: RaffleBase; p?: RaffleProg }) {
@@ -79,7 +54,7 @@ function Card({ r, p }: { r: RaffleBase; p?: RaffleProg }) {
 
   return (
     <Link
-      to={`/ganhavel/${r.id}`}
+      to={`/ganhaveis/${r.id}`}
       className="group rounded-2xl border bg-white overflow-hidden hover:shadow-md transition-shadow"
     >
       <div className="aspect-[16/10] bg-gray-100 overflow-hidden">
@@ -96,7 +71,7 @@ function Card({ r, p }: { r: RaffleBase; p?: RaffleProg }) {
           <StatusBadge s={r.status} />
         </div>
 
-        {(r.status === "approved" || r.status === "scheduled" || r.status === "closed" || r.status === "delivered") && (
+        {["approved", "scheduled", "closed", "delivered"].includes(r.status) ? (
           <>
             <div className="mt-2 text-sm text-gray-700">
               {brl(p?.amount_collected)} de {brl(p?.goal_amount)}
@@ -109,38 +84,50 @@ function Card({ r, p }: { r: RaffleBase; p?: RaffleProg }) {
               {last && <span>Última compra: {last}</span>}
             </div>
           </>
-        )}
-
-        {r.status === "under_review" && (
+        ) : r.status === "under_review" ? (
           <div className="mt-3 text-sm text-gray-600">
             Seu Ganhavel foi enviado e está em análise. Você receberá um e-mail quando for aprovado.
           </div>
-        )}
+        ) : null}
       </div>
     </Link>
   );
 }
 
 export default function Profile() {
+  const [authChecked, setAuthChecked] = React.useState(false);
+  const [uid, setUid] = React.useState<string | null>(null);
+
   const [mine, setMine] = React.useState<RaffleBase[]>([]);
   const [prog, setProg] = React.useState<Record<string, RaffleProg>>({});
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState<string | null>(null);
 
+  // 1) Auth
   React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (mounted) setUid(data.user?.id ?? null);
+      } finally {
+        if (mounted) setAuthChecked(true);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // 2) Fetch my raffles (base table, includes under_review)
+  React.useEffect(() => {
+    if (!authChecked) return;
+    if (!uid) { setLoading(false); return; } // show login prompt below
+
     let cancelled = false;
     (async () => {
       try {
         setLoading(true);
         setErr(null);
 
-        // 1) get me
-        const { data: userRes, error: userErr } = await supabase.auth.getUser();
-        if (userErr) throw userErr;
-        const uid = userRes.user?.id;
-        if (!uid) throw new Error("Precisa estar autenticado");
-
-        // 2) fetch all my raffles (including under_review)
         const { data: rows, error } = await supabase
           .from("raffles")
           .select("id, created_at, title, description, image_url, ticket_price, total_tickets, status")
@@ -151,21 +138,28 @@ export default function Profile() {
         const base = (rows ?? []) as RaffleBase[];
         if (!cancelled) setMine(base);
 
-        // 3) enrich approved+ with progress from raffles_public_v2
         const approvedIds = base
           .filter((r) => ["approved", "scheduled", "closed", "delivered"].includes(r.status))
           .map((r) => r.id);
 
         if (approvedIds.length) {
-          const { data: rows2, error: err2 } = await supabase
+          // prefer v2; fallback to raffles_public if v2 missing
+          const q = supabase
             .from("raffles_public_v2")
             .select("id, paid_tickets, tickets_remaining, amount_collected, goal_amount, progress_pct, last_paid_at")
             .in("id", approvedIds);
 
-          if (err2) throw err2;
+          let { data: rows2, error: err2 } = await q;
+          if (err2) {
+            const fb = await supabase
+              .from("raffles_public")
+              .select("id, paid_tickets, tickets_remaining, amount_collected, goal_amount, progress_pct, last_paid_at")
+              .in("id", approvedIds);
+            rows2 = fb.data as any;
+          }
 
           const map: Record<string, RaffleProg> = {};
-          (rows2 ?? []).forEach((x) => { map[x.id] = x as RaffleProg; });
+          (rows2 ?? []).forEach((x: any) => { map[x.id] = x as RaffleProg; });
           if (!cancelled) setProg(map);
         } else {
           if (!cancelled) setProg({});
@@ -176,43 +170,76 @@ export default function Profile() {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => { cancelled = true; };
-  }, []);
+  }, [authChecked, uid]);
+
+  // UI
+
+  if (!authChecked) {
+    // tiny skeleton to avoid a blank page
+    return (
+      <section className="max-w-6xl mx-auto px-6 py-10">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6">Meu Perfil</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border bg-white overflow-hidden">
+              <div className="aspect-[16/10] bg-gray-100 animate-pulse" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!uid) {
+    return (
+      <section className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-2">Meu Perfil</h1>
+        <p className="text-gray-700">Você precisa estar autenticado.</p>
+        <Link to="/login" className="underline text-emerald-700">Entrar</Link>
+      </section>
+    );
+  }
 
   const sections = [
-    { key: "under_review", title: "Em análise" as const },
-    { key: "approved", title: "Aprovados" as const },
-    { key: "scheduled", title: "Agendados" as const },
-    { key: "closed", title: "Encerrados" as const },
-    { key: "delivered", title: "Entregues" as const },
+    { key: "under_review", title: "Em análise" },
+    { key: "approved",     title: "Aprovados" },
+    { key: "scheduled",    title: "Agendados" },
+    { key: "closed",       title: "Encerrados" },
+    { key: "delivered",    title: "Entregues" },
   ] as const;
 
-  if (err) return <div className="max-w-6xl mx-auto p-6 text-red-700">{err}</div>;
-
   return (
-    <Guard>
-      <section className="max-w-6xl mx-auto px-6 py-10 space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
-          <Link to="/lance-seu-ganhavel" className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">
-            + Lançar Ganhavel
-          </Link>
-        </div>
+    <section className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
+        <Link to="/lance-seu-ganhavel" className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">
+          + Lançar Ganhavel
+        </Link>
+      </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border bg-white overflow-hidden">
-                <div className="aspect-[16/10] bg-gray-100 animate-pulse" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                  <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
-                </div>
+      {err && <div className="p-3 rounded bg-red-50 text-red-700 border border-red-200">{err}</div>}
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border bg-white overflow-hidden">
+              <div className="aspect-[16/10] bg-gray-100 animate-pulse" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
               </div>
-            ))}
-          </div>
-        ) : (
-          sections.map((sec) => {
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          {sections.map((sec) => {
             const items = mine.filter((r) => r.status === sec.key);
             if (!items.length) return null;
             return (
@@ -226,15 +253,16 @@ export default function Profile() {
                 </div>
               </div>
             );
-          })
-        )}
+          })}
 
-        {!loading && !mine.length && (
-          <div className="rounded-2xl border bg-white p-6 text-gray-700">
-            Você ainda não lançou nenhum Ganhavel. <Link to="/lance-seu-ganhavel" className="underline text-emerald-700">Lançar agora</Link>.
-          </div>
-        )}
-      </section>
-    </Guard>
+          {!mine.length && (
+            <div className="rounded-2xl border bg-white p-6 text-gray-700">
+              Você ainda não lançou nenhum Ganhavel.{" "}
+              <Link to="/lance-seu-ganhavel" className="underline text-emerald-700">Lançar agora</Link>.
+            </div>
+          )}
+        </>
+      )}
+    </section>
   );
 }
