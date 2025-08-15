@@ -148,10 +148,8 @@ export default function GanhaveisDetail() {
   }, [id]);
 
   // Derived UI state
-  const soldOut = raffle ? Number(raffle.tickets_remaining || 0) <= 0 : false;
-  const metaDone = raffle ? Number(raffle.progress_pct || 0) >= 100 : false;
-  const buyable =
-    !!raffle && raffle.status === "approved" && !soldOut && !metaDone && Number(raffle.ticket_price) > 0;
+  const buyable = raffle?.status === "approved" && (raffle?.tickets_remaining ?? 0) > 0;
+  const soldOut = (raffle?.tickets_remaining ?? 0) === 0;
 
   // Buy handler
   async function handleBuy() {
@@ -298,11 +296,6 @@ export default function GanhaveisDetail() {
               <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Em revisão</span>
             )}
             {soldOut && <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">Esgotado</span>}
-            {metaDone && (
-              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                Meta alcançada — aguardando sorteio
-              </span>
-            )}
             {!!raffle.participants_count && (
               <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
                 {raffle.participants_count} participantes
@@ -410,22 +403,21 @@ export default function GanhaveisDetail() {
               </div>
             </div>
 
-            <button
-              disabled={!buyable || buying}
-              className="mt-3 w-full rounded-xl bg-emerald-600 text-white py-2 text-sm disabled:opacity-60"
-              onClick={handleBuy}
-              title={
-                buyable
-                  ? "Comprar bilhetes"
-                  : soldOut
-                    ? "Esgotado"
-                    : metaDone
-                      ? "Meta alcançada — aguardando sorteio"
-                      : "Indisponível"
-              }
-            >
-              {buying ? "Processando..." : soldOut ? "Esgotado" : metaDone ? "Meta alcançada" : "Comprar bilhetes"}
-            </button>
+            <div className="mt-4 flex items-center">
+              <button
+                onClick={handleBuy}
+                disabled={!buyable || buying}
+                className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700
+                            ${(!buyable || buying) ? "opacity-50 cursor-not-allowed hover:bg-emerald-600" : ""}`}
+              >
+                Comprar bilhete
+              </button>
+              {soldOut && (
+                <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                  Esgotado
+                </span>
+              )}
+            </div>
 
             <p className="mt-2 text-[12px] text-gray-500">
               Pagamentos 100% seguros. A compra libera os bilhetes e atualiza o progresso em tempo real.
