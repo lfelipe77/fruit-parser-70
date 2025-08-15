@@ -675,35 +675,6 @@ export type Database = {
           },
         ]
       }
-      ticket_picks: {
-        Row: {
-          created_at: string | null
-          id: string
-          numbers: number[]
-          ticket_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          numbers: number[]
-          ticket_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          numbers?: number[]
-          ticket_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ticket_picks_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tickets: {
         Row: {
           created_at: string | null
@@ -838,8 +809,6 @@ export type Database = {
           provider_payment_id: string | null
           raffle_id: string
           received_at: string | null
-          reservation_id: string | null
-          selected_numbers: string[] | null
           source: string | null
           status: string | null
           ticket_numbers: Json | null
@@ -863,8 +832,6 @@ export type Database = {
           provider_payment_id?: string | null
           raffle_id: string
           received_at?: string | null
-          reservation_id?: string | null
-          selected_numbers?: string[] | null
           source?: string | null
           status?: string | null
           ticket_numbers?: Json | null
@@ -888,8 +855,6 @@ export type Database = {
           provider_payment_id?: string | null
           raffle_id?: string
           received_at?: string | null
-          reservation_id?: string | null
-          selected_numbers?: string[] | null
           source?: string | null
           status?: string | null
           ticket_numbers?: Json | null
@@ -1045,23 +1010,15 @@ export type Database = {
           bio: string | null
           created_at: string | null
           display_name: string | null
-          facebook: string | null
           full_name: string | null
           id: string
-          instagram: string | null
           location: string | null
           rating: number | null
           role: string | null
           social_links: Json | null
-          telegram: string | null
-          tiktok: string | null
           total_ganhaveis: number | null
-          twitter: string | null
           updated_at: string | null
           username: string | null
-          website_url: string | null
-          whatsapp: string | null
-          youtube: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1069,23 +1026,15 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
-          facebook?: string | null
           full_name?: string | null
           id: string
-          instagram?: string | null
           location?: string | null
           rating?: number | null
           role?: string | null
           social_links?: Json | null
-          telegram?: string | null
-          tiktok?: string | null
           total_ganhaveis?: number | null
-          twitter?: string | null
           updated_at?: string | null
           username?: string | null
-          website_url?: string | null
-          whatsapp?: string | null
-          youtube?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1093,23 +1042,15 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
-          facebook?: string | null
           full_name?: string | null
           id?: string
-          instagram?: string | null
           location?: string | null
           rating?: number | null
           role?: string | null
           social_links?: Json | null
-          telegram?: string | null
-          tiktok?: string | null
           total_ganhaveis?: number | null
-          twitter?: string | null
           updated_at?: string | null
           username?: string | null
-          website_url?: string | null
-          whatsapp?: string | null
-          youtube?: string | null
         }
         Relationships: []
       }
@@ -1621,10 +1562,6 @@ export type Database = {
         Args: { p_uid: string }
         Returns: boolean
       }
-      is_admin_alias: {
-        Args: { uid: string }
-        Returns: boolean
-      }
       log_audit_event: {
         Args:
           | { action: string; actor_id: string; context: Json }
@@ -1769,28 +1706,6 @@ export type Database = {
       some_function: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      tickets_by_reservation: {
-        Args: { p_reservation: string }
-        Returns: {
-          created_at: string | null
-          ganhavel_id: string | null
-          id: string
-          is_paid: boolean | null
-          number: number | null
-          payment_session_id: string | null
-          payment_status: string | null
-          quantity: number | null
-          raffle_id: string | null
-          reservation_id: string | null
-          reserved_by: string | null
-          reserved_until: string | null
-          status: Database["public"]["Enums"]["ticket_status"]
-          ticket_number: number | null
-          total_amount: number | null
-          transaction_id: string | null
-          user_id: string | null
-        }[]
       }
       update_user_role: {
         Args: { new_role: string; user_id: string }
