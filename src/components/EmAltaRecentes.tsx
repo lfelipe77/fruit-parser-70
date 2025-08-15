@@ -2,17 +2,6 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 
-// tiny inline helper (no new file)
-function timeAgo(iso?: string | null) {
-  if (!iso) return "";
-  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-  const m = Math.floor(s/60), h = Math.floor(m/60), d = Math.floor(h/24);
-  if (d >= 1) return `${d} ${d===1?'dia':'dias'}`;
-  if (h >= 1) return `${h} ${h===1?'hora':'horas'}`;
-  if (m >= 1) return `${m} ${m===1?'min':'mins'}`;
-  return `${s} s`;
-}
-
 type RafflePublic = {
   id: string;
   title: string;
@@ -24,9 +13,6 @@ type RafflePublic = {
   progress_pct: number;
   status: string;
   created_at: string;
-  last_paid_at?: string | null;
-  paid_tickets?: number;
-  participants_count?: number;
   tickets_remaining?: number;
 };
 
@@ -62,11 +48,6 @@ function RCard({ r }: { r: RafflePublic }) {
         <div className="mt-2 text-xs text-gray-600">
           {brl(r.amount_collected)} de {brl(r.goal_amount)}
         </div>
-        {r.last_paid_at && (
-          <div className="mt-1 text-[11px] text-gray-500">
-            Última compra {timeAgo(r.last_paid_at)} atrás
-          </div>
-        )}
 
         <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden" aria-label="progresso">
           <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />

@@ -182,10 +182,7 @@ export default function Navigation() {
                       </AvatarFallback>
                     </Avatar>
                   </Link>
-                  <Link to="/profile" className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors">
-                    Meu Perfil
-                  </Link>
-                  <Button variant="outline" size="sm" asChild className="hidden lg:flex">
+                  <Button variant="outline" size="sm" asChild className="hidden md:flex">
                     <Link to="/dashboard">
                       <User className="w-4 h-4 mr-2" />
                       Dashboard
