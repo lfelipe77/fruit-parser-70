@@ -174,16 +174,13 @@ export default function Navigation() {
               )}
               {user ? (
                 <div className="flex items-center space-x-3">
-                  <Link to="/profile">
+                  <Link to="/dashboard">
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={avatarUrl || ''} />
                       <AvatarFallback>
                         <User className="w-4 h-4" />
                       </AvatarFallback>
                     </Avatar>
-                  </Link>
-                  <Link to="/profile" className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors">
-                    Meu Perfil
                   </Link>
                   <Button variant="outline" size="sm" asChild className="hidden lg:flex">
                     <Link to="/dashboard">
