@@ -108,10 +108,15 @@ export default function Profile() {
     let mounted = true;
     (async () => {
       try {
+        console.log('Profile: Checking auth...');
         const { data } = await supabase.auth.getUser();
+        console.log('Profile: Auth data:', data);
         if (mounted) setUid(data.user?.id ?? null);
       } finally {
-        if (mounted) setAuthChecked(true);
+        if (mounted) {
+          console.log('Profile: Setting authChecked to true');
+          setAuthChecked(true);
+        }
       }
     })();
     return () => { mounted = false; };
