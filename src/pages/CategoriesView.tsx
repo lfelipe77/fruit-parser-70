@@ -7,7 +7,8 @@ import Navigation from "@/components/Navigation";
 import { CategoriasSEO } from "@/components/SEOPages";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CategoryStats, SubcategoryStats, RafflePublic, formatCurrency, getProgressPercent } from "@/types/raffles";
+import { CategoryStats, SubcategoryStats, formatCurrency, getProgressPercent } from "@/types/raffles";
+import { RafflePublic } from "@/types/public-views";
 
 export default function CategoriesView() {
   const { categoria, subcategoria } = useParams();
@@ -64,12 +65,12 @@ export default function CategoriesView() {
 
     async function loadRaffles() {
       setLoading(true);
-      const { data } = await supabase
-        .from("raffles_public")
-        .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, progress_pct, draw_date, status")
+      const { data } = await (supabase as any)
+        .from('raffles_public_ext')
+        .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id')
         .limit(12);
       
-      setRaffles((data || []) as any);
+      setRaffles((data || []) as RafflePublic[]);
       setLoading(false);
     }
     loadRaffles();

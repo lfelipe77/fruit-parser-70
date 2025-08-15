@@ -45,9 +45,9 @@ export default function RaffleDetail() {
     async function run() {
       if (!id) return;
       setLoading(true);
-      const { data, error } = await supabase
-        .from("raffles_public")
-        .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, tickets_remaining, draw_date, status")
+      const { data, error } = await (supabase as any)
+        .from('raffles_public_ext')
+        .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,tickets_remaining,draw_date,status')
         .eq("id", id)
         .maybeSingle();
       if (!mounted) return;
@@ -73,9 +73,9 @@ export default function RaffleDetail() {
         "postgres_changes",
         { event: "*", schema: "public", table: "tickets", filter: `raffle_id=eq.${raffle.id}` },
         async () => {
-          const { data } = await supabase
-            .from("raffles_public")
-            .select("paid_tickets, tickets_remaining")
+          const { data } = await (supabase as any)
+            .from('raffles_public_ext')
+            .select('paid_tickets,tickets_remaining')
             .eq("id", raffle.id)
             .maybeSingle();
           if (data && raffle) {

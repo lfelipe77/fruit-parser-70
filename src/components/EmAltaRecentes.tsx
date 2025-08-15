@@ -1,9 +1,8 @@
-import * as React from "react";
+import React from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Link, useNavigate } from "react-router-dom";
-import { RafflePublic } from "@/types/raffles";
-import RaffleCard from "@/components/RaffleCard";
-
+import { RafflePublic } from "@/types/public-views";
+import RaffleCard from "./RaffleCard";
 
 function SkeletonCard() {
   return (
@@ -31,9 +30,10 @@ export default function EmAltaRecentesSection() {
       setLoading(true);
       setErr(null);
       try {
-        const base = () => supabase
-          .from("raffles_public")
-          .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, progress_pct, draw_date, status");
+        // Use type assertion to work around TypeScript limitations
+        const base = () => (supabase as any)
+          .from('raffles_public_ext')
+          .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id');
         
         const [a, b] = await Promise.all([
           base().order("progress_pct", { ascending: false }).limit(6),
@@ -42,8 +42,8 @@ export default function EmAltaRecentesSection() {
         if (!cancelled) {
           if (a.error) throw a.error;
           if (b.error) throw b.error;
-          setTop((a.data ?? []) as any);
-          setRecent((b.data ?? []) as any);
+          setTop((a.data ?? []) as RafflePublic[]);
+          setRecent((b.data ?? []) as RafflePublic[]);
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");

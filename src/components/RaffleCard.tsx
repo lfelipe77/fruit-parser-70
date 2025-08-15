@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { RafflePublic } from "@/types/public-views";
 import ProgressBar from "@/components/ui/progress-bar";
 import CategoryBadge from "@/components/ui/category-badge";
 import { formatBRL, formatDateBR, withFallbackImage } from "@/lib/formatters";
-import type { RafflePublic } from "@/types/raffles";
 
 type Props = { 
   r: RafflePublic; 
@@ -42,7 +42,7 @@ export default function RaffleCard({ r, onClick }: Props) {
           loading="lazy"
         />
         <div className="absolute left-3 top-3 flex gap-2">
-          {r.category && <CategoryBadge name={r.category} colorClass={null} />}
+          {r.category_name && <CategoryBadge name={r.category_name} colorClass={null} />}
           {r.subcategory_name && <CategoryBadge name={r.subcategory_name} className="hidden sm:inline-flex" />}
         </div>
         {r.status === "completed" && (

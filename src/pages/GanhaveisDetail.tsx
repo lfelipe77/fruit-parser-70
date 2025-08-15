@@ -94,9 +94,9 @@ export default function RifaDetail() {
     const fetchRaffle = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('raffles_public')
-          .select('*')
+        const { data, error } = await (supabase as any)
+          .from('raffles_public_ext')
+          .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id,owner_user_id,amount_collected,goal_amount,tickets_remaining')
           .eq('id', rifaId)
           .maybeSingle();
 
@@ -137,9 +137,9 @@ export default function RifaDetail() {
         filter: `raffle_id=eq.${rifaId}` 
       }, async () => {
         // Re-fetch raffle data when tickets change
-        const { data } = await supabase
-          .from('raffles_public')
-          .select('paid_tickets, tickets_remaining, amount_collected, progress_pct')
+        const { data } = await (supabase as any)
+          .from('raffles_public_ext')
+          .select('paid_tickets,tickets_remaining,amount_collected,progress_pct')
           .eq('id', rifaId)
           .maybeSingle();
         

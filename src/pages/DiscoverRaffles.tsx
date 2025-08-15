@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { RafflePublic, CategoryStats, formatCurrency, formatDate, getProgressPercent } from "@/types/raffles";
+import { CategoryStats, formatCurrency, formatDate, getProgressPercent } from "@/types/raffles";
+import { RafflePublic } from "@/types/public-views";
 import { Link } from "react-router-dom";
 
 const PAGE_SIZE = 12;
@@ -50,9 +51,9 @@ export default function DiscoverRaffles() {
   useEffect(() => {
     async function loadRaffles() {
       setLoading(true);
-      let query = supabase
-        .from("raffles_public")
-        .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, progress_pct, draw_date, status, category_id", { count: "exact" });
+      let query = (supabase as any)
+        .from('raffles_public_ext')
+        .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id', { count: "exact" });
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);
@@ -84,7 +85,7 @@ export default function DiscoverRaffles() {
       const { data, error, count } = await query;
       
       if (!error) {
-        setRaffles((data || []) as any);
+        setRaffles((data || []) as RafflePublic[]);
         setTotalCount(count || 0);
       }
       setLoading(false);
@@ -112,9 +113,9 @@ export default function DiscoverRaffles() {
         
         <div className="p-4">
           <div className="flex items-center gap-2 mb-2">
-            {raffle.category && (
+            {raffle.category_name && (
               <Badge variant="secondary" className="text-xs">
-                {raffle.category}
+                {raffle.category_name}
               </Badge>
             )}
             {soldOut && (

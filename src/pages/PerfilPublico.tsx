@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PublicProfile } from "@/types/public-views";
 import { 
   Trophy, 
   Heart, 
@@ -45,17 +46,17 @@ export default function PerfilPublico() {
       
       try {
         // Try to find by username first, then by ID
-        let { data, error } = await supabase
-          .from('user_profiles')
-          .select('id, username, full_name, avatar_url, bio, location, website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram')
+        let { data, error } = await (supabase as any)
+          .from('user_profiles_public')
+          .select('id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
           .eq('username', username)
           .maybeSingle();
           
         if (!data && error?.code === 'PGRST116') {
           // Not found by username, try by ID
-          const { data: dataById, error: errorById } = await supabase
-            .from('user_profiles')
-            .select('id, username, full_name, avatar_url, bio, location, website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram')
+          const { data: dataById, error: errorById } = await (supabase as any)
+            .from('user_profiles_public')
+            .select('id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
             .eq('id', username)
             .maybeSingle();
             
@@ -66,7 +67,7 @@ export default function PerfilPublico() {
         if (error) {
           console.error('Error fetching profile:', error);
         } else {
-          setProfile(data);
+          setProfile(data as PublicProfile | null);
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
