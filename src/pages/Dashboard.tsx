@@ -177,7 +177,7 @@ export default function Dashboard() {
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
-              onClick={() => navigate('/my-tickets')}
+              onClick={() => navigate('/tickets')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

@@ -82,7 +82,47 @@ export default function MyParticipatingRaffles() {
           }
         });
 
-        setParticipatingRaffles(Array.from(raffleMap.values()));
+        let participatingData = Array.from(raffleMap.values());
+
+        // Add mock data in development if no real data exists
+        if (process.env.NODE_ENV === 'development' && participatingData.length === 0) {
+          const mockParticipating: ParticipatingRaffle[] = [{
+            raffle_id: 'mock-raffle-1',
+            my_tickets_count: 3,
+            total_spent: 3000, // R$ 30.00 in cents
+            raffle: {
+              id: 'mock-raffle-1',
+              title: 'Carro 0km Honda Civic 2024',
+              product_name: 'Honda Civic',
+              product_value: 8000000, // R$ 80.000,00 in cents
+              ticket_price: 1000,
+              total_tickets: 5000,
+              image_url: '/lovable-uploads/4f6691ae-418c-477c-9958-16166ad9f887.png',
+              status: 'active',
+              draw_date: new Date(Date.now() + 7 * 86400000).toISOString(), // 7 days from now
+              created_at: new Date(Date.now() - 30 * 86400000).toISOString()
+            }
+          }, {
+            raffle_id: 'mock-raffle-2',
+            my_tickets_count: 1,
+            total_spent: 500,
+            raffle: {
+              id: 'mock-raffle-2',
+              title: 'iPhone 15 Pro Max 256GB',
+              product_name: 'iPhone 15 Pro Max',
+              product_value: 800000, // R$ 8.000,00 in cents
+              ticket_price: 500,
+              total_tickets: 2000,
+              image_url: '/lovable-uploads/67eff453-d5b1-47f9-a141-e80286a38ba0.png',
+              status: 'active',
+              draw_date: new Date(Date.now() + 14 * 86400000).toISOString(),
+              created_at: new Date(Date.now() - 15 * 86400000).toISOString()
+            }
+          }];
+          participatingData = mockParticipating;
+        }
+
+        setParticipatingRaffles(participatingData);
       } catch (error) {
         console.error('Error fetching participating raffles:', error);
       } finally {

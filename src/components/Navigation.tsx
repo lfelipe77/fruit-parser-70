@@ -15,7 +15,8 @@ import {
   ChevronDown,
   Shield,
   BarChart3,
-  Eye
+  Eye,
+  LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -173,16 +174,36 @@ export default function Navigation() {
                 </DropdownMenu>
               )}
               {user ? (
-                <div className="flex items-center space-x-3">
-                  <Link to="/dashboard">
-                    <Avatar className="w-8 h-8">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar className="w-8 h-8 cursor-pointer">
                       <AvatarImage src={avatarUrl || ''} />
                       <AvatarFallback>
                         <User className="w-4 h-4" />
                       </AvatarFallback>
                     </Avatar>
-                  </Link>
-                </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Meu Perfil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <button onClick={() => supabase.auth.signOut()} className="flex items-center gap-2 w-full text-left">
+                        <LogOut className="h-4 w-4" />
+                        Sair
+                      </button>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
                   <Link to="/login">

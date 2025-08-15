@@ -200,6 +200,11 @@ const AppContent = () => {
             <MyGanhaveis />
           </RequireAuth>
         } />
+        <Route path="/tickets" element={
+          <RequireAuth>
+            <MyTickets />
+          </RequireAuth>
+        } />
         <Route path="/my-tickets" element={
           <RequireAuth>
             <MyTickets />
