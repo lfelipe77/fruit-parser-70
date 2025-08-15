@@ -2,6 +2,24 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
+// normalize DB values into the 5 canonical buckets the UI expects
+const STATUS_MAP: Record<string, string> = {
+  pending: "under_review",
+  review: "under_review",
+  em_analise: "under_review",
+  "em-analise": "under_review",
+  "em análise": "under_review",
+  active: "approved",
+  completa: "closed",
+  completed: "closed",
+  complete: "closed",
+  encerrada: "closed",
+  entregue: "delivered",
+  // fall through -> keep if already canonical
+};
+const norm = (s?: string | null): string =>
+  (s && STATUS_MAP[s]) || s || "under_review";
+
 type RaffleBase = {
   id: string;
   created_at: string;
@@ -245,7 +263,7 @@ export default function Profile() {
       ) : (
         <>
           {sections.map((sec) => {
-            const items = mine.filter((r) => r.status === sec.key);
+            const items = mine.filter((r) => norm(r.status) === sec.key);
             if (!items.length) return null;
             return (
               <div key={sec.key}>
@@ -254,11 +272,27 @@ export default function Profile() {
                   <span className="text-sm text-gray-600">{items.length}</span>
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {items.map((r) => <Card key={r.id} r={r} p={prog[r.id]} />)}
+                  {items.map((r) => <Card key={r.id} r={{...r, status: norm(r.status)}} p={prog[r.id]} />)}
                 </div>
               </div>
             );
           })}
+
+          {/* Fallback for unrecognized statuses */}
+          {(() => {
+            const others = mine.filter((r) => !["under_review","approved","scheduled","closed","delivered"].includes(norm(r.status)));
+            return others.length > 0 && (
+              <div>
+                <div className="flex items-baseline justify-between">
+                  <h2 className="text-xl md:text-2xl font-semibold">Outros</h2>
+                  <span className="text-sm text-gray-600">{others.length}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {others.map((r) => <Card key={r.id} r={{...r, status: norm(r.status)}} p={prog[r.id]} />)}
+                </div>
+              </div>
+            );
+          })()}
 
           {!mine.length && (
             <div className="rounded-2xl border bg-white p-6 text-gray-700">
