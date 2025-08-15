@@ -207,7 +207,14 @@ export default function UserProfile() {
     }
   }
 
-  if (loading) {
+  // Render skeleton if we don't have the minimal fields yet
+  const ready =
+    typeof fullName === "string" &&
+    typeof username === "string" &&
+    typeof bio === "string" &&
+    typeof location === "string";
+
+  if (!ready || loading) {
     return (
       <section className="max-w-5xl mx-auto px-6 py-10">
         <div className="h-8 w-40 bg-gray-100 rounded animate-pulse" />
