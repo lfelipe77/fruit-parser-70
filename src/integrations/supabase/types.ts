@@ -437,6 +437,7 @@ export type Database = {
           product_value: number | null
           slug: string | null
           status: string | null
+          subcategory_id: string | null
           ticket_price: number | null
           title: string | null
           total_tickets: number | null
@@ -460,6 +461,7 @@ export type Database = {
           product_value?: number | null
           slug?: string | null
           status?: string | null
+          subcategory_id?: string | null
           ticket_price?: number | null
           title?: string | null
           total_tickets?: number | null
@@ -483,6 +485,7 @@ export type Database = {
           product_value?: number | null
           slug?: string | null
           status?: string | null
+          subcategory_id?: string | null
           ticket_price?: number | null
           title?: string | null
           total_tickets?: number | null
@@ -491,6 +494,20 @@ export type Database = {
           winner_user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategory_stats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "raffles_category_id_fkey"
             columns: ["category_id"]
@@ -595,6 +612,48 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      subcategories: {
+        Row: {
+          category_id: number
+          created_at: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number | null
+        }
+        Insert: {
+          category_id: number
+          created_at?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number | null
+        }
+        Update: {
+          category_id?: number
+          created_at?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tickets: {
         Row: {
@@ -1018,6 +1077,32 @@ export type Database = {
             columns: ["winner_user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subcategory_stats: {
+        Row: {
+          category_id: number | null
+          ganhavel_count: number | null
+          id: string | null
+          name: string | null
+          slug: string | null
+          sort_order: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
         ]
