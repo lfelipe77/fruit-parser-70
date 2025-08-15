@@ -173,22 +173,14 @@ export default function Navigation() {
                 </DropdownMenu>
               )}
               {user ? (
-                <div className="flex items-center space-x-3">
-                  <Link to="/profile">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={avatarUrl || ''} />
-                      <AvatarFallback>
-                        <User className="w-4 h-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <Button variant="outline" size="sm" asChild className="hidden md:flex">
-                    <Link to="/dashboard">
-                      <User className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </Link>
-                  </Button>
-                </div>
+                <Link to="/profile">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={avatarUrl || ''} />
+                    <AvatarFallback>
+                      <User className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
               ) : (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
                   <Link to="/login">
