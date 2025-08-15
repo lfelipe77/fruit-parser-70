@@ -1,6 +1,6 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { RafflePublic } from "@/types/raffles";
 import RaffleCard from "@/components/RaffleCard";
 
@@ -19,6 +19,7 @@ function SkeletonCard() {
 }
 
 export default function EmAltaRecentesSection() {
+  const navigate = useNavigate();
   const [top, setTop] = React.useState<RafflePublic[]>([]);
   const [recent, setRecent] = React.useState<RafflePublic[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -55,7 +56,7 @@ export default function EmAltaRecentesSection() {
 
   const Grid = ({ items }: { items: RafflePublic[] }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {items.map((r) => <RaffleCard key={r.id} r={r} />)}
+      {items.map((r) => <RaffleCard key={r.id} r={r} onClick={(id) => navigate(`/#/ganhavel/${id}`)} />)}
     </div>
   );
 
