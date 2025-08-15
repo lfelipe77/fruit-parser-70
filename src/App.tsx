@@ -65,7 +65,7 @@ import { DevErrorBoundary } from '@/components/DevErrorBoundary';
 import { useLocation } from 'react-router-dom';
 import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
 import MinimalDashboard from '@/pages/MinimalDashboard';
-import Profile from '@/pages/Profile';
+import MyGanhaveis from '@/pages/MyGanhaveis';
 import UserProfile from '@/pages/UserProfile';
 import MyTickets from '@/pages/MyTickets';
 import Raffles from '@/pages/Raffles';
@@ -187,9 +187,14 @@ const AppContent = () => {
             <UserProfile />
           </RequireAuth>
         } />
+        <Route path="/profile/ganhaveis" element={
+          <RequireAuth>
+            <MyGanhaveis />
+          </RequireAuth>
+        } />
         <Route path="/my-ganhaveis" element={
           <RequireAuth>
-            <Profile />
+            <MyGanhaveis />
           </RequireAuth>
         } />
         <Route path="/my-tickets" element={

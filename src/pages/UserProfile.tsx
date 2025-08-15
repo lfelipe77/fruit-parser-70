@@ -1,410 +1,326 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import ShareButton from "@/components/ShareButton";
-import { useMyProfile } from "@/hooks/useMyProfile";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Trophy, 
-  Heart, 
-  Settings,
-  Camera,
-  Globe,
-  Instagram,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Plus,
-  Edit,
-  Save,
-  X
-} from "lucide-react";
-import Navigation from "@/components/Navigation";
+import * as React from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+
+type UserProfileRow = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  location: string | null;
+  role: string | null;
+  created_at: string;
+};
+
+const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <label className="text-xs font-medium text-gray-600">{children}</label>
+);
 
 export default function UserProfile() {
-  const navigate = useNavigate();
-  const { profile, loading, updateProfile } = useMyProfile();
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileFormData, setProfileFormData] = useState({
-    full_name: "",
-    username: "",
-    bio: "", 
-    location: "",
-    avatar_url: ""
-  });
+  const [uid, setUid] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [ok, setOk] = React.useState<string | null>(null);
+  const [edit, setEdit] = React.useState(false);
 
-  useEffect(() => {
-    if (profile) {
-      setProfileFormData({
-        full_name: profile.full_name || "",
-        username: profile.username || "",
-        bio: profile.bio || "",
-        location: profile.location || "",
-        avatar_url: profile.avatar_url || ""
-      });
-    }
-  }, [profile]);
+  const [profile, setProfile] = React.useState<UserProfileRow | null>(null);
 
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const result = await updateProfile(profileFormData);
-    
-    if (result.error) {
-      toast.error("Erro ao atualizar perfil");
-    } else {
-      toast.success("Perfil atualizado com sucesso!");
-      setIsEditingProfile(false);
+  // form fields
+  const [fullName, setFullName] = React.useState("");
+  const [username, setUsername] = React.useState("");
+  const [bio, setBio] = React.useState("");
+  const [location, setLocation] = React.useState("");
+  const [avatarUrl, setAvatarUrl] = React.useState("");
+  
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { data: auth } = await supabase.auth.getUser();
+        const id = auth.user?.id ?? null;
+        if (!id) throw new Error("Precisa estar autenticado.");
+        if (!mounted) return;
+        setUid(id);
+
+        // fetch or create minimal row
+        const sel =
+          "id, full_name, username, avatar_url, bio, location, role, created_at";
+        let { data: row, error: selErr } = await supabase
+          .from("user_profiles")
+          .select(sel)
+          .eq("id", id)
+          .maybeSingle();
+
+        if (selErr) throw selErr;
+
+        if (!row) {
+          const { data: created, error: insErr } = await supabase
+            .from("user_profiles")
+            .insert({ id })
+            .select(sel)
+            .single();
+          if (insErr) throw insErr;
+          row = created as UserProfileRow;
+        }
+
+        if (!mounted) return;
+        setProfile(row as UserProfileRow);
+        setFullName(row.full_name ?? "");
+        setUsername(row.username ?? "");
+        setBio(row.bio ?? "");
+        setLocation(row.location ?? "");
+        setAvatarUrl(row.avatar_url ?? "");
+      } catch (e: any) {
+        if (mounted) setError(e.message || "Falha ao carregar seu perfil.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function save() {
+    if (!uid) return;
+    try {
+      setSaving(true);
+      setError(null);
+      setOk(null);
+
+      const { data, error: upErr } = await supabase
+        .from("user_profiles")
+        .update({
+          full_name: fullName || null,
+          username: username || null,
+          bio: bio || null,
+          location: location || null,
+          avatar_url: avatarUrl || null,
+        })
+        .eq("id", uid)
+        .select(
+          "id, full_name, username, avatar_url, bio, location, role, created_at"
+        )
+        .single();
+
+      if (upErr) throw upErr;
+
+      setProfile(data as UserProfileRow);
+      setOk("Perfil atualizado!");
+      setEdit(false);
+    } catch (e: any) {
+      setError(e.message || "Não foi possível salvar.");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setOk(null), 2200);
     }
-  };
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Carregando perfil...</p>
+      <section className="max-w-5xl mx-auto px-6 py-10">
+        <div className="h-8 w-40 bg-gray-100 rounded animate-pulse" />
+        <div className="mt-6 grid gap-4 sm:grid-cols-[160px_1fr]">
+          <div className="h-40 w-40 bg-gray-100 rounded-full animate-pulse" />
+          <div className="space-y-3">
+            <div className="h-5 bg-gray-100 rounded animate-pulse w-1/2" />
+            <div className="h-4 bg-gray-100 rounded animate-pulse w-2/3" />
+            <div className="h-4 bg-gray-100 rounded animate-pulse w-1/3" />
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
-  if (!profile) {
+  if (!uid) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <p className="text-muted-foreground">Perfil não encontrado</p>
-          </div>
-        </div>
-      </div>
+      <section className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-2">Meu Perfil</h1>
+        <p className="text-gray-700">Você precisa estar autenticado.</p>
+        <Link to="/login" className="underline text-emerald-700">
+          Entrar
+        </Link>
+      </section>
     );
   }
+
+  const pubLink =
+    profile?.username ? `/perfil/${profile.username}` : null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Profile Header */}
-          <Card className="mb-8">
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="relative">
-                  <Avatar className="w-24 h-24">
-                    <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="text-2xl">
-                      {profile.full_name?.split(' ').map(n => n[0]).join('') || 
-                       profile.username?.[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background border shadow-md"
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="text-center md:text-left flex-1">
-                  <h1 className="text-2xl font-bold">{profile.full_name || profile.username || 'Usuário'}</h1>
-                  {profile.username && (
-                    <p className="text-muted-foreground">@{profile.username}</p>
-                  )}
-                  {profile.location && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 justify-center md:justify-start mt-1">
-                      <MapPin className="h-4 w-4" />
-                      {profile.location}
-                    </p>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Plus className="h-4 w-4 text-blue-500" />
-                      <span>{profile.total_ganhaveis || 0} ganhaveis criados</span>
-                    </div>
-                    {profile.role === 'admin' && (
-                      <Badge variant="secondary">Administrador</Badge>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  {profile.username && (
-                    <ShareButton 
-                      url={`${window.location.origin}/perfil/${profile.username}`}
-                      title={`Confira o perfil de ${profile.full_name || profile.username} na Ganhavel!`}
-                      variant="outline"
-                      size="sm"
-                    />
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditingProfile(!isEditingProfile)}
-                  >
-                    {isEditingProfile ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-                    {isEditingProfile ? 'Cancelar' : 'Editar'}
-                  </Button>
-                </div>
-              </div>
-              
-              {profile.bio && (
-                <div className="mt-6 pt-6 border-t">
-                  <p className="text-muted-foreground">{profile.bio}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Edit Profile Form */}
-          {isEditingProfile && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Editar Perfil</CardTitle>
-                <CardDescription>
-                  Atualize suas informações pessoais
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleProfileUpdate} className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="full_name">Nome completo</Label>
-                      <Input
-                        id="full_name"
-                        value={profileFormData.full_name}
-                        onChange={(e) => setProfileFormData(prev => ({
-                          ...prev,
-                          full_name: e.target.value
-                        }))}
-                        placeholder="Seu nome completo"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="username">Nome de usuário</Label>
-                      <Input
-                        id="username"
-                        value={profileFormData.username}
-                        onChange={(e) => setProfileFormData(prev => ({
-                          ...prev,
-                          username: e.target.value
-                        }))}
-                        placeholder="@seuusername"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="location">Localização</Label>
-                    <Input
-                      id="location"
-                      value={profileFormData.location}
-                      onChange={(e) => setProfileFormData(prev => ({
-                        ...prev,
-                        location: e.target.value
-                      }))}
-                      placeholder="Sua cidade, estado"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="bio">Biografia</Label>
-                    <Input
-                      id="bio"
-                      value={profileFormData.bio}
-                      onChange={(e) => setProfileFormData(prev => ({
-                        ...prev,
-                        bio: e.target.value
-                      }))}
-                      placeholder="Conte um pouco sobre você..."
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button type="submit">
-                      <Save className="h-4 w-4 mr-2" />
-                      Salvar
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => setIsEditingProfile(false)}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+    <section className="max-w-5xl mx-auto px-6 py-10 space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/profile/ganhaveis"
+            className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            Meus Ganhavéis
+          </Link>
+          {!edit ? (
+            <button
+              onClick={() => setEdit(true)}
+              className="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700"
+            >
+              Editar perfil
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={save}
+                disabled={saving}
+                className="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {saving ? "Salvando…" : "Salvar"}
+              </button>
+              <button
+                onClick={() => {
+                  setEdit(false);
+                  // reset fields from state
+                  if (profile) {
+                    setFullName(profile.full_name ?? "");
+                    setUsername(profile.username ?? "");
+                    setBio(profile.bio ?? "");
+                    setLocation(profile.location ?? "");
+                    setAvatarUrl(profile.avatar_url ?? "");
+                  }
+                }}
+                className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+            </div>
           )}
-
-          {/* Main Content Tabs */}
-          <Tabs defaultValue="ganhaveis" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="ganhaveis">Meus Ganhaveis</TabsTrigger>
-              <TabsTrigger value="publico">Perfil Público</TabsTrigger>
-              <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
-              <TabsTrigger value="seguranca">Segurança</TabsTrigger>
-            </TabsList>
-
-            {/* Meus Ganhaveis Tab */}
-            <TabsContent value="ganhaveis" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ganhaveis Criados</CardTitle>
-                  <CardDescription>
-                    Ganhaveis que você organizou
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">
-                      Você ainda não criou nenhum ganhavel
-                    </p>
-                    <Button asChild>
-                      <Link to="/lance-seu-ganhavel">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Criar Ganhavel
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Perfil Público Tab */}
-            <TabsContent value="publico" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Visualização Pública</CardTitle>
-                  <CardDescription>
-                    Como outros usuários veem seu perfil
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {profile.username ? (
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Seu perfil público está disponível em:
-                      </p>
-                      <div className="p-3 bg-muted rounded-lg font-mono text-sm">
-                        {window.location.origin}/perfil/{profile.username}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button asChild variant="outline">
-                          <Link to={`/perfil/${profile.username}`} target="_blank">
-                            <Globe className="h-4 w-4 mr-2" />
-                            Ver Perfil Público
-                          </Link>
-                        </Button>
-                        <ShareButton 
-                          url={`${window.location.origin}/perfil/${profile.username}`}
-                          title={`Confira o perfil de ${profile.full_name || profile.username} na Ganhavel!`}
-                          variant="outline"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">
-                        Você precisa definir um nome de usuário para ter um perfil público
-                      </p>
-                      <Button onClick={() => setIsEditingProfile(true)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar Perfil
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Configurações Tab */}
-            <TabsContent value="configuracoes" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações da Conta</CardTitle>
-                  <CardDescription>
-                    Gerencie suas preferências
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button variant="outline" asChild>
-                    <Link to="/alterar-senha">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Alterar Senha
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <Link to="/gerenciar-cartoes-e-pix">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Gerenciar Pagamentos
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Segurança Tab */}
-            <TabsContent value="seguranca" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Segurança</CardTitle>
-                  <CardDescription>
-                    Configurações de segurança da sua conta
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Autenticação de dois fatores</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Adicione uma camada extra de segurança
-                        </p>
-                      </div>
-                      <Button variant="outline" disabled>
-                        Configurar
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Sessões ativas</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Gerencie dispositivos conectados
-                        </p>
-                      </div>
-                      <Button variant="outline" disabled>
-                        Ver sessões
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
-    </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
+          {error}
+        </div>
+      )}
+      {ok && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
+          {ok}
+        </div>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-[200px_1fr]">
+        {/* Avatar */}
+        <div className="flex flex-col items-center md:items-start">
+          <div className="h-40 w-40 rounded-full bg-gray-100 overflow-hidden ring-1 ring-gray-200">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-gray-400">
+                sem avatar
+              </div>
+            )}
+          </div>
+          {edit && (
+            <div className="w-full mt-3">
+              <Label>URL do avatar</Label>
+              <input
+                type="url"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                placeholder="https://..."
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="space-y-4">
+          {!edit ? (
+            <>
+              <div>
+                <div className="text-xl font-semibold">
+                  {profile?.full_name || "Seu nome"}
+                </div>
+                <div className="text-gray-600">
+                  {profile?.username ? `@${profile.username}` : "defina seu @usuario"}
+                </div>
+              </div>
+              {profile?.bio && (
+                <p className="text-gray-800 whitespace-pre-wrap">{profile.bio}</p>
+              )}
+              <div className="text-sm text-gray-600">
+                {profile?.location}
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                {pubLink ? (
+                  <Link
+                    to={pubLink}
+                    className="rounded-xl border px-3 py-1.5 text-sm hover:bg-gray-50"
+                  >
+                    Ver perfil público
+                  </Link>
+                ) : (
+                  <span className="text-xs text-gray-500">
+                    Defina um @usuario para habilitar o perfil público.
+                  </span>
+                )}
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                  {profile?.role === "admin" ? "Admin" : "Usuário"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Nome</Label>
+                <input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <Label>@Usuário</Label>
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                  placeholder="ex: joaosilva"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label>Bio</Label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={4}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                  placeholder="Escreva um pouco sobre você"
+                />
+              </div>
+              <div>
+                <Label>Localização</Label>
+                <input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                  placeholder="Cidade, País"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
