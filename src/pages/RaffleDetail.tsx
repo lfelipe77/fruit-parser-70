@@ -47,7 +47,7 @@ export default function RaffleDetail() {
       setLoading(true);
       const { data, error } = await supabase
         .from("raffles_public")
-        .select("*")
+        .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, tickets_remaining, draw_date, status")
         .eq("id", id)
         .maybeSingle();
       if (!mounted) return;

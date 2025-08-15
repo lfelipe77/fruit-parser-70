@@ -52,7 +52,7 @@ export default function DiscoverRaffles() {
       setLoading(true);
       let query = supabase
         .from("raffles_public")
-        .select("*", { count: "exact" });
+        .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, progress_pct, draw_date, status, category_id", { count: "exact" });
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);
@@ -112,9 +112,9 @@ export default function DiscoverRaffles() {
         
         <div className="p-4">
           <div className="flex items-center gap-2 mb-2">
-            {raffle.category_name && (
+            {raffle.category && (
               <Badge variant="secondary" className="text-xs">
-                {raffle.category_name}
+                {raffle.category}
               </Badge>
             )}
             {soldOut && (

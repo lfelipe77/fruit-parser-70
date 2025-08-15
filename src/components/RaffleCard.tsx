@@ -42,7 +42,7 @@ export default function RaffleCard({ r, onClick }: Props) {
           loading="lazy"
         />
         <div className="absolute left-3 top-3 flex gap-2">
-          {r.category_name && <CategoryBadge name={r.category_name} colorClass={null} />}
+          {r.category && <CategoryBadge name={r.category} colorClass={null} />}
           {r.subcategory_name && <CategoryBadge name={r.subcategory_name} className="hidden sm:inline-flex" />}
         </div>
         {r.status === "completed" && (

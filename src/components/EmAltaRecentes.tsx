@@ -33,7 +33,7 @@ export default function EmAltaRecentesSection() {
       try {
         const base = () => supabase
           .from("raffles_public")
-          .select("*");
+          .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, progress_pct, draw_date, status");
         
         const [a, b] = await Promise.all([
           base().order("progress_pct", { ascending: false }).limit(6),

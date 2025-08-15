@@ -47,17 +47,17 @@ export default function PerfilPublico() {
         // Try to find by username first, then by ID
         let { data, error } = await supabase
           .from('user_profiles')
-          .select('*')
+          .select('id, username, full_name, avatar_url, bio, location, website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram')
           .eq('username', username)
-          .single();
+          .maybeSingle();
           
-        if (error && error.code === 'PGRST116') {
+        if (!data && error?.code === 'PGRST116') {
           // Not found by username, try by ID
           const { data: dataById, error: errorById } = await supabase
             .from('user_profiles')
-            .select('*')
+            .select('id, username, full_name, avatar_url, bio, location, website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram')
             .eq('id', username)
-            .single();
+            .maybeSingle();
             
           data = dataById;
           error = errorById;

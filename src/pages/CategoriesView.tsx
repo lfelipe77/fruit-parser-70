@@ -66,7 +66,7 @@ export default function CategoriesView() {
       setLoading(true);
       const { data } = await supabase
         .from("raffles_public")
-        .select("*")
+        .select("id, title, description, image_url, ticket_price, total_tickets, paid_tickets, progress_pct, draw_date, status")
         .limit(12);
       
       setRaffles((data || []) as any);
