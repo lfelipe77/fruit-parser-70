@@ -123,6 +123,14 @@ export default function RaffleDetail() {
         throw new Error("Não há bilhetes disponíveis.");
       }
 
+      // Generate lottery numbers for this purchase
+      const selectedNumbers = Array.from({ length: qty }, () => {
+        const numbers = Array.from({ length: 6 }, () => 
+          Math.floor(Math.random() * 90) + 10
+        ).join('-');
+        return `(${numbers})`;
+      });
+
       // 2) create checkout session via Edge Function
       const fnBase = import.meta.env.VITE_SUPABASE_URL!.replace(".supabase.co", ".functions.supabase.co");
       const res = await fetch(`${fnBase}/create-checkout`, {
@@ -137,6 +145,7 @@ export default function RaffleDetail() {
           qty,
           amount: totalAmount,
           currency: "BRL",
+          selected_numbers: selectedNumbers,
         }),
       });
       if (!res.ok) {
@@ -148,7 +157,7 @@ export default function RaffleDetail() {
         throw new Error("Resposta inválida do provedor de pagamento.");
       }
 
-      // 3) insert pending transaction (store fees & base amount)
+      // 3) insert pending transaction (store fees & base amount & selected numbers)
       const { error: txErr } = await supabase.from("transactions").insert({
         user_id: userId,
         raffle_id: raffle.id,
@@ -158,7 +167,8 @@ export default function RaffleDetail() {
         status: "pending",
         fee_fixed: fee_fixed ?? 0,
         fee_pct: fee_pct ?? 0,
-        fee_amount: fee_amount ?? 0
+        fee_amount: fee_amount ?? 0,
+        selected_numbers: selectedNumbers,
       });
       if (txErr) throw txErr;
 

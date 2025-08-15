@@ -14,6 +14,7 @@ interface PaymentDetails {
   status: string;
   created_at: string;
   raffle_id: string;
+  selected_numbers?: string[];
 }
 
 export default function PaymentSuccess() {
@@ -135,6 +136,19 @@ export default function PaymentSuccess() {
                       <span>{new Date(paymentDetails.created_at).toLocaleDateString('pt-BR')}</span>
                     </div>
                   </div>
+
+                  {paymentDetails.selected_numbers && paymentDetails.selected_numbers.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="font-semibold mb-2">Números Selecionados:</h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        {paymentDetails.selected_numbers.map((number, index) => (
+                          <div key={index} className="p-2 bg-green-50 border border-green-200 rounded text-center">
+                            <span className="font-mono text-green-800">{number}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

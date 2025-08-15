@@ -166,6 +166,14 @@ export default function GanhaveisDetail() {
         return;
       }
 
+      // Generate lottery numbers for this purchase
+      const selectedNumbers = Array.from({ length: qty }, () => {
+        const numbers = Array.from({ length: 6 }, () => 
+          Math.floor(Math.random() * 90) + 10
+        ).join('-');
+        return `(${numbers})`;
+      });
+
       // create checkout
       setToastTitle("Iniciando pagamento…");
       setToastMsg("Redirecionando para o pagamento…");
@@ -183,7 +191,8 @@ export default function GanhaveisDetail() {
           raffle_id: raffle?.id,
           qty,
           unit_price: raffle.ticket_price,
-          subtotal: raffle.ticket_price * qty
+          subtotal: raffle.ticket_price * qty,
+          selected_numbers: selectedNumbers,
         }),
       });
       if (!res.ok) throw new Error(`Checkout falhou (${res.status})`);
