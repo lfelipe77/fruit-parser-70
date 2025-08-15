@@ -1,64 +1,9 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { RafflePublic, formatCurrency, getProgressPercent } from "@/types/raffles";
+import { RafflePublic } from "@/types/raffles";
+import RaffleCard from "@/components/RaffleCard";
 
-/** Compact, uncluttered home card */
-function RCard({ r }: { r: RafflePublic }) {
-  const pct = getProgressPercent(r.progress_pct);
-  const soldOut = pct >= 100;
-  const buyable = r.status === "active" && !soldOut;
-  const buyLabel = buyable ? "Comprar bilhete" : "Ver detalhes";
-
-  return (
-    <Link
-      to={`/ganhavel/${r.id}`}
-      className="group rounded-2xl border bg-white overflow-hidden hover:shadow-md transition-shadow"
-    >
-      <div className="aspect-[16/10] bg-gray-100 overflow-hidden">
-        <img
-          src={r.image_url || "/placeholder.svg"}
-          alt={r.title}
-          loading="lazy"
-          className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform"
-        />
-      </div>
-
-      <div className="p-3">
-        <h3 className="font-semibold leading-snug line-clamp-2 text-[15px] md:text-base">
-          {r.title}
-        </h3>
-
-        <div className="mt-2 text-xs text-gray-600">
-          {r.paid_tickets} de {r.total_tickets} bilhetes vendidos
-        </div>
-
-        <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden" aria-label="progresso">
-          <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
-        </div>
-
-        <div className="mt-2 flex items-center justify-between text-xs text-gray-700">
-          <span>{pct}% concluído</span>
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-            Bilhete {formatCurrency(r.ticket_price)}
-          </span>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between">
-          <span className="inline-flex items-center justify-center px-3 py-1 rounded-xl text-sm
-                           bg-emerald-600 text-white group-hover:bg-emerald-700">
-            {buyLabel}
-          </span>
-          {r.category_name && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-              {r.category_name}
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
 
 function SkeletonCard() {
   return (
@@ -110,7 +55,7 @@ export default function EmAltaRecentesSection() {
 
   const Grid = ({ items }: { items: RafflePublic[] }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {items.map((r) => <RCard key={r.id} r={r} />)}
+      {items.map((r) => <RaffleCard key={r.id} r={r} />)}
     </div>
   );
 
