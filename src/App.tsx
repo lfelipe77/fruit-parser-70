@@ -71,6 +71,7 @@ import MyTickets from '@/pages/MyTickets';
 import Raffles from '@/pages/Raffles';
 import AdminRaffles from '@/pages/admin/AdminRaffles';
 import AdminPayouts from '@/pages/AdminPayouts';
+import PublicProfile from '@/pages/PublicProfile';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -174,6 +175,7 @@ const AppContent = () => {
         <Route path="/business-model" element={<BusinessModel />} />
         {import.meta.env.DEV && (<Route path="/turnstile-test" element={<TurnstileTest />} />)}
         <Route path="/perfil/:username" element={<PerfilPublico />} />
+        <Route path="/u/:username" element={<PublicProfile />} />
         {/* User dashboard - requires auth but not admin */}
         <Route path="/dashboard" element={
           <RequireAuth>

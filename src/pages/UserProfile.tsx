@@ -1,9 +1,8 @@
-// src/pages/UserProfile.tsx
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
-// Turn handles or bare values into clickable hrefs
+// Convert handles/bare values into clickable hrefs
 function toHref(v?: string | null, kind?: string) {
   if (!v) return null;
   const s = v.trim();
@@ -51,7 +50,7 @@ const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 export default function UserProfile() {
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const fileRef = React.useRef<HTMLInputElement | null>(null);
 
   const [uid, setUid] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -60,11 +59,11 @@ export default function UserProfile() {
   const [ok, setOk] = React.useState<string | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
 
-  // Single source of truth state (used by view & edit)
-  const [fullName, setFullName] = React.useState("");
-  const [username, setUsername] = React.useState("");
-  const [bio, setBio] = React.useState("");
-  const [location, setLocation] = React.useState("");
+  // 👇 Single source of truth — used by BOTH view & edit (this fixes the "blank view" bug)
+  const [fullName, setFullName]   = React.useState("");
+  const [username, setUsername]   = React.useState("");
+  const [bio, setBio]             = React.useState("");
+  const [location, setLocation]   = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState("");
 
   const [websiteUrl, setWebsiteUrl] = React.useState("");
@@ -76,7 +75,6 @@ export default function UserProfile() {
   const [whatsapp, setWhatsapp]     = React.useState("");
   const [telegram, setTelegram]     = React.useState("");
 
-  // Fetch (or create) profile row
   React.useEffect(() => {
     let mounted = true;
     (async () => {
@@ -94,7 +92,6 @@ export default function UserProfile() {
           "id, full_name, username, avatar_url, bio, location, role, created_at, " +
           "website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram";
 
-        // Try fetch
         let { data: row, error } = await supabase
           .from("user_profiles")
           .select(cols)
@@ -103,7 +100,6 @@ export default function UserProfile() {
 
         if (error) throw error;
 
-        // If no row, create minimal one
         if (!row) {
           const { data: created, error: insErr } = await supabase
             .from("user_profiles")
@@ -115,22 +111,20 @@ export default function UserProfile() {
         }
 
         if (!mounted) return;
-        // hydrate state - ensure row has the expected structure
-        if (row && typeof row === 'object' && 'id' in (row as any)) {
-          const profileData = row as any;
-          setFullName(profileData.full_name ?? "");
-          setUsername(profileData.username ?? "");
-          setBio(profileData.bio ?? "");
-          setLocation(profileData.location ?? "");
-          setAvatarUrl(profileData.avatar_url ?? "");
-          setWebsiteUrl(profileData.website_url ?? "");
-          setInstagram(profileData.instagram ?? "");
-          setTwitter(profileData.twitter ?? "");
-          setFacebook(profileData.facebook ?? "");
-          setYoutube(profileData.youtube ?? "");
-          setTiktok(profileData.tiktok ?? "");
-          setWhatsapp(profileData.whatsapp ?? "");
-          setTelegram(profileData.telegram ?? "");
+        if (row && typeof row === 'object' && 'id' in row) {
+          setFullName((row as any).full_name ?? "");
+          setUsername((row as any).username ?? "");
+          setBio((row as any).bio ?? "");
+          setLocation((row as any).location ?? "");
+          setAvatarUrl((row as any).avatar_url ?? "");
+          setWebsiteUrl((row as any).website_url ?? "");
+          setInstagram((row as any).instagram ?? "");
+          setTwitter((row as any).twitter ?? "");
+          setFacebook((row as any).facebook ?? "");
+          setYoutube((row as any).youtube ?? "");
+          setTiktok((row as any).tiktok ?? "");
+          setWhatsapp((row as any).whatsapp ?? "");
+          setTelegram((row as any).telegram ?? "");
         }
       } catch (e: any) {
         if (mounted) setErr(e.message || "Falha ao carregar seu perfil.");
@@ -160,19 +154,14 @@ export default function UserProfile() {
 
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
       const publicUrl = pub.publicUrl;
+
       setAvatarUrl(publicUrl);
-
-      // Persist avatar immediately so user sees it in view mode after switching
-      await supabase.from("user_profiles")
-        .update({ avatar_url: publicUrl })
-        .eq("id", uid);
-
+      await supabase.from("user_profiles").update({ avatar_url: publicUrl }).eq("id", uid);
     } catch (e: any) {
       setErr(e.message || "Não foi possível enviar o avatar.");
     } finally {
       setSaving(false);
-      // reset file input to allow re-uploading same file
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -198,15 +187,11 @@ export default function UserProfile() {
         telegram: telegram || null,
       };
 
-      const cols =
-        "id, full_name, username, avatar_url, bio, location, role, created_at, " +
-        "website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram";
-
       const { error: upErr } = await supabase
         .from("user_profiles")
         .update(payload)
         .eq("id", uid)
-        .select(cols)
+        .select("*")
         .single();
 
       if (upErr) throw upErr;
@@ -252,32 +237,19 @@ export default function UserProfile() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
         <div className="flex items-center gap-2">
-          <Link
-            to="/profile/ganhaveis"
-            className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
-          >
+          <Link to="/profile/ganhaveis" className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">
             Meus Ganhavéis
           </Link>
           {!edit ? (
-            <button
-              onClick={() => setEdit(true)}
-              className="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700"
-            >
+            <button onClick={() => setEdit(true)} className="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">
               Editar perfil
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <button
-                onClick={save}
-                disabled={saving}
-                className="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700 disabled:opacity-50"
-              >
+              <button onClick={save} disabled={saving} className="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700 disabled:opacity-50">
                 {saving ? "Salvando…" : "Salvar"}
               </button>
-              <button
-                onClick={() => setEdit(false)}
-                className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
-              >
+              <button onClick={() => setEdit(false)} className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">
                 Cancelar
               </button>
             </div>
@@ -285,31 +257,19 @@ export default function UserProfile() {
         </div>
       </div>
 
-      {err && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
-          {err}
-        </div>
-      )}
-      {ok && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
-          {ok}
-        </div>
-      )}
+      {err && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">{err}</div>}
+      {ok &&  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">{ok}</div>}
 
       <div className="grid gap-6 md:grid-cols-[200px_1fr]">
         {/* Avatar */}
         <div className="flex flex-col items-center md:items-start">
           <div className="relative h-40 w-40 rounded-full bg-gray-100 overflow-hidden ring-1 ring-gray-200">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-gray-400">
-                sem avatar
-              </div>
-            )}
+            {avatarUrl
+              ? <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+              : <div className="h-full w-full flex items-center justify-center text-gray-400">sem avatar</div>}
             {edit && (
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => fileRef.current?.click()}
                 className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-3 py-1 text-xs shadow"
               >
                 Trocar avatar
@@ -319,16 +279,8 @@ export default function UserProfile() {
 
           {edit && (
             <>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarPick}
-              />
-              <p className="mt-2 text-xs text-gray-500">
-                JPG/PNG. Envio substitui o avatar atual.
-              </p>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarPick} />
+              <p className="mt-2 text-xs text-gray-500">JPG/PNG. O envio substitui o avatar atual.</p>
             </>
           )}
         </div>
@@ -338,12 +290,8 @@ export default function UserProfile() {
           {!edit ? (
             <>
               <div>
-                <div className="text-xl font-semibold">
-                  {fullName || "Seu nome"}
-                </div>
-                <div className="text-gray-600">
-                  {username ? `@${username}` : "defina seu @usuario"}
-                </div>
+                <div className="text-xl font-semibold">{fullName || "Seu nome"}</div>
+                <div className="text-gray-600">{username ? `@${username}` : "defina seu @usuario"}</div>
               </div>
 
               {bio && <p className="text-gray-800 whitespace-pre-wrap max-w-prose">{bio}</p>}
@@ -363,13 +311,8 @@ export default function UserProfile() {
                 ]
                   .filter(x => !!x.href)
                   .map(x => (
-                    <a
-                      key={x.label}
-                      href={x.href!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center rounded-xl border px-3 py-1.5 text-sm hover:bg-gray-50"
-                    >
+                    <a key={x.label} href={x.href!} target="_blank" rel="noopener noreferrer"
+                       className="inline-flex items-center rounded-xl border px-3 py-1.5 text-sm hover:bg-gray-50">
                       {x.label}
                     </a>
                   ))}
@@ -377,16 +320,11 @@ export default function UserProfile() {
 
               <div className="flex items-center gap-3 pt-2">
                 {username ? (
-                  <Link
-                    to={`/u/${username}`}
-                    className="rounded-xl border px-3 py-1.5 text-sm hover:bg-gray-50"
-                  >
+                  <Link to={`/u/${username}`} className="rounded-xl border px-3 py-1.5 text-sm hover:bg-gray-50">
                     Ver perfil público
                   </Link>
                 ) : (
-                  <span className="text-xs text-gray-500">
-                    Defina um @usuario para habilitar o perfil público.
-                  </span>
+                  <span className="text-xs text-gray-500">Defina um @usuario para habilitar o perfil público.</span>
                 )}
               </div>
             </>
@@ -394,115 +332,31 @@ export default function UserProfile() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Nome</Label>
-                <input
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                />
+                <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
               </div>
               <div>
                 <Label>@Usuário</Label>
-                <input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="ex: joaosilva"
-                />
+                <input value={username} onChange={(e) => setUsername(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="ex: joaosilva" />
               </div>
               <div className="sm:col-span-2">
                 <Label>Bio</Label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  rows={4}
-                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="Escreva um pouco sobre você"
-                />
+                <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="Escreva um pouco sobre você" />
               </div>
               <div>
                 <Label>Localização</Label>
-                <input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="Cidade, País"
-                />
+                <input value={location} onChange={(e) => setLocation(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="Cidade, País" />
               </div>
 
               {/* Links / socials */}
               <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>Website</Label>
-                  <input
-                    value={websiteUrl}
-                    onChange={(e) => setWebsiteUrl(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="https://..."
-                  />
-                </div>
-                <div>
-                  <Label>Instagram</Label>
-                  <input
-                    value={instagram}
-                    onChange={(e) => setInstagram(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="@seuusuario ou url"
-                  />
-                </div>
-                <div>
-                  <Label>Twitter/X</Label>
-                  <input
-                    value={twitter}
-                    onChange={(e) => setTwitter(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="@seuusuario ou url"
-                  />
-                </div>
-                <div>
-                  <Label>TikTok</Label>
-                  <input
-                    value={tiktok}
-                    onChange={(e) => setTiktok(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="@seuusuario ou url"
-                  />
-                </div>
-                <div>
-                  <Label>YouTube</Label>
-                  <input
-                    value={youtube}
-                    onChange={(e) => setYoutube(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="canal ou url"
-                  />
-                </div>
-                <div>
-                  <Label>Facebook</Label>
-                  <input
-                    value={facebook}
-                    onChange={(e) => setFacebook(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="página/usuário ou url"
-                  />
-                </div>
-                <div>
-                  <Label>WhatsApp</Label>
-                  <input
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="+55 47 9..."
-                  />
-                </div>
-                <div>
-                  <Label>Telegram</Label>
-                  <input
-                    value={telegram}
-                    onChange={(e) => setTelegram(e.target.value)}
-                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-                    placeholder="@usuario ou url"
-                  />
-                </div>
+                <div><Label>Website</Label><input value={websiteUrl} onChange={(e)=>setWebsiteUrl(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="https://..." /></div>
+                <div><Label>Instagram</Label><input value={instagram} onChange={(e)=>setInstagram(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@seuusuario ou url" /></div>
+                <div><Label>Twitter/X</Label><input value={twitter} onChange={(e)=>setTwitter(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@seuusuario ou url" /></div>
+                <div><Label>TikTok</Label><input value={tiktok} onChange={(e)=>setTiktok(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@seuusuario ou url" /></div>
+                <div><Label>YouTube</Label><input value={youtube} onChange={(e)=>setYoutube(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="canal ou url" /></div>
+                <div><Label>Facebook</Label><input value={facebook} onChange={(e)=>setFacebook(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="página/usuário ou url" /></div>
+                <div><Label>WhatsApp</Label><input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="+55 47 9..." /></div>
+                <div><Label>Telegram</Label><input value={telegram} onChange={(e)=>setTelegram(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@usuario ou url" /></div>
               </div>
             </div>
           )}
