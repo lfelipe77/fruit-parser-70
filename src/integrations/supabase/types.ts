@@ -1213,7 +1213,9 @@ export type Database = {
         Returns: undefined
       }
       log_user_action: {
-        Args: { p_action_type: string; p_context?: Json; p_user_id: string }
+        Args:
+          | { p_action: string; p_payload: Json; p_user_id: string }
+          | { p_action_type: string; p_context?: Json; p_user_id: string }
         Returns: undefined
       }
       mask_audit_pii_row: {

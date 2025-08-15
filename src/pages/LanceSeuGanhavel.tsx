@@ -114,45 +114,63 @@ export default function LanceSeuGanhavel() {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    if (!userId) return setErrorMsg("Você precisa estar logado para criar um Ganhavel.");
-    if (!title || !categoryId || ticketPrice === "" || prizeValue === "") {
-      return setErrorMsg("Preencha os campos obrigatórios.");
+    if (!session?.user?.id) {
+      setErrorMsg("Você precisa estar logado para criar um Ganhavel.");
+      return;
     }
-    if (!images[0]) return setErrorMsg("Envie pelo menos uma imagem do prêmio.");
+    if (!title || !ticketPrice || !prizeValue) {
+      setErrorMsg("Preencha Título, Preço do Bilhete e Valor do Prêmio.");
+      return;
+    }
+    if (!images.length) {
+      setErrorMsg("Envie ao menos 1 imagem.");
+      return;
+    }
 
+    setSubmitting(true);
     try {
-      setSubmitting(true);
+      const uid = session.user.id;
 
-      // 1) capa
-      const coverUrl = await uploadCoverAndGetUrl(images[0], userId);
+      // 1) upload primeira imagem como capa -> raffles.image_url
+      const cover = images[0];
+      const path = `${uid}/${Date.now()}-${cover.name}`;
+      const up = await supabase.storage.from("raffle-images").upload(path, cover, {
+        upsert: false, cacheControl: "3600",
+      });
+      if (up.error) throw up.error;
 
-      // 2) compor descrição (anexando metadados não‑persistidos no schema)
-      const metaParts: string[] = [];
-      if (subcategory) metaParts.push(`Subcategoria: ${subcategory}`);
-      if (locationType === "online") metaParts.push(`Local: Online`);
-      if (locationType === "cidade" && city) metaParts.push(`Local: ${city}`);
-      if (affiliateUrl) metaParts.push(`Compre direto com o vendedor: ${affiliateUrl}`);
+      const pub = supabase.storage.from("raffle-images").getPublicUrl(path);
+      const coverUrl = pub.data?.publicUrl;
+      if (!coverUrl) throw new Error("Falha ao obter URL pública da imagem");
 
-      const finalDescription =
-        (description?.trim() || "") +
-        (metaParts.length ? `\n\n—\n${metaParts.join(" · ")}` : "");
+      // 2) calcular total_tickets (campo exigido pela RPC)
+      const basePrize = Number(prizeValue);
+      const baseTicket = Number(ticketPrice);
+      if (!(basePrize > 0) || !(baseTicket > 0)) throw new Error("Valores inválidos");
+      const totalTickets = Math.max(1, Math.ceil((basePrize * 1.02) / baseTicket));
 
-      // 3) criar via RPC (status = under_review). draw_date = null
+      // 3) chamar RPC de criação (status = under_review)
       const { data: newId, error: rpcErr } = await supabase.rpc("create_raffle", {
         p_title: title,
-        p_description: finalDescription || null,
-        p_category_id: Number(categoryId),
+        p_description: description || null,
+        p_category_id: categoryId ? Number(categoryId) : null,
         p_image_url: coverUrl,
-        p_prize_value: Number(prizeValue),
-        p_total_tickets: calc.tickets || 1, // obrigatorio no schema; cálculo interno
-        p_ticket_price: Number(ticketPrice),
-        p_draw_date: null, // removemos data de sorteio da UI
+        p_prize_value: basePrize,
+        p_total_tickets: totalTickets,
+        p_ticket_price: baseTicket,
+        p_draw_date: null,                           // **SEM** data de sorteio
       });
-
       if (rpcErr) throw rpcErr;
 
-      setSuccessMsg("Ganhavel enviado para análise!");
-      // redirecionar para a conta ou detalhe
+      // 4) (opcional) log audit
+      await supabase.rpc("log_user_action", {
+        p_user_id: uid,
+        p_action: "create_ganhavel",
+        p_payload: { raffle_id: newId, title, category_id: categoryId, vendor_link: affiliateUrl },
+      });
+
+      setSuccessMsg("Ganhavel enviado para análise.");
+      // redirecione para a página do criador ou detalhe
       setTimeout(() => navigate("/minha-conta"), 800);
     } catch (err: any) {
       console.error(err);
