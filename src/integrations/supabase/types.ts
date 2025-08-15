@@ -52,6 +52,7 @@ export type Database = {
           context: Json | null
           created_at: string | null
           id: string
+          payload: Json | null
           user_id: string | null
         }
         Insert: {
@@ -59,6 +60,7 @@ export type Database = {
           context?: Json | null
           created_at?: string | null
           id?: string
+          payload?: Json | null
           user_id?: string | null
         }
         Update: {
@@ -66,6 +68,7 @@ export type Database = {
           context?: Json | null
           created_at?: string | null
           id?: string
+          payload?: Json | null
           user_id?: string | null
         }
         Relationships: []
@@ -106,6 +109,7 @@ export type Database = {
           id: number
           nome: string
           slug: string
+          sort_order: number | null
         }
         Insert: {
           created_at?: string
@@ -115,6 +119,7 @@ export type Database = {
           id?: number
           nome: string
           slug: string
+          sort_order?: number | null
         }
         Update: {
           created_at?: string
@@ -124,6 +129,7 @@ export type Database = {
           id?: number
           nome?: string
           slug?: string
+          sort_order?: number | null
         }
         Relationships: []
       }
@@ -490,6 +496,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
           {
@@ -909,6 +922,19 @@ export type Database = {
       }
     }
     Views: {
+      category_stats: {
+        Row: {
+          color_class: string | null
+          featured: boolean | null
+          ganhavel_count: number | null
+          icon_name: string | null
+          id: number | null
+          name: string | null
+          slug: string | null
+          sort_order: number | null
+        }
+        Relationships: []
+      }
       ganhavel_categories_public: {
         Row: {
           descricao: string | null
@@ -971,6 +997,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
           {
@@ -1100,6 +1133,10 @@ export type Database = {
         Args: { p_message: string; p_meta: Json; p_type: string }
         Returns: undefined
       }
+      current_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       ensure_profile: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1131,6 +1168,7 @@ export type Database = {
           context: Json | null
           created_at: string | null
           id: string
+          payload: Json | null
           user_id: string | null
         }[]
       }
@@ -1213,9 +1251,7 @@ export type Database = {
         Returns: undefined
       }
       log_user_action: {
-        Args:
-          | { p_action: string; p_payload: Json; p_user_id: string }
-          | { p_action_type: string; p_context?: Json; p_user_id: string }
+        Args: { p_action: string; p_payload: Json; p_user_id: string }
         Returns: undefined
       }
       mask_audit_pii_row: {
