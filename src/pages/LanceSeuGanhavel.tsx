@@ -1,7 +1,45 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
-import { Toast } from "@/components/Toast";
+
+// inline toast to avoid new imports/files
+function ToastInline({
+  open,
+  onClose,
+  title = "Pronto!",
+  message,
+  duration = 2000,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  message: string;
+  duration?: number;
+}) {
+  React.useEffect(() => {
+    if (!open) return;
+    const t = window.setTimeout(onClose, duration);
+    return () => window.clearTimeout(t);
+  }, [open, duration, onClose]);
+
+  if (!open) return null;
+  return (
+    <div className="fixed bottom-4 right-4 z-[9999]">
+      <div className="rounded-xl shadow-lg border bg-white max-w-sm">
+        <div className="px-4 py-3">
+          <div className="font-semibold">{title}</div>
+          <div className="text-sm text-gray-700 mt-1">{message}</div>
+          <button
+            onClick={onClose}
+            className="mt-3 text-xs underline text-gray-600"
+          >
+            fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // util simples para BRL
 function brl(n: number | null | undefined) {
@@ -51,8 +89,12 @@ export default function LanceSeuGanhavel() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [toastOpen, setToastOpen] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string>("");
+  const [toastOpen, setToastOpen] = React.useState(false);
+  const [toastMsg, setToastMsg] = React.useState("");
+  const redirectTimerRef = React.useRef<number | null>(null);
+  React.useEffect(() => () => {
+    if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
+  }, []);
 
   // auth
   useEffect(() => {
@@ -175,7 +217,7 @@ export default function LanceSeuGanhavel() {
       setSuccessMsg("Ganhavel enviado para análise!");
       setToastMsg("✅ Seu Ganhavel foi enviado para análise. Ele aparece no seu perfil como pendente e será publicado quando aprovado.");
       setToastOpen(true);
-      setTimeout(() => navigate("/minha-conta"), 1800);
+      redirectTimerRef.current = window.setTimeout(() => navigate("/minha-conta"), 1800);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err?.message ?? "Erro ao criar Ganhavel.");
@@ -500,12 +542,12 @@ export default function LanceSeuGanhavel() {
         </aside>
       </div>
 
-      <Toast
-        open={toastOpen}
-        onClose={() => setToastOpen(false)}
-        title="Ganhavel enviado!"
-        message={toastMsg}
-      />
+        <ToastInline
+          open={toastOpen}
+          onClose={() => setToastOpen(false)}
+          title="Ganhavel enviado!"
+          message={toastMsg}
+        />
     </div>
   );
 }
