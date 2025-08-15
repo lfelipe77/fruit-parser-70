@@ -29,54 +29,13 @@ export default function Raffles() {
       try {
         const { data, error } = await supabase
           .from('raffles')
-          .select('id, title, description, product_name, product_value, total_tickets, ticket_price, image_url, status, created_at')
+          .select('*')
           .eq('status', 'active')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        let rafflesData = data || [];
-
-        // Add mock data in development if no real data exists
-        if (process.env.NODE_ENV === 'development' && rafflesData.length === 0) {
-          const mockRaffles: Raffle[] = [{
-            id: 'mock-raffle-1',
-            title: 'Carro 0km Honda Civic 2024',
-            description: 'Um Honda Civic 2024 novinho em folha, com todos os opcionais.',
-            product_name: 'Honda Civic',
-            product_value: 8000000, // R$ 80.000,00 in cents
-            total_tickets: 5000,
-            ticket_price: 1000, // R$ 10,00 in cents
-            image_url: '/lovable-uploads/4f6691ae-418c-477c-9958-16166ad9f887.png',
-            status: 'active',
-            created_at: new Date(Date.now() - 30 * 86400000).toISOString() // 30 days ago
-          }, {
-            id: 'mock-raffle-2',
-            title: 'iPhone 15 Pro Max 256GB',
-            description: 'O mais novo iPhone com toda tecnologia Apple.',
-            product_name: 'iPhone 15 Pro Max',
-            product_value: 800000, // R$ 8.000,00 in cents
-            total_tickets: 2000,
-            ticket_price: 500,
-            image_url: '/lovable-uploads/67eff453-d5b1-47f9-a141-e80286a38ba0.png',
-            status: 'active',
-            created_at: new Date(Date.now() - 15 * 86400000).toISOString()
-          }, {
-            id: 'mock-raffle-3',
-            title: 'R$ 50.000 em Dinheiro',
-            description: 'Cinquenta mil reais em dinheiro vivo para você realizar seus sonhos.',
-            product_name: 'Dinheiro',
-            product_value: 5000000, // R$ 50.000,00 in cents
-            total_tickets: 10000,
-            ticket_price: 250,
-            image_url: '/lovable-uploads/ea91f109-b805-487c-986c-b701fbc76222.png',
-            status: 'active',
-            created_at: new Date(Date.now() - 7 * 86400000).toISOString()
-          }];
-          rafflesData = mockRaffles;
-        }
-
-        setRaffles(rafflesData);
+        setRaffles(data || []);
       } catch (error) {
         console.error('Error fetching raffles:', error);
       } finally {

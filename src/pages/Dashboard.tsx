@@ -137,7 +137,11 @@ export default function Dashboard() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              role="button"
+              onClick={() => navigate('/profile')}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="w-5 h-5" />
@@ -148,7 +152,7 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link to="/profile" className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
                   <Avatar className="w-16 h-16">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
                     <AvatarFallback>
@@ -166,11 +170,15 @@ export default function Dashboard() {
                       ID: {user.id}
                     </p>
                   </div>
-                </Link>
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              role="button"
+              onClick={() => navigate('/my-tickets')}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
@@ -181,16 +189,18 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link to="/tickets" className="block">
-                  <p className="text-2xl font-bold">{loading ? "..." : stats.totalTickets}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {stats.totalTickets === 0 ? "Nenhum ticket comprado" : `${stats.totalTickets} ticket${stats.totalTickets > 1 ? 's' : ''} ativo${stats.totalTickets > 1 ? 's' : ''}`}
-                  </p>
-                </Link>
+                <p className="text-2xl font-bold">{loading ? "..." : stats.totalTickets}</p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.totalTickets === 0 ? "Nenhum ticket comprado" : `${stats.totalTickets} ticket${stats.totalTickets > 1 ? 's' : ''} ativo${stats.totalTickets > 1 ? 's' : ''}`}
+                </p>
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              role="button"
+              onClick={() => navigate('/ganhaveis')}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="w-5 h-5" />
@@ -201,12 +211,10 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link to="/ganhaveis" className="block">
-                  <p className="text-2xl font-bold">{loading ? "..." : stats.activeGanhaveis}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {stats.activeGanhaveis === 0 ? "Nenhum ganhavel ativo" : `Participando de ${stats.activeGanhaveis} ganhavel${stats.activeGanhaveis > 1 ? 'eis' : ''}`}
-                  </p>
-                </Link>
+                <p className="text-2xl font-bold">{loading ? "..." : stats.activeGanhaveis}</p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.activeGanhaveis === 0 ? "Nenhum ganhavel ativo" : `Participando de ${stats.activeGanhaveis} ganhavel${stats.activeGanhaveis > 1 ? 'eis' : ''}`}
+                </p>
               </CardContent>
             </Card>
 

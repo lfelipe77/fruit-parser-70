@@ -58,45 +58,7 @@ export default function MyTickets() {
 
         if (error) throw error;
 
-        let ticketsData = data || [];
-
-        // Add mock data in development if no real data exists
-        if (process.env.NODE_ENV === 'development' && ticketsData.length === 0) {
-          const mockTickets: TicketWithRaffle[] = [{
-            id: 'mock-ticket-1',
-            ticket_number: 101,
-            quantity: 1,
-            total_amount: 1000, // R$ 10.00 in cents
-            payment_status: 'paid',
-            created_at: new Date().toISOString(),
-            raffles: {
-              id: 'mock-raffle-1',
-              title: 'Carro 0km Honda Civic 2024',
-              product_name: 'Honda Civic',
-              ticket_price: 1000,
-              image_url: '/lovable-uploads/4f6691ae-418c-477c-9958-16166ad9f887.png',
-              status: 'active'
-            }
-          }, {
-            id: 'mock-ticket-2',
-            ticket_number: 205,
-            quantity: 2,
-            total_amount: 1000,
-            payment_status: 'paid',
-            created_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-            raffles: {
-              id: 'mock-raffle-2',
-              title: 'iPhone 15 Pro Max 256GB',
-              product_name: 'iPhone 15 Pro Max',
-              ticket_price: 500,
-              image_url: '/lovable-uploads/67eff453-d5b1-47f9-a141-e80286a38ba0.png',
-              status: 'active'
-            }
-          }];
-          ticketsData = mockTickets as any;
-        }
-
-        setTickets(ticketsData);
+        setTickets(data || []);
       } catch (error) {
         console.error('Error fetching tickets:', error);
       } finally {

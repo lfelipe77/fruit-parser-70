@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -135,8 +135,6 @@ function VisitLogger() {
   return null;
 }
 
-const SAFE_MODE = import.meta.env.VITE_SAFE_MODE === "1";
-
 // App component with non-blocking rendering
 const AppContent = () => {
   return (
@@ -145,15 +143,48 @@ const AppContent = () => {
       <VisitLogger />
       <ScrollToTop />
       <Routes>
-        {/* Main Routes */}
         <Route path="/" element={<Index />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/lance-seu-ganhavel" element={<LanceSeuGanhavel />} />
+        <Route path="/descobrir" element={<Descobrir />} />
+        <Route path="/resultados" element={<Resultados />} />
+        <Route path="/categorias" element={<Categorias />} />
+        <Route path="/categorias/:categoria" element={<Categorias />} />
+        <Route path="/categorias/:categoria/:subcategoria" element={<SubcategoriaGanhaveis />} />
+        <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
+        <Route path="/ganhavel/:ganhaveisId/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
+        <Route path="/ganhavel/:ganhaveisId/pagamento-sucesso" element={<PagamentoSucesso />} />
+        <Route path="/ganhavel/:ganhaveisId/pagamento-erro" element={<PagamentoErro />} />
+        <Route path="/cadastro" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/test-payment" element={<TestPayment />} />
+        <Route path="/minha-conta" element={<Navigate to="/profile" replace />} />
+        <Route path="/alterar-senha" element={<AlterarSenha />} />
+        <Route path="/gerenciar-cartoes-e-pix" element={<GerenciarCartoesEPix />} />
+        <Route path="/gerenciar-ganhavel/:id" element={<GerenciarGanhavel />} />
+        <Route path="/como-funciona" element={<ComoFunciona />} />
+        <Route path="/guia-do-criador" element={<GuiaDoCriador />} />
+        <Route path="/confianca-seguranca" element={<ConfiancaSeguranca />} />
+        <Route path="/central-de-ajuda" element={<CentralDeAjuda />} />
+        <Route path="/sobre-nos" element={<SobreNos />} />
+        <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
+        <Route path="/investment" element={<Investment />} />
+        <Route path="/proposta-de-investimento" element={<Investment />} />
+        <Route path="/business-model" element={<BusinessModel />} />
+        {import.meta.env.DEV && (<Route path="/turnstile-test" element={<TurnstileTest />} />)}
+        <Route path="/perfil/:username" element={<PerfilPublico />} />
+        <Route path="/u/:username" element={<PublicProfile />} />
+        {/* User dashboard - requires auth but not admin */}
         <Route path="/dashboard" element={
           <RequireAuth>
             {import.meta.env.VITE_DASH_MINIMAL === 'true' ? <MinimalDashboard /> : <Dashboard />}
           </RequireAuth>
         } />
-
-        {/* Profile */}
+        
+        {/* User profile and related pages - requires auth */}
         <Route path="/profile" element={
           <RequireAuth>
             <UserProfile />
@@ -164,191 +195,79 @@ const AppContent = () => {
             <MyGanhaveis />
           </RequireAuth>
         } />
-        <Route path="/u/:username" element={<PublicProfile />} />
-
-        {/* Participation vs Catalog */}
-        <Route path="/ganhaveis" element={
+        <Route path="/my-ganhaveis" element={
           <RequireAuth>
-            <MyParticipatingRaffles />
+            <MyGanhaveis />
           </RequireAuth>
         } />
-        <Route path="/raffles/:id" element={<GanhaveisDetail />} />
-
-        {/* Tickets */}
-        <Route path="/tickets" element={
+        <Route path="/my-tickets" element={
           <RequireAuth>
             <MyTickets />
           </RequireAuth>
         } />
-
-        {/* Legacy redirects */}
-        <Route path="/minha-conta" element={<Navigate to="/profile/ganhaveis" replace />} />
-
-        {/* Other essential routes */}
-        <Route path="/como-funciona" element={<ComoFunciona />} />
-        <Route path="/categorias" element={<Categorias />} />
-        <Route path="/categorias/:slug" element={<SubcategoriaGanhaveis />} />
-        <Route path="/descobrir" element={<Descobrir />} />
-        <Route path="/confianca-seguranca" element={<ConfiancaSeguranca />} />
-        <Route path="/central-de-ajuda" element={<CentralDeAjuda />} />
-        <Route path="/sobre-nos" element={<SobreNos />} />
-        <Route path="/trabalhe-conosco" element={<TrabalheConosco />} />
-        <Route path="/guia-do-criador" element={<GuiaDoCriador />} />
-        <Route path="/business-model" element={<BusinessModel />} />
-        <Route path="/resultados" element={<Resultados />} />
-        <Route path="/investment" element={<Investment />} />
-        <Route path="/crowdfunding" element={<CrowdfundingHome />} />
-
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/cadastro" element={<SignUp />} />
-        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/alterar-senha" element={<AlterarSenha />} />
-        <Route path="/auth-callback" element={<AuthHashCallback />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-
-        {/* Raffles & Ganhaveis */}
         <Route path="/raffles" element={
           <RequireAuth>
             <Raffles />
           </RequireAuth>
         } />
-
-        {/* Payment Routes */}
-        <Route path="/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
-        <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
-        <Route path="/pagamento-erro" element={<PagamentoErro />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-
-        {/* User Protected Routes */}
-        <Route path="/gerenciar-ganhavel/:id" element={
+        <Route path="/ganhaveis" element={
           <RequireAuth>
-            <GerenciarGanhavel />
-          </RequireAuth>
-        } />
-        <Route path="/lance-seu-ganhavel" element={
-          <RequireAuth>
-            <LanceSeuGanhavel />
-          </RequireAuth>
-        } />
-        <Route path="/gerenciar-cartoes-e-pix" element={
-          <RequireAuth>
-            <GerenciarCartoesEPix />
+            <MyParticipatingRaffles />
           </RequireAuth>
         } />
 
-        {/* Admin Protected Routes */}
+        {/* Admin routes - all protected with AdminProtectedRoute */}
         <Route path="/admin" element={
           <AdminProtectedRoute>
             <Admin />
           </AdminProtectedRoute>
-        } />
-        <Route path="/admin/dashboard" element={
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="ganhaveis" element={<GanhaveisManagement />} />
+          <Route path="ganhaveis-concluidos" element={<GanhavelsConcluidos />} />
+          <Route path="usuarios" element={<UsersManagement />} />
+          <Route path="financeiro" element={<FinancialControl />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="logs" element={<AdminLogs />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="painel" element={<AdminDashboard />} />
+          <Route path="configuracoes" element={<Settings />} />
+          <Route path="visits" element={<AdminVisits />} />
+          <Route path="payouts" element={<AdminPayouts />} />
+        </Route>
+        
+        {/* Standalone admin routes - also protected */}
+        <Route path="/admin-dashboard" element={
           <AdminProtectedRoute>
             <AdminDashboard />
           </AdminProtectedRoute>
         } />
-        <Route path="/admin/payouts" element={
-          <AdminProtectedRoute>
-            <AdminPayouts />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/ganhaveis-management" element={
-          <AdminProtectedRoute>
-            <GanhaveisManagement />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/users-management" element={
-          <AdminProtectedRoute>
-            <UsersManagement />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/fraud-detection" element={
-          <AdminProtectedRoute>
-            <FraudDetection />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/financial-control" element={
-          <AdminProtectedRoute>
-            <FinancialControl />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/settings" element={
-          <AdminProtectedRoute>
-            <Settings />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/analytics" element={
-          <AdminProtectedRoute>
-            <Analytics />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/audit-logs" element={
-          <AdminProtectedRoute>
-            <AuditLogs />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/support-tickets" element={
-          <AdminProtectedRoute>
-            <SupportTickets />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/logs" element={
-          <AdminProtectedRoute>
-            <AdminLogs />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/visits" element={
+        <Route path="/admin-visits" element={
           <AdminProtectedRoute>
             <AdminVisits />
           </AdminProtectedRoute>
         } />
-        <Route path="/admin/rate-limits" element={
-          <AdminProtectedRoute>
-            <AdminRateLimits />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/raffles" element={
-          <AdminProtectedRoute>
-            <AdminRaffles />
-          </AdminProtectedRoute>
-        } />
-        <Route path="/admin/ganhaveis-concluidos" element={
-          <AdminProtectedRoute>
-            <GanhavelsConcluidos />
-          </AdminProtectedRoute>
-        } />
-
-        {/* Debug and Test Routes */}
-        {import.meta.env.NODE_ENV !== 'production' && (
-          <>
-            <Route path="/debug-token" element={<DebugToken />} />
-            <Route path="/test-payment" element={<TestPayment />} />
-            <Route path="/test-audit" element={<TestAudit />} />
-            <Route path="/turnstile-test" element={<TurnstileTest />} />
-            <Route path="/minimal-dashboard" element={<MinimalDashboard />} />
-          </>
-        )}
-
-        {/* Safe Mode: force a minimal page if needed */}
-        {SAFE_MODE && <Route path="*" element={<Navigate to="/dashboard" replace />} />}
-
-        {/* Normal 404 */}
-        {!SAFE_MODE && (
-          <Route
-            path="*"
-            element={
-              <div className="p-6">
-                <h1 className="text-xl font-bold">Página não encontrada</h1>
-                <a className="underline text-emerald-700" href="#/dashboard">Voltar ao Dashboard</a>
-              </div>
-            }
-          />
-        )}
-
-        {/* Special Routes */}
+        {/* Legacy routes for backward compatibility */}
+        <Route path="/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
+        <Route path="/pagamento-sucesso" element={<PagamentoSucesso />} />
+        <Route path="/pagamento-erro" element={<PagamentoErro />} />
         <Route path="/access-denied" element={<AccessDenied />} />
+        {/* OAuth callback routes */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/auth-callback" element={<AuthHashCallback />} />
+        {/* Dev-only test route, admin-protected */}
+        {import.meta.env.DEV && (
+          <Route path="/test-audit" element={
+            <AdminProtectedRoute>
+              <TestAudit />
+            </AdminProtectedRoute>
+          } />
+        )}
+        {/* Dev-only debug token */}
+        {import.meta.env.DEV && (
+          <Route path="/debug-token" element={<DebugToken />} />
+        )}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
@@ -360,11 +279,11 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <DevErrorBoundary>
-          <HashRouter>
+          <Router>
             <GlobalAuthDebugOverlay />
             <RouteBadge />
             <AppContent />
-          </HashRouter>
+          </Router>
         </DevErrorBoundary>
       </TooltipProvider>
     </I18nextProvider>
