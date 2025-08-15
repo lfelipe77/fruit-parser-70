@@ -322,31 +322,31 @@ export default function UserProfile() {
             <>
               <div>
                 <div className="text-xl font-semibold">
-                  {profile?.full_name || "Seu nome"}
+                  {fullName || "Seu nome"}
                 </div>
                 <div className="text-gray-600">
-                  {profile?.username ? `@${profile.username}` : "defina seu @usuario"}
+                  {username ? `@${username}` : "defina seu @usuario"}
                 </div>
               </div>
-              {profile?.bio && (
-                <p className="text-gray-800 whitespace-pre-wrap max-w-prose">{profile.bio}</p>
+              {bio && (
+                <p className="text-gray-800 whitespace-pre-wrap max-w-prose">{bio}</p>
               )}
               <div className="text-sm text-gray-600">
-                {profile?.location}
+                {location}
               </div>
 
               {/* social / links */}
               <div className="flex flex-wrap gap-2 pt-3">
                 {(() => {
                   const chips = [
-                    {label: "Website",  href: toHref(profile?.website_url)},
-                    {label: "Instagram",href: toHref(profile?.instagram, "instagram")},
-                    {label: "Twitter/X",href: toHref(profile?.twitter, "twitter")},
-                    {label: "TikTok",   href: toHref(profile?.tiktok, "tiktok")},
-                    {label: "YouTube",  href: toHref(profile?.youtube, "youtube")},
-                    {label: "Facebook", href: toHref(profile?.facebook, "facebook")},
-                    {label: "WhatsApp", href: toHref(profile?.whatsapp, "whatsapp")},
-                    {label: "Telegram", href: toHref(profile?.telegram, "telegram")},
+                    {label: "Website",  href: toHref(websiteUrl)},
+                    {label: "Instagram",href: toHref(instagram, "instagram")},
+                    {label: "Twitter/X",href: toHref(twitter, "twitter")},
+                    {label: "TikTok",   href: toHref(tiktok, "tiktok")},
+                    {label: "YouTube",  href: toHref(youtube, "youtube")},
+                    {label: "Facebook", href: toHref(facebook, "facebook")},
+                    {label: "WhatsApp", href: toHref(whatsapp, "whatsapp")},
+                    {label: "Telegram", href: toHref(telegram, "telegram")},
                   ].filter(x => !!x.href);
 
                   return chips.map((c) => (

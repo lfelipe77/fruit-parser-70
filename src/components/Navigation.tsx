@@ -182,12 +182,6 @@ export default function Navigation() {
                       </AvatarFallback>
                     </Avatar>
                   </Link>
-                  <Button variant="outline" size="sm" asChild className="hidden lg:flex">
-                    <Link to="/dashboard">
-                      <User className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </Link>
-                  </Button>
                 </div>
               ) : (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
