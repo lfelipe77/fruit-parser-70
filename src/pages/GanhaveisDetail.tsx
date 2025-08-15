@@ -193,8 +193,10 @@ export default function GanhaveisDetail() {
 
       // (optional) pending txn (ignore errors; webhook finaliza)
       try {
+        const userId = sess?.session?.user?.id;
         await supabase.from("transactions").insert({
-          ganhavel_id: raffle?.id,
+          ganhavel_id: raffle.id,
+          user_id: userId,
           amount: payload.amount,
           currency: payload.currency || "BRL",
           payment_provider: payload.provider,
@@ -203,7 +205,6 @@ export default function GanhaveisDetail() {
           fee_fixed: payload.fee_fixed ?? 0,
           fee_pct: payload.fee_pct ?? 0,
           fee_amount: payload.fee_amount ?? 0,
-          user_id: sess?.session?.user?.id || "",
         });
       } catch {}
 
