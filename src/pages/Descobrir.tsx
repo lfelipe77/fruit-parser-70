@@ -1,3 +1,6 @@
+import * as React from "react";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectCard";
 import { DescobrirSEO } from "@/components/SEOPages";
@@ -8,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Search, Filter, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
 import { useLocationFilter } from "@/hooks/useLocationFilter";
 // Demo assets removed - these will come from real data
 
@@ -125,12 +127,70 @@ const categories = [
 ];
 
 export default function Descobrir() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [sortBy, setSortBy] = useState("popularity");
-  
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const catSlug = params.get("cat");
+
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [selectedCategory, setSelectedCategory] = React.useState("Todos");
+  const [sortBy, setSortBy] = React.useState("popularity");
+  const [catId, setCatId] = React.useState<number | null>(null);
+  const [items, setItems] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  // resolve slug -> category id (bigint)
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        if (catSlug) {
+          const { data: c, error } = await supabase
+            .from("categories")
+            .select("id, nome")
+            .eq("slug", catSlug)
+            .maybeSingle();
+          if (error) throw error;
+          if (!cancelled) {
+            setCatId(c?.id ?? null);
+            setSelectedCategory(c?.nome ?? "Todos");
+          }
+        } else {
+          if (!cancelled) {
+            setCatId(null);
+            setSelectedCategory("Todos");
+          }
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [catSlug]);
+
+  // fetch raffles_public filtered by category_id when present
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        let q = supabase.from("raffles_public").select("*").order("created_at", { ascending: false });
+        if (catId != null) q = q.eq("category_id", catId);
+        const { data, error } = await q;
+        if (error) throw error;
+        if (!cancelled) setItems(data ?? []);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setItems(allRifas); // fallback to mock data
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [catId]);
+
   // Usar o hook de filtro de localização
-  const { filter: locationFilter, filteredRifas: locationFilteredRifas, updateFilter, clearFilters } = useLocationFilter(allRifas);
+  const { filter: locationFilter, filteredRifas: locationFilteredRifas, updateFilter, clearFilters } = useLocationFilter(items.length > 0 ? items : allRifas);
 
   // Aplicar filtros adicionais (busca e categoria) nas rifas já filtradas por localização
   const filteredRifas = locationFilteredRifas.filter(rifa => {
@@ -236,8 +296,8 @@ export default function Descobrir() {
                     </SheetDescription>
                   </SheetHeader>
                   <div className="mt-6">
-                    <LocationFilter
-                      rifas={allRifas}
+                     <LocationFilter
+                      rifas={items.length > 0 ? items : allRifas}
                       filter={locationFilter}
                       onFilterChange={updateFilter}
                       onClearFilters={clearFilters}

@@ -63,6 +63,7 @@ function Reveal({ show, children }: { show: boolean; children: React.ReactNode }
 }
 
 type Category = { id: number; nome: string };
+type Subcat = { id: string; name: string; slug: string; category_id: number };
 
 export default function LanceSeuGanhavel() {
   const navigate = useNavigate();
@@ -86,6 +87,8 @@ export default function LanceSeuGanhavel() {
   const [uploading, setUploading] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcats, setSubcats] = useState<Subcat[]>([]);
+  const [subcategoryId, setSubcategoryId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -114,6 +117,25 @@ export default function LanceSeuGanhavel() {
         if (data) setCategories(data as Category[]);
       });
   }, []);
+
+  // whenever categoryId changes, fetch subcats
+  useEffect(() => {
+    if (!categoryId) { 
+      setSubcats([]); 
+      setSubcategoryId(""); 
+      return; 
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("subcategories")
+        .select("id,name,slug,category_id")
+        .eq("category_id", Number(categoryId))
+        .order("sort_order", { ascending: true });
+      if (!cancelled) setSubcats((data ?? []) as Subcat[]);
+    })();
+    return () => { cancelled = true; };
+  }, [categoryId]);
 
   const userId = useMemo(() => session?.user?.id ?? null, [session]);
 
@@ -330,12 +352,15 @@ export default function LanceSeuGanhavel() {
 
                 <div>
                   <label className="block text-sm font-medium">Subcategoria (opcional)</label>
-                  <input
+                  <select
                     className="mt-1 w-full border rounded-lg p-2"
-                    value={subcategory}
-                    onChange={(e) => setSubcategory(e.target.value)}
-                    placeholder="Ex: Smartphones, Sofás, Eletrônicos..."
-                  />
+                    value={subcategoryId}
+                    onChange={(e) => setSubcategoryId(e.target.value)}
+                    disabled={!subcats.length}
+                  >
+                    <option value="">{subcats.length ? "Selecione..." : "—"}</option>
+                    {subcats.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
                 </div>
               </div>
 
