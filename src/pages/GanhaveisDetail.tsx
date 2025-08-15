@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Toast } from "@/components/Toast";
 
 // tiny inline helper
 function timeAgo(iso?: string | null) {
@@ -80,6 +81,15 @@ export default function GanhaveisDetail() {
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState<string | null>(null);
 
+  // Toast state
+  const [toastOpen, setToastOpen] = React.useState(false);
+  const [toastMsg, setToastMsg] = React.useState("");
+  const [toastTitle, setToastTitle] = React.useState("Tudo certo!");
+
+  // Buying state
+  const [buying, setBuying] = React.useState(false);
+  const [qty, setQty] = React.useState(1);
+
   // Load raffle data
   React.useEffect(() => {
     let cancelled = false;
@@ -142,6 +152,82 @@ export default function GanhaveisDetail() {
   const metaDone = raffle ? Number(raffle.progress_pct || 0) >= 100 : false;
   const buyable =
     !!raffle && raffle.status === "approved" && !soldOut && !metaDone && Number(raffle.ticket_price) > 0;
+
+  // Buy handler
+  async function handleBuy() {
+    try {
+      setBuying(true);
+
+      // auth
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess?.session?.access_token;
+      if (!accessToken) {
+        setToastTitle("Entre para continuar");
+        setToastMsg("Você precisa estar logado para comprar bilhetes.");
+        setToastOpen(true);
+        return;
+      }
+
+      // create checkout
+      setToastTitle("Iniciando pagamento…");
+      setToastMsg("Redirecionando para o pagamento…");
+      setToastOpen(true);
+
+      const apiBase = "https://whqxpuyjxoiufzhvqneg.supabase.co";
+      const res = await fetch(`${apiBase}/functions/v1/create-checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          provider: "Asaas",
+          raffle_id: raffle?.id,
+          qty,
+          unit_price: raffle.ticket_price,
+          subtotal: raffle.ticket_price * qty
+        }),
+      });
+      if (!res.ok) throw new Error(`Checkout falhou (${res.status})`);
+      const payload = await res.json();
+
+      // (optional) pending txn (ignore errors; webhook finaliza)
+      try {
+        await supabase.from("transactions").insert({
+          ganhavel_id: raffle?.id,
+          amount: payload.amount,
+          currency: payload.currency || "BRL",
+          payment_provider: payload.provider,
+          payment_id: payload.provider_payment_id,
+          status: "pending",
+          fee_fixed: payload.fee_fixed ?? 0,
+          fee_pct: payload.fee_pct ?? 0,
+          fee_amount: payload.fee_amount ?? 0,
+          user_id: sess?.session?.user?.id || "",
+        });
+      } catch {}
+
+      // redirect
+      const url = payload.redirect_url as string;
+      if (url) {
+        // attempt normal redirect first
+        window.location.href = url;
+        // fallback (rare blockers): open new tab if still here after a tick
+        setTimeout(() => {
+          try { window.open(url, "_blank"); } catch {}
+        }, 600);
+      } else {
+        throw new Error("URL de pagamento indisponível.");
+      }
+    } catch (e: any) {
+      console.error(e);
+      setToastTitle("Não deu certo 😕");
+      setToastMsg(e?.message || "Não foi possível iniciar a compra.");
+      setToastOpen(true);
+    } finally {
+      setBuying(false);
+    }
+  }
 
   // Share helpers
   async function copyLink() {
@@ -324,9 +410,9 @@ export default function GanhaveisDetail() {
             </div>
 
             <button
-              disabled={!buyable}
+              disabled={!buyable || buying}
               className="mt-3 w-full rounded-xl bg-emerald-600 text-white py-2 text-sm disabled:opacity-60"
-              onClick={() => alert("Fluxo de compra aqui (reserve_tickets + checkout).")}
+              onClick={handleBuy}
               title={
                 buyable
                   ? "Comprar bilhetes"
@@ -337,7 +423,7 @@ export default function GanhaveisDetail() {
                       : "Indisponível"
               }
             >
-              {soldOut ? "Esgotado" : metaDone ? "Meta alcançada" : "Comprar bilhetes"}
+              {buying ? "Processando..." : soldOut ? "Esgotado" : metaDone ? "Meta alcançada" : "Comprar bilhetes"}
             </button>
 
             <p className="mt-2 text-[12px] text-gray-500">
@@ -355,6 +441,13 @@ export default function GanhaveisDetail() {
           </section>
         </aside>
       </div>
+
+      <Toast
+        open={toastOpen}
+        onClose={() => setToastOpen(false)}
+        title={toastTitle}
+        message={toastMsg}
+      />
     </div>
   );
 }
