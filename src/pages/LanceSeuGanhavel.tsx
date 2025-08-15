@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Toast } from "@/components/Toast";
 
 // util simples para BRL
 function brl(n: number | null | undefined) {
@@ -50,6 +51,8 @@ export default function LanceSeuGanhavel() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string>("");
 
   // auth
   useEffect(() => {
@@ -169,9 +172,10 @@ export default function LanceSeuGanhavel() {
         p_payload: { raffle_id: newId, title, category_id: categoryId, vendor_link: affiliateUrl },
       });
 
-      setSuccessMsg("Ganhavel enviado para análise.");
-      // redirecione para a página do criador ou detalhe
-      setTimeout(() => navigate("/minha-conta"), 800);
+      setSuccessMsg("Ganhavel enviado para análise!");
+      setToastMsg("✅ Seu Ganhavel foi enviado para análise. Ele aparece no seu perfil como pendente e será publicado quando aprovado.");
+      setToastOpen(true);
+      setTimeout(() => navigate("/minha-conta"), 1800);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err?.message ?? "Erro ao criar Ganhavel.");
@@ -192,14 +196,35 @@ export default function LanceSeuGanhavel() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <header className="mb-6">
-        <h1 className="text-3xl font-bold">Lance seu Ganhavel</h1>
-        <p className="text-gray-700 mt-1">
-          Transforme seus sonhos em realidade e ajude outros a realizarem os deles
-        </p>
-        <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-600">
-          <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">✅ 100% Seguro</span>
-          <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">👥 +50.000 Criadores</span>
-          <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">⏱️ Análise em 24h</span>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold">Lance seu Ganhavel</h1>
+            <p className="text-gray-700 mt-1">
+              Transforme seus sonhos em realidade e ajude outros a realizarem os deles
+            </p>
+            <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-600">
+              <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">✅ 100% Seguro</span>
+              <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">👥 +50.000 Criadores</span>
+              <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">⏱️ Análise em 24h</span>
+            </div>
+          </div>
+
+          <div className="shrink-0 flex gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+              title="Voltar para a home"
+            >
+              <span className="mr-2">🏠</span> Home
+            </Link>
+            <Link
+              to="/minha-conta"
+              className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+              title="Voltar"
+            >
+              ← Voltar
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -474,6 +499,13 @@ export default function LanceSeuGanhavel() {
           </section>
         </aside>
       </div>
+
+      <Toast
+        open={toastOpen}
+        onClose={() => setToastOpen(false)}
+        title="Ganhavel enviado!"
+        message={toastMsg}
+      />
     </div>
   );
 }
