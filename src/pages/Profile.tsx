@@ -1,419 +1,219 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useMyProfile } from '@/hooks/useMyProfile';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import AvatarCropper from '@/components/AvatarCropper';
-import { fileToDataUrl } from '@/lib/cropImage';
+import * as React from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
-export default function Profile() {
-  const { profile, loading, updateProfile } = useMyProfile();
-  const { session } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    full_name: '',
-    username: '',
-    bio: '',
-    location: ''
-  });
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
-  const [cropOpen, setCropOpen] = useState(false);
-  const [pendingFileExt, setPendingFileExt] = useState<string>("webp");
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
-  const [savingAvatar, setSavingAvatar] = useState(false);
+type RaffleBase = {
+  id: string;
+  created_at: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  ticket_price: number | null;
+  total_tickets: number | null;
+  status: "under_review" | "approved" | "scheduled" | "closed" | "delivered";
+};
 
-  // Initialize form data when profile loads
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        full_name: profile.full_name || '',
-        username: profile.username || '',
-        bio: profile.bio || '',
-        location: profile.location || ''
-      });
-    }
-  }, [profile]);
+type RaffleProg = {
+  id: string;
+  paid_tickets: number;
+  tickets_remaining: number;
+  amount_collected: number;
+  goal_amount: number;
+  progress_pct: number;
+  last_paid_at: string | null;
+};
 
-  // Debug auth session
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data, error }) => {
-      console.log("[AUTH] user at profile", data?.user?.id, error);
-    });
-  }, []);
+const brl = (n: number | null | undefined) =>
+  Number(n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !profile) return;
+function timeAgo(d: string | null) {
+  if (!d) return null;
+  const diff = (Date.now() - new Date(d).getTime()) / 1000;
+  const m = Math.floor(diff / 60), h = Math.floor(m / 60), dys = Math.floor(h / 24);
+  if (diff < 60) return "agora";
+  if (m < 60) return `${m} min`;
+  if (h < 24) return `${h} h`;
+  return `${dys} d`;
+}
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast({
-        title: 'Erro',
-        description: 'Imagem muito grande (máx. 5MB).',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      // Open cropper
-      const dataUrl = await fileToDataUrl(file);
-      setPendingFileExt("webp"); // we will export to webp
-      setCropSrc(dataUrl);
-      setCropOpen(true);
-      // Clear file input
-      event.target.value = "";
-    } catch (error) {
-      console.error('Error preparing file for crop:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao preparar imagem para corte.',
-        variant: 'destructive',
-      });
-    }
+function StatusBadge({ s }: { s: RaffleBase["status"] }) {
+  const map: Record<RaffleBase["status"], string> = {
+    under_review: "Em análise",
+    approved: "Aprovada",
+    scheduled: "Agendada",
+    closed: "Encerrada",
+    delivered: "Entregue",
   };
-
-  const uploadCroppedBlob = async (blob: Blob) => {
-    const uid = session?.user?.id;
-    if (!uid) {
-      console.error("[avatar upload] missing session.user.id");
-      toast({
-        title: 'Erro',
-        description: 'Sessão expirada. Entre novamente.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    const path = `${uid}/avatar.webp`; // MUST start with UID for RLS
-
-    console.log("[avatar] starting upload", { uid, path, blobSize: blob.size });
-
-    setUploading(true);
-    try {
-      // 1) upload to Storage (overwrite)
-      const up = await supabase.storage.from("avatars").upload(path, blob, {
-        upsert: true,
-        cacheControl: "0",
-        contentType: "image/webp",
-      });
-      console.log("[avatar] storage.upload response", up);
-      if (up.error) throw up.error;
-
-      // 2) get public URL
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      console.log("[avatar] public url", pub);
-      if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública");
-      const baseUrl = pub.publicUrl;
-
-      // 3) UPDATE profile
-      const upd = await supabase
-        .from("user_profiles")
-        .update({ avatar_url: baseUrl })
-        .eq("id", uid)
-        .select("id");
-      console.log("[avatar] profiles.update response", upd);
-      if (upd.error) throw upd.error;
-
-      // 4) If 0 rows updated → INSERT (requires the insert policy)
-      if (!upd.data || upd.data.length === 0) {
-        const ins = await supabase
-          .from("user_profiles")
-          .insert({ id: uid, avatar_url: baseUrl })
-          .select("id");
-        console.log("[avatar] profiles.insert response", ins);
-        if (ins.error) throw ins.error;
-      }
-
-      // 5) cache-bust locally
-      const bust = `${baseUrl}?t=${Date.now()}`;
-      await updateProfile({ avatar_url: bust });
-
-      toast({
-        title: 'Avatar atualizado',
-        description: 'Seu avatar foi atualizado com sucesso.',
-      });
-      console.log("[avatar] done");
-    } catch (e: any) {
-      console.error("[avatar upload/save] error:", e);
-      toast({
-        title: 'Erro',
-        description: e?.message || e?.error_description || "Erro ao enviar avatar.",
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-    }
+  const tone: Record<RaffleBase["status"], string> = {
+    under_review: "bg-amber-100 text-amber-800",
+    approved: "bg-emerald-100 text-emerald-800",
+    scheduled: "bg-blue-100 text-blue-800",
+    closed: "bg-gray-100 text-gray-800",
+    delivered: "bg-purple-100 text-purple-800",
   };
+  return <span className={`px-2 py-0.5 rounded-full text-xs ${tone[s]}`}>{map[s]}</span>;
+}
 
-  // Final "Salvar" button click inside cropper modal
-  const onConfirmCroppedAvatar = async () => {
-    try {
-      if (!session?.user?.id) {
-        console.error("[avatar] no session user id at save time");
-        toast({
-          title: 'Erro',
-          description: 'Faça login novamente para salvar o avatar.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      if (!croppedBlob) {
-        toast({
-          title: 'Erro',
-          description: 'Selecione a área do recorte antes de salvar.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      setSavingAvatar(true);
-      await uploadCroppedBlob(croppedBlob);
-      // close modal only after successful upload
-      setCropOpen(false);
-      setCroppedBlob(null);
-    } catch (e) {
-      console.error("[avatar] confirm error", e);
-    } finally {
-      setSavingAvatar(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const { error } = await updateProfile(formData);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Perfil atualizado',
-        description: 'Suas informações foram salvas com sucesso.',
-      });
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao salvar perfil.',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-48"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
-  }
+function Card({ r, p }: { r: RaffleBase; p?: RaffleProg }) {
+  const pct = Math.max(0, Math.min(100, Number(p?.progress_pct ?? 0)));
+  const last = p?.last_paid_at ? timeAgo(p.last_paid_at) : null;
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Meu Perfil</h1>
-        
-        {/* Call to Action Buttons */}
-        <div className="flex gap-3">
-          <Button variant="outline" asChild>
-            <Link to={`/perfil/${profile?.username || profile?.id}`} className="flex items-center gap-2">
-              <ExternalLink className="w-4 h-4" />
-              Ver Perfil Público
-            </Link>
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/raffles')}>
-            <Search className="w-4 h-4 mr-2" />
-            Explorar Ganhaveis
-          </Button>
-          <Button onClick={() => navigate('/lance-seu-ganhavel')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Lançar Ganhavel
-          </Button>
-        </div>
+    <Link
+      to={`/ganhavel/${r.id}`}
+      className="group rounded-2xl border bg-white overflow-hidden hover:shadow-md transition-shadow"
+    >
+      <div className="aspect-[16/10] bg-gray-100 overflow-hidden">
+        <img
+          src={r.image_url || "/placeholder.svg"}
+          alt={r.title}
+          loading="lazy"
+          className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform"
+        />
       </div>
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold leading-snug line-clamp-2">{r.title}</h3>
+          <StatusBadge s={r.status} />
+        </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        {/* Profile Stats Card */}
-        <Card className="md:col-span-1">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4">
-              <Avatar className="w-24 h-24 mx-auto">
-                <AvatarImage src={profile?.avatar_url || ''} />
-                <AvatarFallback>
-                  <User className="w-12 h-12" />
-                </AvatarFallback>
-              </Avatar>
+        {(r.status === "approved" || r.status === "scheduled" || r.status === "closed" || r.status === "delivered") && (
+          <>
+            <div className="mt-2 text-sm text-gray-700">
+              {brl(p?.amount_collected)} de {brl(p?.goal_amount)}
             </div>
-            <CardTitle className="text-xl">
-              {profile?.full_name || 'Nome não definido'}
-            </CardTitle>
-            <CardDescription>
-              @{profile?.username || 'username'}
-            </CardDescription>
-            {profile?.bio && (
-              <p className="text-sm text-muted-foreground mt-2">{profile.bio}</p>
-            )}
-            {profile?.location && (
-              <p className="text-sm text-muted-foreground">{profile.location}</p>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                  <Users className="w-3 h-3" />
-                  Seguidores
-                </p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                  <UserCheck className="w-3 h-3" />
-                  Seguindo
-                </p>
-              </div>
+            <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden" aria-label="progresso">
+              <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
             </div>
-            
-            <div className="mt-4 pt-4 border-t">
-              <div className="text-center">
-                <p className="text-lg font-semibold">{profile?.total_ganhaveis || 0}</p>
-                <p className="text-sm text-muted-foreground">Ganhaveis Criados</p>
-              </div>
+            <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+              <span>{pct}% concluído</span>
+              {last && <span>Última compra: {last}</span>}
             </div>
-          </CardContent>
-        </Card>
+          </>
+        )}
 
-        {/* Profile Form */}
-        <div className="md:col-span-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Editar Informações</CardTitle>
-            <CardDescription>
-              Atualize suas informações de perfil.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Avatar Upload Section */}
-            <div className="space-y-2">
-              <Label>Avatar do Perfil</Label>
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={profile?.avatar_url || ''} />
-                  <AvatarFallback>
-                    <User className="w-6 h-6" />
-                  </AvatarFallback>
-                </Avatar>
-                
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  disabled={uploading}
-                  onClick={() => document.getElementById('avatar-upload')?.click()}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {uploading ? 'Enviando...' : 'Alterar Avatar'}
-                </Button>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                JPG, PNG ou GIF. Máximo 5MB.
-              </p>
-            </div>
-
-          {/* Form Fields */}
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="full_name">Nome Completo</Label>
-              <Input
-                id="full_name"
-                value={formData.full_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Seu nome completo"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="username">Nome de Usuário</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                placeholder="@seuusername"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="location">Localização</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                placeholder="Sua cidade, estado"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={formData.bio}
-                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                placeholder="Conte um pouco sobre você..."
-                rows={4}
-              />
-            </div>
+        {r.status === "under_review" && (
+          <div className="mt-3 text-sm text-gray-600">
+            Seu Ganhavel foi enviado e está em análise. Você receberá um e-mail quando for aprovado.
           </div>
+        )}
+      </div>
+    </Link>
+  );
+}
 
-            <Button onClick={handleSave} disabled={saving} className="w-full">
-              {saving ? 'Salvando...' : 'Salvar Alterações'}
-            </Button>
-          </CardContent>
-        </Card>
-        </div>
+export default function Profile() {
+  const [mine, setMine] = React.useState<RaffleBase[]>([]);
+  const [prog, setProg] = React.useState<Record<string, RaffleProg>>({});
+  const [loading, setLoading] = React.useState(true);
+  const [err, setErr] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+
+        // 1) get me
+        const { data: userRes, error: userErr } = await supabase.auth.getUser();
+        if (userErr) throw userErr;
+        const uid = userRes.user?.id;
+        if (!uid) throw new Error("Precisa estar autenticado");
+
+        // 2) fetch all my raffles (including under_review)
+        const { data: rows, error } = await supabase
+          .from("raffles")
+          .select("id, created_at, title, description, image_url, ticket_price, total_tickets, status")
+          .eq("owner_user_id", uid)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        const base = (rows ?? []) as RaffleBase[];
+        if (!cancelled) setMine(base);
+
+        // 3) enrich approved+ with progress from raffles_public_v2
+        const approvedIds = base
+          .filter((r) => ["approved", "scheduled", "closed", "delivered"].includes(r.status))
+          .map((r) => r.id);
+
+        if (approvedIds.length) {
+          const { data: rows2, error: err2 } = await supabase
+            .from("raffles_public_v2")
+            .select("id, paid_tickets, tickets_remaining, amount_collected, goal_amount, progress_pct, last_paid_at")
+            .in("id", approvedIds);
+
+          if (err2) throw err2;
+
+          const map: Record<string, RaffleProg> = {};
+          (rows2 ?? []).forEach((x) => { map[x.id] = x as RaffleProg; });
+          if (!cancelled) setProg(map);
+        } else {
+          if (!cancelled) setProg({});
+        }
+      } catch (e: any) {
+        if (!cancelled) setErr(e.message || "Falha ao carregar seus Ganhavéis");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const sections = [
+    { key: "under_review", title: "Em análise" as const },
+    { key: "approved", title: "Aprovados" as const },
+    { key: "scheduled", title: "Agendados" as const },
+    { key: "closed", title: "Encerrados" as const },
+    { key: "delivered", title: "Entregues" as const },
+  ] as const;
+
+  if (err) return <div className="max-w-6xl mx-auto p-6 text-red-700">{err}</div>;
+
+  return (
+    <section className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
+        <Link to="/lance-seu-ganhavel" className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">
+          + Lançar Ganhavel
+        </Link>
       </div>
 
-      <AvatarCropper
-        src={cropSrc ?? ""}
-        open={cropOpen}
-        onClose={() => {
-          setCropOpen(false);
-          setCroppedBlob(null);
-        }}
-        onCropped={async (blob) => {
-          setCroppedBlob(blob);
-          setSavingAvatar(true);
-          try {
-            await uploadCroppedBlob(blob);
-            setCropOpen(false);
-            setCroppedBlob(null);
-          } catch (error) {
-            console.error("[avatar] save error", error);
-          } finally {
-            setSavingAvatar(false);
-          }
-        }}
-      />
-    </div>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border bg-white overflow-hidden">
+              <div className="aspect-[16/10] bg-gray-100 animate-pulse" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        sections.map((sec) => {
+          const items = mine.filter((r) => r.status === sec.key);
+          if (!items.length) return null;
+          return (
+            <div key={sec.key}>
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-xl md:text-2xl font-semibold">{sec.title}</h2>
+                <span className="text-sm text-gray-600">{items.length}</span>
+              </div>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {items.map((r) => <Card key={r.id} r={r} p={prog[r.id]} />)}
+              </div>
+            </div>
+          );
+        })
+      )}
+
+      {!loading && !mine.length && (
+        <div className="rounded-2xl border bg-white p-6 text-gray-700">
+          Você ainda não lançou nenhum Ganhavel. <Link to="/lance-seu-ganhavel" className="underline text-emerald-700">Lançar agora</Link>.
+        </div>
+      )}
+    </section>
   );
 }

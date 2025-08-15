@@ -193,12 +193,11 @@ export default function GanhaveisDetail() {
       try {
         const userId = sess?.session?.user?.id;
         await supabase.from("transactions").insert({
-          ganhavel_id: raffle.id,
+          raffle_id: raffle.id,
           user_id: userId,
           amount: payload.amount,
-          currency: payload.currency || "BRL",
           payment_provider: payload.provider,
-          payment_id: payload.provider_payment_id,
+          provider_payment_id: payload.provider_payment_id,
           status: "pending",
           fee_fixed: payload.fee_fixed ?? 0,
           fee_pct: payload.fee_pct ?? 0,

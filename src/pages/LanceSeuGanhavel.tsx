@@ -239,7 +239,7 @@ export default function LanceSeuGanhavel() {
       setSuccessMsg("Ganhavel enviado para análise!");
       setToastMsg("✅ Seu Ganhavel foi enviado para análise. Ele aparece no seu perfil como pendente e será publicado quando aprovado.");
       setToastOpen(true);
-      redirectTimerRef.current = window.setTimeout(() => navigate("/minha-conta"), 1800);
+      redirectTimerRef.current = window.setTimeout(() => navigate("/profile"), 1800);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err?.message ?? "Erro ao criar Ganhavel.");

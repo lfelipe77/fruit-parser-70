@@ -158,7 +158,7 @@ const AppContent = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/test-payment" element={<TestPayment />} />
-        <Route path="/minha-conta" element={<MinhaConta />} />
+        <Route path="/minha-conta" element={<Navigate to="/profile" replace />} />
         <Route path="/alterar-senha" element={<AlterarSenha />} />
         <Route path="/gerenciar-cartoes-e-pix" element={<GerenciarCartoesEPix />} />
         <Route path="/gerenciar-ganhavel/:id" element={<GerenciarGanhavel />} />
