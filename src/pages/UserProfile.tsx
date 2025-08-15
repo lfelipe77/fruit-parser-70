@@ -111,20 +111,21 @@ export default function UserProfile() {
         }
 
         if (!mounted) return;
-        if (row && typeof row === 'object' && 'id' in row) {
-          setFullName((row as any).full_name ?? "");
-          setUsername((row as any).username ?? "");
-          setBio((row as any).bio ?? "");
-          setLocation((row as any).location ?? "");
-          setAvatarUrl((row as any).avatar_url ?? "");
-          setWebsiteUrl((row as any).website_url ?? "");
-          setInstagram((row as any).instagram ?? "");
-          setTwitter((row as any).twitter ?? "");
-          setFacebook((row as any).facebook ?? "");
-          setYoutube((row as any).youtube ?? "");
-          setTiktok((row as any).tiktok ?? "");
-          setWhatsapp((row as any).whatsapp ?? "");
-          setTelegram((row as any).telegram ?? "");
+        if (row) {
+          const profileData = row as any;
+          setFullName(profileData.full_name ?? "");
+          setUsername(profileData.username ?? "");
+          setBio(profileData.bio ?? "");
+          setLocation(profileData.location ?? "");
+          setAvatarUrl(profileData.avatar_url ?? "");
+          setWebsiteUrl(profileData.website_url ?? "");
+          setInstagram(profileData.instagram ?? "");
+          setTwitter(profileData.twitter ?? "");
+          setFacebook(profileData.facebook ?? "");
+          setYoutube(profileData.youtube ?? "");
+          setTiktok(profileData.tiktok ?? "");
+          setWhatsapp(profileData.whatsapp ?? "");
+          setTelegram(profileData.telegram ?? "");
         }
       } catch (e: any) {
         if (mounted) setErr(e.message || "Falha ao carregar seu perfil.");
