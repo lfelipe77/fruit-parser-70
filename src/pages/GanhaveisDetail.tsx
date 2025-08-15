@@ -2,7 +2,18 @@ import * as React from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
-/** ---- Types (match raffles_public view) ---- */
+// tiny inline helper
+function timeAgo(iso?: string | null) {
+  if (!iso) return "";
+  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  const m = Math.floor(s/60), h = Math.floor(m/60), d = Math.floor(h/24);
+  if (d >= 1) return `${d} ${d===1?'dia':'dias'}`;
+  if (h >= 1) return `${h} ${h===1?'hora':'horas'}`;
+  if (m >= 1) return `${m} ${m===1?'min':'mins'}`;
+  return `${s} s`;
+}
+
+/** ---- Types (match raffles_public_v2 view) ---- */
 type RafflePublic = {
   id: string;
   created_at: string;
@@ -30,9 +41,9 @@ type RafflePublic = {
   organizer_id?: string | null;
   product_name?: string | null;
   product_value?: number | null;
-  vendor_link?: string | null;
-  participants_count?: number;
-  last_paid_at?: string | null;
+  vendor_link: string | null;
+  participants_count: number;
+  last_paid_at: string | null;
 };
 
 /** ---- Small helpers ---- */
@@ -212,7 +223,7 @@ export default function GanhaveisDetail() {
             )}
             {raffle.last_paid_at && (
               <span className="px-2 py-0.5 rounded-full bg-gray-50 text-gray-700">
-                Última compra {since(raffle.last_paid_at)}
+                Última compra {timeAgo(raffle.last_paid_at)} atrás
               </span>
             )}
           </div>
