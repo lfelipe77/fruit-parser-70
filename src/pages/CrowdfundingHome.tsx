@@ -3,16 +3,10 @@ import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import AsaasPartnershipSection from "@/components/AsaasPartnershipSection";
 import CategoriesSection from "@/components/CategoriesSection";
-import ProjectCard from "@/components/ProjectCard";
+import EmAltaRecentesSection from "@/components/EmAltaRecentes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { getAllGanhaveis } from "@/data/ganhaveisData";
-
-// Get the first 3 ganhaveis as featured
-const allGanhaveis = getAllGanhaveis();
-const featuredGanhaveis = allGanhaveis.slice(0, 3);
-const trendingGanhaveis = allGanhaveis.slice(3, 6);
 
 export default function CrowdfundingHome() {
   return (
@@ -22,57 +16,9 @@ export default function CrowdfundingHome() {
       <CaixaLotterySection />
       
       
-      {/* Featured Projects Section */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 md:mb-12 text-center md:text-left">
-            <div className="mb-4 md:mb-0">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-4">
-                Ganhaveis em Destaque
-              </h2>
-              <p className="text-lg md:text-xl text-muted-foreground">
-                Os ganhaveis mais populares selecionados pela nossa equipe
-              </p>
-            </div>
-            <Badge variant="secondary" className="hidden md:block">
-              Seleção da Casa
-            </Badge>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {featuredGanhaveis.map((ganhavel, index) => (
-              <ProjectCard key={index} {...ganhavel} />
-            ))}
-          </div>
-        </div>
-      </section>
+      <EmAltaRecentesSection />
       
       <CategoriesSection />
-      
-      {/* Trending Projects Section */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 md:mb-12 text-center md:text-left">
-            <div className="mb-4 md:mb-0">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-4">
-                Ganhaveis em Alta
-              </h2>
-              <p className="text-lg md:text-xl text-muted-foreground">
-                Ganhaveis que estão bombando e vendendo rápido
-              </p>
-            </div>
-            <Button variant="outline" asChild className="hidden md:flex">
-              <Link to="/descobrir">Ver Todos os Ganhaveis</Link>
-            </Button>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {trendingGanhaveis.map((ganhavel, index) => (
-              <ProjectCard key={index} {...ganhavel} />
-            ))}
-          </div>
-        </div>
-      </section>
       
       {/* Asaas Partnership Section */}
       <AsaasPartnershipSection />

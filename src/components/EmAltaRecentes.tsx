@@ -1,34 +1,18 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-
-type RafflePublic = {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  ticket_price: number;
-  goal_amount: number;
-  amount_collected: number;
-  progress_pct: number;
-  status: string;
-  created_at: string;
-  tickets_remaining?: number;
-};
-
-const brl = (n: number | null | undefined) =>
-  Number(n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+import { RafflePublic, formatCurrency, getProgressPercent } from "@/types/raffles";
 
 /** Compact, uncluttered home card */
 function RCard({ r }: { r: RafflePublic }) {
-  const pct = Math.max(0, Math.min(100, Number(r.progress_pct || 0)));
-  const soldOut = (r.tickets_remaining ?? 1) === 0;
-  const buyable = r.status === "approved" && pct < 100 && !soldOut;
+  const pct = getProgressPercent(r.progress_pct);
+  const soldOut = pct >= 100;
+  const buyable = r.status === "active" && !soldOut;
   const buyLabel = buyable ? "Comprar bilhete" : "Ver detalhes";
 
   return (
     <Link
-      to={`/ganhaveis/${r.id}`}
+      to={`/ganhavel/${r.id}`}
       className="group rounded-2xl border bg-white overflow-hidden hover:shadow-md transition-shadow"
     >
       <div className="aspect-[16/10] bg-gray-100 overflow-hidden">
@@ -46,7 +30,7 @@ function RCard({ r }: { r: RafflePublic }) {
         </h3>
 
         <div className="mt-2 text-xs text-gray-600">
-          {brl(r.amount_collected)} de {brl(r.goal_amount)}
+          {r.paid_tickets} de {r.total_tickets} bilhetes vendidos
         </div>
 
         <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden" aria-label="progresso">
@@ -55,17 +39,19 @@ function RCard({ r }: { r: RafflePublic }) {
 
         <div className="mt-2 flex items-center justify-between text-xs text-gray-700">
           <span>{pct}% concluído</span>
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity">Bilhete {brl(r.ticket_price)}</span>
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+            Bilhete {formatCurrency(r.ticket_price)}
+          </span>
         </div>
 
-        <div className="mt-3 flex items-center">
+        <div className="mt-3 flex items-center justify-between">
           <span className="inline-flex items-center justify-center px-3 py-1 rounded-xl text-sm
                            bg-emerald-600 text-white group-hover:bg-emerald-700">
             {buyLabel}
           </span>
-          {soldOut && (
-            <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-              Esgotado
+          {r.category_name && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+              {r.category_name}
             </span>
           )}
         </div>
@@ -99,16 +85,19 @@ export default function EmAltaRecentesSection() {
       setLoading(true);
       setErr(null);
       try {
-        const base = () => supabase.from("raffles_public").select("*");
+        const base = () => supabase
+          .from("raffles_public")
+          .select("*");
+        
         const [a, b] = await Promise.all([
-          base().order("progress_pct", { ascending: false }).limit(12),
-          base().order("created_at", { ascending: false }).limit(12),
+          base().order("progress_pct", { ascending: false }).limit(6),
+          base().order("draw_date", { ascending: true }).limit(6),
         ]);
         if (!cancelled) {
           if (a.error) throw a.error;
           if (b.error) throw b.error;
-          setTop((a.data ?? []) as RafflePublic[]);
-          setRecent((b.data ?? []) as RafflePublic[]);
+          setTop((a.data ?? []) as any);
+          setRecent((b.data ?? []) as any);
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");
