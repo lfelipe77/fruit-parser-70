@@ -11,6 +11,14 @@ type UserProfileRow = {
   location: string | null;
   role: string | null;
   created_at: string;
+  website_url: string | null;
+  instagram: string | null;
+  twitter: string | null;
+  facebook: string | null;
+  youtube: string | null;
+  tiktok: string | null;
+  whatsapp: string | null;
+  telegram: string | null;
 };
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -33,7 +41,41 @@ export default function UserProfile() {
   const [bio, setBio] = React.useState("");
   const [location, setLocation] = React.useState("");
   const [avatarUrl, setAvatarUrl] = React.useState("");
-  
+  const [websiteUrl, setWebsiteUrl] = React.useState("");
+  const [instagram, setInstagram] = React.useState("");
+  const [twitter, setTwitter] = React.useState("");
+  const [facebook, setFacebook] = React.useState("");
+  const [youtube, setYoutube] = React.useState("");
+  const [tiktok, setTiktok] = React.useState("");
+  const [whatsapp, setWhatsapp] = React.useState("");
+  const [telegram, setTelegram] = React.useState("");
+
+  // helper to normalize links/handles into clickable hrefs
+  function toHref(v?: string | null, kind?: string) {
+    if (!v) return null;
+    let s = v.trim();
+    if (!s) return null;
+
+    const hasProto = /^https?:\/\//i.test(s);
+
+    // handle → url
+    const handle = (h: string) => h.replace(/^@/, "");
+    switch (kind) {
+      case "instagram": return hasProto ? s : `https://instagram.com/${handle(s)}`;
+      case "twitter":   return hasProto ? s : `https://x.com/${handle(s)}`;
+      case "tiktok":    return hasProto ? s : `https://tiktok.com/@${handle(s)}`;
+      case "youtube":   return hasProto ? s : `https://youtube.com/${s}`;
+      case "facebook":  return hasProto ? s : `https://facebook.com/${handle(s)}`;
+      case "telegram":  return hasProto ? s : `https://t.me/${handle(s)}`;
+      case "whatsapp":
+        // accept full url, phone, or wa.me
+        if (hasProto) return s;
+        const digits = s.replace(/\D/g, "");
+        return digits ? `https://wa.me/${digits}` : `https://wa.me/`;
+      default:
+        return hasProto ? s : `https://${s}`;
+    }
+  }
 
   React.useEffect(() => {
     let mounted = true;
@@ -50,7 +92,8 @@ export default function UserProfile() {
 
         // fetch or create minimal row
         const sel =
-          "id, full_name, username, avatar_url, bio, location, role, created_at";
+          "id, full_name, username, avatar_url, bio, location, role, created_at, " +
+          "website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram";
         let { data: row, error: selErr } = await supabase
           .from("user_profiles")
           .select(sel)
@@ -66,16 +109,27 @@ export default function UserProfile() {
             .select(sel)
             .single();
           if (insErr) throw insErr;
-          row = created as UserProfileRow;
+          row = created;
         }
 
         if (!mounted) return;
-        setProfile(row as UserProfileRow);
-        setFullName(row.full_name ?? "");
-        setUsername(row.username ?? "");
-        setBio(row.bio ?? "");
-        setLocation(row.location ?? "");
-        setAvatarUrl(row.avatar_url ?? "");
+        
+        // Type assertion is safe here since we know the structure
+        const profileData = row as unknown as UserProfileRow;
+        setProfile(profileData);
+        setFullName(profileData.full_name ?? "");
+        setUsername(profileData.username ?? "");
+        setBio(profileData.bio ?? "");
+        setLocation(profileData.location ?? "");
+        setAvatarUrl(profileData.avatar_url ?? "");
+        setWebsiteUrl(profileData.website_url ?? "");
+        setInstagram(profileData.instagram ?? "");
+        setTwitter(profileData.twitter ?? "");
+        setFacebook(profileData.facebook ?? "");
+        setYoutube(profileData.youtube ?? "");
+        setTiktok(profileData.tiktok ?? "");
+        setWhatsapp(profileData.whatsapp ?? "");
+        setTelegram(profileData.telegram ?? "");
       } catch (e: any) {
         if (mounted) setError(e.message || "Falha ao carregar seu perfil.");
       } finally {
@@ -94,24 +148,36 @@ export default function UserProfile() {
       setError(null);
       setOk(null);
 
+      const payload = {
+        full_name: fullName || null,
+        username: username || null,
+        bio: bio || null,
+        location: location || null,
+        avatar_url: avatarUrl || null,
+        website_url: websiteUrl || null,
+        instagram: instagram || null,
+        twitter: twitter || null,
+        facebook: facebook || null,
+        youtube: youtube || null,
+        tiktok: tiktok || null,
+        whatsapp: whatsapp || null,
+        telegram: telegram || null,
+      };
+
+      const cols =
+        "id, full_name, username, avatar_url, bio, location, role, created_at, " +
+        "website_url, instagram, twitter, facebook, youtube, tiktok, whatsapp, telegram";
+
       const { data, error: upErr } = await supabase
         .from("user_profiles")
-        .update({
-          full_name: fullName || null,
-          username: username || null,
-          bio: bio || null,
-          location: location || null,
-          avatar_url: avatarUrl || null,
-        })
+        .update(payload)
         .eq("id", uid)
-        .select(
-          "id, full_name, username, avatar_url, bio, location, role, created_at"
-        )
+        .select(cols)
         .single();
 
       if (upErr) throw upErr;
 
-      setProfile(data as UserProfileRow);
+      setProfile(data as unknown as UserProfileRow);
       setOk("Perfil atualizado!");
       setEdit(false);
     } catch (e: any) {
@@ -190,6 +256,14 @@ export default function UserProfile() {
                     setBio(profile.bio ?? "");
                     setLocation(profile.location ?? "");
                     setAvatarUrl(profile.avatar_url ?? "");
+                    setWebsiteUrl(profile.website_url ?? "");
+                    setInstagram(profile.instagram ?? "");
+                    setTwitter(profile.twitter ?? "");
+                    setFacebook(profile.facebook ?? "");
+                    setYoutube(profile.youtube ?? "");
+                    setTiktok(profile.tiktok ?? "");
+                    setWhatsapp(profile.whatsapp ?? "");
+                    setTelegram(profile.telegram ?? "");
                   }
                 }}
                 className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
@@ -255,10 +329,37 @@ export default function UserProfile() {
                 </div>
               </div>
               {profile?.bio && (
-                <p className="text-gray-800 whitespace-pre-wrap">{profile.bio}</p>
+                <p className="text-gray-800 whitespace-pre-wrap max-w-prose">{profile.bio}</p>
               )}
               <div className="text-sm text-gray-600">
                 {profile?.location}
+              </div>
+
+              {/* social / links */}
+              <div className="flex flex-wrap gap-2 pt-3">
+                {(() => {
+                  const chips = [
+                    {label: "Website",  href: toHref(profile?.website_url)},
+                    {label: "Instagram",href: toHref(profile?.instagram, "instagram")},
+                    {label: "Twitter/X",href: toHref(profile?.twitter, "twitter")},
+                    {label: "TikTok",   href: toHref(profile?.tiktok, "tiktok")},
+                    {label: "YouTube",  href: toHref(profile?.youtube, "youtube")},
+                    {label: "Facebook", href: toHref(profile?.facebook, "facebook")},
+                    {label: "WhatsApp", href: toHref(profile?.whatsapp, "whatsapp")},
+                    {label: "Telegram", href: toHref(profile?.telegram, "telegram")},
+                  ].filter(x => !!x.href);
+
+                  return chips.map((c) => (
+                    <a
+                      key={c.label}
+                      href={c.href!}
+                      target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center rounded-xl border px-3 py-1.5 text-sm hover:bg-gray-50"
+                    >
+                      {c.label}
+                    </a>
+                  ));
+                })()}
               </div>
 
               <div className="flex items-center gap-3 pt-2">
@@ -316,6 +417,50 @@ export default function UserProfile() {
                   className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                   placeholder="Cidade, País"
                 />
+              </div>
+              
+              {/* Social links section */}
+              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Website</Label>
+                  <input value={websiteUrl} onChange={(e)=>setWebsiteUrl(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="https://..." />
+                </div>
+                <div>
+                  <Label>Instagram</Label>
+                  <input value={instagram} onChange={(e)=>setInstagram(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@seuusuario ou url" />
+                </div>
+                <div>
+                  <Label>Twitter/X</Label>
+                  <input value={twitter} onChange={(e)=>setTwitter(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@seuusuario ou url" />
+                </div>
+                <div>
+                  <Label>TikTok</Label>
+                  <input value={tiktok} onChange={(e)=>setTiktok(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@seuusuario ou url" />
+                </div>
+                <div>
+                  <Label>YouTube</Label>
+                  <input value={youtube} onChange={(e)=>setYoutube(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="canal ou url" />
+                </div>
+                <div>
+                  <Label>Facebook</Label>
+                  <input value={facebook} onChange={(e)=>setFacebook(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="página/usuário ou url" />
+                </div>
+                <div>
+                  <Label>WhatsApp</Label>
+                  <input value={whatsapp} onChange={(e)=>setWhatsapp(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="+55 47 9..." />
+                </div>
+                <div>
+                  <Label>Telegram</Label>
+                  <input value={telegram} onChange={(e)=>setTelegram(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="@usuario ou url" />
+                </div>
               </div>
             </div>
           )}
