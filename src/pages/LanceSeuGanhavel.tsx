@@ -282,7 +282,7 @@ export default function LanceSeuGanhavel() {
               <span className="mr-2">🏠</span> Home
             </Link>
             <Link
-              to="/minha-conta"
+              to="/profile"
               className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
               title="Voltar"
             >

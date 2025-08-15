@@ -403,19 +403,15 @@ export default function GanhaveisDetail() {
             </div>
 
             <div className="mt-4 flex items-center">
-              <button
-                onClick={handleBuy}
-                disabled={!buyable || buying}
-                className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-white bg-emerald-600 hover:bg-emerald-700
-                            ${(!buyable || buying) ? "opacity-50 cursor-not-allowed hover:bg-emerald-600" : ""}`}
-              >
-                Comprar bilhete
-              </button>
-              {soldOut && (
-                <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                  Esgotado
-                </span>
-              )}
+              {(() => {
+                const buyable = raffle.status === "approved" && Number(raffle.tickets_remaining || 0) > 0;
+                return (
+                  <button onClick={handleBuy} disabled={!buyable || buying}
+                    className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-white ${buyable ? "bg-emerald-600 hover:bg-emerald-700" : "bg-gray-300 cursor-not-allowed"}`}>
+                    {Number(raffle.tickets_remaining || 0) === 0 ? "Esgotado" : "Comprar bilhete"}
+                  </button>
+                );
+              })()}
             </div>
 
             <p className="mt-2 text-[12px] text-gray-500">

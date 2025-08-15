@@ -2,6 +2,25 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 
+const Guard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [uidChecked, setUidChecked] = React.useState(false);
+  const [uid, setUid] = React.useState<string | null>(null);
+  React.useEffect(() => { (async () => {
+    const { data } = await supabase.auth.getUser();
+    setUid(data.user?.id ?? null);
+    setUidChecked(true);
+  })(); }, []);
+  if (!uidChecked) return null; // or a small skeleton
+  if (!uid) return (
+    <section className="max-w-3xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-2">Meu Perfil</h1>
+      <p className="text-gray-700">Você precisa estar autenticado.</p>
+      <Link to="/login" className="underline text-emerald-700">Entrar</Link>
+    </section>
+  );
+  return <>{children}</>;
+};
+
 type RaffleBase = {
   id: string;
   created_at: string;
@@ -171,49 +190,51 @@ export default function Profile() {
   if (err) return <div className="max-w-6xl mx-auto p-6 text-red-700">{err}</div>;
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-10 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
-        <Link to="/lance-seu-ganhavel" className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">
-          + Lançar Ganhavel
-        </Link>
-      </div>
-
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border bg-white overflow-hidden">
-              <div className="aspect-[16/10] bg-gray-100 animate-pulse" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
-              </div>
-            </div>
-          ))}
+    <Guard>
+      <section className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
+          <Link to="/lance-seu-ganhavel" className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50">
+            + Lançar Ganhavel
+          </Link>
         </div>
-      ) : (
-        sections.map((sec) => {
-          const items = mine.filter((r) => r.status === sec.key);
-          if (!items.length) return null;
-          return (
-            <div key={sec.key}>
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-xl md:text-2xl font-semibold">{sec.title}</h2>
-                <span className="text-sm text-gray-600">{items.length}</span>
-              </div>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((r) => <Card key={r.id} r={r} p={prog[r.id]} />)}
-              </div>
-            </div>
-          );
-        })
-      )}
 
-      {!loading && !mine.length && (
-        <div className="rounded-2xl border bg-white p-6 text-gray-700">
-          Você ainda não lançou nenhum Ganhavel. <Link to="/lance-seu-ganhavel" className="underline text-emerald-700">Lançar agora</Link>.
-        </div>
-      )}
-    </section>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border bg-white overflow-hidden">
+                <div className="aspect-[16/10] bg-gray-100 animate-pulse" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          sections.map((sec) => {
+            const items = mine.filter((r) => r.status === sec.key);
+            if (!items.length) return null;
+            return (
+              <div key={sec.key}>
+                <div className="flex items-baseline justify-between">
+                  <h2 className="text-xl md:text-2xl font-semibold">{sec.title}</h2>
+                  <span className="text-sm text-gray-600">{items.length}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {items.map((r) => <Card key={r.id} r={r} p={prog[r.id]} />)}
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {!loading && !mine.length && (
+          <div className="rounded-2xl border bg-white p-6 text-gray-700">
+            Você ainda não lançou nenhum Ganhavel. <Link to="/lance-seu-ganhavel" className="underline text-emerald-700">Lançar agora</Link>.
+          </div>
+        )}
+      </section>
+    </Guard>
   );
 }
