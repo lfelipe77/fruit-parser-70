@@ -35,14 +35,14 @@ type RaffleData = {
   lottery_type?: string;
 };
 
-type OrganizerData = {
+type ProfileData = {
   id: string;
   display_name?: string;
   username?: string;
   full_name?: string;
   avatar_url?: string;
   bio?: string;
-  location_city?: string;
+  location?: string;
   created_at: string;
 };
 
@@ -53,7 +53,7 @@ export default function RifaDetail() {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [rifa, setRifa] = useState<RaffleData | null>(null);
-  const [organizer, setOrganizer] = useState<OrganizerData | null>(null);
+  const [organizer, setOrganizer] = useState<ProfileData | null>(null);
   
   const navigate = useNavigate();
   const { id: rifaId } = useParams();
@@ -282,19 +282,56 @@ export default function RifaDetail() {
     }
   };
 
-  const organizerDisplayName = organizer?.display_name || organizer?.full_name || organizer?.username || 'Organizador';
-  const organizerUsername = organizer?.username || '';
-  const organizerLocation = organizer?.location || 'Brasil';
-  const memberSince = organizer?.created_at ? new Date(organizer.created_at).toLocaleDateString('pt-BR', { 
-    month: 'short', 
-    year: 'numeric' 
-  }) : 'Jan 2023';
+  // Map organizer data correctly
+  type OrganizerData = {
+    name: string;
+    username: string;
+    bio?: string | null;
+    location?: string | null;
+    memberSince: string;
+    totalGanhaveisLancados: number;
+    ganhaveisCompletos: number;
+    totalGanhaveisParticipados: number;
+    ganhaveisGanhos: number;
+    avaliacaoMedia: number;
+    totalAvaliacoes: number;
+    avatar: string;
+    website?: string;
+    socialLinks?: {
+      instagram?: string;
+      facebook?: string;
+      twitter?: string;
+      linkedin?: string;
+    };
+  };
+
+  function fmtMemberSince(createdAt?: string | null) {
+    if (!createdAt) return "Jan 2023";
+    const d = new Date(createdAt);
+    return d.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+  }
+
+  const organizerData = organizer ? {
+    name: organizer.display_name || organizer.full_name || organizer.username || "Organizador",
+    username: organizer.username || "",
+    bio: organizer.bio || "Organizador verificado na Ganhavel com histórico comprovado de entregas pontuais e rifas bem-sucedidas.",
+    location: organizer.location,
+    memberSince: fmtMemberSince(organizer.created_at),
+    avatar: organizer.avatar_url || "/placeholder.svg",
+    totalGanhaveisLancados: 10,
+    ganhaveisCompletos: 9,
+    totalGanhaveisParticipados: 50,
+    ganhaveisGanhos: 3,
+    avaliacaoMedia: 4.8,
+    totalAvaliacoes: 45,
+    socialLinks: {}
+  } : null;
 
   return (
     <div className="min-h-screen bg-background">
       <SEOHead 
         title={`${rifa.title} - Rifa na Ganhavel`}
-        description={`${rifa.description} Participe desta rifa por apenas R$ ${rifa.ticket_price.toFixed(2)}. Organizado por ${organizerDisplayName}.`}
+        description={`${rifa.description} Participe desta rifa por apenas R$ ${rifa.ticket_price.toFixed(2)}. Organizado por ${organizerData?.name || 'Organizador'}.`}
         canonical={`https://ganhavel.com/ganhavel/${rifa.id}`}
         ogImage={rifa.image_url}
         ogType="product"
@@ -347,7 +384,7 @@ export default function RifaDetail() {
               {/* Location - Hidden on mobile */}
               <div className="hidden md:flex items-center gap-2 border-l pl-4">
                 <MapPin className="h-5 w-5 text-muted-foreground" />
-                <span className="text-base font-semibold">{organizerLocation}</span>
+                <span className="text-base font-semibold">{organizerData?.location || 'Brasil'}</span>
               </div>
               <Button variant="ghost" size="sm">
                 <Heart className="w-4 h-4" />
@@ -524,23 +561,9 @@ export default function RifaDetail() {
             </div>
 
             {/* Organizer Card */}
-            {organizer && (
+            {organizerData && (
               <div className="px-4 lg:px-0">
-                <DetalhesOrganizador organizadorData={{
-                  name: organizerDisplayName,
-                  username: organizerUsername,
-                  bio: organizer.bio || "Organizador verificado na Ganhavel com histórico comprovado de entregas pontuais e rifas bem-sucedidas.",
-                  location: organizerLocation,
-                  memberSince: memberSince,
-                  totalGanhaveisLancados: 10,
-                  ganhaveisCompletos: 9,
-                  totalGanhaveisParticipados: 50,
-                  ganhaveisGanhos: 3,
-                  avaliacaoMedia: 4.8,
-                  totalAvaliacoes: 45,
-                  avatar: organizer.avatar_url || "/placeholder.svg",
-                  socialLinks: {}
-                }} />
+                <DetalhesOrganizador organizer={organizerData} />
               </div>
             )}
           </div>
