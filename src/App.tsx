@@ -143,11 +143,11 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/lance-seu-ganhavel" element={<LanceSeuGanhavel />} />
-        <Route path="/descobrir" element={<Descobrir />} />
+        <Route path="/descobrir" element={<DiscoverRaffles />} />
         <Route path="/resultados" element={<Resultados />} />
-        <Route path="/categorias" element={<Categorias />} />
-        <Route path="/categorias/:categoria" element={<Categorias />} />
-        <Route path="/categorias/:categoria/:subcategoria" element={<SubcategoriaGanhaveis />} />
+        <Route path="/categorias" element={<CategoriesView />} />
+        <Route path="/categorias/:categoria" element={<CategoriesView />} />
+        <Route path="/categorias/:categoria/:subcategoria" element={<CategoriesView />} />
         <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
         <Route path="/ganhavel/:ganhaveisId/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
         <Route path="/ganhavel/:ganhaveisId/pagamento-sucesso" element={<PagamentoSucesso />} />
