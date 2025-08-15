@@ -13,6 +13,7 @@ type RafflePublic = {
   progress_pct: number;
   status: string;
   created_at: string;
+  tickets_remaining?: number;
 };
 
 const brl = (n: number | null | undefined) =>
@@ -21,7 +22,9 @@ const brl = (n: number | null | undefined) =>
 /** Compact, uncluttered home card */
 function RCard({ r }: { r: RafflePublic }) {
   const pct = Math.max(0, Math.min(100, Number(r.progress_pct || 0)));
-  const buyLabel = pct >= 100 || r.status !== "approved" ? "Ver detalhes" : "Comprar bilhete";
+  const soldOut = (r.tickets_remaining ?? 1) === 0;
+  const buyable = r.status === "approved" && pct < 100 && !soldOut;
+  const buyLabel = buyable ? "Comprar bilhete" : "Ver detalhes";
 
   return (
     <Link
@@ -52,14 +55,19 @@ function RCard({ r }: { r: RafflePublic }) {
 
         <div className="mt-2 flex items-center justify-between text-xs text-gray-700">
           <span>{pct}% concluído</span>
-          <span>Bilhete {brl(r.ticket_price)}</span>
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity">Bilhete {brl(r.ticket_price)}</span>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-3 flex items-center">
           <span className="inline-flex items-center justify-center px-3 py-1 rounded-xl text-sm
                            bg-emerald-600 text-white group-hover:bg-emerald-700">
             {buyLabel}
           </span>
+          {soldOut && (
+            <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+              Esgotado
+            </span>
+          )}
         </div>
       </div>
     </Link>
