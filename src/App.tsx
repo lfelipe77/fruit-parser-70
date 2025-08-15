@@ -66,6 +66,7 @@ import { useLocation } from 'react-router-dom';
 import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
 import MinimalDashboard from '@/pages/MinimalDashboard';
 import Profile from '@/pages/Profile';
+import UserProfile from '@/pages/UserProfile';
 import MyTickets from '@/pages/MyTickets';
 import Raffles from '@/pages/Raffles';
 import AdminRaffles from '@/pages/admin/AdminRaffles';
@@ -182,6 +183,11 @@ const AppContent = () => {
         
         {/* User profile and related pages - requires auth */}
         <Route path="/profile" element={
+          <RequireAuth>
+            <UserProfile />
+          </RequireAuth>
+        } />
+        <Route path="/my-ganhaveis" element={
           <RequireAuth>
             <Profile />
           </RequireAuth>
