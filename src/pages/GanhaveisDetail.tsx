@@ -49,7 +49,7 @@ type ProfileData = {
 export default function RifaDetail() {
   const [selectedCountry, setSelectedCountry] = useState("brasil");
   const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const [selectedProvider, setSelectedProvider] = useState<"asaas" | "stripe">("asaas");
+  const selectedProvider = "asaas"; // Fixed to Asaas only
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [rifa, setRifa] = useState<RaffleData | null>(null);
@@ -664,25 +664,7 @@ export default function RifaDetail() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Processador de pagamento</label>
-                      <div className="flex gap-2">
-                        <Button
-                          variant={selectedProvider === 'asaas' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setSelectedProvider('asaas')}
-                        >
-                          Asaas
-                        </Button>
-                        <Button
-                          variant={selectedProvider === 'stripe' ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setSelectedProvider('stripe')}
-                        >
-                          Stripe
-                        </Button>
-                      </div>
-                    </div>
+                    {/* Payment provider is now fixed to Asaas */}
 
                     <div className="space-y-3 pt-4 border-t">
                       <div className="flex items-center justify-between text-sm">
