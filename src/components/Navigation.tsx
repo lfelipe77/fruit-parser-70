@@ -173,7 +173,7 @@ export default function Navigation() {
                 </DropdownMenu>
               )}
               {user ? (
-                <Link to="/profile">
+                <Link to="/dashboard">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={avatarUrl || ''} />
                     <AvatarFallback>
