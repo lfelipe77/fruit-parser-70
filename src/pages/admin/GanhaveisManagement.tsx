@@ -48,14 +48,55 @@ export default function GanhaveisManagement() {
   const loadRaffles = async () => {
     try {
       setLoading(true);
-      const { data, error } = await (supabase as any)
-        .from('raffles_public_money_ext')
-        .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at')
-        .order('last_paid_at', { ascending: false });
+      
+      // Use base raffles table with joins for admin access
+      const query = supabase
+        .from('raffles')
+        .select(`
+          id,
+          title,
+          description,
+          image_url,
+          status,
+          ticket_price,
+          total_tickets,
+          draw_date,
+          created_at,
+          owner_user_id,
+          category_id,
+          subcategory_id,
+          categories(nome),
+          subcategories(name)
+        `)
+        .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
       
       if (error) throw error;
-      console.log('[GanhaveisManagement] Raw Supabase data:', data);
-      setRaffles(Array.isArray(data) ? data as RafflePublicMoney[] : []);
+      
+      // Transform data to match expected format with all required fields
+      const transformedData = (data || []).map(raffle => ({
+        id: raffle.id,
+        title: raffle.title || 'Sem título',
+        description: raffle.description,
+        image_url: raffle.image_url,
+        status: raffle.status || 'pending',
+        ticket_price: raffle.ticket_price || 0,
+        total_tickets: raffle.total_tickets || 0,
+        draw_date: raffle.draw_date,
+        created_at: raffle.created_at,
+        category_id: raffle.category_id,
+        subcategory_id: raffle.subcategory_id,
+        category_name: raffle.categories?.nome || null,
+        subcategory_name: raffle.subcategories?.name || null,
+        amount_raised: 0, // placeholder - will be enhanced later
+        goal_amount: 0, // placeholder - will be enhanced later
+        progress_pct_money: 0, // placeholder - will be enhanced later
+        last_paid_at: null // placeholder - will be enhanced later
+      }));
+
+      console.log('admin-rows', transformedData.length, transformedData.slice(0, 3));
+      setRaffles(transformedData as RafflePublicMoney[]);
     } catch (error) {
       console.error('Error loading raffles:', error);
       setRaffles([]); // ✅ Always set to empty array on error
