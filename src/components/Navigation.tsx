@@ -186,7 +186,7 @@ export default function Navigation() {
               {/* Direct Admin Link - Primary Method */}
               {isAdmin && (
                 <Link
-                  to="/admin/ganhaveis"
+                  to="/admin"
                   className="px-3 py-2 text-sm font-medium hover:opacity-80 flex items-center gap-2 bg-primary/10 text-primary rounded-md transition-colors"
                   data-testid="nav-admin-link"
                   onClick={() => console.log('[Navigation] Direct admin link clicked')}

@@ -264,8 +264,9 @@ export default function GanhaveisManagement() {
       
       setShowApprovalModal(false);
       
-      // Note: In a real app, you'd refresh the ganhaveis list or use optimistic updates
-      // For now we keep the reload but this should be replaced with proper state management
+      // TODO: Implement proper state management instead of reload
+      // For now, optimistically update the UI
+      // setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'active' } : r));
     } catch (error) {
       console.error('Error approving raffle:', error);
       toast({
@@ -301,8 +302,9 @@ export default function GanhaveisManagement() {
       setShowRejectModal(false);
       setRejectionReason("");
       
-      // Note: In a real app, you'd refresh the ganhaveis list or use optimistic updates
-      // For now we keep the reload but this should be replaced with proper state management
+      // TODO: Implement proper state management instead of reload
+      // For now, optimistically update the UI  
+      // setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'rejected' } : r));
     } catch (error) {
       console.error('Error rejecting raffle:', error);
       toast({

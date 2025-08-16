@@ -205,7 +205,7 @@ const AppContent = () => {
             <Admin />
           </AdminProtectedRoute>
         }>
-          <Route index element={<AdminDashboard />} />
+          <Route index element={<GanhaveisManagement />} />
           <Route path="ganhaveis" element={<GanhaveisManagement />} />
           <Route path="ganhaveis-concluidos" element={<GanhavelsConcluidos />} />
           <Route path="usuarios" element={<UsersManagement />} />
