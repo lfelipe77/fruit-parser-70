@@ -5,9 +5,11 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
+import DetalhesOrganizador from "@/components/DetalhesOrganizador";
+import ShareButton from "@/components/ShareButton";
 
 type RafflePublicMoney = {
   id: string;
@@ -62,25 +64,6 @@ const FALLBACK_RULES = `
 </ul>
 `;
 
-function ShareButton({ title, url }: { title: string; url: string }) {
-  const [copied, setCopied] = React.useState(false);
-  const doShare = async () => {
-    try {
-      if ((navigator as any).share) {
-        await (navigator as any).share({ title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    } catch {}
-  };
-  return (
-    <button onClick={doShare} className="rounded-lg border px-3 py-1 text-sm">
-      {copied ? "Link copiado!" : "Compartilhar"}
-    </button>
-  );
-}
 
 export default function GanhaveisDetail() {
   const { id } = useParams<{ id: string }>();
@@ -151,7 +134,15 @@ export default function GanhaveisDetail() {
           <div className="text-xs text-gray-600">
             🇧🇷 Loteria Federal • Próximo sorteio: {drawLabel}
           </div>
-          <ShareButton title={raffle.title} url={pageUrl} />
+          <div className="flex items-center gap-2">
+            <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+              <Share2 className="h-4 w-4 mr-2" />
+              <ShareButton 
+                title={raffle.title} 
+                url={pageUrl}
+              />
+            </Button>
+          </div>
         </div>
 
       {/* Image + Title */}
@@ -265,6 +256,33 @@ export default function GanhaveisDetail() {
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* Organizer Profile Section */}
+      <div className="mt-8">
+        <DetalhesOrganizador 
+          organizer={{
+            name: "João Silva",
+            username: "joaosilva",
+            bio: "Organizador experiente com mais de 50 ganhaveis realizados. Especialista em rifas de veículos e eletrônicos.",
+            location: "São Paulo, SP",
+            memberSince: "Janeiro 2023",
+            totalGanhaveisLancados: 47,
+            ganhaveisCompletos: 43,
+            totalGanhaveisParticipados: 156,
+            ganhaveisGanhos: 2,
+            avaliacaoMedia: 4.8,
+            totalAvaliacoes: 234,
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+            website: "https://joaosilva.com.br",
+            socialLinks: {
+              instagram: "@joaosilva_ganhaveis",
+              facebook: "joaosilva.ganhaveis",
+              twitter: "@joaosilva",
+              linkedin: "joao-silva-123"
+            }
+          }}
+        />
       </div>
       </div>
     </>
