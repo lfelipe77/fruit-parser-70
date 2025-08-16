@@ -32,7 +32,7 @@ export default function EmAltaRecentesSection() {
       try {
         const base = () => (supabase as any)
           .from('raffles_public_money_ext')
-          .select('id,title,description,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at');
+          .select('id,title,description,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at,draw_date');
         
         const [a, b] = await Promise.all([
           base().order("progress_pct_money", { ascending: false }).limit(3),
@@ -42,7 +42,19 @@ export default function EmAltaRecentesSection() {
           if (a.error) throw a.error;
           if (b.error) throw b.error;
           setTop((a.data ?? []) as RafflePublicMoney[]);
-          setRecent((b.data ?? []) as RafflePublicMoney[]);
+          let recentData = (b.data ?? []) as RafflePublicMoney[];
+          // Fallbacks for "Recentes": draw_date desc, then id desc
+          if (recentData.length === 0) {
+            const fb1 = await base().order('draw_date', { ascending: false }).limit(3);
+            if (fb1.error) throw fb1.error;
+            recentData = (fb1.data ?? []) as RafflePublicMoney[];
+            if (recentData.length === 0) {
+              const fb2 = await base().order('id', { ascending: false }).limit(3);
+              if (fb2.error) throw fb2.error;
+              recentData = (fb2.data ?? []) as RafflePublicMoney[];
+            }
+          }
+          setRecent(recentData);
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");

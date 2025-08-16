@@ -61,7 +61,10 @@ export default function DiscoverRaffles() {
       }
 
       if (selectedCategory) {
-        query = query.eq("category_id", selectedCategory);
+        const catName = categories.find(c => c.id === selectedCategory)?.name;
+        if (catName) {
+          query = query.eq("category_name", catName);
+        }
       }
 
       // Apply sorting

@@ -77,47 +77,38 @@ export default function GanhaveisDetail() {
       try {
         setLoading(true);
         
-        // Load raffle data
+        // Load raffle data (money view)
         const { data: moneyData, error: moneyError } = await (supabase as any)
           .from("raffles_public_money_ext")
-          .select("*")
+          .select("id,title,description,image_url,status,ticket_price,draw_date,category_name,subcategory_name,amount_raised,goal_amount,progress_pct_money,last_paid_at")
           .eq("id", id)
           .maybeSingle();
         
         if (moneyError) console.warn("money error", moneyError);
         if (!alive) return;
-        
         setMoneyRow(moneyData as MoneyRow | null);
 
-        // Load owner data if available
-        if (moneyData?.owner_user_id) {
+        // Load extras from base table
+        const { data: baseData, error: baseError } = await (supabase as any)
+          .from("raffles")
+          .select("user_id,vendor_url,location_city,location_state,details_html,regulation_html,prize_details,description_long")
+          .eq("id", id)
+          .maybeSingle();
+        if (baseError) console.warn("extras error", baseError);
+        if (!alive) return;
+        setExtrasRow((baseData ?? null) as RaffleExtras | null);
+
+        // Load organizer profile if available
+        if (baseData?.user_id) {
           const { data: ownerData, error: ownerError } = await (supabase as any)
             .from("user_profiles_public")
             .select("*")
-            .eq("id", moneyData.owner_user_id)
+            .eq("id", baseData.user_id)
             .maybeSingle();
-          
           if (ownerError) console.warn("owner error", ownerError);
-          if (alive) {
-            setExtrasRow({
-              user_id: moneyData.owner_user_id,
-              vendor_url: null,
-              location_city: null,
-              location_state: null,
-              details_html: null,
-              regulation_html: null,
-            });
-            setOrganizerData(ownerData);
-          }
+          if (alive) setOrganizerData(ownerData);
         } else {
-          setExtrasRow({
-            user_id: null,
-            vendor_url: null,
-            location_city: null,
-            location_state: null,
-            details_html: null,
-            regulation_html: null,
-          });
+          if (alive) setOrganizerData(null);
         }
       } finally {
         if (alive) setLoading(false);
