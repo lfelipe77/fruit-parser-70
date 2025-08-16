@@ -17,7 +17,7 @@ import {
   BarChart3,
   Eye
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import NotificationCenter from "@/components/NotificationCenter";
@@ -27,13 +27,39 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+function useIsAdmin() {
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  useEffect(() => {
+    (async () => {
+      console.log('[useIsAdmin] Checking admin status...');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('[useIsAdmin] No user found');
+        return setIsAdmin(false);
+      }
+      console.log('[useIsAdmin] User found:', user.id);
+      const { data } = await supabase
+        .from("user_profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      console.log('[useIsAdmin] Profile data:', data);
+      const adminStatus = ((data?.role ?? "") as string).toLowerCase() === "admin";
+      console.log('[useIsAdmin] Admin status:', adminStatus);
+      setIsAdmin(adminStatus);
+    })();
+  }, []);
+  return isAdmin;
+}
+
 export default function Navigation() {
   const { t } = useTranslation();
   const [selectedLottery, setSelectedLottery] = useState('br');
-  const { isAdmin } = useAdminCheck();
+  const { isAdmin: legacyIsAdmin } = useAdminCheck();
   const { user } = useAuth();
   const [userRole, setUserRole] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const isAdmin = useIsAdmin();
 
   // Verificar role do usuário e avatar
   useEffect(() => {
@@ -99,8 +125,10 @@ export default function Navigation() {
   // Debug logging for admin status
   console.log('[Navigation] Current user:', user?.id);
   console.log('[Navigation] Current userRole:', userRole);
-  console.log('[Navigation] isAdmin hook result:', isAdmin);
+  console.log('[Navigation] legacyIsAdmin hook result:', legacyIsAdmin);
+  console.log('[Navigation] useIsAdmin hook result:', isAdmin);
   console.log('[Navigation] Admin dropdown visible:', userRole === "admin");
+  console.log('[Navigation] Direct admin link visible:', isAdmin === true);
   
   return (
     <>
@@ -154,17 +182,31 @@ export default function Navigation() {
               </Button>
               <NotificationCenter />
               <LanguageSelector />
-              {/* Admin dropdown menu */}
-              {userRole === "admin" && (
+              
+              {/* Direct Admin Link - Primary Method */}
+              {isAdmin && (
+                <Link
+                  to="/admin/ganhaveis"
+                  className="px-3 py-2 text-sm font-medium hover:opacity-80 flex items-center gap-2 bg-primary/10 text-primary rounded-md transition-colors"
+                  data-testid="nav-admin-link"
+                  onClick={() => console.log('[Navigation] Direct admin link clicked')}
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Link>
+              )}
+              
+              {/* Legacy Admin dropdown menu - Fallback */}
+              {userRole === "admin" && !isAdmin && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="ghost" 
                       className="flex items-center gap-2"
-                      onClick={() => console.log('[Navigation] Admin dropdown clicked, userRole:', userRole, 'isAdmin:', isAdmin)}
+                      onClick={() => console.log('[Navigation] Legacy admin dropdown clicked, userRole:', userRole, 'isAdmin:', legacyIsAdmin)}
                     >
                       <Shield className="h-4 w-4" />
-                      Admin
+                      Admin (Legacy)
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
