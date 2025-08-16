@@ -214,11 +214,6 @@ export default function GanhaveisDetail() {
             </TabsList>
 
             <TabsContent value="detalhes" className="prose mt-4 max-w-none">
-              {raffle.descShort && (
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-gray-700">{raffle.descShort}</p>
-                </div>
-              )}
               <div
                 dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
               />
