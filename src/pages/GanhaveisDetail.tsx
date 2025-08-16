@@ -5,6 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Navigation from "@/components/Navigation";
 
 type RafflePublicMoney = {
   id: string;
@@ -128,14 +131,28 @@ export default function GanhaveisDetail() {
   const pageUrl = `${location.origin}/#/ganhavel/${raffle.id}`;
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      {/* Header bar */}
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-600">
-          🇧🇷 Loteria Federal • Próximo sorteio: {drawLabel}
+    <>
+      <Navigation />
+      <div className="container mx-auto p-4 space-y-4">
+        {/* Back button */}
+        <div className="mb-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
         </div>
-        <ShareButton title={raffle.title} url={pageUrl} />
-      </div>
+
+        {/* Header bar */}
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-gray-600">
+            🇧🇷 Loteria Federal • Próximo sorteio: {drawLabel}
+          </div>
+          <ShareButton title={raffle.title} url={pageUrl} />
+        </div>
 
       {/* Image + Title */}
       <div className="grid gap-6 md:grid-cols-[1fr,360px]">
@@ -175,46 +192,81 @@ export default function GanhaveisDetail() {
         </div>
 
         {/* Right: money box */}
-        <aside className="rounded-2xl border p-4">
-          <div className="text-sm text-gray-600">
-            {formatBRL(raffle.amount_raised)} <span className="text-gray-400">de</span> {formatBRL(raffle.goal_amount)}
+        <aside className="rounded-2xl border p-6 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-lg">
+          {/* Campaign Progress Section */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-emerald-800 mb-3">Progresso da Campanha</h3>
+            <div className="text-sm text-gray-600 mb-2">
+              {formatBRL(raffle.amount_raised)} <span className="text-gray-400">de</span> {formatBRL(raffle.goal_amount)}
+            </div>
+            <div className="mt-2">
+              <Progress value={pct} className="h-3 bg-emerald-200" />
+            </div>
+            <div className="mt-2 text-sm text-emerald-700 font-medium">{pct}% completo</div>
+            <div className="text-sm text-gray-600">Último pagamento: {lastPaidAgo}</div>
           </div>
-          <div className="mt-2">
-            <Progress value={pct} className="h-2" />
-          </div>
-          <div className="mt-2 text-sm text-gray-600">Sorteio: {pct}% completo</div>
-          <div className="text-sm text-gray-600">Último pagamento: {lastPaidAgo}</div>
 
-          <div className="mt-4 space-y-2">
-            <div className="text-xs text-gray-500">Bilhete</div>
-            <div className="text-lg font-semibold">{formatBRL(raffle.ticket_price)}</div>
+          <div className="space-y-4">
+            <div className="text-xs text-gray-500 uppercase tracking-wide">Bilhete</div>
+            <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.ticket_price)}</div>
 
-            <div className="mt-2 flex items-center gap-2">
-              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="rounded border px-2 py-1">–</button>
-              <span className="w-8 text-center">{qty}</span>
-              <button onClick={() => setQty(q => q + 1)} className="rounded border px-2 py-1">+</button>
+            <div className="flex items-center gap-3 bg-white rounded-lg p-2">
+              <button 
+                onClick={() => setQty(q => Math.max(1, q - 1))} 
+                className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
+              >
+                –
+              </button>
+              <span className="w-12 text-center font-semibold">{qty}</span>
+              <button 
+                onClick={() => setQty(q => q + 1)} 
+                className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
+              >
+                +
+              </button>
             </div>
 
-            <div className="mt-2 flex justify-between text-sm">
-              <span>Bilhetes ({qty}x):</span><span>{formatBRL(subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Taxa institucional:</span><span>{formatBRL(feeFixed)}</span>
-            </div>
-            <div className="flex justify-between font-semibold">
-              <span>Total a pagar</span><span>{formatBRL(total)}</span>
+            <div className="space-y-2 bg-white rounded-lg p-4">
+              <div className="flex justify-between text-sm">
+                <span>Bilhetes ({qty}x):</span><span>{formatBRL(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Taxa institucional:</span><span>{formatBRL(feeFixed)}</span>
+              </div>
+              <hr className="my-2 border-gray-200" />
+              <div className="flex justify-between font-bold text-lg text-emerald-700">
+                <span>Total a pagar</span><span>{formatBRL(total)}</span>
+              </div>
             </div>
 
             <button
               onClick={() => navigate(`/ganhavel/${raffle.id}/confirmacao-pagamento?qty=${qty}`)}
               disabled={!isActive}
-              className="mt-2 w-full rounded-xl bg-emerald-500 py-2 text-white disabled:opacity-50"
+              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Comprar {qty} bilhetes
             </button>
+
+            {/* Regulamento Section */}
+            <div className="mt-6 pt-6 border-t border-emerald-200">
+              <h4 className="text-md font-semibold text-emerald-800 mb-3">📋 Regulamento</h4>
+              <div className="bg-white rounded-lg p-4 text-sm text-gray-700 space-y-2">
+                <p className="font-medium text-emerald-700">🏆 Como o ganhador é definido:</p>
+                <ul className="space-y-1 text-xs leading-relaxed">
+                  <li>• Sorteio através da Loteria Federal</li>
+                  <li>• Bilhete com número exato ou mais próximo</li>
+                  <li>• Em caso de empate: quem comprou primeiro</li>
+                  <li>• Processo 100% transparente e auditável</li>
+                </ul>
+                <div className="mt-3 pt-2 border-t border-gray-100">
+                  <p className="text-xs text-emerald-600 font-medium">✅ Garantia total de justiça e transparência</p>
+                </div>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
