@@ -56,17 +56,31 @@ export default function PagamentoSucesso() {
   };
 
   const handleShare = () => {
+    const shareTitle = `🍀 Participando do Ganhavel: ${paymentData.rifaTitle}`;
+    const shareText = `Acabei de comprar ${paymentData.quantity} bilhete${paymentData.quantity > 1 ? 's' : ''} no ganhavel "${paymentData.rifaTitle}"! 
+
+🎯 Prêmio: ${paymentData.rifaTitle}
+🎫 Bilhetes: ${paymentData.quantity}
+💰 Valor: R$ ${paymentData.totalAmount.toFixed(2)}
+🏆 Organizado por: ${paymentData.organizerName}
+
+Participe você também e concorra a este prêmio incrível! 🚀`;
+    
+    const shareUrl = `${window.location.origin}/#/ganhavel/${paymentData.rifaId}`;
+
     if (navigator.share) {
       navigator.share({
-        title: `Participando do ganhavel: ${paymentData.rifaTitle}`,
-        text: `Acabei de comprar ${paymentData.quantity} bilhetes no ganhavel ${paymentData.rifaTitle}! 🍀`,
-        url: window.location.origin + `/ganhavel/${paymentData.rifaId}`
+        title: shareTitle,
+        text: shareText,
+        url: shareUrl
       });
     } else {
-      navigator.clipboard.writeText(window.location.origin + `/ganhavel/${paymentData.rifaId}`);
+      // Fallback: copy rich text to clipboard
+      const fullShareText = `${shareText}\n\n🔗 ${shareUrl}`;
+      navigator.clipboard.writeText(fullShareText);
       toast({
-        title: "Link copiado!",
-        description: "O link do ganhavel foi copiado para a área de transferência.",
+        title: "Conteúdo copiado!",
+        description: "As informações do ganhavel foram copiadas para compartilhar.",
       });
     }
   };
