@@ -78,6 +78,9 @@ export default function GanhaveisManagement() {
   const [adminNotes, setAdminNotes] = useState("");
   const [raffles, setRaffles] = useState<RafflePublicMoney[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Log data shape for debugging
+  console.log('[GanhaveisManagement] Raffles data:', raffles);
   const { toast } = useToast();
   const { logAdminAction } = useAuditLogger();
 
@@ -95,7 +98,8 @@ export default function GanhaveisManagement() {
         .order('last_paid_at', { ascending: false });
       
       if (error) throw error;
-      setRaffles((data || []) as RafflePublicMoney[]);
+      console.log('[GanhaveisManagement] Raw Supabase data:', data);
+      setRaffles(Array.isArray(data) ? data as RafflePublicMoney[] : []);
     } catch (error) {
       console.error('Error loading raffles:', error);
     } finally {
@@ -364,7 +368,7 @@ export default function GanhaveisManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas as categorias</SelectItem>
-                  {getAllCategories().map(category => (
+                  {(getAllCategories() || []).map(category => (
                     <SelectItem key={category.slug} value={category.slug}>
                       {category.name}
                     </SelectItem>
@@ -416,7 +420,7 @@ export default function GanhaveisManagement() {
                             <div className="animate-pulse">Carregando...</div>
                           </TableCell>
                         </TableRow>
-                      ) : filteredGanhaveis.map((raffle) => {
+                      ) : (filteredGanhaveis || []).map((raffle) => {
                         const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
                         return (
                           <TableRow key={raffle.id}>
