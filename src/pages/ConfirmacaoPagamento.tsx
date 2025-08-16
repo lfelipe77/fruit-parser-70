@@ -29,6 +29,7 @@ export default function ConfirmacaoPagamento() {
   const [loading, setLoading] = React.useState(true);
   const [paymentMethod, setPaymentMethod] = React.useState<'pix' | 'card' | 'bank'>('pix');
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [selectedNumbers, setSelectedNumbers] = React.useState<string[]>([]);
   
   // Form data
   const [formData, setFormData] = React.useState({
@@ -41,6 +42,25 @@ export default function ConfirmacaoPagamento() {
     cvv: '',
     cardName: ''
   });
+
+  // Generate lottery combinations (6 two-digit numbers, like: (12-43-24-56-78-90))
+  const generateLotteryCombination = () => {
+    const numbers = [];
+    for (let i = 0; i < 6; i++) {
+      const num = String(Math.floor(Math.random() * 89) + 10).padStart(2, '0');
+      numbers.push(num);
+    }
+    return `(${numbers.join('-')})`;
+  };
+
+  const generateNumbers = (count: number) => {
+    return Array.from({ length: count }, () => generateLotteryCombination());
+  };
+
+  // Generate numbers when qty changes
+  React.useEffect(() => {
+    setSelectedNumbers(generateNumbers(qty));
+  }, [qty]);
 
   // Load raffle data
   React.useEffect(() => {
@@ -76,8 +96,19 @@ export default function ConfirmacaoPagamento() {
       // For now, we'll simulate the process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Redirect to success page
-      navigate(`/ganhavel/${id}/pagamento-sucesso?qty=${qty}`);
+      // Redirect to success page with selected numbers
+      navigate(`/ganhavel/${id}/pagamento-sucesso?qty=${qty}`, {
+        state: {
+          rifaId: id,
+          rifaTitle: raffle?.title,
+          rifaImage: raffle?.image_url,
+          selectedNumbers: selectedNumbers,
+          quantity: qty,
+          totalAmount: total,
+          paymentId: `PAY_${Date.now()}`,
+          paymentDate: new Date().toISOString()
+        }
+      });
     } catch (error) {
       console.error('Payment error:', error);
       // Redirect to error page
@@ -85,6 +116,10 @@ export default function ConfirmacaoPagamento() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleRegenerateNumbers = () => {
+    setSelectedNumbers(generateNumbers(qty));
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -113,12 +148,12 @@ export default function ConfirmacaoPagamento() {
       <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
         {/* Main Form */}
         <div className="space-y-6">
-          {/* Raffle Summary */}
+          {/* Raffle Summary & Selected Numbers */}
           <Card>
             <CardHeader>
               <CardTitle>Resumo da Compra</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex gap-4">
                 <img
                   src={raffle.image_url || "https://placehold.co/100x60?text=Imagem"}
@@ -131,6 +166,33 @@ export default function ConfirmacaoPagamento() {
                     {qty} bilhete{qty > 1 ? 's' : ''} × {formatBRL(raffle.ticket_price)}
                   </p>
                 </div>
+              </div>
+
+              {/* Selected Numbers */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium">Seus Números da Sorte:</h4>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleRegenerateNumbers}
+                  >
+                    🎲 Gerar Novos
+                  </Button>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {selectedNumbers.map((combination, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <span className="font-mono text-sm font-semibold text-emerald-800">{combination}</span>
+                      <div className="text-xs text-emerald-600 font-medium">
+                        Bilhete #{index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 Estes números são gerados aleatoriamente para você. Clique em "Gerar Novos" se quiser trocar.
+                </p>
               </div>
             </CardContent>
           </Card>
