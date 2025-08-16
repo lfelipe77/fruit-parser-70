@@ -15,9 +15,12 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
   useEffect(() => {
     const checkAdmin = async () => {
       if (!user) {
+        console.log('[AdminProtectedRoute] No user, cannot check admin');
         setChecking(false);
         return;
       }
+
+      console.log('[AdminProtectedRoute] Checking admin status for user:', user.id);
 
       try {
         const { data, error } = await supabase
@@ -26,6 +29,8 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
           .eq('id', user.id)
           .maybeSingle();
 
+        console.log('[AdminProtectedRoute] Profile query result:', { data, error, userId: user.id });
+
         if (error) {
           console.error('Error checking admin role:', error);
           setIsAdmin(false);
@@ -33,7 +38,9 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
           console.warn('User profile not found, assuming non-admin role');
           setIsAdmin(false);
         } else {
-          setIsAdmin(data.role === 'admin');
+          const userIsAdmin = data.role === 'admin';
+          console.log('[AdminProtectedRoute] User role check:', { role: data.role, isAdmin: userIsAdmin });
+          setIsAdmin(userIsAdmin);
         }
       } catch (error) {
         console.error('Error checking admin role:', error);
@@ -59,14 +66,17 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
 
   // Redirect to login if not authenticated
   if (!user) {
+    console.log('[AdminProtectedRoute] Redirecting to login - no user');
     return <Navigate to="/login" replace />;
   }
 
   // Redirect to access denied if not admin
   if (isAdmin === false) {
+    console.log('[AdminProtectedRoute] Redirecting to access denied - not admin');
     return <Navigate to="/access-denied" replace />;
   }
 
+  console.log('[AdminProtectedRoute] User is admin, rendering children');
   // Render children if user is admin
   return <>{children}</>;
 };
