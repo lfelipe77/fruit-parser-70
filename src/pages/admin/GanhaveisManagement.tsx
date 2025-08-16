@@ -64,6 +64,19 @@ export default function GanhaveisManagement() {
     }
   };
 
+  // Realtime subscription to reload on raffle inserts/updates/deletes
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-raffles-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'raffles' }, () => {
+        loadRaffles();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   // ✅ Filter data safely with fallbacks
   const safeRaffles = Array.isArray(raffles) ? raffles : [];
   const safeCategories = getAllCategories() || [];

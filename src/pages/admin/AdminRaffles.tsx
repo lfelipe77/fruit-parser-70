@@ -53,7 +53,7 @@ export default function AdminRaffles() {
     product_value: '',
     total_tickets: '',
     ticket_price: '',
-    status: 'draft'
+      status: 'pending'
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -167,7 +167,7 @@ export default function AdminRaffles() {
 
         toast({
           title: 'Rifa criada',
-          description: 'Nova rifa foi criada com sucesso.',
+          description: 'Nova rifa foi criada com sucesso. Status: Pendente.',
         });
       }
 
@@ -253,6 +253,7 @@ export default function AdminRaffles() {
     switch (status) {
       case 'active': return 'default';
       case 'closed': return 'secondary';
+      case 'pending': return 'outline';
       case 'draft': return 'outline';
       default: return 'secondary';
     }
@@ -262,6 +263,7 @@ export default function AdminRaffles() {
     switch (status) {
       case 'active': return 'Ativa';
       case 'closed': return 'Fechada';
+      case 'pending': return 'Pendente';
       case 'draft': return 'Rascunho';
       default: return status;
     }
@@ -392,9 +394,10 @@ export default function AdminRaffles() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="draft">Rascunho</SelectItem>
+                      <SelectItem value="pending">Pendente</SelectItem>
                       <SelectItem value="active">Ativa</SelectItem>
                       <SelectItem value="closed">Fechada</SelectItem>
+                      <SelectItem value="draft">Rascunho</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
