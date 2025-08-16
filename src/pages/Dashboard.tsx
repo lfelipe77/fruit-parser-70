@@ -249,7 +249,7 @@ export default function Dashboard() {
                   carros, motos, dinheiro e muito mais!
                 </p>
                 <Button asChild>
-                  <Link to="/raffles">Explorar Rifas</Link>
+                  <Link to="/raffles">Explorar Ganhaveis</Link>
                 </Button>
               </CardContent>
             </Card>
