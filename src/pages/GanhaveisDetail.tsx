@@ -58,6 +58,7 @@ export default function GanhaveisDetail() {
   // ---- Hooks (always first)
   const [moneyRow, setMoneyRow] = React.useState<MoneyRow | null>(null);
   const [extrasRow, setExtrasRow] = React.useState<RaffleExtras | null>(null);
+  const [organizerData, setOrganizerData] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [qty, setQty] = React.useState(1);
 
@@ -88,15 +89,36 @@ export default function GanhaveisDetail() {
         
         setMoneyRow(moneyData as MoneyRow | null);
 
-        // TODO: Connect extras data when available in DB
-        setExtrasRow({
-          user_id: null, // TODO: wire owner_user_id from view
-          vendor_url: null,
-          location_city: null,
-          location_state: null,
-          details_html: null,
-          regulation_html: null,
-        });
+        // Load owner data if available
+        if (moneyData?.owner_user_id) {
+          const { data: ownerData, error: ownerError } = await (supabase as any)
+            .from("user_profiles_public")
+            .select("*")
+            .eq("id", moneyData.owner_user_id)
+            .maybeSingle();
+          
+          if (ownerError) console.warn("owner error", ownerError);
+          if (alive) {
+            setExtrasRow({
+              user_id: moneyData.owner_user_id,
+              vendor_url: null,
+              location_city: null,
+              location_state: null,
+              details_html: null,
+              regulation_html: null,
+            });
+            setOrganizerData(ownerData);
+          }
+        } else {
+          setExtrasRow({
+            user_id: null,
+            vendor_url: null,
+            location_city: null,
+            location_state: null,
+            details_html: null,
+            regulation_html: null,
+          });
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -268,24 +290,24 @@ export default function GanhaveisDetail() {
       <div className="mt-8">
         <DetalhesOrganizador 
           organizer={{
-            name: "João Silva",
-            username: "joaosilva",
-            bio: "Organizador experiente com mais de 50 ganhaveis realizados. Especialista em rifas de veículos e eletrônicos.",
-            location: "São Paulo, SP",
-            memberSince: "Janeiro 2023",
-            totalGanhaveisLancados: 47,
-            ganhaveisCompletos: 43,
-            totalGanhaveisParticipados: 156,
-            ganhaveisGanhos: 2,
-            avaliacaoMedia: 4.8,
-            totalAvaliacoes: 234,
-            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-            website: "https://joaosilva.com.br",
+            name: organizerData?.full_name || organizerData?.username || "Organizador",
+            username: organizerData?.username || "user",
+            bio: organizerData?.bio || "Organizador experiente na plataforma.",
+            location: organizerData?.location || "Brasil",
+            memberSince: "Janeiro 2023", // TODO: wire from created_at
+            totalGanhaveisLancados: 47, // TODO: aggregate from raffles
+            ganhaveisCompletos: 43, // TODO: aggregate completed
+            totalGanhaveisParticipados: 156, // TODO: aggregate participations
+            ganhaveisGanhos: 2, // TODO: aggregate wins
+            avaliacaoMedia: 4.8, // TODO: wire from ratings
+            totalAvaliacoes: 234, // TODO: aggregate reviews
+            avatar: organizerData?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+            website: organizerData?.website_url || null,
             socialLinks: {
-              instagram: "@joaosilva_ganhaveis",
-              facebook: "joaosilva.ganhaveis",
-              twitter: "@joaosilva",
-              linkedin: "joao-silva-123"
+              instagram: organizerData?.instagram || null,
+              facebook: organizerData?.facebook || null,
+              twitter: organizerData?.twitter || null,
+              linkedin: null // TODO: wire linkedin field
             }
           }}
         />

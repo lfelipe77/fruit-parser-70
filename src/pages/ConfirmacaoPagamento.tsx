@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { formatBRL } from "@/lib/formatters";
 import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import { toConfirm } from "@/lib/nav";
 
 type RaffleRow = {
   id: string;
@@ -60,9 +61,18 @@ export default function ConfirmacaoPagamento() {
     return Array.from({ length: count }, () => generateLotteryCombination());
   };
 
+  // TODO: Connect to database - persist tickets preview
+  const persistTicketsPreview = (numbers: string[]) => {
+    // TODO: Insert into tickets table with status='reserved'
+    // TODO: Store numbers in ticket_picks table
+    console.log('Tickets to persist:', numbers);
+  };
+
   // Generate numbers when qty changes
   React.useEffect(() => {
-    setSelectedNumbers(generateNumbers(qty));
+    const numbers = generateNumbers(qty);
+    setSelectedNumbers(numbers);
+    persistTicketsPreview(numbers); // TODO: Connect to DB
   }, [qty]);
 
   // Load raffle data
@@ -95,7 +105,9 @@ export default function ConfirmacaoPagamento() {
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      // Here you would integrate with your payment provider (Asaas)
+      // TODO: Create transaction record in database
+      // TODO: Reserve tickets in tickets table
+      // TODO: Integrate with Asaas payment provider
       // For now, we'll simulate the process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
@@ -108,7 +120,7 @@ export default function ConfirmacaoPagamento() {
           selectedNumbers: selectedNumbers,
           quantity: qty,
           totalAmount: total,
-          paymentId: `PAY_${Date.now()}`,
+          paymentId: `PAY_${Date.now()}`, // TODO: Real payment ID from provider
           paymentDate: new Date().toISOString()
         }
       });
@@ -122,7 +134,9 @@ export default function ConfirmacaoPagamento() {
   };
 
   const handleRegenerateNumbers = () => {
-    setSelectedNumbers(generateNumbers(qty));
+    const numbers = generateNumbers(qty);
+    setSelectedNumbers(numbers);
+    persistTicketsPreview(numbers); // TODO: Connect to DB
   };
 
   const handleInputChange = (field: string, value: string) => {
