@@ -253,7 +253,7 @@ export default function PagamentoSucesso() {
                     Compartilhar Ganhável
                   </Button>
                   
-                  <Link to="/minha-conta" className="block">
+                  <Link to="/dashboard" className="block">
                     <Button variant="secondary" className="w-full">
                       Ver Meus Ganhaveis
                     </Button>

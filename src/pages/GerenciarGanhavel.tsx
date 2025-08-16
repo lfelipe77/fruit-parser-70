@@ -210,7 +210,7 @@ export default function GerenciarRifa() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex items-center gap-4 mb-6">
-            <Link to="/minha-conta?tab=rifas-lancadas">
+            <Link to="/dashboard?tab=rifas-lancadas">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar

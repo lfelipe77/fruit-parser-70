@@ -185,7 +185,7 @@ export default function GerenciarCartoesEPix() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/minha-conta")}
+            onClick={() => navigate("/dashboard")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>

@@ -82,7 +82,7 @@ export default function AlterarSenha() {
       description: "Sua senha foi alterada com sucesso.",
     });
     
-    navigate("/minha-conta");
+    navigate("/dashboard");
   };
 
   const passwordStrength = (password: string) => {
@@ -110,7 +110,7 @@ export default function AlterarSenha() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate("/minha-conta")}
+            onClick={() => navigate("/dashboard")}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -265,7 +265,7 @@ export default function AlterarSenha() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/minha-conta")}
+                  onClick={() => navigate("/dashboard")}
                   className="flex-1"
                 >
                   Cancelar

@@ -27,7 +27,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AlterarSenha from "./pages/AlterarSenha";
 import AuthCallback from "./pages/AuthCallback";
 import AuthHashCallback from "./pages/AuthHashCallback";
-import MinhaConta from "./pages/MinhaConta";
+
 import LanceSeuGanhavel from "./pages/LanceSeuGanhavel";
 import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
@@ -161,7 +161,7 @@ const AppContent = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/test-payment" element={<TestPayment />} />
-        <Route path="/minha-conta" element={<MinhaConta />} />
+        
         <Route path="/alterar-senha" element={<AlterarSenha />} />
         <Route path="/gerenciar-cartoes-e-pix" element={<GerenciarCartoesEPix />} />
         <Route path="/gerenciar-ganhavel/:id" element={<GerenciarGanhavel />} />

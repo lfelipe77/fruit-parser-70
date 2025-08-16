@@ -215,9 +215,9 @@ export default function LanceSeuGanhavel() {
       });
 
       setSuccessMsg("Ganhavel enviado para análise!");
-      setToastMsg("✅ Seu Ganhavel foi enviado para análise. Ele aparece no seu perfil como pendente e será publicado quando aprovado.");
+      setToastMsg("✅ Ganhavel lançado! Status: Pendente. Ele já está em Admin → Pendentes.");
       setToastOpen(true);
-      redirectTimerRef.current = window.setTimeout(() => navigate("/minha-conta"), 1800);
+      redirectTimerRef.current = window.setTimeout(() => navigate("/dashboard"), 1800);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err?.message ?? "Erro ao criar Ganhavel.");
@@ -260,7 +260,7 @@ export default function LanceSeuGanhavel() {
               <span className="mr-2">🏠</span> Home
             </Link>
             <Link
-              to="/minha-conta"
+              to="/dashboard"
               className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
               title="Voltar"
             >
