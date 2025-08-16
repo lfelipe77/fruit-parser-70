@@ -220,23 +220,69 @@ const handler = async (req: Request): Promise<Response> => {
           throw new Error('Transaction not found');
         }
 
-        // Create tickets (simplified logic)
-        const ticketCount = Math.max(1, Math.floor(amount / 100)); // 1 ticket per R$1.00
-        
-        for (let i = 0; i < ticketCount; i++) {
-          const { error: ticketError } = await supabaseService
-            .from('tickets')
-            .insert({
-              user_id: transaction.user_id,
-              ganhavel_id: transaction.ganhavel_id,
-              payment_status: 'paid',
-              is_paid: true,
-              total_amount: amount / ticketCount,
-              ticket_number: Math.floor(Math.random() * 1000000) + 1
-            });
+        // Get raffle details to determine ticket price
+        const { data: raffle, error: raffleError } = await supabaseService
+          .from('raffles')
+          .select('ticket_price, total_tickets')
+          .eq('id', transaction.ganhavel_id)
+          .single();
 
-          if (ticketError) {
-            console.error('Ticket creation error:', ticketError);
+        if (raffleError || !raffle) {
+          console.error('Failed to fetch raffle:', raffleError);
+          throw new Error('Raffle not found');
+        }
+
+        // Calculate number of tickets from amount and ticket price
+        const ticketCount = Math.floor(transaction.amount / raffle.ticket_price);
+        
+        // Use reserve_tickets function to get proper ticket numbers
+        const { data: ticketNumbers, error: reserveError } = await supabaseService
+          .rpc('reserve_tickets', {
+            p_raffle_id: transaction.ganhavel_id,
+            p_qty: ticketCount
+          });
+
+        if (reserveError || !ticketNumbers) {
+          console.error('Failed to reserve tickets:', reserveError);
+          // Fallback to manual ticket creation
+          for (let i = 0; i < ticketCount; i++) {
+            const { error: ticketError } = await supabaseService
+              .from('tickets')
+              .insert({
+                user_id: transaction.user_id,
+                raffle_id: transaction.ganhavel_id,
+                ganhavel_id: transaction.ganhavel_id,
+                payment_status: 'paid',
+                is_paid: true,
+                total_amount: raffle.ticket_price,
+                ticket_number: Math.floor(Math.random() * raffle.total_tickets) + 1,
+                status: 'paid'
+              });
+
+            if (ticketError) {
+              console.error('Manual ticket creation error:', ticketError);
+            }
+          }
+        } else {
+          // Create tickets with proper numbers from reserve_tickets
+          for (let i = 0; i < ticketNumbers.length; i++) {
+            const { error: ticketError } = await supabaseService
+              .from('tickets')
+              .insert({
+                user_id: transaction.user_id,
+                raffle_id: transaction.ganhavel_id,
+                ganhavel_id: transaction.ganhavel_id,
+                payment_status: 'paid',
+                is_paid: true,
+                total_amount: raffle.ticket_price,
+                ticket_number: ticketNumbers[i],
+                number: ticketNumbers[i],
+                status: 'paid'
+              });
+
+            if (ticketError) {
+              console.error('Ticket creation error:', ticketError);
+            }
           }
         }
 

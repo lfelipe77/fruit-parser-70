@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRealTimeRaffleUpdates } from "@/hooks/useRealTimeRaffleUpdates";
 import { toast } from "sonner";
 
 // Types for our Supabase data
@@ -58,6 +59,7 @@ export default function RifaDetail() {
   const navigate = useNavigate();
   const { id: rifaId } = useParams();
   const { user } = useAuth();
+  const { lastUpdate, timeAgo } = useRealTimeRaffleUpdates(rifaId);
   
   // Countries database with lottery information
   const countries = {
@@ -217,7 +219,7 @@ export default function RifaDetail() {
   const percentage = Math.round(rifa.progress_pct || 0);
   const isCompleted = percentage >= 100;
   const isSoldOut = (rifa.tickets_remaining || 0) <= 0;
-  const canPurchase = rifa.status === 'approved' && !isCompleted && !isSoldOut;
+  const canPurchase = rifa.status === 'active' && !isCompleted && !isSoldOut;
 
   // Calculate purchase totals
   const subtotal = selectedQuantity * rifa.ticket_price;
@@ -643,6 +645,12 @@ export default function RifaDetail() {
                       <CheckCircle className="w-4 h-4 text-primary" />
                       <span>{rifa.tickets_remaining} bilhetes disponíveis</span>
                     </div>
+                    {timeAgo && (
+                      <div className="flex items-center gap-2 text-green-600">
+                        <Clock className="w-4 h-4" />
+                        <span>Última compra {timeAgo}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -728,8 +736,8 @@ export default function RifaDetail() {
                           ? "Meta alcançada — aguardando sorteio" 
                           : isSoldOut 
                             ? "Rifa esgotada"
-                            : rifa.status !== 'approved'
-                              ? "Em revisão"
+                             : rifa.status !== 'active'
+                               ? "Em revisão"
                               : `Comprar ${selectedQuantity} bilhetes`
                       }
                     </Button>

@@ -243,6 +243,14 @@ export default function GanhaveisManagement() {
 
   const handleApprove = async (ganhaveisId: string) => {
     try {
+      // Update raffle status to active in database
+      const { error: updateError } = await supabase
+        .from('raffles')
+        .update({ status: 'active' })
+        .eq('id', ganhaveisId);
+
+      if (updateError) throw updateError;
+
       // Log admin action
       logAdminAction('raffle_approved', {
         targetRaffleId: ganhaveisId,
@@ -251,16 +259,33 @@ export default function GanhaveisManagement() {
 
       toast({
         title: "Ganhavel Aprovado",
-        description: `O ganhavel ${ganhaveisId} foi aprovado com sucesso.`,
+        description: `O ganhavel ${ganhaveisId} foi aprovado e está agora ativo.`,
       });
+      
       setShowApprovalModal(false);
+      
+      // Refresh the ganhaveis list
+      window.location.reload();
     } catch (error) {
       console.error('Error approving raffle:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao aprovar o ganhavel. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleReject = async (ganhaveisId: string, reason: string) => {
     try {
+      // Update raffle status to rejected in database
+      const { error: updateError } = await supabase
+        .from('raffles')
+        .update({ status: 'rejected' })
+        .eq('id', ganhaveisId);
+
+      if (updateError) throw updateError;
+
       // Log admin action
       logAdminAction('raffle_rejected', {
         targetRaffleId: ganhaveisId,
@@ -272,10 +297,19 @@ export default function GanhaveisManagement() {
         description: `O ganhavel ${ganhaveisId} foi rejeitado. Motivo: ${reason}`,
         variant: "destructive",
       });
+      
       setShowRejectModal(false);
       setRejectionReason("");
+      
+      // Refresh the ganhaveis list
+      window.location.reload();
     } catch (error) {
       console.error('Error rejecting raffle:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao rejeitar o ganhavel. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
