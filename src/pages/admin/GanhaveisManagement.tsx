@@ -1,10 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -15,72 +12,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLogger } from "@/hooks/useAuditLogger";
 import {
   Search,
   Filter,
-  Eye,
-  Check,
-  Ban,
-  AlertTriangle,
   Clock,
-  CheckCircle,
-  XCircle,
-  Calendar,
-  User,
-  DollarSign,
-  ExternalLink,
-  Pause,
-  Play,
-  MessageSquare,
-  Link,
-  MapPin,
   TrendingUp,
-  Users,
   Gift,
+  AlertTriangle,
 } from "lucide-react";
 import { getAllCategories } from "@/data/categoriesData";
 import { supabase } from "@/integrations/supabase/client";
 import { RafflePublicMoney } from "@/types/public-views";
-import { useRelativeTime } from "@/hooks/useRelativeTime";
-import { formatBRL } from "@/lib/formatters";
-import { useEffect } from "react";
+import { AdminRaffleRow } from "@/components/AdminRaffleRow";
 
 export default function GanhaveisManagement() {
+  // ✅ All hooks at the top of the component
   const [selectedTab, setSelectedTab] = useState("todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todas");
-  const [selectedGanhavel, setSelectedGanhavel] = useState<any>(null);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [adminNotes, setAdminNotes] = useState("");
   const [raffles, setRaffles] = useState<RafflePublicMoney[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Log data shape for debugging
-  console.log('[GanhaveisManagement] Raffles data:', raffles);
   const { toast } = useToast();
   const { logAdminAction } = useAuditLogger();
 
@@ -88,6 +41,9 @@ export default function GanhaveisManagement() {
   useEffect(() => {
     loadRaffles();
   }, []);
+
+  // Log data shape for debugging
+  console.log('[GanhaveisManagement] Raffles data:', raffles);
 
   const loadRaffles = async () => {
     try {
@@ -102,41 +58,17 @@ export default function GanhaveisManagement() {
       setRaffles(Array.isArray(data) ? data as RafflePublicMoney[] : []);
     } catch (error) {
       console.error('Error loading raffles:', error);
+      setRaffles([]); // ✅ Always set to empty array on error
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="outline" className="text-orange-600 border-orange-200"><Clock className="h-3 w-3 mr-1" />Pendente</Badge>;
-      case "active":
-        return <Badge variant="outline" className="text-blue-600 border-blue-200"><CheckCircle className="h-3 w-3 mr-1" />Ativa</Badge>;
-      case "completed":
-        return <Badge variant="outline" className="text-green-600 border-green-200"><Check className="h-3 w-3 mr-1" />Concluída</Badge>;
-      case "cancelled":
-        return <Badge variant="outline" className="text-red-600 border-red-200"><XCircle className="h-3 w-3 mr-1" />Cancelada</Badge>;
-      case "suspended":
-        return <Badge variant="outline" className="text-red-600 border-red-200"><Ban className="h-3 w-3 mr-1" />Suspensa</Badge>;
-      case "review":
-        return <Badge variant="outline" className="text-purple-600 border-purple-200"><Eye className="h-3 w-3 mr-1" />Em Análise</Badge>;
-      default:
-        return <Badge variant="outline">Desconhecido</Badge>;
-    }
-  };
-
-  const getRiskBadge = (riskScore: number) => {
-    if (riskScore <= 2) {
-      return <Badge variant="outline" className="text-green-600 border-green-200">Baixo Risco</Badge>;
-    } else if (riskScore <= 5) {
-      return <Badge variant="outline" className="text-yellow-600 border-yellow-200">Médio Risco</Badge>;
-    } else {
-      return <Badge variant="outline" className="text-red-600 border-red-200">Alto Risco</Badge>;
-    }
-  };
-
-  const filteredGanhaveis = raffles.filter((raffle) => {
+  // ✅ Filter data safely with fallbacks
+  const safeRaffles = Array.isArray(raffles) ? raffles : [];
+  const safeCategories = getAllCategories() || [];
+  
+  const filteredGanhaveis = safeRaffles.filter((raffle) => {
     const matchesTab = selectedTab === "todas" || raffle.status === selectedTab;
     const matchesSearch = raffle.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "todas" || raffle.category_name === selectedCategory;
@@ -164,8 +96,6 @@ export default function GanhaveisManagement() {
         title: "Ganhavel Aprovado",
         description: `O ganhavel foi aprovado e está agora ativo.`,
       });
-      
-      setShowApprovalModal(false);
       
       // Update local state without reload
       setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'active' } : r));
@@ -200,9 +130,6 @@ export default function GanhaveisManagement() {
         description: `O ganhavel foi rejeitado. Motivo: ${reason}`,
         variant: "destructive",
       });
-      
-      setShowRejectModal(false);
-      setRejectionReason("");
       
       // Update local state without reload
       setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'rejected' } : r));
@@ -278,6 +205,33 @@ export default function GanhaveisManagement() {
     });
   };
 
+  // ✅ Early returns after all hooks are declared  
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Ganhaveis</h1>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+        <div className="animate-pulse space-y-4">
+          <div className="h-32 bg-muted rounded-lg"></div>
+          <div className="h-64 bg-muted rounded-lg"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!safeRaffles.length && !loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Ganhaveis</h1>
+          <p className="text-muted-foreground">Nenhum ganhavel encontrado</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -296,7 +250,7 @@ export default function GanhaveisManagement() {
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{raffles.length}</div>
+            <div className="text-2xl font-bold">{safeRaffles.length}</div>
             <p className="text-xs text-muted-foreground">+12% este mês</p>
           </CardContent>
         </Card>
@@ -307,7 +261,7 @@ export default function GanhaveisManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {raffles.filter(r => r.status === "pending").length}
+              {safeRaffles.filter(r => r.status === "pending").length}
             </div>
             <p className="text-xs text-muted-foreground">Aguardando aprovação</p>
           </CardContent>
@@ -319,7 +273,7 @@ export default function GanhaveisManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {raffles.filter(r => r.status === "active").length}
+              {safeRaffles.filter(r => r.status === "active").length}
             </div>
             <p className="text-xs text-muted-foreground">Em andamento</p>
           </CardContent>
@@ -331,7 +285,7 @@ export default function GanhaveisManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {raffles.filter(r => r.status === "completed").length}
+              {safeRaffles.filter(r => r.status === "completed").length}
             </div>
             <p className="text-xs text-muted-foreground">Finalizados</p>
           </CardContent>
@@ -368,7 +322,7 @@ export default function GanhaveisManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas as categorias</SelectItem>
-                  {(getAllCategories() || []).map(category => (
+                  {safeCategories.map(category => (
                     <SelectItem key={category.slug} value={category.slug}>
                       {category.name}
                     </SelectItem>
@@ -401,312 +355,45 @@ export default function GanhaveisManagement() {
             
             <TabsContent value={selectedTab} className="mt-6">
               <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Arrecadado</TableHead>
+                      <TableHead>Meta</TableHead>
+                      <TableHead>%</TableHead>
+                      <TableHead>Último pagamento</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
                       <TableRow>
-                        <TableHead>Título</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Arrecadado</TableHead>
-                        <TableHead>Meta</TableHead>
-                        <TableHead>%</TableHead>
-                        <TableHead>Último pagamento</TableHead>
-                        <TableHead>Ações</TableHead>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <div className="animate-pulse">Carregando...</div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loading ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
-                            <div className="animate-pulse">Carregando...</div>
-                          </TableCell>
-                        </TableRow>
-                      ) : (filteredGanhaveis || []).map((raffle) => {
-                        const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
-                        return (
-                          <TableRow key={raffle.id}>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{raffle.title}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {raffle.category_name}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>{getStatusBadge(raffle.status)}</TableCell>
-                            <TableCell>
-                              <div className="font-medium text-emerald-600">
-                                {formatBRL(raffle.amount_raised)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="font-medium">
-                                {formatBRL(raffle.goal_amount)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">
-                                  {Math.round(raffle.progress_pct_money)}%
-                                </span>
-                                <div className="w-16 bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-emerald-500 h-2 rounded-full" 
-                                    style={{ width: `${Math.min(100, raffle.progress_pct_money)}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm text-muted-foreground">
-                                {lastPaidAgo}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                          <div className="flex gap-1">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => setSelectedGanhavel(raffle)}
-                              >
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Detalhes do Ganhavel - {selectedGanhavel?.id}</DialogTitle>
-                                  <DialogDescription>
-                                    Informações completas do ganhavel
-                                  </DialogDescription>
-                                </DialogHeader>
-                                 {selectedGanhavel && (
-                                   <div className="space-y-6">
-                                     {/* Basic Info */}
-                                     <div className="grid gap-4 md:grid-cols-2">
-                                       <div>
-                                         <Label>Título</Label>
-                                          <p className="text-sm font-medium">{selectedGanhavel.title}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Categoria</Label>
-                                          <p className="text-sm">{selectedGanhavel.category}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Organizador</Label>
-                                          <p className="text-sm font-medium">{selectedGanhavel.organizer}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Email</Label>
-                                          <p className="text-sm">{selectedGanhavel.organizerEmail}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Telefone</Label>
-                                          <p className="text-sm">{selectedGanhavel.organizerPhone}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Localização</Label>
-                                          <p className="text-sm">{selectedGanhavel.location}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Valor Total</Label>
-                                          <p className="text-sm font-medium text-green-600">{selectedGanhavel.value}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Progresso</Label>
-                                          <p className="text-sm">{selectedGanhavel.soldNumbers}/{selectedGanhavel.totalNumbers} números vendidos</p>
-                                        </div>
-                                      </div>
-
-                                      {/* Risk Assessment */}
-                                      <div className="border rounded-lg p-4">
-                                        <div className="flex items-center gap-2 mb-3">
-                                          <AlertTriangle className="h-4 w-4" />
-                                          <Label>Avaliação de Risco</Label>
-                                          {getRiskBadge(selectedGanhavel.riskScore)}
-                                        </div>
-                                        <div className="text-sm space-y-2">
-                                          <p><strong>Score de Risco:</strong> {selectedGanhavel.riskScore}/10</p>
-                                          {selectedGanhavel.suspiciousActivities.length > 0 && (
-                                            <div>
-                                              <p><strong>Atividades Suspeitas:</strong></p>
-                                              <ul className="list-disc list-inside ml-4">
-                                                {selectedGanhavel.suspiciousActivities.map((activity, idx) => (
-                                                  <li key={idx} className="text-red-600">{activity}</li>
-                                                ))}
-                                              </ul>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Affiliate Info */}
-                                      {selectedGanhavel.isAffiliate && (
-                                        <div className="border rounded-lg p-4">
-                                          <div className="flex items-center gap-2 mb-3">
-                                            <Link className="h-4 w-4" />
-                                            <Label>Informações de Afiliado</Label>
-                                          </div>
-                                          <div className="space-y-2">
-                                            <div>
-                                              <Label className="text-xs">Link de Afiliado</Label>
-                                              <div className="flex items-center gap-2">
-                                                <p className="text-sm text-blue-600 break-all">{selectedGanhavel.affiliateLink}</p>
-                                                <Button 
-                                                  size="sm" 
-                                                  variant="outline"
-                                                  onClick={() => handleVerifyAffiliate(selectedGanhavel.affiliateLink)}
-                                                >
-                                                  <ExternalLink className="h-3 w-3 mr-1" />
-                                                  Verificar
-                                                </Button>
-                                              </div>
-                                            </div>
-                                            <div>
-                                              <Label className="text-xs">Comissão</Label>
-                                              <p className="text-sm">{selectedGanhavel.affiliateCommission}%</p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* Documents */}
-                                      <div className="border rounded-lg p-4">
-                                        <div className="flex items-center gap-2 mb-3">
-                                          <User className="h-4 w-4" />
-                                          <Label>Documentação</Label>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                          {selectedGanhavel.documents.map((doc, idx) => (
-                                            <Badge key={idx} variant="outline">{doc}</Badge>
-                                          ))}
-                                        </div>
-                                      </div>
-
-                                      {/* Description */}
-                                      <div>
-                                        <Label>Descrição do Produto</Label>
-                                        <p className="text-sm bg-gray-50 p-3 rounded-md mt-1">{selectedGanhavel.description}</p>
-                                      </div>
-
-                                      {/* Admin Notes */}
-                                      <div>
-                                        <Label>Observações Administrativas</Label>
-                                        <Textarea
-                                          value={adminNotes || selectedGanhavel.adminNotes}
-                                          onChange={(e) => setAdminNotes(e.target.value)}
-                                          placeholder="Adicionar observações..."
-                                          className="mt-1"
-                                        />
-                                        <Button 
-                                          size="sm" 
-                                          className="mt-2"
-                                          onClick={() => handleSaveNotes(selectedGanhavel.id, adminNotes)}
-                                        >
-                                          Salvar Observações
-                                        </Button>
-                                      </div>
-
-                                      {/* Dates */}
-                                      <div className="grid gap-4 md:grid-cols-2">
-                                        <div>
-                                          <Label>Data de Criação</Label>
-                                          <p className="text-sm">{selectedGanhavel.created}</p>
-                                        </div>
-                                        <div>
-                                          <Label>Data de Término</Label>
-                                          <p className="text-sm">{selectedGanhavel.endDate}</p>
-                                       </div>
-                                     </div>
-                                   </div>
-                                 )}
-                              </DialogContent>
-                            </Dialog>
-                            
-                            {/* Approval Actions */}
-                            {raffle.status === "pending" && (
-                              <>
-                                <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
-                                  <DialogTrigger asChild>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
-                                      className="text-green-600 hover:text-green-700"
-                                      onClick={() => setSelectedGanhavel(raffle)}
-                                    >
-                                      <Check className="h-3 w-3" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Aprovar Ganhavel</DialogTitle>
-                                      <DialogDescription>
-                                        Confirme a aprovação do ganhavel "{raffle.title}". Esta ação tornará o ganhavel visível ao público.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <DialogFooter>
-                                      <Button variant="outline" onClick={() => setShowApprovalModal(false)}>
-                                        Cancelar
-                                      </Button>
-                                      <Button onClick={() => handleApprove(raffle.id)}>
-                                        <Check className="h-3 w-3 mr-1" />
-                                        Aprovar Ganhavel
-                                      </Button>
-                                    </DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
-
-                                <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
-                                  <DialogTrigger asChild>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
-                                      className="text-red-600 hover:text-red-700"
-                                      onClick={() => setSelectedGanhavel(raffle)}
-                                    >
-                                      <Ban className="h-3 w-3" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Rejeitar Ganhavel</DialogTitle>
-                                      <DialogDescription>
-                                        Informe o motivo da rejeição do ganhavel "{raffle.title}".
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      <div>
-                                        <Label>Motivo da Rejeição</Label>
-                                        <Textarea
-                                          value={rejectionReason}
-                                          onChange={(e) => setRejectionReason(e.target.value)}
-                                          placeholder="Descreva o motivo da rejeição..."
-                                        />
-                                      </div>
-                                    </div>
-                                    <DialogFooter>
-                                      <Button variant="outline" onClick={() => setShowRejectModal(false)}>
-                                        Cancelar
-                                      </Button>
-                                      <Button 
-                                        variant="destructive"
-                                        onClick={() => handleReject(raffle.id, rejectionReason)}
-                                        disabled={!rejectionReason.trim()}
-                                      >
-                                        <Ban className="h-3 w-3 mr-1" />
-                                        Rejeitar
-                                      </Button>
-                                    </DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
-                              </>
-                            )}
-
-                          </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                    ) : filteredGanhaveis.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <div className="text-muted-foreground">Nenhum ganhavel encontrado</div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredGanhaveis.map((raffle) => (
+                        <AdminRaffleRow
+                          key={raffle.id}
+                          raffle={raffle}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                          onSuspend={handleSuspend}
+                          onReactivate={handleReactivate}
+                          onSaveNotes={handleSaveNotes}
+                          onVerifyAffiliate={handleVerifyAffiliate}
+                        />
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
