@@ -38,46 +38,63 @@ export default function Dashboard() {
     try {
       console.log('[dash] fetching data for user:', user?.id);
       
-      // For now, just set loading to false and show the dashboard
-      // We'll add real data fetching later when the tables exist
-      setStats({
-        totalTickets: 0,
-        totalSpent: 0,
-        activeGanhaveis: 0,
-        recentTransactions: []
-      });
+      const uid = user?.id;
+      if (!uid) {
+        setStats({
+          totalTickets: 0,
+          totalSpent: 0,
+          activeGanhaveis: 0,
+          recentTransactions: []
+        });
+        return;
+      }
+
+      // Performant count queries using HEAD requests
       
-      /* TODO: Uncomment when tables exist
-      // Fetch user tickets
-      const { data: tickets, error: ticketsError } = await supabase
+      // Count tickets purchased by user
+      const { count: ticketsCount, error: ticketsError } = await supabase
         .from('tickets')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', uid);
 
-      if (ticketsError) throw ticketsError;
+      if (ticketsError) {
+        console.error('Error counting tickets:', ticketsError);
+      }
 
-      // Fetch user transactions
+      // Count active raffles launched by user  
+      const { count: activeLaunchedCount, error: rafflesError } = await supabase
+        .from('raffles')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', uid)
+        .eq('status', 'active');
+
+      if (rafflesError) {
+        console.error('Error counting active raffles:', rafflesError);
+      }
+
+      // Get recent transactions for spending calculation
       const { data: transactions, error: transactionsError } = await supabase
         .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
+        .select('amount, status, created_at, id')
+        .eq('user_id', uid)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10);
 
-      if (transactionsError) throw transactionsError;
+      if (transactionsError) {
+        console.error('Error fetching transactions:', transactionsError);
+      }
 
-      // Calculate stats
-      const totalTickets = tickets?.length || 0;
-      const totalSpent = transactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
-      const activeGanhaveis = new Set(tickets?.map(t => t.ganhavel_id)).size || 0;
+      // Calculate total spent from completed transactions
+      const totalSpent = transactions
+        ?.filter(t => t.status === 'completed' || t.status === 'paid')
+        ?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
 
       setStats({
-        totalTickets,
-        totalSpent: totalSpent / 100, // Convert from cents
-        activeGanhaveis,
-        recentTransactions: transactions || []
+        totalTickets: ticketsCount ?? 0,
+        totalSpent: totalSpent,
+        activeGanhaveis: activeLaunchedCount ?? 0,
+        recentTransactions: transactions?.slice(0, 5) || []
       });
-      */
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erro ao carregar dados do dashboard');
@@ -181,16 +198,16 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Meus Tickets
+                  Meus Bilhetes
                 </CardTitle>
                 <CardDescription>
-                  Total de tickets comprados
+                  Total de Bilhetes comprados
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{loading ? "..." : stats.totalTickets}</p>
                 <p className="text-sm text-muted-foreground">
-                  {stats.totalTickets === 0 ? "Nenhum ticket comprado" : `${stats.totalTickets} ticket${stats.totalTickets > 1 ? 's' : ''} ativo${stats.totalTickets > 1 ? 's' : ''}`}
+                  {stats.totalTickets === 0 ? "Nenhum bilhete comprado" : `${stats.totalTickets} bilhete${stats.totalTickets > 1 ? 's' : ''} comprado${stats.totalTickets > 1 ? 's' : ''}`}
                 </p>
               </CardContent>
             </Card>
@@ -203,16 +220,16 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="w-5 h-5" />
-                  Ganhaveis Ativos
+                  Ganhaveis que você lançou
                 </CardTitle>
                 <CardDescription>
-                  Ganhaveis que você está participando
+                  Ganhaveis aprovados (ativos) que você lançou
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{loading ? "..." : stats.activeGanhaveis}</p>
                 <p className="text-sm text-muted-foreground">
-                  {stats.activeGanhaveis === 0 ? "Nenhum ganhavel ativo" : `Participando de ${stats.activeGanhaveis} ganhavel${stats.activeGanhaveis > 1 ? 'eis' : ''}`}
+                  {stats.activeGanhaveis === 0 ? "Nenhum ganhavel lançado" : `${stats.activeGanhaveis} ganhavel${stats.activeGanhaveis > 1 ? 'eis' : ''} ativo${stats.activeGanhaveis > 1 ? 's' : ''}`}
                 </p>
               </CardContent>
             </Card>
@@ -226,7 +243,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
-                  {loading ? "..." : `R$ ${stats.totalSpent.toFixed(2)}`}
+                  {loading ? "..." : `R$ ${(stats.totalSpent / 100).toFixed(2)}`}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {stats.totalSpent === 0 ? "Nenhum gasto registrado" : "Valor acumulado"}
