@@ -13,11 +13,14 @@ export default function CrowdfundingHome() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <HeroSection />
-      <CaixaLotterySection />
       
-      
+      {/* Ganhaveis em Alta - moved up right after hero */}
       <EmAltaRecentesSection />
       
+      {/* Loteria da Caixa - moved down */}
+      <CaixaLotterySection />
+      
+      {/* Categorias */}
       <CategoriesSection />
       
       {/* Asaas Partnership Section */}
