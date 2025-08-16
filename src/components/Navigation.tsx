@@ -38,31 +38,39 @@ export default function Navigation() {
   // Verificar role do usuário e avatar
   useEffect(() => {
     const checkUserRole = async () => {
+      console.log('[Navigation] Checking user role for user:', user?.id);
+      
       if (!user) {
+        console.log('[Navigation] No user found, clearing role and avatar');
         setUserRole("");
         setAvatarUrl(null);
         return;
       }
       
       try {
+        console.log('[Navigation] Fetching user profile from database...');
         const { data, error } = await supabase
           .from("user_profiles")
           .select("role, avatar_url")
           .eq("id", user.id)
           .maybeSingle();
           
+        console.log('[Navigation] User profile query result:', { data, error, userId: user.id });
+          
         if (error) {
-          console.error("Error checking user role:", error);
+          console.error("[Navigation] Error checking user role:", error);
           return;
         }
         
         if (!data) {
-          console.warn("User profile not found, assuming no role");
+          console.warn("[Navigation] User profile not found, assuming no role");
           setUserRole("");
           setAvatarUrl(null);
           return;
         }
         
+        console.log('[Navigation] Setting user role:', data.role);
+        console.log('[Navigation] User role comparison - data.role:', data.role, 'isAdmin check result:', data.role === 'admin');
         setUserRole(data.role || "");
         
         // Apply cache buster for avatar
@@ -72,7 +80,7 @@ export default function Navigation() {
           setAvatarUrl(null);
         }
       } catch (error) {
-        console.error("Error checking user role:", error);
+        console.error("[Navigation] Error checking user role:", error);
       }
     };
 
@@ -87,6 +95,12 @@ export default function Navigation() {
   ];
 
   const selectedDraw = lotteryDraws.find(draw => draw.id === selectedLottery);
+
+  // Debug logging for admin status
+  console.log('[Navigation] Current user:', user?.id);
+  console.log('[Navigation] Current userRole:', userRole);
+  console.log('[Navigation] isAdmin hook result:', isAdmin);
+  console.log('[Navigation] Admin dropdown visible:', userRole === "admin");
   
   return (
     <>
@@ -144,7 +158,11 @@ export default function Navigation() {
               {userRole === "admin" && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      className="flex items-center gap-2"
+                      onClick={() => console.log('[Navigation] Admin dropdown clicked, userRole:', userRole, 'isAdmin:', isAdmin)}
+                    >
                       <Shield className="h-4 w-4" />
                       Admin
                       <ChevronDown className="h-3 w-3" />
@@ -152,19 +170,31 @@ export default function Navigation() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center gap-2">
+                      <Link 
+                        to="/admin" 
+                        className="flex items-center gap-2"
+                        onClick={() => console.log('[Navigation] Clicking admin main panel link')}
+                      >
                         <Settings className="h-4 w-4" />
                         Painel Principal
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/admin-dashboard" className="flex items-center gap-2">
+                      <Link 
+                        to="/admin-dashboard" 
+                        className="flex items-center gap-2"
+                        onClick={() => console.log('[Navigation] Clicking admin dashboard link')}
+                      >
                         <BarChart3 className="h-4 w-4" />
                         Dashboard
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/admin-visits" className="flex items-center gap-2">
+                      <Link 
+                        to="/admin-visits" 
+                        className="flex items-center gap-2"
+                        onClick={() => console.log('[Navigation] Clicking admin visits link')}
+                      >
                         <Eye className="h-4 w-4" />
                         Visitas Públicas
                       </Link>
