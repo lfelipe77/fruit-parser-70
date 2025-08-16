@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CategoryStats, SubcategoryStats, formatCurrency, getProgressPercent } from "@/types/raffles";
 import { RafflePublicMoney } from "@/types/public-views";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
+import RaffleCard from "@/components/RaffleCard";
 import { formatBRL } from "@/lib/formatters";
 
 export default function CategoriesView() {
@@ -78,39 +79,6 @@ export default function CategoriesView() {
     loadRaffles();
   }, [currentSubcategory?.id]);
 
-  const RaffleCard = ({ raffle }: { raffle: RafflePublicMoney }) => {
-    const pct = Math.max(0, Math.min(100, raffle.progress_pct_money ?? 0));
-    const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
-    
-    return (
-      <Link
-        to={`/ganhavel/${raffle.id}`}
-        className="group rounded-lg border bg-white overflow-hidden hover:shadow-md transition-all"
-      >
-        <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
-          <img
-            src={raffle.image_url || "/placeholder.svg"}
-            alt={raffle.title}
-            className="h-full w-full object-cover group-hover:scale-105 transition-transform"
-          />
-        </div>
-        <div className="p-3">
-          <h3 className="font-semibold text-sm mb-2 line-clamp-2">
-            {raffle.title}
-          </h3>
-          <div className="text-xs text-muted-foreground mb-2">
-            {formatBRL(raffle.amount_raised)} de {formatBRL(raffle.goal_amount)} • {formatBRL(raffle.ticket_price)}
-          </div>
-          <div className="h-1 bg-gray-100 rounded-full overflow-hidden mb-2">
-            <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Última compra: {lastPaidAgo}
-          </div>
-        </div>
-      </Link>
-    );
-  };
 
   // Show category not found
   if (categoria && !currentCategory && categories.length > 0) {
@@ -170,7 +138,7 @@ export default function CategoriesView() {
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {raffles.map((raffle) => (
-                  <RaffleCard key={raffle.id} raffle={raffle} />
+                  <RaffleCard key={raffle.id} r={raffle} />
                 ))}
               </div>
               

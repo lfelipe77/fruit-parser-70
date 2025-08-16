@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CategoryStats, formatCurrency, formatDate, getProgressPercent } from "@/types/raffles";
 import { RafflePublicMoney } from "@/types/public-views";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
+import RaffleCard from "@/components/RaffleCard";
 import { Link } from "react-router-dom";
 
 const PAGE_SIZE = 12;
@@ -98,73 +99,6 @@ export default function DiscoverRaffles() {
     loadRaffles();
   }, [searchTerm, selectedCategory, sortBy, currentPage]);
 
-  const RaffleCard = ({ raffle }: { raffle: RafflePublicMoney }) => {
-    const pct = Math.max(0, Math.min(100, raffle.progress_pct_money));
-    const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
-    
-    return (
-      <Link
-        to={`/ganhavel/${raffle.id}`}
-        className="group rounded-2xl border bg-white overflow-hidden hover:shadow-lg transition-all"
-      >
-        <div className="aspect-[16/10] bg-gray-100 overflow-hidden">
-          <img
-            src={raffle.image_url || "/placeholder.svg"}
-            alt={raffle.title}
-            className="h-full w-full object-cover group-hover:scale-105 transition-transform"
-          />
-        </div>
-        
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            {raffle.category_name && (
-              <Badge variant="secondary" className="text-xs">
-                {raffle.category_name}
-              </Badge>
-            )}
-            {pct >= 100 && (
-              <Badge variant="default" className="text-xs bg-success">
-                Meta alcançada
-              </Badge>
-            )}
-          </div>
-          
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-            {raffle.title}
-          </h3>
-          
-          <div className="space-y-3">
-            <div className="text-sm">
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-emerald-600">{formatCurrency(raffle.amount_raised)}</span>
-                <span className="text-muted-foreground">de {formatCurrency(raffle.goal_amount)}</span>
-              </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-emerald-500 transition-all" 
-                  style={{ width: `${pct}%` }} 
-                />
-              </div>
-              <div className="mt-1 text-xs text-gray-600">
-                {pct}% arrecadado
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Bilhete:</span>
-              <span className="font-semibold">{formatCurrency(raffle.ticket_price)}</span>
-            </div>
-            
-            {lastPaidAgo !== "—" && (
-              <div className="text-xs text-muted-foreground">
-                Última compra: {lastPaidAgo}
-              </div>
-            )}
-          </div>
-        </div>
-      </Link>
-    );
-  };
 
   const SkeletonCard = () => (
     <div className="rounded-2xl border bg-white overflow-hidden">
@@ -298,7 +232,7 @@ export default function DiscoverRaffles() {
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {raffles.map((raffle) => (
-                  <RaffleCard key={raffle.id} raffle={raffle} />
+                  <RaffleCard key={raffle.id} r={raffle} />
                 ))}
               </div>
 
