@@ -1,92 +1,89 @@
-import React from "react";
 import { Link } from "react-router-dom";
-import { RafflePublicMoney } from "@/types/public-views";
-import ProgressBar from "@/components/ui/progress-bar";
-import CategoryBadge from "@/components/ui/category-badge";
-import { formatBRL, formatDateBR, withFallbackImage } from "@/lib/formatters";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
+import type { RafflePublicMoney } from "@/types/public-views";
+import { Progress } from "@/components/ui/progress";
+import { formatBRL } from "@/lib/formatters";
+import { Badge } from "@/components/ui/badge";
 
-type Props = { 
-  r: RafflePublicMoney; 
-  onClick?: (id: string) => void;
+type Props = {
+  r: RafflePublicMoney;
+  onClick?: () => void;
 };
 
 export default function RaffleCard({ r, onClick }: Props) {
+  console.log('[RaffleCard] Rendering card for:', r.title);
+  const progress = Math.max(0, Math.min(100, r.progress_pct_money ?? 0));
+  const lastPaidAgo = useRelativeTime(r.last_paid_at, "pt-BR");
+
+  const CardContent = () => (
+    <div className="group rounded-2xl border bg-white shadow-sm hover:shadow-md overflow-hidden transition-all">
+      <div className="aspect-[16/10] bg-gray-100 overflow-hidden relative">
+        <img
+          src={r.image_url || `/placeholder.svg`}
+          alt={r.title}
+          className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+        />
+        <div className="absolute top-3 left-3 flex gap-2">
+          {r.category_name && (
+            <Badge variant="secondary" className="text-xs bg-white/90 text-gray-700">
+              {r.category_name}
+            </Badge>
+          )}
+          {r.subcategory_name && (
+            <Badge variant="outline" className="text-xs bg-white/90 text-gray-600">
+              {r.subcategory_name}
+            </Badge>
+          )}
+        </div>
+        <div className="absolute top-3 right-3">
+          <Badge
+            variant={r.status === 'active' ? 'default' : 'secondary'}
+            className="text-xs"
+          >
+            {r.status === 'active' ? 'Ativo' : 'Inativo'}
+          </Badge>
+        </div>
+      </div>
+      
+      <div className="p-4">
+        <h3 className="text-lg font-semibold mb-2 line-clamp-2">{r.title}</h3>
+        
+        <div className="mb-3 text-sm">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-semibold text-emerald-600">{formatBRL(r.amount_raised)}</span>
+            <span className="text-gray-500">de {formatBRL(r.goal_amount)}</span>
+          </div>
+          <Progress value={progress} className="h-2 bg-gray-200 [&>div]:bg-emerald-500" />
+          <div className="mt-1 text-xs text-gray-600">
+            {progress}% arrecadado
+          </div>
+        </div>
+
+        <div className="text-xs text-gray-600 mb-3">
+          Última compra: {lastPaidAgo}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Bilhete: {formatBRL(r.ticket_price)}</span>
+          <button className="rounded-xl bg-emerald-500 px-4 py-2 text-white text-sm hover:bg-emerald-600 transition-colors">
+            Comprar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (onClick) {
-    // If custom onClick provided, use div with click handler
     return (
-      <div
-        className="group relative grid cursor-pointer overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:shadow-md"
-        role="button"
-        onClick={() => onClick(r.id)}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onClick(r.id);
-          }
-        }}
-      >
+      <div onClick={onClick} className="cursor-pointer">
         <CardContent />
       </div>
     );
   }
 
-  // Default behavior: use Link for proper routing
   return (
-    <Link
-      to={`/ganhavel/${r.id}`}
-      className="group relative grid overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:shadow-md"
-    >
+    <Link to={`/ganhavel/${r.id}`}>
       <CardContent />
     </Link>
   );
-
-  function CardContent() {
-    const lastPaidAgo = useRelativeTime(r.last_paid_at, "pt-BR");
-    
-    return (
-      <>
-        <div className="relative aspect-[16/10] w-full overflow-hidden">
-          <img
-            src={withFallbackImage(r.image_url, r.id)}
-            alt={r.title}
-            className="h-full w-full object-cover transition group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-          <div className="absolute left-3 top-3 flex gap-2">
-            {r.category_name && <CategoryBadge name={r.category_name} colorClass={null} />}
-            {r.subcategory_name && <CategoryBadge name={r.subcategory_name} className="hidden sm:inline-flex" />}
-          </div>
-          {r.status === "completed" && (
-            <span className="absolute right-3 top-3 rounded-full bg-black/70 px-2 py-0.5 text-xs text-white">Encerrada</span>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-3 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="line-clamp-2 text-sm font-semibold text-card-foreground">{r.title}</h3>
-            <div className="shrink-0 rounded-lg bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
-              {formatBRL(r.ticket_price)}
-            </div>
-          </div>
-
-          <ProgressBar value={r.progress_pct_money} />
-
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              {formatBRL(r.amount_raised)} de {formatBRL(r.goal_amount)}
-            </span>
-          </div>
-          
-          {lastPaidAgo !== "—" && (
-            <div className="text-xs text-muted-foreground">
-              Último pagamento: {lastPaidAgo}
-            </div>
-          )}
-        </div>
-      </>
-    );
-  }
-
 }

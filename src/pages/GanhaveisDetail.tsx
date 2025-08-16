@@ -7,7 +7,6 @@ import DetalhesOrganizador from "@/components/DetalhesOrganizador";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
@@ -16,10 +15,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
 import { RafflePublicMoney, PublicProfile } from "@/types/public-views";
-import ProgressBar from "@/components/ui/progress-bar";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
 export default function RifaDetail() {
+  console.log('[GanhaveisDetail] Component starting to render');
+  
   const [selectedCountry, setSelectedCountry] = useState("brasil");
   const [qty, setQty] = useState(3);
   const [loading, setLoading] = useState(true);
@@ -551,7 +552,7 @@ export default function RifaDetail() {
               <CardContent className="space-y-6">
                 {/* Progress */}
                 <div className="space-y-3">
-                  <ProgressBar value={pct} />
+                  <Progress value={pct} className="h-3" />
                   <div className="text-center text-sm text-muted-foreground">
                     Sorteio: {pct}% completo
                   </div>
