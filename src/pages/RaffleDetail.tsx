@@ -151,7 +151,7 @@ export default function RaffleDetail() {
       // 3) insert pending transaction (store fees & base amount)
       const { error: txErr } = await supabase.from("transactions").insert({
         user_id: userId,
-        ganhavel_id: raffle.id,
+        raffle_id: raffle.id, // Changed from ganhavel_id to raffle_id
         amount: baseAmount,     // base ticket revenue (qty * ticket_price)
         payment_provider: retProv,
         payment_id: provider_payment_id,

@@ -13,6 +13,7 @@ type CardRow = {
   goal_amount: number;
   progress_pct_money: number;
   last_paid_at: string | null;
+  created_at?: string | null; // added
   category_name?: string | null;
   subcategory_name?: string | null;
   location_city?: string | null;
@@ -65,8 +66,14 @@ export default function RaffleCard({ r }: { r: CardRow }) {
           </div>
         </div>
 
-        {/* Last purchase */}
-        <div className="text-sm text-muted-foreground">Última compra: {last}</div>
+        {/* Last purchase or launch date */}
+        <div className="text-sm text-muted-foreground">
+          {(() => {
+            const when = r.last_paid_at ?? r.created_at;
+            const label = r.last_paid_at ? "Última venda" : "Lançado";
+            return when ? <span>{label}: {useRelativeTime(when, "pt-BR")}</span> : null;
+          })()}
+        </div>
 
         {/* Location (second instance as in your example) */}
         {loc && (

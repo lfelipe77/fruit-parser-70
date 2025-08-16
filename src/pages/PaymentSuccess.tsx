@@ -13,7 +13,7 @@ interface PaymentDetails {
   amount: number;
   status: string;
   created_at: string;
-  ganhavel_id: string;
+  raffle_id: string; // Changed from ganhavel_id to raffle_id
 }
 
 export default function PaymentSuccess() {
