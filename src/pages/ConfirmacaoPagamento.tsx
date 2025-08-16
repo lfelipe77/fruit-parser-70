@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatBRL } from "@/lib/formatters";
-import { CreditCard, Smartphone, Building, ArrowLeft } from "lucide-react";
+import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye } from "lucide-react";
+import Navigation from "@/components/Navigation";
 
 type RaffleRow = {
   id: string;
@@ -130,20 +131,30 @@ export default function ConfirmacaoPagamento() {
   if (!raffle) return <div className="p-6">Rifa não encontrada.</div>;
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      {/* Header */}
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(`/ganhavel/${id}`)}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
-        <h1 className="text-2xl font-bold">Confirmação de Pagamento</h1>
-        <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
-      </div>
+    <>
+      <Navigation />
+      <div className="container mx-auto p-4 max-w-4xl">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(`/ganhavel/${id}`)}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar
+            </Button>
+            <Button 
+              variant="outline" 
+              className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 hover:from-emerald-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              Compartilhe
+            </Button>
+          </div>
+          <h1 className="text-2xl font-bold">Confirmação de Pagamento</h1>
+          <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
+        </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
         {/* Main Form */}
@@ -190,9 +201,15 @@ export default function ConfirmacaoPagamento() {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  💡 Estes números são gerados aleatoriamente para você. Clique em "Gerar Novos" se quiser trocar.
-                </p>
+                <div className="flex items-center justify-between mt-3">
+                  <p className="text-xs text-muted-foreground">
+                    💡 Estes números são gerados aleatoriamente para você. Clique em "Gerar Novos" se quiser trocar.
+                  </p>
+                  <Button variant="link" size="sm" className="text-emerald-600 hover:text-emerald-700 p-0 h-auto">
+                    <Eye className="mr-1 h-3 w-3" />
+                    ver todos os números
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -387,6 +404,7 @@ export default function ConfirmacaoPagamento() {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
