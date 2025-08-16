@@ -3,29 +3,22 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { formatBRL, formatDateBR } from "@/lib/formatters";
+import { formatBRL } from "@/lib/formatters";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { ArrowLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import DetalhesOrganizador from "@/components/DetalhesOrganizador";
 import ShareButton from "@/components/ShareButton";
-
-type RafflePublicMoney = {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  status: string;
-  ticket_price: number;
-  draw_date: string | null;
-  category_name: string | null;
-  subcategory_name: string | null;
-  amount_raised: number;
-  goal_amount: number;
-  progress_pct_money: number;
-  last_paid_at: string | null;
-};
+import { 
+  adaptRaffleDetail, 
+  adaptOrganizerProfile, 
+  toConfirm,
+  type RaffleDetailRaw,
+  type OrganizerProfileRaw,
+  type RaffleDetailNormalized,
+  type OrganizerProfileNormalized
+} from "@/lib/adapters/raffleDetailAdapter";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -70,11 +63,16 @@ export default function GanhaveisDetail() {
   const navigate = useNavigate();
 
   // ---- Hooks (always first)
-  const [raffle, setRaffle] = React.useState<RafflePublicMoney | null>(null);
+  const [raffleRaw, setRaffleRaw] = React.useState<RaffleDetailRaw | null>(null);
+  const [organizerRaw, setOrganizerRaw] = React.useState<OrganizerProfileRaw | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [qty, setQty] = React.useState(1);
 
-  const lastPaidAgo = useRelativeTime(raffle?.last_paid_at ?? null, "pt-BR");
+  // ---- Data normalization
+  const raffle = React.useMemo(() => adaptRaffleDetail(raffleRaw), [raffleRaw]);
+  const organizer = React.useMemo(() => adaptOrganizerProfile(organizerRaw), [organizerRaw]);
+  
+  const lastPaidAgo = useRelativeTime(raffle?.lastPaidAt ?? null, "pt-BR");
 
   // ---- Data load
   React.useEffect(() => {
@@ -82,14 +80,21 @@ export default function GanhaveisDetail() {
     (async () => {
       try {
         setLoading(true);
-        const { data: r, error } = await (supabase as any)
+        
+        // Load raffle data using raw query
+        const { data: raffleData, error: raffleError } = await (supabase as any)
           .from("raffles_public_money_ext")
-          .select("id,title,description,image_url,status,ticket_price,draw_date,category_name,subcategory_name,amount_raised,goal_amount,progress_pct_money,last_paid_at")
+          .select("*")
           .eq("id", id)
           .maybeSingle();
-        if (error) console.warn("money view error", error);
+        
+        if (raffleError) console.warn("raffle error", raffleError);
         if (!alive) return;
-        setRaffle((r ?? null) as RafflePublicMoney | null);
+        
+        setRaffleRaw(raffleData as unknown as RaffleDetailRaw | null);
+
+        // TODO: Connect organizer data when owner_user_id is available in view
+        // For now using mock data in DetalhesOrganizador component
       } finally {
         if (alive) setLoading(false);
       }
@@ -100,11 +105,8 @@ export default function GanhaveisDetail() {
   }, [id]);
 
   // ---- Derived
-  const pct = Math.max(0, Math.min(100, raffle?.progress_pct_money ?? 0));
-  const drawLabel = raffle?.draw_date ? formatDateBR(raffle.draw_date) : "—";
-  const isActive = raffle?.status === "active";
   const feeFixed = 2;
-  const subtotal = (raffle?.ticket_price ?? 0) * qty;
+  const subtotal = (raffle?.ticketPrice ?? 0) * qty;
   const total = subtotal + feeFixed;
 
   // ---- Render
@@ -132,7 +134,7 @@ export default function GanhaveisDetail() {
         {/* Header bar */}
         <div className="flex items-center justify-between">
           <div className="text-xs text-gray-600">
-            🇧🇷 Loteria Federal • Próximo sorteio: {drawLabel}
+            🇧🇷 Loteria Federal • Próximo sorteio: {raffle.drawLabel}
           </div>
           <div className="flex items-center gap-2">
             <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200">
@@ -150,7 +152,7 @@ export default function GanhaveisDetail() {
         <div>
           <div className="overflow-hidden rounded-2xl border bg-white">
             <img
-              src={raffle.image_url || "https://placehold.co/1200x675?text=Imagem+indispon%C3%ADvel"}
+              src={raffle.imageUrl}
               alt={raffle.title}
               className="h-auto w-full object-cover"
             />
@@ -188,18 +190,18 @@ export default function GanhaveisDetail() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-emerald-800 mb-3">Progresso da Campanha</h3>
             <div className="text-sm text-gray-600 mb-2">
-              {formatBRL(raffle.amount_raised)} <span className="text-gray-400">de</span> {formatBRL(raffle.goal_amount)}
+              {formatBRL(raffle.amountRaised)} <span className="text-gray-400">de</span> {formatBRL(raffle.goalAmount)}
             </div>
             <div className="mt-2">
-              <Progress value={pct} className="h-3 bg-emerald-200" />
+              <Progress value={raffle.progressPercent} className="h-3 bg-emerald-200" />
             </div>
-            <div className="mt-2 text-sm text-emerald-700 font-medium">{pct}% completo</div>
+            <div className="mt-2 text-sm text-emerald-700 font-medium">{raffle.progressPercent}% completo</div>
             <div className="text-sm text-gray-600">Último pagamento: {lastPaidAgo}</div>
           </div>
 
           <div className="space-y-4">
             <div className="text-xs text-gray-500 uppercase tracking-wide">Bilhete</div>
-            <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.ticket_price)}</div>
+            <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.ticketPrice)}</div>
 
             <div className="flex items-center gap-3 bg-white rounded-lg p-2">
               <button 
@@ -231,8 +233,8 @@ export default function GanhaveisDetail() {
             </div>
 
             <button
-              onClick={() => navigate(`/ganhavel/${raffle.id}/confirmacao-pagamento?qty=${qty}`)}
-              disabled={!isActive}
+              onClick={() => navigate(toConfirm(raffle.id, qty))}
+              disabled={!raffle.isActive}
               className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Comprar {qty} bilhetes
