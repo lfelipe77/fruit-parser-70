@@ -82,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
         .insert({
           id: payment_id,
           user_id: user.id,
-          ganhavel_id: raffle_id,
+          raffle_id: raffle_id,
           amount: amount,
           type: 'payment',
           status: 'pending',
@@ -211,7 +211,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (status === 'completed') {
         const { data: transaction, error: fetchError } = await supabaseService
           .from('transactions')
-          .select('user_id, ganhavel_id, amount')
+          .select('user_id, raffle_id, amount')
           .eq('id', payment_id)
           .single();
 
@@ -224,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
         const { data: raffle, error: raffleError } = await supabaseService
           .from('raffles')
           .select('ticket_price, total_tickets')
-          .eq('id', transaction.ganhavel_id)
+          .eq('id', transaction.raffle_id)
           .single();
 
         if (raffleError || !raffle) {
@@ -238,52 +238,37 @@ const handler = async (req: Request): Promise<Response> => {
         // Use reserve_tickets function to get proper ticket numbers
         const { data: ticketNumbers, error: reserveError } = await supabaseService
           .rpc('reserve_tickets', {
-            p_raffle_id: transaction.ganhavel_id,
+            p_raffle_id: transaction.raffle_id,
             p_qty: ticketCount
           });
 
         if (reserveError || !ticketNumbers) {
           console.error('Failed to reserve tickets:', reserveError);
-          // Fallback to manual ticket creation
-          for (let i = 0; i < ticketCount; i++) {
-            const { error: ticketError } = await supabaseService
-              .from('tickets')
-              .insert({
-                user_id: transaction.user_id,
-                raffle_id: transaction.ganhavel_id,
-                ganhavel_id: transaction.ganhavel_id,
-                payment_status: 'paid',
-                is_paid: true,
-                total_amount: raffle.ticket_price,
-                ticket_number: Math.floor(Math.random() * raffle.total_tickets) + 1,
-                status: 'paid'
-              });
-
-            if (ticketError) {
-              console.error('Manual ticket creation error:', ticketError);
-            }
-          }
+          throw new Error('Failed to reserve tickets');
         } else {
           // Create tickets with proper numbers from reserve_tickets
-          for (let i = 0; i < ticketNumbers.length; i++) {
-            const { error: ticketError } = await supabaseService
-              .from('tickets')
-              .insert({
-                user_id: transaction.user_id,
-                raffle_id: transaction.ganhavel_id,
-                ganhavel_id: transaction.ganhavel_id,
-                payment_status: 'paid',
-                is_paid: true,
-                total_amount: raffle.ticket_price,
-                ticket_number: ticketNumbers[i],
-                number: ticketNumbers[i],
-                status: 'paid'
-              });
+          const rows = ticketNumbers.map((num: number) => ({
+            raffle_id: transaction.raffle_id,
+            user_id: transaction.user_id,
+            ticket_number: num,
+            is_paid: true,
+            payment_status: 'paid',
+            total_amount: raffle.ticket_price,
+            status: 'paid'
+          }));
 
-            if (ticketError) {
-              console.error('Ticket creation error:', ticketError);
-            }
+          const { error: ticketError } = await supabaseService
+            .from('tickets')
+            .insert(rows);
+
+          if (ticketError) {
+            console.error('Batch ticket creation error:', ticketError);
+            throw new Error('Failed to create tickets');
           }
+
+          // Note: sold_tickets and last_paid_at are calculated fields from views
+          // The real-time updates will trigger from the tickets table inserts above
+          console.log(`Successfully created ${ticketCount} tickets for raffle ${transaction.raffle_id}`);
         }
 
         console.log(`Created ${ticketCount} tickets for payment ${payment_id}`);

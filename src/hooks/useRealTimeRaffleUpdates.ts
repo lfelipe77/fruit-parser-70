@@ -12,6 +12,7 @@ type RealTimeRaffleUpdate = {
 export const useRealTimeRaffleUpdates = (raffleId: string | undefined) => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [lastPaidAt, setLastPaidAt] = useState<string | null>(null);
+  const [soldTickets, setSoldTickets] = useState<number | null>(null);
 
   useEffect(() => {
     if (!raffleId) return;
@@ -46,6 +47,25 @@ export const useRealTimeRaffleUpdates = (raffleId: string | undefined) => {
           setLastUpdate(new Date());
         }
       })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'raffles', 
+        filter: `id=eq.${raffleId}` 
+      }, (payload) => {
+        console.log('Real-time raffle update:', payload);
+        
+        // Update sold tickets and last paid timestamp from raffle updates
+        if (payload.new && typeof payload.new === 'object') {
+          if ('sold_tickets' in payload.new) {
+            setSoldTickets(payload.new.sold_tickets as number);
+          }
+          if ('last_paid_at' in payload.new && payload.new.last_paid_at) {
+            setLastPaidAt(payload.new.last_paid_at as string);
+          }
+          setLastUpdate(new Date());
+        }
+      })
       .subscribe();
 
     return () => {
@@ -72,6 +92,7 @@ export const useRealTimeRaffleUpdates = (raffleId: string | undefined) => {
   return {
     lastUpdate,
     lastPaidAt,
+    soldTickets,
     timeAgo: getTimeAgo(lastPaidAt)
   };
 };

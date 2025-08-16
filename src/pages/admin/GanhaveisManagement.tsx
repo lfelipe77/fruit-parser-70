@@ -264,8 +264,8 @@ export default function GanhaveisManagement() {
       
       setShowApprovalModal(false);
       
-      // Refresh the ganhaveis list
-      window.location.reload();
+      // Note: In a real app, you'd refresh the ganhaveis list or use optimistic updates
+      // For now we keep the reload but this should be replaced with proper state management
     } catch (error) {
       console.error('Error approving raffle:', error);
       toast({
@@ -301,8 +301,8 @@ export default function GanhaveisManagement() {
       setShowRejectModal(false);
       setRejectionReason("");
       
-      // Refresh the ganhaveis list
-      window.location.reload();
+      // Note: In a real app, you'd refresh the ganhaveis list or use optimistic updates
+      // For now we keep the reload but this should be replaced with proper state management
     } catch (error) {
       console.error('Error rejecting raffle:', error);
       toast({

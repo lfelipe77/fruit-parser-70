@@ -437,7 +437,7 @@ export default function RifaDetail() {
                   alt={rifa.title}
                   className="w-full h-[50vh] md:h-96 object-cover"
                 />
-                {rifa.status !== 'approved' && (
+                {rifa.status !== 'active' && rifa.status !== 'completed' && (
                   <Badge className="absolute top-4 left-4 bg-amber-500 text-white">
                     Em revisão
                   </Badge>

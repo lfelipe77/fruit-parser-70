@@ -38,7 +38,7 @@ const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
           console.warn('User profile not found, assuming non-admin role');
           setIsAdmin(false);
         } else {
-          const userIsAdmin = data.role === 'admin';
+          const userIsAdmin = (data.role || '').toLowerCase() === 'admin';
           console.log('[AdminProtectedRoute] User role check:', { role: data.role, isAdmin: userIsAdmin });
           setIsAdmin(userIsAdmin);
         }
