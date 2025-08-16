@@ -133,14 +133,17 @@ export default function DiscoverRaffles() {
           <div className="space-y-3">
             <div className="text-sm">
               <div className="flex justify-between items-center mb-1">
-                <span>Progresso</span>
-                <span className="font-medium">{pct}%</span>
+                <span className="font-semibold text-emerald-600">{formatCurrency(raffle.amount_raised)}</span>
+                <span className="text-muted-foreground">de {formatCurrency(raffle.goal_amount)}</span>
               </div>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-primary transition-all" 
+                  className="h-full bg-emerald-500 transition-all" 
                   style={{ width: `${pct}%` }} 
                 />
+              </div>
+              <div className="mt-1 text-xs text-gray-600">
+                {pct}% arrecadado
               </div>
             </div>
             
@@ -149,13 +152,9 @@ export default function DiscoverRaffles() {
               <span className="font-semibold">{formatCurrency(raffle.ticket_price)}</span>
             </div>
             
-            <div className="text-xs text-muted-foreground">
-              {formatCurrency(raffle.amount_raised)} de {formatCurrency(raffle.goal_amount)}
-            </div>
-            
             {lastPaidAgo !== "—" && (
               <div className="text-xs text-muted-foreground">
-                Último pagamento: {lastPaidAgo}
+                Última compra: {lastPaidAgo}
               </div>
             )}
           </div>

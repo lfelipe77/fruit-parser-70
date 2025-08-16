@@ -62,134 +62,10 @@ import {
 } from "lucide-react";
 import { getAllCategories } from "@/data/categoriesData";
 import { supabase } from "@/integrations/supabase/client";
-
-const ganhaveisData = [
-  {
-    id: "RF001",
-    title: "iPhone 15 Pro Max 256GB",
-    organizer: "João Silva",
-    organizerEmail: "joao@email.com",
-    organizerPhone: "(11) 99999-9999",
-    value: "R$ 6.000",
-    participants: 120,
-    totalNumbers: 1000,
-    soldNumbers: 120,
-    status: "pending",
-    category: "Eletrônicos",
-    location: "São Paulo, SP",
-    created: "2024-01-15",
-    endDate: "2024-02-15",
-    description: "iPhone 15 Pro Max 256GB na cor Azul Titânio, novo lacrado com garantia Apple",
-    isAffiliate: true,
-    affiliateLink: "https://amzn.to/exemplo",
-    affiliateCommission: 5,
-    documents: ["RG", "CPF", "Comprovante"],
-    riskScore: 2,
-    suspiciousActivities: [],
-    adminNotes: "",
-    rejectionReason: "",
-  },
-  {
-    id: "RF002",
-    title: "Honda Civic 2024",
-    organizer: "Maria Santos",
-    organizerEmail: "maria@email.com",
-    organizerPhone: "(11) 88888-8888",
-    value: "R$ 120.000",
-    participants: 85,
-    totalNumbers: 500,
-    soldNumbers: 85,
-    status: "active",
-    category: "Automóveis",
-    location: "Rio de Janeiro, RJ",
-    created: "2024-01-10",
-    endDate: "2024-03-10",
-    description: "Honda Civic Touring 2024, 0km, cor preta, completo",
-    isAffiliate: false,
-    affiliateLink: "",
-    affiliateCommission: 0,
-    documents: ["RG", "CPF", "CNH", "CRLV"],
-    riskScore: 1,
-    suspiciousActivities: [],
-    adminNotes: "Verificada documentação do veículo",
-    rejectionReason: "",
-  },
-  {
-    id: "RF003",
-    title: "PS5 + Setup Gamer Completo",
-    organizer: "Carlos Mendes",
-    organizerEmail: "carlos@email.com",
-    organizerPhone: "(11) 77777-7777",
-    value: "R$ 8.500",
-    participants: 200,
-    totalNumbers: 200,
-    soldNumbers: 200,
-    status: "completed",
-    category: "Eletrônicos",
-    location: "Belo Horizonte, MG",
-    created: "2024-01-05",
-    endDate: "2024-01-20",
-    description: "PlayStation 5 + Monitor 4K + Cadeira Gamer + Headset",
-    isAffiliate: true,
-    affiliateLink: "https://amzn.to/setup-gamer",
-    affiliateCommission: 7,
-    documents: ["RG", "CPF"],
-    riskScore: 0,
-    suspiciousActivities: [],
-    adminNotes: "Rifa finalizada com sucesso",
-    rejectionReason: "",
-  },
-  {
-    id: "RF004",
-    title: "Apartamento 2 Quartos - Alphaville",
-    organizer: "Ana Costa",
-    organizerEmail: "ana@email.com",
-    organizerPhone: "(11) 66666-6666",
-    value: "R$ 350.000",
-    participants: 45,
-    totalNumbers: 1000,
-    soldNumbers: 45,
-    status: "suspended",
-    category: "Imóveis",
-    location: "São Paulo, SP",
-    created: "2024-01-12",
-    endDate: "2024-04-12",
-    description: "Apartamento 2 quartos, 80m², condomínio fechado",
-    isAffiliate: false,
-    affiliateLink: "",
-    affiliateCommission: 0,
-    documents: ["RG", "CPF", "Escritura"],
-    riskScore: 8,
-    suspiciousActivities: ["Link afiliado suspeito", "Múltiplas contas"],
-    adminNotes: "Suspeita de fraude - investigar",
-    rejectionReason: "Documentação incompleta",
-  },
-  {
-    id: "RF005",
-    title: "Yamaha MT-03 2024",
-    organizer: "Pedro Lima",
-    organizerEmail: "pedro@email.com",
-    organizerPhone: "(11) 55555-5555",
-    value: "R$ 25.000",
-    participants: 156,
-    totalNumbers: 500,
-    soldNumbers: 156,
-    status: "review",
-    category: "Automóveis",
-    location: "Online",
-    created: "2024-01-18",
-    endDate: "2024-02-28",
-    description: "Motocicleta Yamaha MT-03 2024, 0km, azul metálico",
-    isAffiliate: false,
-    affiliateLink: "",
-    affiliateCommission: 0,
-    documents: ["RG", "CPF", "CNH"],
-    riskScore: 3,
-    suspiciousActivities: ["Vendas muito rápidas"],
-    adminNotes: "Em análise pela equipe de segurança",
-    rejectionReason: "",
-  },
-];
+import { RafflePublicMoney } from "@/types/public-views";
+import { useRelativeTime } from "@/hooks/useRelativeTime";
+import { formatBRL } from "@/lib/formatters";
+import { useEffect } from "react";
 
 export default function GanhaveisManagement() {
   const [selectedTab, setSelectedTab] = useState("todas");
@@ -200,8 +76,32 @@ export default function GanhaveisManagement() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
+  const [raffles, setRaffles] = useState<RafflePublicMoney[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { logAdminAction } = useAuditLogger();
+
+  // Load raffles from database
+  useEffect(() => {
+    loadRaffles();
+  }, []);
+
+  const loadRaffles = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await (supabase as any)
+        .from('raffles_public_money_ext')
+        .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at')
+        .order('last_paid_at', { ascending: false });
+      
+      if (error) throw error;
+      setRaffles((data || []) as RafflePublicMoney[]);
+    } catch (error) {
+      console.error('Error loading raffles:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -232,11 +132,10 @@ export default function GanhaveisManagement() {
     }
   };
 
-  const filteredGanhaveis = ganhaveisData.filter((ganhavel) => {
-    const matchesTab = selectedTab === "todas" || ganhavel.status === selectedTab;
-    const matchesSearch = ganhavel.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ganhavel.organizer.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "todas" || ganhavel.category === selectedCategory;
+  const filteredGanhaveis = raffles.filter((raffle) => {
+    const matchesTab = selectedTab === "todas" || raffle.status === selectedTab;
+    const matchesSearch = raffle.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "todas" || raffle.category_name === selectedCategory;
     
     return matchesTab && matchesSearch && matchesCategory;
   });
@@ -259,14 +158,13 @@ export default function GanhaveisManagement() {
 
       toast({
         title: "Ganhavel Aprovado",
-        description: `O ganhavel ${ganhaveisId} foi aprovado e está agora ativo.`,
+        description: `O ganhavel foi aprovado e está agora ativo.`,
       });
       
       setShowApprovalModal(false);
       
-      // TODO: Implement proper state management instead of reload
-      // For now, optimistically update the UI
-      // setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'active' } : r));
+      // Update local state without reload
+      setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'active' } : r));
     } catch (error) {
       console.error('Error approving raffle:', error);
       toast({
@@ -295,16 +193,15 @@ export default function GanhaveisManagement() {
 
       toast({
         title: "Ganhavel Rejeitado",
-        description: `O ganhavel ${ganhaveisId} foi rejeitado. Motivo: ${reason}`,
+        description: `O ganhavel foi rejeitado. Motivo: ${reason}`,
         variant: "destructive",
       });
       
       setShowRejectModal(false);
       setRejectionReason("");
       
-      // TODO: Implement proper state management instead of reload
-      // For now, optimistically update the UI  
-      // setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'rejected' } : r));
+      // Update local state without reload
+      setRaffles(prev => prev.map(r => r.id === ganhaveisId ? { ...r, status: 'rejected' } : r));
     } catch (error) {
       console.error('Error rejecting raffle:', error);
       toast({
@@ -395,7 +292,7 @@ export default function GanhaveisManagement() {
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{ganhaveisData.length}</div>
+            <div className="text-2xl font-bold">{raffles.length}</div>
             <p className="text-xs text-muted-foreground">+12% este mês</p>
           </CardContent>
         </Card>
@@ -406,7 +303,7 @@ export default function GanhaveisManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {ganhaveisData.filter(r => r.status === "pending").length}
+              {raffles.filter(r => r.status === "pending").length}
             </div>
             <p className="text-xs text-muted-foreground">Aguardando aprovação</p>
           </CardContent>
@@ -418,21 +315,21 @@ export default function GanhaveisManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {ganhaveisData.filter(r => r.status === "active").length}
+              {raffles.filter(r => r.status === "active").length}
             </div>
             <p className="text-xs text-muted-foreground">Em andamento</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alto Risco</CardTitle>
+            <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {ganhaveisData.filter(r => r.riskScore > 5).length}
+              {raffles.filter(r => r.status === "completed").length}
             </div>
-            <p className="text-xs text-muted-foreground">Requer atenção</p>
+            <p className="text-xs text-muted-foreground">Finalizados</p>
           </CardContent>
         </Card>
       </div>
@@ -500,78 +397,77 @@ export default function GanhaveisManagement() {
             
             <TabsContent value={selectedTab} className="mt-6">
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Ganhavel</TableHead>
-                      <TableHead>Organizador</TableHead>
-                      <TableHead>Valor / Progress</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Risco</TableHead>
-                      <TableHead>Localização</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredGanhaveis.map((ganhavel) => (
-                      <TableRow key={ganhavel.id}>
-                        <TableCell className="font-medium">{ganhavel.id}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{ganhavel.title}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {ganhavel.category}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{ganhavel.organizer}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {ganhavel.organizerEmail}
-                            </div>
-                            {ganhavel.isAffiliate && (
-                              <Badge variant="outline" className="text-blue-600 border-blue-200 mt-1">
-                                <Link className="h-3 w-3 mr-1" />
-                                Afiliado
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{ganhavel.value}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {ganhavel.soldNumbers}/{ganhavel.totalNumbers} vendidas
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                              <div 
-                                className="bg-blue-600 h-1.5 rounded-full" 
-                                style={{ width: `${(ganhavel.soldNumbers / ganhavel.totalNumbers) * 100}%` }}
-                              />
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(ganhavel.status)}</TableCell>
-                        <TableCell>{getRiskBadge(ganhavel.riskScore)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm">
-                            <MapPin className="h-3 w-3" />
-                            {ganhavel.location}
-                          </div>
-                        </TableCell>
-                        <TableCell>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Arrecadado</TableHead>
+                        <TableHead>Meta</TableHead>
+                        <TableHead>%</TableHead>
+                        <TableHead>Último pagamento</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8">
+                            <div className="animate-pulse">Carregando...</div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredGanhaveis.map((raffle) => {
+                        const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
+                        return (
+                          <TableRow key={raffle.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{raffle.title}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {raffle.category_name}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(raffle.status)}</TableCell>
+                            <TableCell>
+                              <div className="font-medium text-emerald-600">
+                                {formatBRL(raffle.amount_raised)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">
+                                {formatBRL(raffle.goal_amount)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                  {Math.round(raffle.progress_pct_money)}%
+                                </span>
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-emerald-500 h-2 rounded-full" 
+                                    style={{ width: `${Math.min(100, raffle.progress_pct_money)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-muted-foreground">
+                                {lastPaidAgo}
+                              </div>
+                            </TableCell>
+                            <TableCell>
                           <div className="flex gap-1">
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => setSelectedGanhavel(ganhavel)}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setSelectedGanhavel(raffle)}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl">
                                 <DialogHeader>
@@ -724,7 +620,7 @@ export default function GanhaveisManagement() {
                             </Dialog>
                             
                             {/* Approval Actions */}
-                            {ganhavel.status === "pending" && (
+                            {raffle.status === "pending" && (
                               <>
                                 <Dialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
                                   <DialogTrigger asChild>
@@ -732,7 +628,7 @@ export default function GanhaveisManagement() {
                                       size="sm" 
                                       variant="outline" 
                                       className="text-green-600 hover:text-green-700"
-                                      onClick={() => setSelectedGanhavel(ganhavel)}
+                                      onClick={() => setSelectedGanhavel(raffle)}
                                     >
                                       <Check className="h-3 w-3" />
                                     </Button>
@@ -741,14 +637,14 @@ export default function GanhaveisManagement() {
                                     <DialogHeader>
                                       <DialogTitle>Aprovar Ganhavel</DialogTitle>
                                       <DialogDescription>
-                                        Confirme a aprovação do ganhavel "{ganhavel.title}". Esta ação tornará o ganhavel visível ao público.
+                                        Confirme a aprovação do ganhavel "{raffle.title}". Esta ação tornará o ganhavel visível ao público.
                                       </DialogDescription>
                                     </DialogHeader>
                                     <DialogFooter>
                                       <Button variant="outline" onClick={() => setShowApprovalModal(false)}>
                                         Cancelar
                                       </Button>
-                                      <Button onClick={() => handleApprove(ganhavel.id)}>
+                                      <Button onClick={() => handleApprove(raffle.id)}>
                                         <Check className="h-3 w-3 mr-1" />
                                         Aprovar Ganhavel
                                       </Button>
@@ -762,7 +658,7 @@ export default function GanhaveisManagement() {
                                       size="sm" 
                                       variant="outline" 
                                       className="text-red-600 hover:text-red-700"
-                                      onClick={() => setSelectedGanhavel(ganhavel)}
+                                      onClick={() => setSelectedGanhavel(raffle)}
                                     >
                                       <Ban className="h-3 w-3" />
                                     </Button>
@@ -771,7 +667,7 @@ export default function GanhaveisManagement() {
                                     <DialogHeader>
                                       <DialogTitle>Rejeitar Ganhavel</DialogTitle>
                                       <DialogDescription>
-                                        Informe o motivo da rejeição do ganhavel "{ganhavel.title}".
+                                        Informe o motivo da rejeição do ganhavel "{raffle.title}".
                                       </DialogDescription>
                                     </DialogHeader>
                                     <div className="space-y-4">
@@ -790,7 +686,7 @@ export default function GanhaveisManagement() {
                                       </Button>
                                       <Button 
                                         variant="destructive"
-                                        onClick={() => handleReject(ganhavel.id, rejectionReason)}
+                                        onClick={() => handleReject(raffle.id, rejectionReason)}
                                         disabled={!rejectionReason.trim()}
                                       >
                                         <Ban className="h-3 w-3 mr-1" />
@@ -802,64 +698,11 @@ export default function GanhaveisManagement() {
                               </>
                             )}
 
-                            {/* Active Ganhavel Actions */}
-                            {ganhavel.status === "active" && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="text-orange-600 hover:text-orange-700"
-                                  onClick={() => handleSuspend(ganhavel.id)}
-                                >
-                                  <Pause className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="text-blue-600 hover:text-blue-700"
-                                >
-                                  <MessageSquare className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-
-                            {/* Suspended Ganhavel Actions */}
-                            {ganhavel.status === "suspended" && (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="text-green-600 hover:text-green-700"
-                                onClick={() => handleReactivate(ganhavel.id)}
-                              >
-                                <Play className="h-3 w-3" />
-                              </Button>
-                            )}
-
-                            {/* Review Status Actions */}
-                            {ganhavel.status === "review" && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="text-green-600 hover:text-green-700"
-                                  onClick={() => handleApprove(ganhavel.id)}
-                                >
-                                  <Check className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="text-red-600 hover:text-red-700"
-                                  onClick={() => handleSuspend(ganhavel.id)}
-                                >
-                                  <Ban className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
               </div>

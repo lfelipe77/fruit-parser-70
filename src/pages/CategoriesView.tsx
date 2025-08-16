@@ -8,13 +8,15 @@ import { CategoriasSEO } from "@/components/SEOPages";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CategoryStats, SubcategoryStats, formatCurrency, getProgressPercent } from "@/types/raffles";
-import { RafflePublic } from "@/types/public-views";
+import { RafflePublicMoney } from "@/types/public-views";
+import { useRelativeTime } from "@/hooks/useRelativeTime";
+import { formatBRL } from "@/lib/formatters";
 
 export default function CategoriesView() {
   const { categoria, subcategoria } = useParams();
   const [categories, setCategories] = useState<CategoryStats[]>([]);
   const [subcategories, setSubcategories] = useState<SubcategoryStats[]>([]);
-  const [raffles, setRaffles] = useState<RafflePublic[]>([]);
+  const [raffles, setRaffles] = useState<RafflePublicMoney[]>([]);
   const [loading, setLoading] = useState(true);
 
   const currentCategory = categories.find(c => c.slug === categoria);
@@ -66,18 +68,19 @@ export default function CategoriesView() {
     async function loadRaffles() {
       setLoading(true);
       const { data } = await (supabase as any)
-        .from('raffles_public_ext')
-        .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id')
+        .from('raffles_public_money_ext')
+        .select('id,title,description,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,draw_date,status,last_paid_at')
         .limit(12);
       
-      setRaffles((data || []) as RafflePublic[]);
+      setRaffles((data || []) as RafflePublicMoney[]);
       setLoading(false);
     }
     loadRaffles();
   }, [currentSubcategory?.id]);
 
-  const RaffleCard = ({ raffle }: { raffle: RafflePublic }) => {
-    const pct = getProgressPercent(raffle.progress_pct);
+  const RaffleCard = ({ raffle }: { raffle: RafflePublicMoney }) => {
+    const pct = Math.max(0, Math.min(100, raffle.progress_pct_money ?? 0));
+    const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
     
     return (
       <Link
@@ -96,10 +99,13 @@ export default function CategoriesView() {
             {raffle.title}
           </h3>
           <div className="text-xs text-muted-foreground mb-2">
-            {pct}% concluído • {formatCurrency(raffle.ticket_price)}
+            {formatBRL(raffle.amount_raised)} de {formatBRL(raffle.goal_amount)} • {formatBRL(raffle.ticket_price)}
           </div>
-          <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-1 bg-gray-100 rounded-full overflow-hidden mb-2">
             <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Última compra: {lastPaidAgo}
           </div>
         </div>
       </Link>
