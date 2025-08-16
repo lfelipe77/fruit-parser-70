@@ -1,139 +1,89 @@
-import React from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import * as React from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/lib/formatters";
-import type { RafflePublicMoney } from "@/types/public-views";
-import Navigation from "@/components/Navigation";
+
+type MoneyRow = {
+  id: string;
+  title: string;
+  image_url: string | null;
+  ticket_price: number;
+};
 
 export default function ConfirmacaoPagamento() {
-  const { id, ganhaveisId } = useParams<{ id?: string; ganhaveisId?: string }>();
-  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  
-  // ---- All hooks first (unconditionally)
-  const actualId = id || ganhaveisId;
-  const qty = Math.max(1, Number(new URLSearchParams(location.search).get("qty") ?? "1"));
-  const [loading, setLoading] = React.useState(true);
-  const [raffle, setRaffle] = React.useState<RafflePublicMoney | null>(null);
+  const navigate = useNavigate();
 
-  // ---- Data loading
+  // hooks first
+  const qty = Math.max(1, Number(new URLSearchParams(location.search).get("qty") ?? "1"));
+  const [row, setRow] = React.useState<MoneyRow | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
   React.useEffect(() => {
-    if (!actualId) {
-      setLoading(false);
-      return;
-    }
-    
     let alive = true;
-    
-    const fetchRaffle = async () => {
+    (async () => {
       try {
         setLoading(true);
-        
-        const { data: r } = await (supabase as any)
+        const { data } = await (supabase as any)
           .from("raffles_public_money_ext")
-          .select("id,title,ticket_price,image_url,amount_raised,goal_amount,progress_pct_money")
-          .eq("id", actualId)
+          .select("id,title,image_url,ticket_price")
+          .eq("id", id)
           .maybeSingle();
-        
         if (!alive) return;
-        setRaffle(r);
-      } catch (error) {
-        console.error('Error fetching raffle:', error);
-        if (alive) {
-          setRaffle(null);
-        }
+        setRow((data ?? null) as MoneyRow | null);
       } finally {
-        if (alive) {
-          setLoading(false);
-        }
+        if (alive) setLoading(false);
       }
-    };
+    })();
+    return () => { alive = false; };
+  }, [id]);
 
-    fetchRaffle();
-    
-    return () => {
-      alive = false;
-    };
-  }, [actualId]);
+  if (loading) return <div className="p-6">Carregando…</div>;
+  if (!row) return <div className="p-6">Rifa não encontrada.</div>;
 
-  // ---- Derived values
-  const feeFixed = 2.0;
-  const subtotal = (raffle?.ticket_price ?? 0) * qty;
-  const total = subtotal + feeFixed;
+  const subtotal = row.ticket_price * qty;
+  const fee = 2;
+  const total = subtotal + fee;
 
-  const handleConfirmPayment = async () => {
-    if (!raffle || !actualId) return;
-    
-    try {
-      // Mock transaction creation for now
-      console.log('Creating transaction:', { actualId, qty, total });
-      
-      // Navigate to success page
-      navigate(`/ganhavel/${actualId}/pagamento-sucesso`);
-    } catch (error) {
-      console.error('Error creating transaction:', error);
-    }
+  const handleBack = () => navigate(`/ganhavel/${id}`);
+  // plug your Asaas flow here
+  const handlePay = async () => {
+    navigate(`/ganhavel/${id}`); // placeholder success/back
   };
 
-  // ---- Render
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="p-6">Carregando…</div>
-      </div>
-    );
-  }
-
-  if (!raffle) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="p-6">Rifa não encontrada.</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Confirmar Pagamento</h1>
-        
-        <div className="max-w-md mx-auto space-y-4">
-          <div className="border rounded-lg p-4">
-            <h2 className="font-semibold">{raffle.title}</h2>
-            <p className="text-sm text-gray-600">Quantidade: {qty} bilhetes</p>
-          </div>
-          
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Bilhetes ({qty}x):</span>
-              <span>{formatBRL(subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Taxa institucional:</span>
-              <span>{formatBRL(feeFixed)}</span>
-            </div>
-            <div className="flex justify-between font-semibold text-lg border-t pt-2">
-              <span>Total a pagar</span>
-              <span>{formatBRL(total)}</span>
-            </div>
-          </div>
+    <div className="container mx-auto p-4">
+      <div className="mb-4 flex items-center gap-3">
+        {row.image_url ? (
+          <img src={row.image_url} alt={row.title} className="h-16 w-16 rounded object-cover" />
+        ) : (
+          <div className="h-16 w-16 rounded bg-gray-100" />
+        )}
+        <div>
+          <h1 className="text-xl font-semibold">Confirmar compra</h1>
+          <div className="text-gray-600">{row.title}</div>
+        </div>
+      </div>
 
-          <button
-            onClick={handleConfirmPayment}
-            className="w-full rounded-xl bg-emerald-500 py-3 text-white font-semibold"
-          >
-            Confirmar Pagamento
-          </button>
+      <div className="max-w-md space-y-2 rounded-2xl border p-4">
+        <div className="flex justify-between">
+          <span>Bilhetes ({qty}x)</span>
+          <span>{formatBRL(subtotal)}</span>
+        </div>
+        <div className="flex justify-between text-gray-600">
+          <span>Taxa institucional</span>
+          <span>{formatBRL(fee)}</span>
+        </div>
+        <div className="flex justify-between font-semibold text-emerald-700">
+          <span>Total</span>
+          <span>{formatBRL(total)}</span>
+        </div>
 
-          <button
-            onClick={() => navigate(`/ganhavel/${actualId}`)}
-            className="w-full rounded-xl border py-3 text-gray-700"
-          >
-            Voltar aos Detalhes
-          </button>
+        <div className="mt-3 flex gap-2">
+          <Button variant="outline" className="flex-1" onClick={handleBack}>Voltar</Button>
+          <Button className="flex-1" onClick={handlePay}>Pagar com Asaas</Button>
         </div>
       </div>
     </div>
