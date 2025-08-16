@@ -77,10 +77,10 @@ const configItems = [
 ];
 
 export function AdminSidebar() {
-  const { state } = useSidebar();
+  const { open } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  const collapsed = state === "collapsed";
+  const collapsed = !open;
 
   const isActive = (path: string) => {
     if (path === "/admin") {
