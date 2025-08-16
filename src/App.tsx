@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import DiscoverRaffles from "./pages/DiscoverRaffles";
 import CategoriesView from "./pages/CategoriesView";
 import GanhaveisDetail from "./pages/GanhaveisDetail";
+import RaffleRedirect from "./components/RaffleRedirect";
 import ComoFunciona from "./pages/ComoFunciona";
 import Resultados from "./pages/Resultados";
 import SobreNos from "./pages/SobreNos";
@@ -150,7 +151,7 @@ const AppContent = () => {
         <Route path="/categorias/:categoria/:subcategoria" element={<CategoriesView />} />
         <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
         {/* Optional alias/redirect for legacy URLs */}
-        <Route path="/raffles/:id" element={<Navigate to="/ganhavel/:id" replace />} />
+        <Route path="/raffles/:id" element={<RaffleRedirect />} />
         <Route path="/ganhavel/:ganhaveisId/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
         <Route path="/ganhavel/:ganhaveisId/pagamento-sucesso" element={<PagamentoSucesso />} />
         <Route path="/ganhavel/:ganhaveisId/pagamento-erro" element={<PagamentoErro />} />

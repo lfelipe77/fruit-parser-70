@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
 import type { RafflePublicMoney, PublicProfile } from "@/types/public-views";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
+import Navigation from "@/components/Navigation";
 
 export default function GanhaveisDetail() {
   const { id } = useParams<{ id: string }>();
@@ -21,18 +22,29 @@ export default function GanhaveisDetail() {
 
   // ---- Data load
   React.useEffect(() => {
+    console.log('[GanhaveisDetail] Starting data fetch for ID:', id);
+    
+    if (!id) {
+      console.log('[GanhaveisDetail] No ID provided');
+      setLoading(false);
+      return;
+    }
+    
     let alive = true;
     (async () => {
       try {
         setLoading(true);
+        console.log('[GanhaveisDetail] Fetching raffle data...');
 
-        const { data: r } = await (supabase as any)
+        const { data: r, error } = await (supabase as any)
           .from("raffles_public_money_ext")
           .select(
             "id,title,description,image_url,status,ticket_price,draw_date,category_name,subcategory_name,amount_raised,goal_amount,progress_pct_money,last_paid_at"
           )
           .eq("id", id)
           .maybeSingle();
+
+        console.log('[GanhaveisDetail] Raffle query result:', { data: r, error });
 
         if (!alive) return;
         const raffleRow = (r ?? null) as RafflePublicMoney | null;
@@ -56,6 +68,11 @@ export default function GanhaveisDetail() {
           setOrganizer((p ?? null) as PublicProfile | null);
         } else {
           setOrganizer(null);
+        }
+      } catch (error) {
+        console.error('[GanhaveisDetail] Error fetching data:', error);
+        if (alive) {
+          setRaffle(null);
         }
       } finally {
         if (alive) setLoading(false);
@@ -82,11 +99,28 @@ export default function GanhaveisDetail() {
   };
 
   // ---- Render
-  if (loading) return <div className="p-6">Carregando…</div>;
-  if (!raffle) return <div className="p-6">Ganhavel não encontrado.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="p-6">Carregando…</div>
+      </div>
+    );
+  }
+  
+  if (!raffle) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="p-6">Ganhavel não encontrado.</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="container mx-auto p-4">
       {/* Header */}
       <div className="mb-3 text-xs text-gray-600">
         🇧🇷 Loteria Federal • Próximo sorteio: {drawLabel}
@@ -205,6 +239,7 @@ export default function GanhaveisDetail() {
             </p>
           </div>
         </aside>
+      </div>
       </div>
     </div>
   );
