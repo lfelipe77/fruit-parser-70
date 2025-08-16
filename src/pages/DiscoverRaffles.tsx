@@ -8,13 +8,14 @@ import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CategoryStats, formatCurrency, formatDate, getProgressPercent } from "@/types/raffles";
-import { RafflePublic } from "@/types/public-views";
+import { RafflePublicMoney } from "@/types/public-views";
+import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { Link } from "react-router-dom";
 
 const PAGE_SIZE = 12;
 
 export default function DiscoverRaffles() {
-  const [raffles, setRaffles] = useState<RafflePublic[]>([]);
+  const [raffles, setRaffles] = useState<RafflePublicMoney[]>([]);
   const [categories, setCategories] = useState<CategoryStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,8 +53,8 @@ export default function DiscoverRaffles() {
     async function loadRaffles() {
       setLoading(true);
       let query = (supabase as any)
-        .from('raffles_public_ext')
-        .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id', { count: "exact" });
+        .from('raffles_public_money_ext')
+        .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at', { count: "exact" });
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);
@@ -66,13 +67,13 @@ export default function DiscoverRaffles() {
       // Apply sorting
       switch (sortBy) {
         case "ending-soon":
-          query = query.order("draw_date", { ascending: true });
+          query = query.order("last_paid_at", { ascending: true });
           break;
         case "newest":
-          query = query.order("created_at", { ascending: false });
+          query = query.order("last_paid_at", { ascending: false });
           break;
         case "popularity":
-          query = query.order("progress_pct", { ascending: false });
+          query = query.order("progress_pct_money", { ascending: false });
           break;
         case "goal":
           query = query.order("goal_amount", { ascending: false });
@@ -85,7 +86,7 @@ export default function DiscoverRaffles() {
       const { data, error, count } = await query;
       
       if (!error) {
-        setRaffles((data || []) as RafflePublic[]);
+        setRaffles((data || []) as RafflePublicMoney[]);
         setTotalCount(count || 0);
       }
       setLoading(false);
@@ -94,9 +95,9 @@ export default function DiscoverRaffles() {
     loadRaffles();
   }, [searchTerm, selectedCategory, sortBy, currentPage]);
 
-  const RaffleCard = ({ raffle }: { raffle: RafflePublic }) => {
-    const pct = getProgressPercent(raffle.progress_pct);
-    const soldOut = pct >= 100;
+  const RaffleCard = ({ raffle }: { raffle: RafflePublicMoney }) => {
+    const pct = Math.max(0, Math.min(100, raffle.progress_pct_money));
+    const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
     
     return (
       <Link
@@ -118,9 +119,9 @@ export default function DiscoverRaffles() {
                 {raffle.category_name}
               </Badge>
             )}
-            {soldOut && (
-              <Badge variant="destructive" className="text-xs">
-                Esgotado
+            {pct >= 100 && (
+              <Badge variant="default" className="text-xs bg-success">
+                Meta alcançada
               </Badge>
             )}
           </div>
@@ -128,10 +129,6 @@ export default function DiscoverRaffles() {
           <h3 className="font-semibold text-lg mb-2 line-clamp-2">
             {raffle.title}
           </h3>
-          
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {raffle.description}
-          </p>
           
           <div className="space-y-3">
             <div className="text-sm">
@@ -152,10 +149,13 @@ export default function DiscoverRaffles() {
               <span className="font-semibold">{formatCurrency(raffle.ticket_price)}</span>
             </div>
             
-            {raffle.draw_date && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Sorteio:</span>
-                <span>{formatDate(raffle.draw_date)}</span>
+            <div className="text-xs text-muted-foreground">
+              {formatCurrency(raffle.amount_raised)} de {formatCurrency(raffle.goal_amount)}
+            </div>
+            
+            {lastPaidAgo !== "—" && (
+              <div className="text-xs text-muted-foreground">
+                Último pagamento: {lastPaidAgo}
               </div>
             )}
           </div>

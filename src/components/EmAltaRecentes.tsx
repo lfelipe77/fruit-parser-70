@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { RafflePublic } from "@/types/public-views";
+import { RafflePublicMoney } from "@/types/public-views";
 import RaffleCard from "./RaffleCard";
 
 function SkeletonCard() {
@@ -19,8 +19,8 @@ function SkeletonCard() {
 
 export default function EmAltaRecentesSection() {
   const navigate = useNavigate();
-  const [top, setTop] = React.useState<RafflePublic[]>([]);
-  const [recent, setRecent] = React.useState<RafflePublic[]>([]);
+  const [top, setTop] = React.useState<RafflePublicMoney[]>([]);
+  const [recent, setRecent] = React.useState<RafflePublicMoney[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState<string | null>(null);
 
@@ -30,20 +30,19 @@ export default function EmAltaRecentesSection() {
       setLoading(true);
       setErr(null);
       try {
-        // Use type assertion to work around TypeScript limitations
         const base = () => (supabase as any)
-          .from('raffles_public_ext')
-          .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id');
+          .from('raffles_public_money_ext')
+          .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at');
         
         const [a, b] = await Promise.all([
-          base().order("progress_pct", { ascending: false }).limit(6),
-          base().order("draw_date", { ascending: true }).limit(6),
+          base().order("progress_pct_money", { ascending: false }).limit(6),
+          base().order("last_paid_at", { ascending: false }).limit(6),
         ]);
         if (!cancelled) {
           if (a.error) throw a.error;
           if (b.error) throw b.error;
-          setTop((a.data ?? []) as RafflePublic[]);
-          setRecent((b.data ?? []) as RafflePublic[]);
+          setTop((a.data ?? []) as RafflePublicMoney[]);
+          setRecent((b.data ?? []) as RafflePublicMoney[]);
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");
@@ -54,7 +53,7 @@ export default function EmAltaRecentesSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const Grid = ({ items }: { items: RafflePublic[] }) => (
+  const Grid = ({ items }: { items: RafflePublicMoney[] }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {items.map((r) => <RaffleCard key={r.id} r={r} />)}
     </div>

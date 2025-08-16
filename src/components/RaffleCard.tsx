@@ -1,12 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { RafflePublic } from "@/types/public-views";
+import { RafflePublicMoney } from "@/types/public-views";
 import ProgressBar from "@/components/ui/progress-bar";
 import CategoryBadge from "@/components/ui/category-badge";
 import { formatBRL, formatDateBR, withFallbackImage } from "@/lib/formatters";
+import { useRelativeTime } from "@/hooks/useRelativeTime";
 
 type Props = { 
-  r: RafflePublic; 
+  r: RafflePublicMoney; 
   onClick?: (id: string) => void;
 };
 
@@ -42,6 +43,8 @@ export default function RaffleCard({ r, onClick }: Props) {
   );
 
   function CardContent() {
+    const lastPaidAgo = useRelativeTime(r.last_paid_at, "pt-BR");
+    
     return (
       <>
         <div className="relative aspect-[16/10] w-full overflow-hidden">
@@ -68,14 +71,19 @@ export default function RaffleCard({ r, onClick }: Props) {
             </div>
           </div>
 
-          <ProgressBar value={r.progress_pct} />
+          <ProgressBar value={r.progress_pct_money} />
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              {r.paid_tickets}/{r.total_tickets ?? 0} bilhetes
+              {formatBRL(r.amount_raised)} de {formatBRL(r.goal_amount)}
             </span>
-            {r.draw_date && <span>Sorteio: {formatDateBR(r.draw_date)}</span>}
           </div>
+          
+          {lastPaidAgo !== "—" && (
+            <div className="text-xs text-muted-foreground">
+              Último pagamento: {lastPaidAgo}
+            </div>
+          )}
         </div>
       </>
     );

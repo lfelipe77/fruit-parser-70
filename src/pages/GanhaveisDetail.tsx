@@ -13,53 +13,24 @@ import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useRealTimeRaffleUpdates } from "@/hooks/useRealTimeRaffleUpdates";
+import { useRelativeTime } from "@/hooks/useRelativeTime";
+import { formatBRL, formatDateBR } from "@/lib/formatters";
+import { RafflePublicMoney, PublicProfile } from "@/types/public-views";
+import ProgressBar from "@/components/ui/progress-bar";
 import { toast } from "sonner";
-
-// Types for our Supabase data
-type RaffleData = {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  ticket_price: number;
-  total_tickets: number;
-  paid_tickets: number;
-  tickets_remaining: number;
-  amount_collected: number;
-  goal_amount: number;
-  progress_pct: number;
-  status: string;
-  category_id: number;
-  owner_user_id: string;
-  vendor_link?: string;
-  lottery_type?: string;
-};
-
-type ProfileData = {
-  id: string;
-  display_name?: string;
-  username?: string;
-  full_name?: string;
-  avatar_url?: string;
-  bio?: string;
-  location?: string;
-  created_at: string;
-};
 
 export default function RifaDetail() {
   const [selectedCountry, setSelectedCountry] = useState("brasil");
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const selectedProvider = "asaas"; // Fixed to Asaas only
+  const [qty, setQty] = useState(3);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
-  const [rifa, setRifa] = useState<RaffleData | null>(null);
-  const [organizer, setOrganizer] = useState<ProfileData | null>(null);
+  const [raffle, setRaffle] = useState<RafflePublicMoney | null>(null);
+  const [organizer, setOrganizer] = useState<PublicProfile | null>(null);
+  const [vendorUrl, setVendorUrl] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { id: rifaId } = useParams();
   const { user } = useAuth();
-  const { lastUpdate, timeAgo } = useRealTimeRaffleUpdates(rifaId);
   
   // Countries database with lottery information
   const countries = {
@@ -96,52 +67,36 @@ export default function RifaDetail() {
     const fetchRaffle = async () => {
       setLoading(true);
       try {
-        console.log('Fetching raffle with ID:', rifaId);
-        
-        // First get from raffles_public_ext (available columns only)
-        const { data: raffleData, error: raffleError } = await (supabase as any)
-          .from('raffles_public_ext')
-          .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id')
+        // main raffle from money view
+        const { data: r } = await (supabase as any)
+          .from('raffles_public_money_ext')
+          .select('id,title,description,image_url,status,ticket_price,draw_date,category_name,subcategory_name,amount_raised,goal_amount,progress_pct_money,last_paid_at')
+          .eq('id', rifaId)
+          .maybeSingle();
+        const raffleData = (r ?? null) as RafflePublicMoney | null;
+
+        // organizer id (from base raffles)
+        const { data: base } = await (supabase as any)
+          .from('raffles')
+          .select('user_id, vendor_link')
           .eq('id', rifaId)
           .maybeSingle();
 
-        console.log('Raffle query result:', { raffleData, raffleError });
+        const organizerId = base?.user_id ?? null;
+        setVendorUrl(base?.vendor_link ?? null);
 
-        if (raffleError) throw raffleError;
-        
-        // Get owner info from main raffles table  
-        let ownerUserId = null;
-        if (raffleData) {
-          const { data: ownerData } = await supabase
-            .from('raffles')
-            .select('owner_user_id, user_id')
-            .eq('id', rifaId)
-            .maybeSingle();
-          
-          ownerUserId = ownerData?.owner_user_id || ownerData?.user_id;
-          console.log('Owner user ID:', ownerUserId);
-        }
+        // organizer public profile
+        const { data: p } = organizerId
+          ? await (supabase as any)
+              .from('user_profiles_public')
+              .select('id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
+              .eq('id', organizerId)
+              .maybeSingle()
+          : { data: null };
+        const organizerData = (p ?? null) as PublicProfile | null;
 
-        const data = raffleData ? { 
-          ...raffleData, 
-          owner_user_id: ownerUserId,
-          amount_collected: raffleData.paid_tickets * raffleData.ticket_price,
-          goal_amount: raffleData.total_tickets * raffleData.ticket_price,
-          tickets_remaining: raffleData.total_tickets - raffleData.paid_tickets
-        } : null;
-
-        setRifa(data);
-
-        // Fetch organizer if raffle found
-        if (data?.owner_user_id) {
-          const { data: organizerData } = await supabase
-            .from('user_profiles')
-            .select('id, display_name, username, full_name, avatar_url, bio, location, created_at')
-            .eq('id', data.owner_user_id)
-            .maybeSingle();
-          
-          setOrganizer(organizerData);
-        }
+        setRaffle(raffleData);
+        setOrganizer(organizerData);
       } catch (error) {
         console.error('Error fetching raffle:', error);
         toast.error('Erro ao carregar rifa');
@@ -160,20 +115,23 @@ export default function RifaDetail() {
     const channel = supabase
       .channel(`raffle-tickets-${rifaId}`)
       .on('postgres_changes', { 
-        event: '*', 
+        event: 'INSERT', 
         schema: 'public', 
         table: 'tickets', 
         filter: `raffle_id=eq.${rifaId}` 
-      }, async () => {
-        // Re-fetch raffle data when tickets change
-        const { data } = await (supabase as any)
-          .from('raffles_public_ext')
-          .select('paid_tickets,tickets_remaining,amount_collected,progress_pct')
-          .eq('id', rifaId)
-          .maybeSingle();
-        
-        if (data && rifa) {
-          setRifa(prev => prev ? { ...prev, ...data } : null);
+      }, async (payload) => {
+        // Check if paid ticket was inserted
+        if (payload.new.is_paid) {
+          // Refetch single row from money view
+          const { data } = await (supabase as any)
+            .from('raffles_public_money_ext')
+            .select('amount_raised,goal_amount,progress_pct_money,last_paid_at')
+            .eq('id', rifaId)
+            .maybeSingle();
+          
+          if (data && raffle) {
+            setRaffle(prev => prev ? { ...prev, ...data } : null);
+          }
         }
       })
       .subscribe();
@@ -181,7 +139,7 @@ export default function RifaDetail() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [rifaId, rifa]);
+  }, [rifaId, raffle]);
 
   if (loading) {
     return (
@@ -198,7 +156,7 @@ export default function RifaDetail() {
     );
   }
 
-  if (!rifa) {
+  if (!raffle) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -216,27 +174,17 @@ export default function RifaDetail() {
     );
   }
 
-  const percentage = Math.round(rifa.progress_pct || 0);
-  const isCompleted = percentage >= 100;
-  const isSoldOut = (rifa.tickets_remaining || 0) <= 0;
-  const canPurchase = rifa.status === 'active' && !isCompleted && !isSoldOut;
-
-  // Calculate purchase totals
-  const subtotal = selectedQuantity * rifa.ticket_price;
-  const fee = selectedProvider === 'asaas' ? 2.00 : 0;
-  const total = subtotal + fee;
-
-  const handleQuantityChange = (quantity: number) => {
-    setSelectedQuantity(Math.max(1, Math.min(100, quantity))); // Limited to max 100 tickets
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 1;
-    handleQuantityChange(value);
-  };
+  // Derived/UX helpers
+  const pct = Math.max(0, Math.min(100, raffle?.progress_pct_money ?? 0));
+  const drawLabel = raffle?.draw_date ? formatDateBR(raffle.draw_date) : '—';
+  const feeFixed = 2.00;
+  const subtotal = (raffle?.ticket_price ?? 0) * qty;
+  const total = subtotal + feeFixed;
+  const lastPaidAgo = useRelativeTime(raffle?.last_paid_at, "pt-BR");
+  const isActive = raffle?.status === 'active';
 
   const handlePurchase = async () => {
-    if (!rifaId || !user || !canPurchase) {
+    if (!rifaId || !user || !isActive) {
       if (!user) {
         toast.error('Entre para comprar bilhetes');
         navigate('/login');
@@ -251,7 +199,7 @@ export default function RifaDetail() {
       const { data: ticketNumbers, error: reserveError } = await supabase
         .rpc('reserve_tickets', {
           p_raffle_id: rifaId,
-          p_qty: selectedQuantity
+          p_qty: qty
         });
 
       if (reserveError) throw reserveError;
@@ -260,12 +208,12 @@ export default function RifaDetail() {
         return;
       }
 
-      // 2. Create checkout
+      // 2. Create checkout (Asaas only)
       const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
         body: {
-          provider: selectedProvider,
+          provider: 'asaas',
           raffle_id: rifaId,
-          qty: selectedQuantity,
+          qty: qty,
           amount: subtotal,
           currency: 'BRL'
         }
@@ -278,21 +226,19 @@ export default function RifaDetail() {
         .from('transactions')
         .insert({
           user_id: user.id,
-          ganhavel_id: rifaId,
           amount: subtotal,
-          currency: 'BRL',
-          payment_provider: selectedProvider,
+          payment_provider: 'asaas',
           payment_id: checkoutData.provider_payment_id,
           status: 'pending',
-          fee_fixed: checkoutData.fee_fixed || 0,
-          fee_pct: checkoutData.fee_pct || 0,
-          fee_amount: checkoutData.fee_amount || 0
+          fee_fixed: feeFixed,
+          fee_amount: feeFixed,
+          total_amount_computed: total
         });
 
       if (transactionError) throw transactionError;
 
-      // 4. Redirect to payment
-      window.location.href = checkoutData.redirect_url;
+      // 4. Open in new tab
+      window.open(checkoutData.url, '_blank');
 
     } catch (error: any) {
       console.error('Purchase error:', error);
@@ -312,58 +258,13 @@ export default function RifaDetail() {
     }
   };
 
-  // Map organizer data correctly
-  type OrganizerData = {
-    name: string;
-    username: string;
-    bio?: string | null;
-    location?: string | null;
-    memberSince: string;
-    totalGanhaveisLancados: number;
-    ganhaveisCompletos: number;
-    totalGanhaveisParticipados: number;
-    ganhaveisGanhos: number;
-    avaliacaoMedia: number;
-    totalAvaliacoes: number;
-    avatar: string;
-    website?: string;
-    socialLinks?: {
-      instagram?: string;
-      facebook?: string;
-      twitter?: string;
-      linkedin?: string;
-    };
-  };
-
-  function fmtMemberSince(createdAt?: string | null) {
-    if (!createdAt) return "Jan 2023";
-    const d = new Date(createdAt);
-    return d.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
-  }
-
-  const organizerData = organizer ? {
-    name: organizer.display_name || organizer.full_name || organizer.username || "Organizador",
-    username: organizer.username || "",
-    bio: organizer.bio || "Organizador verificado na Ganhavel com histórico comprovado de entregas pontuais e rifas bem-sucedidas.",
-    location: organizer.location,
-    memberSince: fmtMemberSince(organizer.created_at),
-    avatar: organizer.avatar_url || "/placeholder.svg",
-    totalGanhaveisLancados: 10,
-    ganhaveisCompletos: 9,
-    totalGanhaveisParticipados: 50,
-    ganhaveisGanhos: 3,
-    avaliacaoMedia: 4.8,
-    totalAvaliacoes: 45,
-    socialLinks: {}
-  } : null;
-
   return (
     <div className="min-h-screen bg-background">
       <SEOHead 
-        title={`${rifa.title} - Rifa na Ganhavel`}
-        description={`${rifa.description} Participe desta rifa por apenas R$ ${rifa.ticket_price.toFixed(2)}. Organizado por ${organizerData?.name || 'Organizador'}.`}
-        canonical={`https://ganhavel.com/ganhavel/${rifa.id}`}
-        ogImage={rifa.image_url}
+        title={`${raffle.title} - Rifa na Ganhavel`}
+        description={`${raffle.description} Participe desta rifa por apenas ${formatBRL(raffle.ticket_price)}. Meta: ${formatBRL(raffle.goal_amount)}.`}
+        canonical={`https://ganhavel.com/ganhavel/${raffle.id}`}
+        ogImage={raffle.image_url}
         ogType="product"
       />
       {/* Header */}
@@ -408,13 +309,13 @@ export default function RifaDetail() {
               {/* Selected Country Lottery Details - Hidden on mobile */}
               <div className="hidden xl:block text-sm text-muted-foreground border-l pl-4">
                 <div>Próximo sorteio:</div>
-                <div className="font-medium text-foreground">{countries[selectedCountry as keyof typeof countries].nextDraw}</div>
+                <div className="font-medium text-foreground">{drawLabel}</div>
               </div>
               
               {/* Location - Hidden on mobile */}
               <div className="hidden md:flex items-center gap-2 border-l pl-4">
                 <MapPin className="h-5 w-5 text-muted-foreground" />
-                <span className="text-base font-semibold">{organizerData?.location || 'Brasil'}</span>
+                <span className="text-base font-semibold">{organizer?.location || 'Brasil'}</span>
               </div>
               <Button variant="ghost" size="sm">
                 <Heart className="w-4 h-4" />
@@ -433,31 +334,26 @@ export default function RifaDetail() {
             <div className="space-y-4">
               <div className="relative overflow-hidden lg:rounded-lg">
                 <img
-                  src={rifa.image_url}
-                  alt={rifa.title}
+                  src={raffle.image_url || '/placeholder.svg'}
+                  alt={raffle.title}
                   className="w-full h-[50vh] md:h-96 object-cover"
                 />
-                {rifa.status !== 'active' && rifa.status !== 'completed' && (
+                {raffle.status !== 'active' && raffle.status !== 'completed' && (
                   <Badge className="absolute top-4 left-4 bg-amber-500 text-white">
                     Em revisão
                   </Badge>
                 )}
-                {isCompleted && (
+                {pct >= 100 && (
                   <Badge className="absolute top-4 right-4 bg-success text-success-foreground">
                     Meta alcançada!
-                  </Badge>
-                )}
-                {isSoldOut && !isCompleted && (
-                  <Badge className="absolute top-4 right-4 bg-destructive text-destructive-foreground">
-                    Esgotado
                   </Badge>
                 )}
               </div>
               
               <div className="px-4 lg:px-0">
-                <h1 className="text-2xl md:text-3xl font-bold mb-4">{rifa.title}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold mb-4">{raffle.title}</h1>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-6">
-                  {rifa.description}
+                  {raffle.description}
                 </p>
                 
                 {/* Share Section - Simplified on mobile */}
@@ -466,8 +362,8 @@ export default function RifaDetail() {
                     <div className="w-full md:w-auto">
                       <ShareButton 
                         url={`${window.location.origin}/#/ganhavel/${rifaId}`}
-                        title={`Confira esta rifa: ${rifa.title}`}
-                        description={rifa.description}
+                        title={`Confira esta rifa: ${raffle.title}`}
+                        description={raffle.description || ''}
                         variant="default"
                         size="lg"
                       />
@@ -488,32 +384,84 @@ export default function RifaDetail() {
                   <TabsTrigger value="rules">Regulamento</TabsTrigger>
                 </TabsList>
               
-                <TabsContent value="details" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Trophy className="w-5 h-5" />
-                        <span>Detalhes do Prêmio</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="prose max-w-none">
-                        <div className="whitespace-pre-wrap text-sm text-muted-foreground">
-                          {rifa.description}
+                <TabsContent value="details" className="space-y-6">
+                  <div className="bg-card border rounded-2xl p-6 space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-primary" />
+                      Descrição
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {raffle.description}
+                    </p>
+                  </div>
+
+                  {/* Trust Section */}
+                  <div className="bg-card border rounded-2xl p-6 space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      Por que confiar?
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-success mt-0.5" />
+                        <div>
+                          <h4 className="font-medium">Seguimos a Loteria Federal</h4>
+                          <p className="text-sm text-muted-foreground">Sorteios transparentes baseados na Loteria Federal brasileira</p>
                         </div>
                       </div>
-                      
-                      {rifa.vendor_link && (
-                        <div className="border-t pt-4">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-success mt-0.5" />
+                        <div>
+                          <h4 className="font-medium">Organizador verificado</h4>
+                          <p className="text-sm text-muted-foreground">Perfil verificado com histórico comprovado</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-success mt-0.5" />
+                        <div>
+                          <h4 className="font-medium">Prêmio garantido</h4>
+                          <p className="text-sm text-muted-foreground">Valores seguros e entrega garantida</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Organizer Block */}
+                  {organizer && (
+                    <div className="bg-card border rounded-2xl p-6">
+                      <h3 className="text-lg font-semibold mb-4">Organizador</h3>
+                      <DetalhesOrganizador
+                        organizer={{
+                          name: organizer.full_name || organizer.username || "Organizador",
+                          username: organizer.username || "",
+                          bio: organizer.bio || "Organizador verificado na Ganhavel.",
+                          location: organizer.location,
+                          memberSince: "Jan 2023",
+                          avatar: organizer.avatar_url || "/placeholder.svg",
+                          totalGanhaveisLancados: 10,
+                          ganhaveisCompletos: 9,
+                          totalGanhaveisParticipados: 50,
+                          ganhaveisGanhos: 3,
+                          avaliacaoMedia: 4.8,
+                          totalAvaliacoes: 45,
+                          socialLinks: {
+                            instagram: organizer.instagram || undefined,
+                            facebook: organizer.facebook || undefined,
+                            twitter: organizer.twitter || undefined,
+                          }
+                        }}
+                      />
+                      {vendorUrl && (
+                        <div className="mt-4 pt-4 border-t">
                           <Button asChild variant="outline" className="w-full">
-                            <a href={rifa.vendor_link} target="_blank" rel="noopener noreferrer">
-                              Comprar diretamente com o vendedor
+                            <a href={vendorUrl} target="_blank" rel="noopener noreferrer">
+                              Compre direto com o vendedor
                             </a>
                           </Button>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="rules" className="space-y-4">
@@ -589,68 +537,25 @@ export default function RifaDetail() {
                 </TabsContent>
               </Tabs>
             </div>
-
-            {/* Organizer Card */}
-            {organizerData && (
-              <div className="px-4 lg:px-0">
-                <DetalhesOrganizador organizer={organizerData} />
-              </div>
-            )}
           </div>
 
           {/* Sidebar - Purchase Card */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-center">Participe do Ganhavel</CardTitle>
+                <CardTitle className="text-center">
+                  {formatBRL(raffle.amount_raised)} de {formatBRL(raffle.goal_amount)}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Progress */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Progresso</span>
-                    <span className="text-sm font-medium">{percentage}%</span>
+                  <ProgressBar value={pct} />
+                  <div className="text-center text-sm text-muted-foreground">
+                    Sorteio: {pct}% completo
                   </div>
-                  <Progress value={percentage} className="h-3 mb-4" />
-                  
-                  <div className="grid grid-cols-2 gap-4 text-center mb-4">
-                    <div>
-                      <p className="text-2xl font-bold text-success">R$ {rifa.amount_collected.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                      <p className="text-sm text-muted-foreground">Arrecadados</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">R$ {rifa.goal_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                      <p className="text-sm text-muted-foreground">Meta</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-primary" />
-                      <span>Sorteio: {percentage}% completo</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary" />
-                      <span>🎯 Sorteio após arrecadação total</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-primary" />
-                      <span>🏛️ {rifa.lottery_type || 'Loteria Federal'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-primary" />
-                      <span>{rifa.paid_tickets} bilhetes vendidos</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-primary" />
-                      <span>{rifa.tickets_remaining} bilhetes disponíveis</span>
-                    </div>
-                    {timeAgo && (
-                      <div className="flex items-center gap-2 text-green-600">
-                        <Clock className="w-4 h-4" />
-                        <span>Última compra {timeAgo}</span>
-                      </div>
-                    )}
+                  <div className="text-center text-sm text-muted-foreground">
+                    Último pagamento: {lastPaidAgo}
                   </div>
                 </div>
 
@@ -665,86 +570,75 @@ export default function RifaDetail() {
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-semibold">Bilhete</span>
-                      <span className="text-lg font-bold">R$ {rifa.ticket_price.toFixed(2)}</span>
+                      <span className="text-lg font-semibold">Bilhete — {formatBRL(raffle.ticket_price)}</span>
                     </div>
                     
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Quantidade</label>
+                      <label className="text-sm font-medium">Bilhetes ({qty}×)</label>
                       <div className="flex items-center gap-3">
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleQuantityChange(selectedQuantity - 1)}
-                          disabled={selectedQuantity <= 1}
+                          onClick={() => setQty(Math.max(1, qty - 1))}
+                          disabled={qty <= 1}
                         >
-                          -
+                          −
                         </Button>
                         <Input
                           type="number"
                           min="1"
                           max="100"
-                          value={selectedQuantity}
-                          onChange={handleInputChange}
+                          value={qty}
+                          onChange={(e) => setQty(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
                           className="w-20 text-center"
                         />
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleQuantityChange(selectedQuantity + 1)}
-                          disabled={selectedQuantity >= 100}
+                          onClick={() => setQty(Math.min(100, qty + 1))}
+                          disabled={qty >= 100}
                         >
                           +
                         </Button>
                       </div>
                     </div>
 
-                    {/* Payment provider is now fixed to Asaas */}
-
                     <div className="space-y-3 pt-4 border-t">
                       <div className="flex items-center justify-between text-sm">
-                        <span>Subtotal ({selectedQuantity} bilhetes)</span>
-                        <span>R$ {subtotal.toFixed(2)}</span>
+                        <span>Subtotal</span>
+                        <span>{formatBRL(subtotal)}</span>
                       </div>
-                      {fee > 0 && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span>Taxa institucional</span>
-                          <span>+ R$ {fee.toFixed(2)}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Taxa institucional</span>
+                        <span>{formatBRL(feeFixed)}</span>
+                      </div>
                       <div className="flex items-center justify-between font-semibold text-lg border-t pt-3">
-                        <span>Total a pagar</span>
-                        <span>R$ {total.toFixed(2)}</span>
+                        <span>Total</span>
+                        <span>{formatBRL(total)}</span>
                       </div>
                     </div>
 
-                    {fee > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Taxa institucional: R$ {fee.toFixed(2)} destinados à instituição financeira para processamento e segurança dos pagamentos.
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Taxa institucional: {formatBRL(feeFixed)} destinados à instituição financeira para processamento e segurança dos pagamentos.
+                    </p>
 
                     <Button 
                       onClick={handlePurchase}
                       size="lg" 
                       className="w-full"
-                      disabled={!canPurchase || purchasing}
+                      disabled={!isActive || purchasing}
                     >
                       {purchasing 
                         ? "Processando..." 
-                        : isCompleted 
-                          ? "Meta alcançada — aguardando sorteio" 
-                          : isSoldOut 
-                            ? "Rifa esgotada"
-                             : rifa.status !== 'active'
-                               ? "Em revisão"
-                              : `Comprar ${selectedQuantity} bilhetes`
+                        : !isActive 
+                          ? "Rifa indisponível"
+                          : `Comprar ${qty} bilhetes`
                       }
                     </Button>
 
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                       <Shield className="w-4 h-4" />
-                      <span>{rifa.lottery_type || 'Loteria Federal'} – 100% seguro e transparente</span>
+                      <span>100% seguro e transparente</span>
                     </div>
                   </div>
                 )}
