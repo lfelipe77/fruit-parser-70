@@ -152,7 +152,7 @@ const AppContent = () => {
         <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
         {/* Optional alias/redirect for legacy URLs */}
         <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
-        <Route path="/ganhavel/:ganhaveisId/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
+        <Route path="/ganhavel/:id/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
         <Route path="/ganhavel/:ganhaveisId/pagamento-sucesso" element={<PagamentoSucesso />} />
         <Route path="/ganhavel/:ganhaveisId/pagamento-erro" element={<PagamentoErro />} />
         <Route path="/cadastro" element={<SignUp />} />

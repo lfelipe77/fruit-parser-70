@@ -35,7 +35,7 @@ type Extras = {
   description_long?: string | null;
 };
 
-// Fallbacks (what you sent) if DB fields are empty
+// Fallback copy (what you sent) in case DB fields are empty:
 const FALLBACK_DETALHES = `Detalhes do Prêmio
 Especificações
 • Modelo: Honda Civic LX CVT 2024
@@ -79,7 +79,7 @@ export default function GanhaveisDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // ---- hooks first (fixed 310)
+  // ✅ hooks first (prevents error #310)
   const [raffle, setRaffle] = React.useState<RafflePublicMoney | null>(null);
   const [extras, setExtras] = React.useState<Extras | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -87,7 +87,7 @@ export default function GanhaveisDetail() {
 
   const lastPaidAgo = useRelativeTime(raffle?.last_paid_at ?? null, "pt-BR");
 
-  // ---- data fetch (money view + base raffle for long content/location)
+  // ✅ data fetch (money view + long content/location)
   React.useEffect(() => {
     let alive = true;
     (async () => {
@@ -113,12 +113,10 @@ export default function GanhaveisDetail() {
         if (alive) setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [id]);
 
-  // ---- derived
+  // ✅ derived
   const pct = Math.max(0, Math.min(100, raffle?.progress_pct_money ?? 0));
   const isActive = raffle?.status === "active";
   const feeFixed = 2;
@@ -128,11 +126,9 @@ export default function GanhaveisDetail() {
   const img = raffle?.image_url || "";
   const locationLabel = [extras?.location_city, extras?.location_state].filter(Boolean).join(", ");
 
-  // long text (prefer HTML from DB; else fallback → render as <pre/>)
   const detalhes = extras?.details_html || extras?.description_long || raffle?.description || FALLBACK_DETALHES;
   const regulamento = extras?.regulation_html || FALLBACK_REGULAMENTO;
 
-  // ---- UI helpers
   const handleShare = async () => {
     const url = window.location.href;
     try {
@@ -142,9 +138,7 @@ export default function GanhaveisDetail() {
         await navigator.clipboard.writeText(url);
         alert("Link copiado!");
       }
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   };
 
   const handleBuy = () => {
@@ -157,58 +151,52 @@ export default function GanhaveisDetail() {
 
   return (
     <div className="container mx-auto p-4">
-      {/* top line: breadcrumbs / loteria / próxima data */}
+      {/* tiny breadcrumb / loteria line */}
       <div className="mb-2 text-xs text-gray-600">
         🇧🇷 Loteria Federal • Próximo sorteio: {drawLabel}
       </div>
 
-      {/* header image + title row */}
+      {/* HERO */}
       <div className="grid gap-6 md:grid-cols-[1.25fr,0.75fr]">
         <div>
+          {/* Image */}
           {img ? (
-            <img
-              src={img}
-              alt={raffle.title}
-              className="mb-3 h-64 w-full rounded-2xl object-cover sm:h-80"
-            />
+            <img src={img} alt={raffle.title} className="mb-3 h-64 w-full rounded-2xl object-cover sm:h-80" />
           ) : (
             <div className="mb-3 h-64 w-full rounded-2xl bg-gray-100 sm:h-80" />
           )}
 
+          {/* Top badges + actions (this is the "button on top" block) */}
           <div className="mb-2 flex flex-wrap items-center gap-2">
             {raffle.category_name && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">
-                {raffle.category_name}
-              </span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">{raffle.category_name}</span>
             )}
             {raffle.subcategory_name && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">
-                {raffle.subcategory_name}
-              </span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">{raffle.subcategory_name}</span>
             )}
             {locationLabel && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">
-                {locationLabel}
-              </span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs">{locationLabel}</span>
             )}
             {raffle.status && (
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs text-emerald-700">
                 {raffle.status === "active" ? "Ativo" : raffle.status}
               </span>
             )}
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-2">
               <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="mr-2 h-4 w-4" /> Compartilhar
+              </Button>
+              <Button size="sm" onClick={handleBuy}>
+                Faça o sonho acontecer
               </Button>
             </div>
           </div>
 
+          {/* Title + short description */}
           <h1 className="text-2xl font-semibold">{raffle.title}</h1>
-          {raffle.description && (
-            <p className="mt-1 text-sm text-gray-700">{raffle.description}</p>
-          )}
+          {raffle.description && <p className="mt-1 text-sm text-gray-700">{raffle.description}</p>}
 
-          {/* Tabs: Detalhes / Regulamento */}
+          {/* Tabs */}
           <Tabs defaultValue="detalhes" className="mt-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
@@ -235,15 +223,12 @@ export default function GanhaveisDetail() {
           </Tabs>
         </div>
 
-        {/* Right: money/checkout box */}
+        {/* RIGHT: Money box */}
         <aside className="rounded-2xl border p-4">
           <div className="text-sm text-gray-600">
-            {formatBRL(raffle.amount_raised)}{" "}
-            <span className="text-gray-400">de</span> {formatBRL(raffle.goal_amount)}
+            {formatBRL(raffle.amount_raised)} <span className="text-gray-400">de</span> {formatBRL(raffle.goal_amount)}
           </div>
-          <div className="mt-2">
-            <Progress value={pct} className="h-2" />
-          </div>
+          <div className="mt-2"><Progress value={pct} className="h-2" /></div>
           <div className="mt-2 text-sm text-gray-600">Sorteio: {pct}% completo</div>
           <div className="text-sm text-gray-600">Último pagamento: {lastPaidAgo}</div>
 
@@ -258,38 +243,25 @@ export default function GanhaveisDetail() {
             </div>
 
             <div className="mt-2 flex justify-between text-sm">
-              <span>Bilhetes ({qty}x):</span>
-              <span>{formatBRL(subtotal)}</span>
+              <span>Bilhetes ({qty}x):</span><span>{formatBRL(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm text-gray-600">
-              <span>Taxa institucional:</span>
-              <span>{formatBRL(feeFixed)}</span>
+              <span>Taxa institucional:</span><span>{formatBRL(feeFixed)}</span>
             </div>
             <div className="flex justify-between font-semibold">
-              <span>Total a pagar</span>
-              <span>{formatBRL(total)}</span>
+              <span>Total a pagar</span><span>{formatBRL(total)}</span>
             </div>
 
-            <Button
-              onClick={handleBuy}
-              disabled={!isActive}
-              className="mt-2 w-full"
-            >
+            <Button onClick={handleBuy} disabled={!isActive} className="mt-2 w-full">
               Comprar {qty} {qty > 1 ? "bilhetes" : "bilhete"}
             </Button>
 
             <p className="text-xs text-gray-500">
-              Taxa institucional: R$ 2,00 destinados à instituição financeira
-              para processamento e segurança dos pagamentos.
+              Taxa institucional: R$ 2,00 destinados à instituição financeira para processamento e segurança dos pagamentos.
             </p>
 
             {extras?.vendor_url && (
-              <a
-                href={extras.vendor_url}
-                target="_blank"
-                rel="noreferrer"
-                className="block text-center text-xs text-emerald-700 underline"
-              >
+              <a href={extras.vendor_url} target="_blank" rel="noreferrer" className="block text-center text-xs text-emerald-700 underline">
                 Compre direto com o vendedor
               </a>
             )}
