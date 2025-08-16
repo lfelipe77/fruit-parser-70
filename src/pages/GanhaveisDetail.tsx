@@ -149,10 +149,7 @@ export default function GanhaveisDetail() {
         </div>
 
         {/* Header bar */}
-        <div className="flex items-center justify-between">
-          <div className="text-xs text-gray-600">
-            🇧🇷 Loteria Federal • Próximo sorteio: {drawLabel}
-          </div>
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-2">
             <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200">
               <Share2 className="h-4 w-4 mr-2" />
