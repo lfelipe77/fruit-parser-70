@@ -70,54 +70,86 @@ export default function GanhaveisDetail() {
   
   const lastPaidAgo = useRelativeTime(raffle?.lastPaidAt ?? null, "pt-BR");
 
+  // ---- Data fetching function
+  const fetchData = React.useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      
+      // Load raffle data (money view)
+      const { data: v, error: moneyError } = await supabase
+        .from('raffles_public_money_ext')
+        .select(`
+          id,
+          title,
+          description,
+          image_url,
+          status,
+          ticket_price,
+          draw_date,
+          created_at,
+          category_name,
+          subcategory_name,
+          amount_raised,
+          goal_amount,
+          progress_pct_money,
+          last_paid_at
+        `)
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (moneyError) console.warn("money error", moneyError);
+      setMoneyRow(v as MoneyRow | null);
+
+      // Load extras from base table
+      const { data: baseData, error: baseError } = await supabase
+        .from("raffles")
+        .select("user_id,description")
+        .eq("id", id)
+        .maybeSingle();
+      if (baseError) console.warn("extras error", baseError);
+      setExtrasRow(baseData ? { 
+        user_id: baseData.user_id, 
+        vendor_url: "", 
+        location_city: "", 
+        location_state: "" 
+      } : null);
+
+      // Load organizer profile if available
+      if (baseData?.user_id) {
+        const { data: ownerData, error: ownerError } = await supabase
+          .from("user_profiles_public")
+          .select("*")
+          .eq("id", baseData.user_id)
+          .maybeSingle();
+        if (ownerError) console.warn("owner error", ownerError);
+        setOrganizerData(ownerData);
+      } else {
+        setOrganizerData(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   // ---- Data load
   React.useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        
-        // Load raffle data (money view)
-        const { data: moneyData, error: moneyError } = await (supabase as any)
-          .from("raffles_public_money_ext")
-          .select("id,title,description,image_url,status,ticket_price,draw_date,category_name,subcategory_name,amount_raised,goal_amount,progress_pct_money,last_paid_at")
-          .eq("id", id)
-          .maybeSingle();
-        
-        if (moneyError) console.warn("money error", moneyError);
-        if (!alive) return;
-        setMoneyRow(moneyData as MoneyRow | null);
+    fetchData();
+  }, [fetchData]);
 
-        // Load extras from base table
-        const { data: baseData, error: baseError } = await (supabase as any)
-          .from("raffles")
-          .select("user_id,vendor_url,location_city,location_state,details_html,regulation_html,prize_details,description_long")
-          .eq("id", id)
-          .maybeSingle();
-        if (baseError) console.warn("extras error", baseError);
-        if (!alive) return;
-        setExtrasRow((baseData ?? null) as RaffleExtras | null);
-
-        // Load organizer profile if available
-        if (baseData?.user_id) {
-          const { data: ownerData, error: ownerError } = await (supabase as any)
-            .from("user_profiles_public")
-            .select("*")
-            .eq("id", baseData.user_id)
-            .maybeSingle();
-          if (ownerError) console.warn("owner error", ownerError);
-          if (alive) setOrganizerData(ownerData);
-        } else {
-          if (alive) setOrganizerData(null);
-        }
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
+  // ---- Realtime updates
+  React.useEffect(() => {
+    const ch = supabase
+      .channel('money-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => fetchData())
+      .subscribe();
+    
     return () => {
-      alive = false;
+      supabase.removeChannel(ch);
     };
-  }, [id]);
+  }, [fetchData]);
 
   // ---- Derived
   const feeFixed = 2;
@@ -173,9 +205,6 @@ export default function GanhaveisDetail() {
           </div>
 
           <h1 className="mt-4 text-2xl font-semibold">{raffle.title}</h1>
-          {raffle.descShort && (
-            <p className="mt-2 text-gray-700">{raffle.descShort}</p>
-          )}
 
           {/* Tabs */}
           <Tabs defaultValue="detalhes" className="mt-6">
@@ -185,6 +214,11 @@ export default function GanhaveisDetail() {
             </TabsList>
 
             <TabsContent value="detalhes" className="prose mt-4 max-w-none">
+              {raffle.descShort && (
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-700">{raffle.descShort}</p>
+                </div>
+              )}
               <div
                 dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
               />
@@ -204,13 +238,13 @@ export default function GanhaveisDetail() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-emerald-800 mb-3">Progresso da Campanha</h3>
             <div className="text-sm text-gray-600 mb-2">
-              {formatBRL(raffle.raised)} <span className="text-gray-400">de</span> {formatBRL(raffle.goal)}
+              {formatBRL(moneyRow?.amount_raised || 0)} <span className="text-gray-400">de</span> {formatBRL(moneyRow?.goal_amount || 0)}
             </div>
             <div className="mt-2">
-              <Progress value={raffle.pct} className="h-3 bg-emerald-200" />
+              <Progress value={Math.max(0, Math.min(100, Number(moneyRow?.progress_pct_money || 0)))} className="h-3 bg-emerald-200" />
             </div>
-            <div className="mt-2 text-sm text-emerald-700 font-medium">{raffle.pct}% completo</div>
-            <div className="text-sm text-gray-600">Último pagamento: {lastPaidAgo}</div>
+            <div className="mt-2 text-sm text-emerald-700 font-medium">{Math.max(0, Math.min(100, Number(moneyRow?.progress_pct_money || 0)))}% completo</div>
+            <div className="text-sm text-gray-600">Último pagamento: {moneyRow?.last_paid_at ? lastPaidAgo : "—"}</div>
           </div>
 
           <div className="space-y-4">
