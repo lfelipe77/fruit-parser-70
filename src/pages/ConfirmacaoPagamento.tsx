@@ -246,18 +246,21 @@ export default function ConfirmacaoPagamento() {
               </div>
             </CardContent>
           </Card>
+        </div>
 
+        {/* Order Summary Sidebar */}
+        <div className="space-y-6">
           {/* Payment Methods */}
           <Card>
             <CardHeader>
               <CardTitle>Forma de Pagamento</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3">
                 <Button
                   variant={paymentMethod === 'pix' ? 'default' : 'outline'}
                   onClick={() => setPaymentMethod('pix')}
-                  className="flex items-center gap-2 h-auto p-4"
+                  className="flex items-center gap-2 h-auto p-4 justify-start"
                 >
                   <Smartphone className="h-5 w-5" />
                   <div className="text-left">
@@ -269,7 +272,7 @@ export default function ConfirmacaoPagamento() {
                 <Button
                   variant={paymentMethod === 'card' ? 'default' : 'outline'}
                   onClick={() => setPaymentMethod('card')}
-                  className="flex items-center gap-2 h-auto p-4"
+                  className="flex items-center gap-2 h-auto p-4 justify-start"
                 >
                   <CreditCard className="h-5 w-5" />
                   <div className="text-left">
@@ -281,7 +284,7 @@ export default function ConfirmacaoPagamento() {
                 <Button
                   variant={paymentMethod === 'bank' ? 'default' : 'outline'}
                   onClick={() => setPaymentMethod('bank')}
-                  className="flex items-center gap-2 h-auto p-4"
+                  className="flex items-center gap-2 h-auto p-4 justify-start"
                 >
                   <Building className="h-5 w-5" />
                   <div className="text-left">
@@ -303,7 +306,7 @@ export default function ConfirmacaoPagamento() {
                       placeholder="0000 0000 0000 0000"
                     />
                   </div>
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-4 grid-cols-2">
                     <div>
                       <Label htmlFor="expiryDate">Validade</Label>
                       <Input
@@ -322,24 +325,21 @@ export default function ConfirmacaoPagamento() {
                         placeholder="123"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="cardName">Nome no Cartão</Label>
-                      <Input
-                        id="cardName"
-                        value={formData.cardName}
-                        onChange={(e) => handleInputChange('cardName', e.target.value)}
-                        placeholder="Nome impresso"
-                      />
-                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="cardName">Nome no Cartão</Label>
+                    <Input
+                      id="cardName"
+                      value={formData.cardName}
+                      onChange={(e) => handleInputChange('cardName', e.target.value)}
+                      placeholder="Nome impresso"
+                    />
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Order Summary Sidebar */}
-        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Resumo do Pedido</CardTitle>
