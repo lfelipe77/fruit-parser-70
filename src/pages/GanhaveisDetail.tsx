@@ -226,6 +226,7 @@ export default function RifaDetail() {
         .from('transactions')
         .insert({
           user_id: user.id,
+          ganhavel_id: rifaId,
           amount: subtotal,
           payment_provider: 'asaas',
           payment_id: checkoutData.provider_payment_id,
