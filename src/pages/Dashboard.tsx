@@ -116,7 +116,6 @@ export default function Dashboard() {
     <>
       <DebugDashboardPanel />
       <div className="p-6">
-        <h1 className="text-lg font-semibold">Dashboard</h1>
         <div className="min-h-screen bg-background">
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl mx-auto">

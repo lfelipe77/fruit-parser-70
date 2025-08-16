@@ -21,7 +21,7 @@ export default function MinimalDashboard() {
 
   return (
     <div style={{padding:16}}>
-      <h1 className="text-lg font-semibold">Minimal Dashboard</h1>
+      
       <div><b>UID:</b> {out.uid || '—'}</div>
       <div><b>Email:</b> {out.email || '—'}</div>
       <div style={{marginTop:8}}><b>Perfil:</b></div>
