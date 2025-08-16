@@ -94,13 +94,40 @@ export default function RifaDetail() {
     const fetchRaffle = async () => {
       setLoading(true);
       try {
-        const { data, error } = await (supabase as any)
+        console.log('Fetching raffle with ID:', rifaId);
+        
+        // First get from raffles_public_ext (available columns only)
+        const { data: raffleData, error: raffleError } = await (supabase as any)
           .from('raffles_public_ext')
-          .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id,owner_user_id,amount_collected,goal_amount,tickets_remaining')
+          .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,progress_pct,category_name,subcategory_name,draw_date,status,category_id,subcategory_id')
           .eq('id', rifaId)
           .maybeSingle();
 
-        if (error) throw error;
+        console.log('Raffle query result:', { raffleData, raffleError });
+
+        if (raffleError) throw raffleError;
+        
+        // Get owner info from main raffles table  
+        let ownerUserId = null;
+        if (raffleData) {
+          const { data: ownerData } = await supabase
+            .from('raffles')
+            .select('owner_user_id, user_id')
+            .eq('id', rifaId)
+            .maybeSingle();
+          
+          ownerUserId = ownerData?.owner_user_id || ownerData?.user_id;
+          console.log('Owner user ID:', ownerUserId);
+        }
+
+        const data = raffleData ? { 
+          ...raffleData, 
+          owner_user_id: ownerUserId,
+          amount_collected: raffleData.paid_tickets * raffleData.ticket_price,
+          goal_amount: raffleData.total_tickets * raffleData.ticket_price,
+          tickets_remaining: raffleData.total_tickets - raffleData.paid_tickets
+        } : null;
+
         setRifa(data);
 
         // Fetch organizer if raffle found
