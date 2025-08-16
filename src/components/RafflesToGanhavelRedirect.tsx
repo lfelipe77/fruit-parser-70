@@ -1,6 +1,6 @@
 import { useParams, Navigate } from "react-router-dom";
 
-export default function RaffleRedirect() {
+export default function RafflesToGanhavelRedirect() {
   const { id } = useParams<{ id: string }>();
   
   if (!id) {
