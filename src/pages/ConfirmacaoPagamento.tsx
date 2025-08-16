@@ -139,7 +139,7 @@ export default function ConfirmacaoPagamento() {
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar para a rifa
+          Voltar
         </Button>
         <h1 className="text-2xl font-bold">Confirmação de Pagamento</h1>
         <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
