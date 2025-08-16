@@ -68,13 +68,26 @@ export default function RifaDetail() {
     const fetchRaffle = async () => {
       setLoading(true);
       try {
+        console.log('[GanhaveisDetail] Fetching raffle data for ID:', rifaId);
+        
         // main raffle from money view
-        const { data: r } = await (supabase as any)
+        const { data: r, error: raffleError } = await (supabase as any)
           .from('raffles_public_money_ext')
           .select('id,title,description,image_url,status,ticket_price,draw_date,category_name,subcategory_name,amount_raised,goal_amount,progress_pct_money,last_paid_at')
           .eq('id', rifaId)
           .maybeSingle();
+          
+        console.log('[GanhaveisDetail] Raffle query result:', { data: r, error: raffleError });
+        
+        if (raffleError) {
+          throw raffleError;
+        }
+        
         const raffleData = (r ?? null) as RafflePublicMoney | null;
+        
+        if (!raffleData) {
+          throw new Error('Rifa não encontrada');
+        }
 
         // organizer id (from base raffles)
         const { data: base } = await (supabase as any)

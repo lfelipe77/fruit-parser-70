@@ -32,11 +32,11 @@ export default function EmAltaRecentesSection() {
       try {
         const base = () => (supabase as any)
           .from('raffles_public_money_ext')
-          .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at');
+          .select('id,title,description,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at');
         
         const [a, b] = await Promise.all([
-          base().order("progress_pct_money", { ascending: false }).limit(6),
-          base().order("last_paid_at", { ascending: false }).limit(6),
+          base().order("progress_pct_money", { ascending: false }).limit(3),
+          base().order("last_paid_at", { ascending: false }).limit(3),
         ]);
         if (!cancelled) {
           if (a.error) throw a.error;
@@ -54,14 +54,14 @@ export default function EmAltaRecentesSection() {
   }, []);
 
   const Grid = ({ items }: { items: RafflePublicMoney[] }) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((r) => <RaffleCard key={r.id} r={r} />)}
     </div>
   );
 
   const SkeletonGrid = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
     </div>
   );
 
