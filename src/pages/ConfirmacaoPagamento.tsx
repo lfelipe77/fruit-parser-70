@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/formatters";
 import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye } from "lucide-react";
 import Navigation from "@/components/Navigation";
@@ -31,6 +32,7 @@ export default function ConfirmacaoPagamento() {
   const [paymentMethod, setPaymentMethod] = React.useState<'pix' | 'card' | 'bank'>('pix');
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [selectedNumbers, setSelectedNumbers] = React.useState<string[]>([]);
+  const [showAllNumbers, setShowAllNumbers] = React.useState(false);
   
   // Form data
   const [formData, setFormData] = React.useState({
@@ -205,10 +207,39 @@ export default function ConfirmacaoPagamento() {
                   <p className="text-xs text-muted-foreground">
                     💡 Estes números são gerados aleatoriamente para você. Clique em "Gerar Novos" se quiser trocar.
                   </p>
-                  <Button variant="link" size="sm" className="text-emerald-600 hover:text-emerald-700 p-0 h-auto">
-                    <Eye className="mr-1 h-3 w-3" />
-                    ver todos os números
-                  </Button>
+                  <Dialog open={showAllNumbers} onOpenChange={setShowAllNumbers}>
+                    <DialogTrigger asChild>
+                      <Button variant="link" size="sm" className="text-emerald-600 hover:text-emerald-700 p-0 h-auto">
+                        <Eye className="mr-1 h-3 w-3" />
+                        ver todos os números
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Todos os Seus Números da Sorte</DialogTitle>
+                      </DialogHeader>
+                      <div className="max-h-96 overflow-y-auto space-y-3 p-4">
+                        {selectedNumbers.map((combination, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <div>
+                              <span className="font-mono text-lg font-bold text-emerald-800">{combination}</span>
+                            </div>
+                            <div className="text-sm text-emerald-600 font-medium bg-emerald-100 px-3 py-1 rounded-full">
+                              Bilhete #{index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center pt-4 border-t">
+                        <div className="text-sm text-muted-foreground">
+                          Total: {selectedNumbers.length} bilhete{selectedNumbers.length > 1 ? 's' : ''}
+                        </div>
+                        <Button onClick={handleRegenerateNumbers} variant="outline">
+                          🎲 Gerar Novos Números
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </CardContent>
