@@ -57,6 +57,7 @@ export default function CategoryDetailPage() {
     const { data, error } = await supabase
       .from('raffles_public_money_ext')
       .select('*')
+      .eq('category_slug', slug)
       .order('created_at', { ascending: false })
       .limit(60);
 
@@ -65,7 +66,7 @@ export default function CategoryDetailPage() {
       return [];
     }
 
-    console.log("[CategoryDetail] Raffles loaded:", data?.length);
+    console.log("[CategoryDetail] Raffles loaded for category:", slug, data?.length);
     return data || [];
   };
 
