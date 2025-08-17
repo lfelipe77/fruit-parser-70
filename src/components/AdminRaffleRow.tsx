@@ -28,26 +28,28 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Eye,
-  Check,
-  Ban,
-  AlertTriangle,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Calendar,
-  User,
-  DollarSign,
-  ExternalLink,
-  Pause,
-  Play,
-  MessageSquare,
-  Link,
-  MapPin,
-} from "lucide-react";
+   Eye,
+   Check,
+   Ban,
+   AlertTriangle,
+   Clock,
+   CheckCircle,
+   XCircle,
+   Calendar,
+   User,
+   DollarSign,
+   ExternalLink,
+   Pause,
+   Play,
+   MessageSquare,
+   Link,
+   MapPin,
+   Edit,
+ } from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { formatBRL } from "@/lib/formatters";
 import { RafflePublicMoney } from "@/types/public-views";
+import { useNavigate } from "react-router-dom";
 
 interface AdminRaffleRowProps {
   raffle: RafflePublicMoney;
@@ -75,6 +77,7 @@ export function AdminRaffleRow({
   const [rejectionReason, setRejectionReason] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   
+  const navigate = useNavigate();
   const lastPaidAgo = useRelativeTime(raffle.last_paid_at, "pt-BR");
 
   const getStatusBadge = (status: string) => {
@@ -189,6 +192,13 @@ export function AdminRaffleRow({
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => navigate(`/admin/rifas?edit=${raffle.id}`)}
+          >
+            <Edit className="h-3 w-3" />
+          </Button>
 
           {raffle.status === "pending" && (
             <>

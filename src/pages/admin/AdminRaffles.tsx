@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash2, Upload, Shield } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface Raffle {
   id: string;
@@ -59,11 +60,43 @@ export default function AdminRaffles() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const openEditorById = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('raffles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      if (data) {
+        handleEdit(data as Raffle);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar rifa:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível abrir a rifa para edição.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   useEffect(() => {
     if (!profileLoading && isAdmin) {
       fetchRaffles();
     }
   }, [isAdmin, profileLoading]);
+
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId) {
+      openEditorById(editId);
+      setDialogOpen(true);
+    }
+  }, [searchParams]);
 
   const fetchRaffles = async () => {
     try {
@@ -300,7 +333,14 @@ export default function AdminRaffles() {
     <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Gerenciar Rifas</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            const sp = new URLSearchParams(searchParams);
+            sp.delete('edit');
+            navigate({ pathname: '/admin/rifas', search: sp.toString() ? `?${sp.toString()}` : '' });
+          }
+        }}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
               <Plus className="w-4 h-4 mr-2" />
