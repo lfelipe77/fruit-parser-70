@@ -43,9 +43,11 @@ export function usePersistMock(
           if (freshData) {
             console.log('Fresh raffle data after payment:', freshData);
             // Trigger a custom event to notify other components
+            console.log('Dispatching raffleUpdated event for raffle:', raffleId);
             window.dispatchEvent(new CustomEvent('raffleUpdated', { 
               detail: { raffleId, freshData } 
             }));
+            console.log('raffleUpdated event dispatched successfully');
           }
         }
       } catch (error) {

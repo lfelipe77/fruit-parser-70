@@ -68,7 +68,8 @@ export default function EmAltaRecentesSection() {
     fetchData();
 
     // Listen for raffle updates to invalidate and re-fetch
-    const handleRaffleUpdate = () => {
+    const handleRaffleUpdate = (event?: any) => {
+      console.log('[EmAltaRecentes] Received raffleUpdated event:', event?.detail);
       if (!cancelled) {
         fetchData();
       }
@@ -76,9 +77,18 @@ export default function EmAltaRecentesSection() {
 
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
     
+    // Also set up an interval to refresh data periodically
+    const interval = setInterval(() => {
+      if (!cancelled) {
+        console.log('[EmAltaRecentes] Auto-refreshing data...');
+        fetchData();
+      }
+    }, 30000); // Refresh every 30 seconds
+    
     return () => { 
       cancelled = true; 
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+      clearInterval(interval);
     };
   }, []);
 
