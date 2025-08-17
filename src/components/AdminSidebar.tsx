@@ -37,6 +37,11 @@ const mainItems = [
     icon: Gift,
   },
   {
+    title: "Rifas (CRUD)",
+    url: "/admin/rifas",
+    icon: Gift,
+  },
+  {
     title: "Ganhaveis Concluídos",
     url: "/admin/ganhaveis-concluidos",
     icon: CheckCircle,

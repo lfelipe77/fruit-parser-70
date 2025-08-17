@@ -216,6 +216,7 @@ const AppContent = () => {
         }>
           <Route index element={<GanhaveisManagement />} />
           <Route path="ganhaveis" element={<GanhaveisManagement />} />
+          <Route path="rifas" element={<AdminRaffles />} />
           <Route path="ganhaveis-concluidos" element={<GanhavelsConcluidos />} />
           <Route path="usuarios" element={<UsersManagement />} />
           <Route path="financeiro" element={<FinancialControl />} />
