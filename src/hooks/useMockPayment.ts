@@ -30,7 +30,7 @@ export function useMockPayment() {
         .from('transactions')
         .select('id')
         .eq('provider_payment_id', providerRef)
-        .single();
+        .maybeSingle();
 
       if (existingTx) {
         console.log('Transaction already exists, skipping');
@@ -44,9 +44,10 @@ export function useMockPayment() {
           raffle_id: data.raffleId,
           user_id: user.id,
           amount: totalAmount,
-          status: 'completed',
+          status: 'approved',
           provider: 'mock',
           provider_payment_id: providerRef,
+          selected_numbers: data.selectedNumbers,
           type: 'payment'
         })
         .select('id')
