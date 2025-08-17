@@ -35,7 +35,7 @@ export default function EmAltaRecentesSection() {
           .select('id,title,description,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at,draw_date');
         
         const [a, b] = await Promise.all([
-          base().order("progress_pct_money", { ascending: false }).limit(3),
+          base().order("last_paid_at", { ascending: false }).limit(3),
           base().order("last_paid_at", { ascending: false }).limit(3),
         ]);
         if (!cancelled) {
