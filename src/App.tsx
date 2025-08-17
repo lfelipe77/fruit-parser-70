@@ -6,7 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from "@/i18n";
 import Index from "./pages/Index";
 import DiscoverRaffles from "./pages/DiscoverRaffles";
-import CategoriesView from "./pages/CategoriesView";
+import CategoriesPage from "./pages/CategoriesPage";
 import GanhaveisDetail from "./pages/GanhaveisDetail";
 import RafflesToGanhavelRedirect from "./components/RafflesToGanhavelRedirect";
 import ComoFunciona from "./pages/ComoFunciona";
@@ -146,9 +146,9 @@ const AppContent = () => {
         <Route path="/lance-seu-ganhavel" element={<LanceSeuGanhavel />} />
         <Route path="/descobrir" element={<DiscoverRaffles />} />
         <Route path="/resultados" element={<Resultados />} />
-        <Route path="/categorias" element={<CategoriesView />} />
-        <Route path="/categorias/:categoria" element={<CategoriesView />} />
-        <Route path="/categorias/:categoria/:subcategoria" element={<CategoriesView />} />
+        <Route path="/categorias" element={<CategoriesPage />} />
+        <Route path="/categorias/:categorySlug" element={<CategoriesPage />} />
+        <Route path="/categorias/:categorySlug/:subSlug" element={<CategoriesPage />} />
         <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
         {/* Optional alias/redirect for legacy URLs */}
         <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
