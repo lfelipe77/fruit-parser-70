@@ -151,16 +151,18 @@ export default function SubcategoryDetailPage() {
         }
 
         // Fetch raffles
-        const CARD_SELECT =
+        const RAFFLE_CARD_SELECT =
           "id,title,description,image_url,status," +
           "ticket_price,goal_amount,amount_raised,progress_pct_money," +
           "last_paid_at,created_at,draw_date," +
           "category_name,subcategory_name," +
           "location_city,location_state,participants_count";
 
-        const { data: raffles, error: raffErr } = await supabase
+        const { data: raffles, error: raffErr } = await (supabase as any)
           .from('raffles_public_money_ext')
-          .select(CARD_SELECT)
+          .select(RAFFLE_CARD_SELECT)
+          .eq('category_slug', categorySlug)
+          .eq('subcategory_slug', subSlug)
           .order('created_at', { ascending: false })
           .limit(60);
 

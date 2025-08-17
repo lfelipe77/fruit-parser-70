@@ -27,7 +27,7 @@ export default function EmAltaRecentesSection() {
   React.useEffect(() => {
     let cancelled = false;
     
-    const SELECT =
+    const RAFFLE_CARD_SELECT =
       "id,title,description,image_url,status," +
       "ticket_price,goal_amount,amount_raised,progress_pct_money," +
       "last_paid_at,created_at,draw_date," +
@@ -41,24 +41,22 @@ export default function EmAltaRecentesSection() {
         const [emAlta, recentes] = await Promise.all([
           supabase
             .from("raffles_public_money_ext")
-            .select(SELECT)
+            .select(RAFFLE_CARD_SELECT)
             .order("last_paid_at", { ascending: false, nullsFirst: false }) // nulls last
-            .limit(12)
-            .returns<RaffleCardInfo[]>(),
+            .limit(12),
           supabase
             .from("raffles_public_money_ext")
-            .select(SELECT)
+            .select(RAFFLE_CARD_SELECT)
             .order("created_at", { ascending: false })
             .limit(24)
-            .returns<RaffleCardInfo[]>()
         ]);
         
         if (!cancelled) {
           if (emAlta.error) throw emAlta.error;
           if (recentes.error) throw recentes.error;
           
-          setTop((emAlta.data ?? []).slice(0, 3));
-          setRecent((recentes.data ?? []).slice(0, 3));
+          setTop(((emAlta.data ?? []) as unknown as RaffleCardInfo[]).slice(0, 3));
+          setRecent(((recentes.data ?? []) as unknown as RaffleCardInfo[]).slice(0, 3));
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");

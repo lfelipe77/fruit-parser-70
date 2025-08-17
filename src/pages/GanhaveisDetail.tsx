@@ -78,29 +78,21 @@ export default function GanhaveisDetail() {
       setLoading(true);
       
       // Load raffle data (money view)
+      const RAFFLE_CARD_SELECT =
+        "id,title,description,image_url,status," +
+        "ticket_price,goal_amount,amount_raised,progress_pct_money," +
+        "last_paid_at,created_at,draw_date," +
+        "category_name,subcategory_name," +
+        "location_city,location_state,participants_count";
+
       const { data: v, error: moneyError } = await supabase
         .from('raffles_public_money_ext')
-        .select(`
-          id,
-          title,
-          description,
-          image_url,
-          status,
-          ticket_price,
-          draw_date,
-          created_at,
-          category_name,
-          subcategory_name,
-          amount_raised,
-          goal_amount,
-          progress_pct_money,
-          last_paid_at
-        `)
+        .select(RAFFLE_CARD_SELECT)
         .eq('id', id)
         .maybeSingle();
       
       if (moneyError) console.warn("money error", moneyError);
-      setMoneyRow(v as MoneyRow | null);
+      setMoneyRow(v ? v as unknown as MoneyRow : null);
 
       // Load extras from base table
       const { data: baseData, error: baseError } = await supabase

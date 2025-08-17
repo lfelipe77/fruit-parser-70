@@ -54,9 +54,16 @@ export default function DiscoverRaffles() {
     
     async function loadRaffles() {
       setLoading(true);
+      const RAFFLE_CARD_SELECT =
+        "id,title,description,image_url,status," +
+        "ticket_price,goal_amount,amount_raised,progress_pct_money," +
+        "last_paid_at,created_at,draw_date," +
+        "category_name,subcategory_name," +
+        "location_city,location_state,participants_count";
+
       let query = (supabase as any)
         .from('raffles_public_money_ext')
-        .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count', { count: "exact" });
+        .select(RAFFLE_CARD_SELECT, { count: "exact" });
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);
