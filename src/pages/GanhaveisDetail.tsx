@@ -236,9 +236,28 @@ export default function GanhaveisDetail() {
               {formatBRL(moneyRow?.amount_raised || 0)} <span className="text-gray-400">de</span> {formatBRL(moneyRow?.goal_amount || 0)}
             </div>
             <div className="mt-2">
-              <Progress value={Math.max(0, Math.min(100, Number(moneyRow?.progress_pct_money || 0)))} className="h-3 bg-emerald-200" />
+              {(() => {
+                // Use backend progress_pct_money with defensive fallback
+                const progress = moneyRow?.progress_pct_money ?? (
+                  (moneyRow?.goal_amount ?? 0) > 0 
+                    ? Math.min(100, Math.max(0, Math.round(((moneyRow?.amount_raised ?? 0) / (moneyRow?.goal_amount ?? 1)) * 100)))
+                    : 0
+                );
+                const pct = Math.max(0, Math.min(100, progress));
+                
+                return (
+                  <>
+                    <div className="w-full bg-emerald-200 rounded-full h-3">
+                      <div 
+                        className="bg-primary h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 text-sm text-emerald-700 font-medium">{pct}% arrecadado</div>
+                  </>
+                );
+              })()}
             </div>
-            <div className="mt-2 text-sm text-emerald-700 font-medium">{Math.max(0, Math.min(100, Number(moneyRow?.progress_pct_money || 0)))}% completo</div>
             <div className="text-sm text-gray-600">Último pagamento: {moneyRow?.last_paid_at ? lastPaidAgo : "—"}</div>
           </div>
 

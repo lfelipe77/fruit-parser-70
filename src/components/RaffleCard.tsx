@@ -2,27 +2,26 @@ import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { formatBRL } from "@/lib/formatters";
+import { RaffleCardInfo } from "@/types/public-views";
 
-type CardRow = {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  ticket_price: number;
-  amount_raised: number;
-  goal_amount: number;
-  progress_pct_money: number;
-  last_paid_at: string | null;
-  created_at?: string | null; // added
+type CardRow = RaffleCardInfo & {
+  description?: string | null;
+  created_at?: string | null;
   category_name?: string | null;
   subcategory_name?: string | null;
   location_city?: string | null;
   location_state?: string | null;
-  participants_count?: number | null; // optional
+  participants_count?: number | null;
 };
 
 export default function RaffleCard({ r }: { r: CardRow }) {
-  const pct = Math.max(0, Math.min(100, r.progress_pct_money ?? 0));
+  // Use backend progress_pct_money with defensive fallback
+  const progress = r.progress_pct_money ?? (
+    r.goal_amount > 0 
+      ? Math.min(100, Math.max(0, Math.round((r.amount_raised / r.goal_amount) * 100)))
+      : 0
+  );
+  const pct = Math.max(0, Math.min(100, progress));
   const last = useRelativeTime(r.last_paid_at, "pt-BR");
   const loc = [r.location_city, r.location_state].filter(Boolean).join(", ");
 
@@ -55,7 +54,12 @@ export default function RaffleCard({ r }: { r: CardRow }) {
           </div>
           
           {/* Progress bar */}
-          <Progress value={pct} className="h-2" />
+          <div className="w-full bg-muted rounded-full h-2">
+            <div 
+              className="bg-primary h-2 rounded-full transition-all duration-300"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
           
           {/* Progress info */}
           <div className="flex items-center justify-between text-sm">
@@ -68,11 +72,11 @@ export default function RaffleCard({ r }: { r: CardRow }) {
 
         {/* Last purchase or launch date */}
         <div className="text-sm text-muted-foreground">
-          {(() => {
-            const when = r.last_paid_at ?? r.created_at;
-            const label = r.last_paid_at ? "Última venda" : "Lançado";
-            return when ? <span>{label}: {useRelativeTime(when, "pt-BR")}</span> : null;
-          })()}
+          {r.last_paid_at ? (
+            <span>Última venda: {useRelativeTime(r.last_paid_at, "pt-BR")}</span>
+          ) : (
+            <span>—</span>
+          )}
         </div>
 
         {/* Location (second instance as in your example) */}

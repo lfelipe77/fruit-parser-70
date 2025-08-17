@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { RafflePublicMoney } from "@/types/public-views";
+import { RaffleCardInfo } from "@/types/public-views";
 import RaffleCard from "./RaffleCard";
 
 function SkeletonCard() {
@@ -19,8 +19,8 @@ function SkeletonCard() {
 
 export default function EmAltaRecentesSection() {
   const navigate = useNavigate();
-  const [top, setTop] = React.useState<RafflePublicMoney[]>([]);
-  const [recent, setRecent] = React.useState<RafflePublicMoney[]>([]);
+  const [top, setTop] = React.useState<RaffleCardInfo[]>([]);
+  const [recent, setRecent] = React.useState<RaffleCardInfo[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState<string | null>(null);
 
@@ -32,7 +32,7 @@ export default function EmAltaRecentesSection() {
       try {
         const base = () => (supabase as any)
           .from('raffles_public_money_ext')
-          .select('id,title,description,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at,draw_date');
+          .select('id,title,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at');
         
         const [a, b] = await Promise.all([
           base().order("last_paid_at", { ascending: false }).limit(3),
@@ -41,17 +41,17 @@ export default function EmAltaRecentesSection() {
         if (!cancelled) {
           if (a.error) throw a.error;
           if (b.error) throw b.error;
-          setTop((a.data ?? []) as RafflePublicMoney[]);
-          let recentData = (b.data ?? []) as RafflePublicMoney[];
+          setTop((a.data ?? []) as RaffleCardInfo[]);
+          let recentData = (b.data ?? []) as RaffleCardInfo[];
           // Fallbacks for "Recentes": draw_date desc, then id desc
           if (recentData.length === 0) {
             const fb1 = await base().order('draw_date', { ascending: false }).limit(3);
             if (fb1.error) throw fb1.error;
-            recentData = (fb1.data ?? []) as RafflePublicMoney[];
+            recentData = (fb1.data ?? []) as RaffleCardInfo[];
             if (recentData.length === 0) {
               const fb2 = await base().order('id', { ascending: false }).limit(3);
               if (fb2.error) throw fb2.error;
-              recentData = (fb2.data ?? []) as RafflePublicMoney[];
+              recentData = (fb2.data ?? []) as RaffleCardInfo[];
             }
           }
           setRecent(recentData);
@@ -65,7 +65,7 @@ export default function EmAltaRecentesSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const Grid = ({ items }: { items: RafflePublicMoney[] }) => (
+  const Grid = ({ items }: { items: RaffleCardInfo[] }) => (
     <div className="grid gap-4 md:grid-cols-3">
       {items.map((r) => <RaffleCard key={r.id} r={r} />)}
     </div>
