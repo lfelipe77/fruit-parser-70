@@ -107,11 +107,56 @@ export type Database = {
         }
         Relationships: []
       }
+      brazil_cities: {
+        Row: {
+          ibge_code: number | null
+          id: string
+          name: string
+          uf: string
+        }
+        Insert: {
+          ibge_code?: number | null
+          id?: string
+          name: string
+          uf: string
+        }
+        Update: {
+          ibge_code?: number | null
+          id?: string
+          name?: string
+          uf?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brazil_cities_uf_fkey"
+            columns: ["uf"]
+            isOneToOne: false
+            referencedRelation: "brazil_states"
+            referencedColumns: ["uf"]
+          },
+        ]
+      }
+      brazil_states: {
+        Row: {
+          name: string
+          uf: string
+        }
+        Insert: {
+          name: string
+          uf: string
+        }
+        Update: {
+          name?: string
+          uf?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
           descricao: string | null
           destaque: boolean
+          icon_emoji: string | null
           icone_url: string | null
           id: number
           nome: string
@@ -122,6 +167,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           destaque?: boolean
+          icon_emoji?: string | null
           icone_url?: string | null
           id?: number
           nome: string
@@ -132,6 +178,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           destaque?: boolean
+          icon_emoji?: string | null
           icone_url?: string | null
           id?: number
           nome?: string
@@ -414,6 +461,13 @@ export type Database = {
             foreignKeyName: "payouts_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "raffles_money_view"
             referencedColumns: ["raffle_id"]
           },
@@ -497,6 +551,8 @@ export type Database = {
         Row: {
           category: string | null
           category_id: number | null
+          city: string | null
+          city_id: string | null
           closed_at: string | null
           completed_at: string | null
           created_at: string | null
@@ -515,6 +571,8 @@ export type Database = {
           product_name: string | null
           product_value: number | null
           slug: string | null
+          state: string | null
+          state_uf: string | null
           status: string | null
           subcategory_id: string | null
           ticket_price: number | null
@@ -530,6 +588,8 @@ export type Database = {
         Insert: {
           category?: string | null
           category_id?: number | null
+          city?: string | null
+          city_id?: string | null
           closed_at?: string | null
           completed_at?: string | null
           created_at?: string | null
@@ -548,6 +608,8 @@ export type Database = {
           product_name?: string | null
           product_value?: number | null
           slug?: string | null
+          state?: string | null
+          state_uf?: string | null
           status?: string | null
           subcategory_id?: string | null
           ticket_price?: number | null
@@ -563,6 +625,8 @@ export type Database = {
         Update: {
           category?: string | null
           category_id?: number | null
+          city?: string | null
+          city_id?: string | null
           closed_at?: string | null
           completed_at?: string | null
           created_at?: string | null
@@ -581,6 +645,8 @@ export type Database = {
           product_name?: string | null
           product_value?: number | null
           slug?: string | null
+          state?: string | null
+          state_uf?: string | null
           status?: string | null
           subcategory_id?: string | null
           ticket_price?: number | null
@@ -605,6 +671,13 @@ export type Database = {
             foreignKeyName: "fk_raffles_subcategory"
             columns: ["subcategory_id"]
             isOneToOne: false
+            referencedRelation: "subcategories_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
             referencedRelation: "subcategory_stats"
             referencedColumns: ["id"]
           },
@@ -623,6 +696,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "brazil_cities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "raffles_owner_user_id_fkey"
             columns: ["owner_user_id"]
             isOneToOne: false
@@ -635,6 +722,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_state_uf_fkey"
+            columns: ["state_uf"]
+            isOneToOne: false
+            referencedRelation: "brazil_states"
+            referencedColumns: ["uf"]
           },
           {
             foreignKeyName: "raffles_winner_user_id_fkey"
@@ -767,6 +861,13 @@ export type Database = {
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ticket_picks: {
@@ -880,53 +981,53 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
-            referencedRelation: "ganhaveis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tickets_raffle_id_fkey"
-            columns: ["raffle_id"]
-            isOneToOne: false
             referencedRelation: "raffles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_id_fkey"
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_money_view"
             referencedColumns: ["raffle_id"]
           },
           {
-            foreignKeyName: "tickets_raffle_id_fkey"
+            foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_id_fkey"
+            foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_ext"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_id_fkey"
+            foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_money_ext"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_id_fkey"
+            foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_id_fkey"
+            foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
@@ -1039,63 +1140,56 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "transactions_ganhavel_fk"
-            columns: ["raffle_id"]
-            isOneToOne: false
-            referencedRelation: "ganhaveis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_ganhavel_id_fkey"
-            columns: ["raffle_id"]
-            isOneToOne: false
-            referencedRelation: "ganhaveis"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_raffle_id_fkey"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_raffle_id_fkey"
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_money_view"
             referencedColumns: ["raffle_id"]
           },
           {
-            foreignKeyName: "transactions_raffle_id_fkey"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_raffle_id_fkey"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_ext"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_raffle_id_fkey"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_money_ext"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_raffle_id_fkey"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_raffle_id_fkey"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
@@ -1160,6 +1254,13 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
             referencedColumns: ["id"]
           },
           {
@@ -1343,30 +1444,77 @@ export type Database = {
       }
       ganhavel_categories_public: {
         Row: {
+          active_raffles: number | null
           descricao: string | null
           destaque: boolean | null
           icone_url: string | null
-          id: string | null
+          id: number | null
           nome: string | null
           slug: string | null
-        }
-        Insert: {
-          descricao?: string | null
-          destaque?: boolean | null
-          icone_url?: string | null
-          id?: string | null
-          nome?: string | null
-          slug?: string | null
-        }
-        Update: {
-          descricao?: string | null
-          destaque?: boolean | null
-          icone_url?: string | null
-          id?: string | null
-          nome?: string | null
-          slug?: string | null
+          sort_order: number | null
         }
         Relationships: []
+      }
+      raffles_by_category_public: {
+        Row: {
+          amount_raised: number | null
+          category_id: number | null
+          category_slug: string | null
+          goal_amount: number | null
+          id: string | null
+          image_url: string | null
+          last_paid_at: string | null
+          progress_pct_money: number | null
+          status: string | null
+          subcategory_id: string | null
+          subcategory_slug: string | null
+          ticket_price: number | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategory_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       raffles_money_view: {
         Row: {
@@ -1420,6 +1568,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
             referencedColumns: ["id"]
           },
           {
@@ -1483,6 +1638,13 @@ export type Database = {
             foreignKeyName: "fk_raffles_subcategory"
             columns: ["subcategory_id"]
             isOneToOne: false
+            referencedRelation: "subcategories_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
             referencedRelation: "subcategory_stats"
             referencedColumns: ["id"]
           },
@@ -1500,22 +1662,35 @@ export type Database = {
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       raffles_public_money_ext: {
         Row: {
           amount_raised: number | null
           category_name: string | null
+          category_slug: string | null
           created_at: string | null
           description: string | null
+          description_excerpt: string | null
           draw_date: string | null
           goal_amount: number | null
           id: string | null
           image_url: string | null
           last_paid_at: string | null
+          location_city: string | null
+          location_state: string | null
+          participants_count: number | null
           progress_pct_money: number | null
           status: string | null
           subcategory_name: string | null
+          subcategory_slug: string | null
           ticket_price: number | null
           title: string | null
         }
@@ -1559,6 +1734,13 @@ export type Database = {
             foreignKeyName: "fk_raffles_subcategory"
             columns: ["subcategory_id"]
             isOneToOne: false
+            referencedRelation: "subcategories_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_raffles_subcategory"
+            columns: ["subcategory_id"]
+            isOneToOne: false
             referencedRelation: "subcategory_stats"
             referencedColumns: ["id"]
           },
@@ -1574,6 +1756,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
             referencedColumns: ["id"]
           },
           {
@@ -1606,13 +1795,16 @@ export type Database = {
           },
         ]
       }
-      subcategory_stats: {
+      subcategories_public: {
         Row: {
-          active_count: number | null
+          active_raffles: number | null
           category_id: number | null
+          category_nome: string | null
+          category_slug: string | null
           id: string | null
-          name: string | null
+          nome: string | null
           slug: string | null
+          sort_order: number | null
         }
         Relationships: [
           {
@@ -1627,6 +1819,47 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subcategory_stats: {
+        Row: {
+          category_id: number | null
+          category_name: string | null
+          category_slug: string | null
+          id: string | null
+          raffles_count: number | null
+          subcategory_name: string | null
+          subcategory_slug: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "category_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ganhavel_categories_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1932,7 +2165,9 @@ export type Database = {
         Returns: undefined
       }
       log_event: {
-        Args: { action: string; context?: Json; user_id: string }
+        Args:
+          | { p_payload: Json; p_type: string; p_user: string }
+          | { p_payload: Json; p_type: string; p_user: string }
         Returns: undefined
       }
       log_public_visit: {
@@ -2005,6 +2240,18 @@ export type Database = {
       }
       record_mock_purchase: {
         Args: {
+          p_buyer_user_id: string
+          p_numbers: Json
+          p_payment_provider: string
+          p_qty: number
+          p_raffle_id: string
+          p_unit_price: number
+        }
+        Returns: string
+      }
+      record_mock_purchase_admin: {
+        Args: {
+          p_buyer_user_id: string
           p_numbers: Json
           p_provider_ref: string
           p_qty: number
