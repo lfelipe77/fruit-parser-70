@@ -7,6 +7,8 @@ import i18n from "@/i18n";
 import Index from "./pages/Index";
 import DiscoverRaffles from "./pages/DiscoverRaffles";
 import CategoriesPage from "./pages/CategoriesPage";
+import CategoryDetailPage from "./pages/CategoryDetailPage";
+import SubcategoryDetailPage from "./pages/SubcategoryDetailPage";
 import GanhaveisDetail from "./pages/GanhaveisDetail";
 import RafflesToGanhavelRedirect from "./components/RafflesToGanhavelRedirect";
 import ComoFunciona from "./pages/ComoFunciona";
@@ -147,8 +149,8 @@ const AppContent = () => {
         <Route path="/descobrir" element={<DiscoverRaffles />} />
         <Route path="/resultados" element={<Resultados />} />
         <Route path="/categorias" element={<CategoriesPage />} />
-        <Route path="/categorias/:categorySlug" element={<CategoriesPage />} />
-        <Route path="/categorias/:categorySlug/:subSlug" element={<CategoriesPage />} />
+        <Route path="/categorias/:categorySlug" element={<CategoryDetailPage />} />
+        <Route path="/categorias/:categorySlug/:subSlug" element={<SubcategoryDetailPage />} />
         <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
         {/* Optional alias/redirect for legacy URLs */}
         <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
