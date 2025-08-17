@@ -104,22 +104,22 @@ export default function SubcategoryDetailPage() {
         setCategoryInfo(categoryData);
 
         // Fetch subcategory info
-        const subcatQuery = await (supabase as any)
-          .from("subcategory_stats")
-          .select("*")
-          .eq("category_slug", categorySlug)
-          .eq("subcategory_slug", subSlug)
+        const subInfoQuery = await (supabase as any)
+          .from('subcategory_stats')
+          .select('*')
+          .eq('category_slug', categorySlug)
+          .eq('subcategory_slug', subSlug)
           .maybeSingle();
 
-        if (subcatQuery.error) {
-          console.error("[SubcategoryDetail] Subcategory error:", subcatQuery.error);
+        if (subInfoQuery.error) {
+          console.error("[SubcategoryDetail] Subcategory error:", subInfoQuery.error);
           setError("Subcategoria não encontrada");
           setLoading(false);
           return;
         }
 
-        if (subcatQuery.data) {
-          const sub = subcatQuery.data as any;
+        if (subInfoQuery.data) {
+          const sub = subInfoQuery.data;
           setSubcategoryInfo({
             id: sub.id,
             slug: sub.subcategory_slug,
@@ -129,8 +129,8 @@ export default function SubcategoryDetailPage() {
           });
         }
 
-        // Fetch all subcategories for chips
-        const subsQuery = await supabase
+        // Fetch all subcategories for chips  
+        const subsQuery = await (supabase as any)
           .from('subcategory_stats')
           .select('*')
           .eq('category_slug', categorySlug)
@@ -151,8 +151,24 @@ export default function SubcategoryDetailPage() {
         }
 
         // Fetch raffles
-        const raffleData = await fetchRaffles(categorySlug, subSlug);
-        setRaffles(raffleData);
+        const CARD_SELECT =
+          "id,title,description,image_url,status," +
+          "ticket_price,goal_amount,amount_raised,progress_pct_money," +
+          "last_paid_at,created_at,draw_date," +
+          "category_name,subcategory_name," +
+          "location_city,location_state,participants_count";
+
+        const { data: raffles, error: raffErr } = await supabase
+          .from('raffles_public_money_ext')
+          .select(CARD_SELECT)
+          .order('created_at', { ascending: false })
+          .limit(60);
+
+        if (raffErr) {
+          console.error("[SubcategoryDetail] raffles error:", raffErr);
+        } else {
+          setRaffles(raffles || []);
+        }
 
       } catch (err) {
         console.error("[SubcategoryDetail] General error:", err);
