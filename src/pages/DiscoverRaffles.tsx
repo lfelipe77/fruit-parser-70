@@ -24,24 +24,24 @@ export default function DiscoverRaffles() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Load categories
+  // Load categories with counts
   useEffect(() => {
     async function loadCategories() {
       const { data } = await supabase
-        .from("categories")
+        .from("category_stats")
         .select("*")
         .order("sort_order", { ascending: true });
       
       const mapped = (data || []).map(cat => ({
         id: cat.id,
-        name: cat.nome,
+        name: cat.name,
         slug: cat.slug,
-        active_count: 0,
-        icon_name: null,
+        active_count: cat.active_count || 0,
+        icon_name: cat.icon_name,
         icone_url: cat.icone_url,
-        color_class: null,
+        color_class: cat.color_class,
         sort_order: cat.sort_order,
-        featured: cat.destaque
+        featured: cat.featured
       }));
       setCategories(mapped);
     }
