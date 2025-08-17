@@ -51,11 +51,13 @@ export default function DiscoverRaffles() {
 
   // Load raffles
   useEffect(() => {
+    let cancelled = false;
+    
     async function loadRaffles() {
       setLoading(true);
       let query = (supabase as any)
         .from('raffles_public_money_ext')
-        .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name', { count: "exact" });
+        .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count', { count: "exact" });
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);
@@ -92,14 +94,30 @@ export default function DiscoverRaffles() {
 
       const { data, error, count } = await query;
       
-      if (!error) {
-        setRaffles((data || []) as RafflePublicMoney[]);
-        setTotalCount(count || 0);
+      if (!cancelled) {
+        if (!error) {
+          setRaffles((data || []) as RafflePublicMoney[]);
+          setTotalCount(count || 0);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     }
     
     loadRaffles();
+
+    // Listen for raffle updates to invalidate and re-fetch
+    const handleRaffleUpdate = () => {
+      if (!cancelled) {
+        loadRaffles();
+      }
+    };
+
+    window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    
+    return () => { 
+      cancelled = true; 
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+    };
   }, [searchTerm, selectedCategory, sortBy, currentPage]);
 
 

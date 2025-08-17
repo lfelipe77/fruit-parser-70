@@ -33,7 +33,7 @@ export default function EmAltaRecentesSection() {
       try {
         const base = () => (supabase as any)
           .from('raffles_public_money_ext')
-          .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name');
+          .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count');
         
         const [a, b] = await Promise.all([
           base().order("last_paid_at", { ascending: false }).limit(3),

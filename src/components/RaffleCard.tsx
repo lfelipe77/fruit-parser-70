@@ -15,13 +15,8 @@ type CardRow = RaffleCardInfo & {
 };
 
 export default function RaffleCard({ r }: { r: CardRow }) {
-  // Use backend progress_pct_money with defensive fallback
-  const pct = r.progress_pct_money ?? (
-    r.goal_amount > 0 
-      ? Math.min(100, Math.max(0, Math.round((r.amount_raised / r.goal_amount) * 100)))
-      : 0
-  );
-  const last = useRelativeTime(r.last_paid_at, "pt-BR");
+  // Always use backend progress_pct_money - no local calculations
+  const pct = r.progress_pct_money ?? 0;
   const loc = [r.location_city, r.location_state].filter(Boolean).join(", ");
 
   return (
@@ -52,7 +47,7 @@ export default function RaffleCard({ r }: { r: CardRow }) {
             <span className="text-muted-foreground">de {formatBRL(r.goal_amount)}</span>
           </div>
           
-          {/* Progress bar */}
+          {/* Progress bar - backend truth only */}
           <div className="w-full bg-muted rounded-full h-2">
             <div 
               className="bg-primary h-2 rounded-full transition-all duration-300"
@@ -77,11 +72,6 @@ export default function RaffleCard({ r }: { r: CardRow }) {
             <span>—</span>
           )}
         </div>
-
-        {/* Location (second instance as in your example) */}
-        {loc && (
-          <div className="text-sm text-muted-foreground">{loc}</div>
-        )}
 
         {/* Buy button */}
         <button className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">

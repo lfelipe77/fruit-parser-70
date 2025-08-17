@@ -145,11 +145,21 @@ export default function GanhaveisDetail() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => fetchData())
       .subscribe();
+
+    // Listen for raffle updates from payment success
+    const handleRaffleUpdate = (event: any) => {
+      if (event.detail?.raffleId === id) {
+        fetchData();
+      }
+    };
+
+    window.addEventListener('raffleUpdated', handleRaffleUpdate);
     
     return () => {
       supabase.removeChannel(ch);
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
     };
-  }, [fetchData]);
+  }, [fetchData, id]);
 
   // ---- Derived
   const feeFixed = 2;
