@@ -26,13 +26,14 @@ export default function EmAltaRecentesSection() {
 
   React.useEffect(() => {
     let cancelled = false;
-    (async () => {
+    
+    const fetchData = async () => {
       setLoading(true);
       setErr(null);
       try {
         const base = () => (supabase as any)
           .from('raffles_public_money_ext')
-          .select('id,title,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at');
+          .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name');
         
         const [a, b] = await Promise.all([
           base().order("last_paid_at", { ascending: false }).limit(3),
@@ -61,8 +62,23 @@ export default function EmAltaRecentesSection() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+
+    fetchData();
+
+    // Listen for raffle updates to invalidate and re-fetch
+    const handleRaffleUpdate = () => {
+      if (!cancelled) {
+        fetchData();
+      }
+    };
+
+    window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    
+    return () => { 
+      cancelled = true; 
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+    };
   }, []);
 
   const Grid = ({ items }: { items: RaffleCardInfo[] }) => (

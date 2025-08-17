@@ -44,7 +44,7 @@ export function useMockPayment() {
           raffle_id: data.raffleId,
           user_id: user.id,
           amount: totalAmount,
-          status: 'approved',
+          status: 'paid',
           provider: 'mock',
           provider_payment_id: providerRef,
           selected_numbers: data.selectedNumbers,
@@ -64,7 +64,7 @@ export function useMockPayment() {
         user_id: user.id,
         quantity: 1,
         total_amount: data.unitPrice,
-        status: 'issued' as const,
+        status: 'paid' as const,
         transaction_id: transaction.id,
         ticket_number: index + 1
       }));

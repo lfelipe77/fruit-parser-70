@@ -70,7 +70,7 @@ export default function CategoriesView() {
       setLoading(true);
       const { data } = await (supabase as any)
         .from('raffles_public_money_ext')
-        .select('id,title,description,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,draw_date,status,last_paid_at')
+        .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name')
         .limit(12);
       
       setRaffles((data || []) as RafflePublicMoney[]);

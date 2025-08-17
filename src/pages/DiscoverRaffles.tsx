@@ -55,7 +55,7 @@ export default function DiscoverRaffles() {
       setLoading(true);
       let query = (supabase as any)
         .from('raffles_public_money_ext')
-        .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at,created_at', { count: "exact" });
+        .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name', { count: "exact" });
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);

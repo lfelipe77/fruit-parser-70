@@ -33,19 +33,25 @@ export type RafflePublicMoney = {
   goal_amount: number;
   progress_pct_money: number;   // 0..100
   last_paid_at: string | null;  // date only (used for time-ago)
+  created_at: string;
 };
 
 // Card-specific type for consistent display
 export type RaffleCardInfo = {
   id: string;
   title: string;
+  description: string | null;
   image_url: string | null;
   status: string;
   ticket_price: number;
   goal_amount: number;
   amount_raised: number;
-  progress_pct_money: number | null;
+  progress_pct_money: number;
   last_paid_at: string | null;
+  created_at: string;
+  draw_date: string | null;
+  category_name: string | null;
+  subcategory_name: string | null;
 };
 
 export type PublicProfile = {

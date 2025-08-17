@@ -29,6 +29,21 @@ export function usePersistMock(
           console.error('Mock purchase error:', result.error);
         } else {
           console.log('Mock purchase recorded successfully:', result.data);
+          
+          // Re-fetch backend truth for immediate UI update
+          const { data: freshData } = await supabase
+            .from('raffles_public_money_ext')
+            .select('id, amount_raised, progress_pct_money, last_paid_at')
+            .eq('id', raffleId)
+            .single();
+          
+          if (freshData) {
+            console.log('Fresh raffle data after payment:', freshData);
+            // Trigger a custom event to notify other components
+            window.dispatchEvent(new CustomEvent('raffleUpdated', { 
+              detail: { raffleId, freshData } 
+            }));
+          }
         }
       } catch (error) {
         console.error('Mock purchase failed:', error);

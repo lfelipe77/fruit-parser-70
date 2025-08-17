@@ -16,12 +16,11 @@ type CardRow = RaffleCardInfo & {
 
 export default function RaffleCard({ r }: { r: CardRow }) {
   // Use backend progress_pct_money with defensive fallback
-  const progress = r.progress_pct_money ?? (
+  const pct = r.progress_pct_money ?? (
     r.goal_amount > 0 
       ? Math.min(100, Math.max(0, Math.round((r.amount_raised / r.goal_amount) * 100)))
       : 0
   );
-  const pct = Math.max(0, Math.min(100, progress));
   const last = useRelativeTime(r.last_paid_at, "pt-BR");
   const loc = [r.location_city, r.location_state].filter(Boolean).join(", ");
 
