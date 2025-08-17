@@ -11,7 +11,8 @@ type CategoryRow = {
   icone_url: string | null;
   descricao: string | null;
   destaque: boolean;
-  active_raffles?: number;
+  sort_order: number;
+  active_raffles: number;
 };
 
 export default function CategoriesPage() {
@@ -26,8 +27,10 @@ export default function CategoriesPage() {
       
       const { data, error } = await supabase
         .from('ganhavel_categories_public')
-        .select('*')
-        .order('nome', { ascending: true });
+        .select('id, slug, nome, icone_url, descricao, destaque, sort_order, active_raffles')
+        .order('sort_order', { ascending: true })
+        .order('nome', { ascending: true })
+        .returns<CategoryRow[]>();
 
       if (error) {
         console.error("[Categorias] Supabase error:", error);
@@ -88,7 +91,7 @@ export default function CategoriesPage() {
               </p>
 
               <div className="text-sm text-muted-foreground mb-4">
-                Ativas: <span className="font-semibold text-foreground">{c.active_raffles || 0}</span>
+                Ativas: <span className="font-semibold text-foreground">{c.active_raffles}</span>
               </div>
 
               {c.icone_url && (
