@@ -5,53 +5,23 @@ import Navigation from "@/components/Navigation";
 import RaffleCard from "@/components/RaffleCard";
 import { Badge } from "@/components/ui/badge";
 
-const CARD_SELECT = `
-id,title,description,image_url,status,
-ticket_price,goal_amount,
-amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,
-category_name,category_slug,subcategory_name,subcategory_slug,
-location_city,location_state,participants_count
-`;
-
 type CategoryInfo = {
   nome: string;
   icone_url: string | null;
 };
 
-type SubcategoryChip = {
+type SubcatRow = {
   id: string;
   subcategory_slug: string;
   subcategory_name: string;
   raffles_count: number;
 };
 
-type RaffleCardData = {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  status: string;
-  ticket_price: number;
-  goal_amount: number;
-  amount_raised: number;
-  progress_pct_money: number;
-  last_paid_at: string | null;
-  created_at: string;
-  draw_date: string | null;
-  category_name: string;
-  category_slug: string;
-  subcategory_name: string | null;
-  subcategory_slug: string | null;
-  location_city: string | null;
-  location_state: string | null;
-  participants_count: number | null;
-};
-
 export default function CategoryDetailPage() {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const [categoryInfo, setCategoryInfo] = useState<CategoryInfo | null>(null);
-  const [subcategories, setSubcategories] = useState<SubcategoryChip[]>([]);
-  const [raffles, setRaffles] = useState<RaffleCardData[]>([]);
+  const [subcategories, setSubcategories] = useState<SubcatRow[]>([]);
+  const [raffles, setRaffles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,10 +39,10 @@ export default function CategoryDetailPage() {
 
   const fetchRaffles = async (slug: string) => {
     const { data, error } = await supabase
-      .from("raffles_public_money_ext")
-      .select(CARD_SELECT)
-      .eq("category_slug", slug)
-      .order("created_at", { ascending: false })
+      .from('raffles_public_money_ext')
+      .select('*')
+      .eq('category_slug', slug)
+      .order('created_at', { ascending: false })
       .limit(60);
 
     if (error) {
@@ -109,16 +79,16 @@ export default function CategoryDetailPage() {
         setCategoryInfo(categoryData);
 
         // Fetch subcategories
-        const { data: subcatData, error: subcatError } = await supabase
-          .from("subcategory_stats")
-          .select("id,subcategory_slug,subcategory_name,raffles_count")
-          .eq("category_slug", categorySlug)
-          .order("subcategory_name");
+        const { data: subs, error: subsError } = await supabase
+          .from('subcategory_stats')
+          .select('id, subcategory_slug, subcategory_name, raffles_count')
+          .eq('category_slug', categorySlug)
+          .order('subcategory_name');
 
-        if (subcatError) {
-          console.error("[CategoryDetail] Subcategories error:", subcatError);
+        if (subsError) {
+          console.error("[CategoryDetail] Subcategories error:", subsError);
         } else {
-          setSubcategories(subcatData || []);
+          setSubcategories(subs || []);
         }
 
         // Fetch raffles

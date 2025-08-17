@@ -5,14 +5,13 @@ import Navigation from "@/components/Navigation";
 import { CategoriasSEO } from "@/components/SEOPages";
 
 type CategoryRow = {
-  id: number | string;
+  id: string | number;
   slug: string;
   nome: string;
   icone_url: string | null;
   descricao: string | null;
   destaque: boolean;
-  sort_order: number;
-  active_raffles: number;
+  active_raffles?: number;
 };
 
 export default function CategoriesPage() {
@@ -24,11 +23,11 @@ export default function CategoriesPage() {
     (async () => {
       setLoading(true);
       setError(null);
+      
       const { data, error } = await supabase
-        .from("ganhavel_categories_public")
-        .select("*")
-        .order("sort_order", { ascending: true })
-        .order("nome", { ascending: true });
+        .from('ganhavel_categories_public')
+        .select('*')
+        .order('nome', { ascending: true });
 
       if (error) {
         console.error("[Categorias] Supabase error:", error);
@@ -89,7 +88,7 @@ export default function CategoriesPage() {
               </p>
 
               <div className="text-sm text-muted-foreground mb-4">
-                Ativas: <span className="font-semibold text-foreground">{c.active_raffles}</span>
+                Ativas: <span className="font-semibold text-foreground">{c.active_raffles || 0}</span>
               </div>
 
               {c.icone_url && (
