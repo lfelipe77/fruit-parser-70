@@ -32,7 +32,7 @@ export default function CategoriesSection() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category, index) => {
+          {categories.slice(0, 8).map((category, index) => {
             return (
               <Link key={category.id} to={`/categorias/${category.slug}`}>
                 <Card
