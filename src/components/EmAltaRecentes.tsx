@@ -36,7 +36,7 @@ export default function EmAltaRecentesSection() {
         
         const [a, b] = await Promise.all([
           base().order("last_paid_at", { ascending: false }).limit(3),
-          base().order("last_paid_at", { ascending: false }).limit(3),
+          base().order("created_at", { ascending: false }).limit(3),
         ]);
         if (!cancelled) {
           if (a.error) throw a.error;
