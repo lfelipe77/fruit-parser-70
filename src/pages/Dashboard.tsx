@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useMyProfile } from "@/hooks/useMyProfile";
 import { LogOut, User, CreditCard, Trophy, History } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -18,6 +19,7 @@ interface DashboardStats {
 export default function Dashboard() {
   console.log('[dash] mounted');
   const { user, loading: authLoading, signOut } = useAuth();
+  const { profile } = useMyProfile();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalTickets: 0,
@@ -168,17 +170,17 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback>
-                      {user.email?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">
-                      {user.user_metadata?.full_name || 'Usuário'}
-                    </p>
+                 <div className="flex items-center gap-4">
+                   <Avatar className="w-16 h-16">
+                     <AvatarImage src={profile?.avatar_url || ''} />
+                     <AvatarFallback>
+                       {user.email?.charAt(0).toUpperCase()}
+                     </AvatarFallback>
+                   </Avatar>
+                   <div>
+                     <p className="font-medium">
+                       {profile?.full_name || user.user_metadata?.full_name || 'Usuário'}
+                     </p>
                     <p className="text-sm text-muted-foreground">
                       {user.email}
                     </p>
