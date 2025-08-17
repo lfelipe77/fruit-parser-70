@@ -21,7 +21,7 @@ export default function DiscoverRaffles() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState("popularity");
+  const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -55,7 +55,7 @@ export default function DiscoverRaffles() {
       setLoading(true);
       let query = (supabase as any)
         .from('raffles_public_money_ext')
-        .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at', { count: "exact" });
+        .select('id,title,image_url,ticket_price,amount_raised,goal_amount,progress_pct_money,category_name,subcategory_name,status,last_paid_at,created_at', { count: "exact" });
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);
@@ -68,19 +68,22 @@ export default function DiscoverRaffles() {
         }
       }
 
-      // Apply sorting
+      // Apply sorting - default to newest first
       switch (sortBy) {
         case "ending-soon":
           query = query.order("last_paid_at", { ascending: true });
           break;
         case "newest":
-          query = query.order("last_paid_at", { ascending: false });
+          query = query.order("created_at", { ascending: false });
           break;
         case "popularity":
           query = query.order("progress_pct_money", { ascending: false });
           break;
         case "goal":
           query = query.order("goal_amount", { ascending: false });
+          break;
+        default:
+          query = query.order("created_at", { ascending: false });
           break;
       }
 
