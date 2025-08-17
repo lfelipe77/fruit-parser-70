@@ -800,13 +800,16 @@ export type Database = {
       }
       tickets: {
         Row: {
+          buyer_user_id: string | null
           created_at: string | null
           ganhavel_id: string | null
           id: string
           is_paid: boolean | null
           number: number | null
+          numbers: Json | null
           payment_session_id: string | null
           payment_status: string | null
+          qty: number | null
           quantity: number | null
           raffle_id: string | null
           reservation_id: string | null
@@ -816,16 +819,20 @@ export type Database = {
           ticket_number: number | null
           total_amount: number | null
           transaction_id: string | null
+          unit_price: number | null
           user_id: string | null
         }
         Insert: {
+          buyer_user_id?: string | null
           created_at?: string | null
           ganhavel_id?: string | null
           id?: string
           is_paid?: boolean | null
           number?: number | null
+          numbers?: Json | null
           payment_session_id?: string | null
           payment_status?: string | null
+          qty?: number | null
           quantity?: number | null
           raffle_id?: string | null
           reservation_id?: string | null
@@ -835,16 +842,20 @@ export type Database = {
           ticket_number?: number | null
           total_amount?: number | null
           transaction_id?: string | null
+          unit_price?: number | null
           user_id?: string | null
         }
         Update: {
+          buyer_user_id?: string | null
           created_at?: string | null
           ganhavel_id?: string | null
           id?: string
           is_paid?: boolean | null
           number?: number | null
+          numbers?: Json | null
           payment_session_id?: string | null
           payment_status?: string | null
+          qty?: number | null
           quantity?: number | null
           raffle_id?: string | null
           reservation_id?: string | null
@@ -854,6 +865,7 @@ export type Database = {
           ticket_number?: number | null
           total_amount?: number | null
           transaction_id?: string | null
+          unit_price?: number | null
           user_id?: string | null
         }
         Relationships: [
@@ -921,6 +933,13 @@ export type Database = {
             referencedColumns: ["raffle_id"]
           },
           {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -939,6 +958,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number | null
+          buyer_user_id: string | null
           created_at: string | null
           customer_email: string | null
           due_date: string | null
@@ -951,6 +971,7 @@ export type Database = {
           payment_reference: string | null
           provider: string | null
           provider_payment_id: string | null
+          provider_ref: string | null
           raffle_id: string
           received_at: string | null
           reservation_id: string | null
@@ -964,6 +985,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          buyer_user_id?: string | null
           created_at?: string | null
           customer_email?: string | null
           due_date?: string | null
@@ -976,6 +998,7 @@ export type Database = {
           payment_reference?: string | null
           provider?: string | null
           provider_payment_id?: string | null
+          provider_ref?: string | null
           raffle_id: string
           received_at?: string | null
           reservation_id?: string | null
@@ -989,6 +1012,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          buyer_user_id?: string | null
           created_at?: string | null
           customer_email?: string | null
           due_date?: string | null
@@ -1001,6 +1025,7 @@ export type Database = {
           payment_reference?: string | null
           provider?: string | null
           provider_payment_id?: string | null
+          provider_ref?: string | null
           raffle_id?: string
           received_at?: string | null
           reservation_id?: string | null
@@ -1978,6 +2003,16 @@ export type Database = {
           participants_count: number
         }[]
       }
+      record_mock_purchase: {
+        Args: {
+          p_numbers: Json
+          p_provider_ref: string
+          p_qty: number
+          p_raffle_id: string
+          p_unit_price: number
+        }
+        Returns: string
+      }
       request_password_reset: {
         Args: { user_email: string }
         Returns: string
@@ -2040,13 +2075,16 @@ export type Database = {
       tickets_by_reservation: {
         Args: { p_reservation: string }
         Returns: {
+          buyer_user_id: string | null
           created_at: string | null
           ganhavel_id: string | null
           id: string
           is_paid: boolean | null
           number: number | null
+          numbers: Json | null
           payment_session_id: string | null
           payment_status: string | null
+          qty: number | null
           quantity: number | null
           raffle_id: string | null
           reservation_id: string | null
@@ -2056,6 +2094,7 @@ export type Database = {
           ticket_number: number | null
           total_amount: number | null
           transaction_id: string | null
+          unit_price: number | null
           user_id: string | null
         }[]
       }
