@@ -185,7 +185,11 @@ export default function GerenciarCartoesEPix() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => {
+              const lastPath = sessionStorage.getItem("lastPath");
+              const redirectTo = lastPath && lastPath !== "/gerenciar-cartoes-e-pix" ? lastPath : "/dashboard";
+              navigate(redirectTo);
+            }}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>

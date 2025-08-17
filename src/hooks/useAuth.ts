@@ -35,7 +35,10 @@ export const useAuth = () => {
             }
           }, 0);
           
-          navigate('/dashboard');
+          // Navigate to last path or home instead of forcing dashboard
+          const lastPath = sessionStorage.getItem("lastPath");
+          const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
+          navigate(redirectTo, { replace: true });
           toast.success('Login realizado com sucesso!');
         }
 
@@ -131,7 +134,7 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       
       const { error } = await withTimeout(
         supabase.auth.signUp({
@@ -169,6 +172,9 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      // Clear lastPath on logout
+      sessionStorage.removeItem("lastPath");
+      
       const { error } = await withTimeout(supabase.auth.signOut(), 5000, 'signout');
       if (error) {
         toast.error('Erro ao sair: ' + error.message);
@@ -178,6 +184,8 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.warn('Signout timeout, proceeding anyway');
+      // Still clear lastPath even if signout failed
+      sessionStorage.removeItem("lastPath");
       navigate('/');
     }
   };

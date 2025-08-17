@@ -82,7 +82,9 @@ export default function AlterarSenha() {
       description: "Sua senha foi alterada com sucesso.",
     });
     
-    navigate("/dashboard");
+    const lastPath = sessionStorage.getItem("lastPath");
+    const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/alterar-senha" ? lastPath : "/";
+    navigate(redirectTo, { replace: true });
   };
 
   const passwordStrength = (password: string) => {
@@ -110,11 +112,15 @@ export default function AlterarSenha() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => {
+              const lastPath = sessionStorage.getItem("lastPath");
+              const redirectTo = lastPath && lastPath !== "/alterar-senha" ? lastPath : "/dashboard";
+              navigate(redirectTo);
+            }}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para Minha Conta
+            Voltar
           </Button>
           
           <div className="flex items-center gap-3 mb-2">
@@ -265,7 +271,11 @@ export default function AlterarSenha() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => {
+                    const lastPath = sessionStorage.getItem("lastPath");
+                    const redirectTo = lastPath && lastPath !== "/alterar-senha" ? lastPath : "/dashboard";
+                    navigate(redirectTo);
+                  }}
                   className="flex-1"
                 >
                   Cancelar

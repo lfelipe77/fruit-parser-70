@@ -73,6 +73,8 @@ import MyTickets from '@/pages/MyTickets';
 import Raffles from '@/pages/Raffles';
 import AdminRaffles from '@/pages/admin/AdminRaffles';
 import AdminPayouts from '@/pages/AdminPayouts';
+import LastPathKeeper from '@/components/LastPathKeeper';
+import { useAuth } from '@/hooks/useAuth';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -137,8 +139,12 @@ function VisitLogger() {
 
 // App component with non-blocking rendering
 const AppContent = () => {
+  const { session } = useAuth();
+  const isAuthenticated = !!session;
+
   return (
     <>
+      <LastPathKeeper isAuthenticated={isAuthenticated} />
       <DebugBanner />
       <VisitLogger />
       <ScrollToTop />

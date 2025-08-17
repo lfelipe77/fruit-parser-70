@@ -37,8 +37,8 @@ export default function AdminProtectedRoute({ children }: { children: React.Reac
   }
   
   if (state === "deny") {
-    console.log('[AdminProtectedRoute] Access denied, redirecting to dashboard');
-    return <Navigate to="/dashboard" replace />;
+    console.log('[AdminProtectedRoute] Access denied, redirecting to home');
+    return <Navigate to="/" replace />;
   }
   
   console.log('[AdminProtectedRoute] Access granted, rendering children');

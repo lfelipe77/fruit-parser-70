@@ -46,8 +46,10 @@ async function oauthEarly() {
       if (r.error) throw r.error;
     }
 
-    // Clean URL without reloading; then let React boot with the stored session.
-    history.replaceState(null, '', `${window.location.origin}/#/dashboard`);
+    // Clean URL without reloading; restore to home instead of forcing dashboard
+    const lastPath = sessionStorage.getItem("lastPath");
+    const restoreTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
+    history.replaceState(null, '', `${window.location.origin}/#${restoreTo}`);
   } catch (e) {
     console.error('[oauth-early] failed', e);
     history.replaceState(null, '', `${window.location.origin}/#/login`);

@@ -276,9 +276,9 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                     Compartilhar Ganhável
                   </Button>
                   
-                  <Link to="/dashboard" className="block">
+                  <Link to="/my-tickets" className="block">
                     <Button variant="secondary" className="w-full">
-                      Ver Meus Ganhaveis
+                      Ver Meus Tickets
                     </Button>
                   </Link>
                   

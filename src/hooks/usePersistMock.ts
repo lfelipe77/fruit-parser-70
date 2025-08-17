@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./useAuth";
 
 export function usePersistMock(
   raffleId: string | undefined, 
@@ -7,10 +8,11 @@ export function usePersistMock(
   unitPrice: number, 
   numbers: string[]
 ) {
+  const { user } = useAuth();
   const once = useRef(false);
 
   useEffect(() => {
-    if (once.current || !raffleId || !qty || !unitPrice || numbers.length === 0) return;
+    if (once.current || !raffleId || !qty || !unitPrice || numbers.length === 0 || !user?.id) return;
     once.current = true;
 
     const providerRef = `MOCK_${raffleId}_${Date.now()}`;
@@ -18,11 +20,12 @@ export function usePersistMock(
     const executePurchase = async () => {
       try {
         const result = await supabase.rpc("record_mock_purchase", {
+          p_buyer_user_id: user.id,
           p_raffle_id: raffleId,
           p_qty: qty,
           p_unit_price: unitPrice,
           p_numbers: numbers,
-          p_provider_ref: providerRef,
+          p_payment_provider: "mock"
         });
 
         if (result.error) {
@@ -51,5 +54,5 @@ export function usePersistMock(
     };
 
     executePurchase();
-  }, [raffleId, qty, unitPrice, numbers]);
+  }, [raffleId, qty, unitPrice, numbers, user?.id]);
 }

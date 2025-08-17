@@ -217,7 +217,11 @@ export default function LanceSeuGanhavel() {
       setSuccessMsg("Ganhavel enviado para análise!");
       setToastMsg("✅ Ganhavel lançado! Status: Pendente. Ele já está em Admin → Pendentes.");
       setToastOpen(true);
-      redirectTimerRef.current = window.setTimeout(() => navigate("/dashboard"), 1800);
+      redirectTimerRef.current = window.setTimeout(() => {
+        const lastPath = sessionStorage.getItem("lastPath");
+        const redirectTo = lastPath && lastPath !== "/lance-seu-ganhavel" ? lastPath : "/";
+        navigate(redirectTo);
+      }, 1800);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err?.message ?? "Erro ao criar Ganhavel.");
@@ -262,9 +266,9 @@ export default function LanceSeuGanhavel() {
             <Link
               to="/dashboard"
               className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
-              title="Voltar"
+              title="Ir para Dashboard"
             >
-              ← Voltar
+              📊 Dashboard
             </Link>
           </div>
         </div>

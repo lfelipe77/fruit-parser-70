@@ -80,11 +80,12 @@ export default function Login() {
   }, []);
 
   // Redirect if already logged in
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/dashboard');
-    }
-  }, [user, loading, navigate]);
+  // Auto-redirect is now handled by LastPathKeeper, remove forced dashboard redirect
+  // useEffect(() => {
+  //   if (!loading && user) {
+  //     navigate('/dashboard');
+  //   }
+  // }, [user, loading, navigate]);
 
   const validateForm = () => {
     try {

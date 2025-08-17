@@ -24,9 +24,13 @@ export default function AuthCallback() {
             return;
           }
           // success
-          console.log('[AuthCallback] Session exchange successful, redirecting to dashboard');
+          console.log('[AuthCallback] Session exchange successful, navigating to last path');
           setMsg('Login concluído! Redirecionando...');
-          setTimeout(() => navigate('/dashboard'), 500);
+          setTimeout(() => {
+            const lastPath = sessionStorage.getItem("lastPath");
+            const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
+            navigate(redirectTo, { replace: true });
+          }, 500);
           return;
         }
 

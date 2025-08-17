@@ -150,7 +150,7 @@ export default function PaymentSuccess() {
 
               <div className="space-y-3">
                 <Button asChild className="w-full">
-                  <Link to="/dashboard">
+                  <Link to="/my-tickets">
                     <ArrowRight className="w-4 h-4 mr-2" />
                     Ver Meus Tickets
                   </Link>

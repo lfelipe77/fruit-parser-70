@@ -112,11 +112,12 @@ export default function SignUp() {
   }, []);
 
   // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
+  // Auto-redirect is now handled by LastPathKeeper, remove forced dashboard redirect
+  // useEffect(() => {
+  //   if (user) {
+  //     navigate('/dashboard');
+  //   }
+  // }, [user, navigate]);
 
   // Auto-fill form when user logs in with Google
   useEffect(() => {
