@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import {
   Trophy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMockPayment } from "@/hooks/useMockPayment";
 
 interface PaymentSuccessData {
   rifaId: string;
@@ -34,8 +35,11 @@ export default function PagamentoSucesso() {
   const navigate = useNavigate();
   const { rifaId } = useParams();
   const { toast } = useToast();
+  const { createMockPayment, loading: mockPaymentLoading } = useMockPayment();
+  const hasProcessedPayment = useRef(false);
+
   const paymentData: PaymentSuccessData = location.state || {
-    rifaId: "honda-civic-0km-2024",
+    rifaId: rifaId || "honda-civic-0km-2024",
     rifaTitle: "Honda Civic 0KM 2024",
     rifaImage: "/src/assets/honda-civic-2024.jpg",
     selectedNumbers: ["(12-43-24-56-78-90)", "(34-67-89-12-45-78)", "(56-89-23-45-67-34)"],
@@ -45,6 +49,20 @@ export default function PagamentoSucesso() {
     paymentId: "MP_1234567890",
     paymentDate: new Date().toISOString()
   };
+
+  // Process mock payment once
+  useEffect(() => {
+    if (!hasProcessedPayment.current && paymentData.rifaId) {
+      hasProcessedPayment.current = true;
+      
+      createMockPayment({
+        raffleId: paymentData.rifaId,
+        quantity: paymentData.quantity,
+        unitPrice: paymentData.totalAmount / paymentData.quantity,
+        selectedNumbers: paymentData.selectedNumbers
+      });
+    }
+  }, [paymentData, createMockPayment]);
 
 
   const handleDownloadReceipt = () => {

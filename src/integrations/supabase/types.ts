@@ -1351,20 +1351,6 @@ export type Database = {
           progress_pct_money: number | null
           raffle_id: string | null
         }
-        Insert: {
-          amount_raised?: never
-          goal_amount?: never
-          last_paid_at?: never
-          progress_pct_money?: never
-          raffle_id?: string | null
-        }
-        Update: {
-          amount_raised?: never
-          goal_amount?: never
-          last_paid_at?: never
-          progress_pct_money?: never
-          raffle_id?: string | null
-        }
         Relationships: []
       }
       raffles_public: {
@@ -2097,7 +2083,7 @@ export type Database = {
         | "rejected"
         | "closed"
         | "delivered"
-      ticket_status: "reserved" | "paid" | "canceled"
+      ticket_status: "reserved" | "paid" | "canceled" | "issued" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2235,7 +2221,7 @@ export const Constants = {
         "closed",
         "delivered",
       ],
-      ticket_status: ["reserved", "paid", "canceled"],
+      ticket_status: ["reserved", "paid", "canceled", "issued", "cancelled"],
     },
   },
 } as const
