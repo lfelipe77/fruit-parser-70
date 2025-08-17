@@ -350,10 +350,10 @@ export default function AdminRaffles() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingRaffle ? 'Editar Rifa' : 'Nova Rifa'}
+                {editingRaffle ? 'Editar Ganhavel' : 'Novo Ganhavel'}
               </DialogTitle>
               <DialogDescription>
-                {editingRaffle ? 'Edite as informações da rifa.' : 'Crie uma nova rifa preenchendo as informações abaixo.'}
+                {editingRaffle ? 'Edite as informações do ganhavel.' : 'Crie um novo ganhavel preenchendo as informações abaixo.'}
               </DialogDescription>
             </DialogHeader>
             
