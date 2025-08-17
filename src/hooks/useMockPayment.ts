@@ -22,7 +22,7 @@ export function useMockPayment() {
     processedRef.current = true;
 
     try {
-      const providerRef = `MOCK_${nanoid()}`;
+      const providerRef = `MOCK_${data.raffleId}_${Date.now()}`;
       const totalAmount = data.quantity * data.unitPrice;
 
       // Check if transaction already exists (idempotency)
