@@ -7,8 +7,7 @@ import Navigation from "@/components/Navigation";
 import { CategoriasSEO } from "@/components/SEOPages";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CategoryStats, SubcategoryStats, formatCurrency, getProgressPercent } from "@/types/raffles";
-import { RafflePublicMoney } from "@/types/public-views";
+import { CategoryStats, SubcategoryStats, formatCurrency, getProgressPercent, RaffleCardInfo } from "@/types/raffles";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import RaffleCard from "@/components/RaffleCard";
 import { formatBRL } from "@/lib/formatters";
@@ -17,7 +16,7 @@ export default function CategoriesView() {
   const { categoria, subcategoria } = useParams();
   const [categories, setCategories] = useState<CategoryStats[]>([]);
   const [subcategories, setSubcategories] = useState<SubcategoryStats[]>([]);
-  const [raffles, setRaffles] = useState<RafflePublicMoney[]>([]);
+  const [raffles, setRaffles] = useState<RaffleCardInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
   const currentCategory = categories.find(c => c.slug === categoria);
@@ -76,7 +75,7 @@ export default function CategoriesView() {
         .limit(12);
       
       if (!cancelled) {
-        setRaffles((data || []) as RafflePublicMoney[]);
+        setRaffles((data || []) as RaffleCardInfo[]);
         setLoading(false);
       }
     }

@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { RaffleCardInfo } from "@/types/public-views";
+import { RaffleCardInfo } from "@/types/raffles";
 import RaffleCard from "./RaffleCard";
 
 function SkeletonCard() {
@@ -27,35 +27,38 @@ export default function EmAltaRecentesSection() {
   React.useEffect(() => {
     let cancelled = false;
     
+    const SELECT =
+      "id,title,description,image_url,status," +
+      "ticket_price,goal_amount,amount_raised,progress_pct_money," +
+      "last_paid_at,created_at,draw_date," +
+      "category_name,subcategory_name," +
+      "location_city,location_state,participants_count";
+    
     const fetchData = async () => {
       setLoading(true);
       setErr(null);
       try {
-        const base = () => (supabase as any)
-          .from('raffles_public_money_ext')
-          .select('id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count');
-        
-        const [a, b] = await Promise.all([
-          base().order("last_paid_at", { ascending: false }).limit(3),
-          base().order("created_at", { ascending: false }).limit(3),
+        const [emAlta, recentes] = await Promise.all([
+          supabase
+            .from("raffles_public_money_ext")
+            .select(SELECT)
+            .order("last_paid_at", { ascending: false, nullsFirst: false }) // nulls last
+            .limit(12)
+            .returns<RaffleCardInfo[]>(),
+          supabase
+            .from("raffles_public_money_ext")
+            .select(SELECT)
+            .order("created_at", { ascending: false })
+            .limit(24)
+            .returns<RaffleCardInfo[]>()
         ]);
+        
         if (!cancelled) {
-          if (a.error) throw a.error;
-          if (b.error) throw b.error;
-          setTop((a.data ?? []) as RaffleCardInfo[]);
-          let recentData = (b.data ?? []) as RaffleCardInfo[];
-          // Fallbacks for "Recentes": draw_date desc, then id desc
-          if (recentData.length === 0) {
-            const fb1 = await base().order('draw_date', { ascending: false }).limit(3);
-            if (fb1.error) throw fb1.error;
-            recentData = (fb1.data ?? []) as RaffleCardInfo[];
-            if (recentData.length === 0) {
-              const fb2 = await base().order('id', { ascending: false }).limit(3);
-              if (fb2.error) throw fb2.error;
-              recentData = (fb2.data ?? []) as RaffleCardInfo[];
-            }
-          }
-          setRecent(recentData);
+          if (emAlta.error) throw emAlta.error;
+          if (recentes.error) throw recentes.error;
+          
+          setTop((emAlta.data ?? []).slice(0, 3));
+          setRecent((recentes.data ?? []).slice(0, 3));
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");

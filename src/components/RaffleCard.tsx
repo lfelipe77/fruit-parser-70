@@ -1,83 +1,55 @@
+import { brl, timeAgo, RaffleCardInfo } from "@/types/raffles";
 import { Link } from "react-router-dom";
-import { Progress } from "@/components/ui/progress";
-import { useRelativeTime } from "@/hooks/useRelativeTime";
-import { formatBRL } from "@/lib/formatters";
-import { RaffleCardInfo } from "@/types/public-views";
 
-type CardRow = RaffleCardInfo & {
-  description?: string | null;
-  created_at?: string | null;
-  category_name?: string | null;
-  subcategory_name?: string | null;
-  location_city?: string | null;
-  location_state?: string | null;
-  participants_count?: number | null;
-};
-
-export default function RaffleCard({ r }: { r: CardRow }) {
-  // Always use backend progress_pct_money - no local calculations
-  const pct = r.progress_pct_money ?? 0;
-  const loc = [r.location_city, r.location_state].filter(Boolean).join(", ");
+export function RaffleCard({ r }: { r: RaffleCardInfo }) {
+  const pct = Math.max(0, Math.min(100, r.progress_pct_money ?? 0));
+  const moneyNow = r.amount_raised ?? 0;
+  const moneyGoal = r.goal_amount ?? 0;
+  const cityState = [r.location_city, r.location_state].filter(Boolean).join(" • ");
 
   return (
-    <Link to={`/ganhavel/${r.id}`} className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
-      {r.image_url ? (
-        <img src={r.image_url} alt={r.title} className="h-48 w-full object-cover" />
-      ) : (
-        <div className="h-48 w-full bg-muted" />
-      )}
-      <div className="p-4 space-y-3">
-        {/* Title */}
-        <h3 className="text-lg font-semibold text-foreground line-clamp-1">{r.title}</h3>
-        
-        {/* Description */}
-        {r.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{r.description}</p>
+    <div className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+      {/* Image */}
+      <div className="h-44 w-full overflow-hidden rounded-lg">
+        {r.image_url ? (
+          <img src={r.image_url} alt={r.title} className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="h-full w-full bg-muted" />
         )}
-
-        {/* Location */}
-        {loc && (
-          <div className="text-sm text-muted-foreground">{loc}</div>
-        )}
-
-        {/* Amount raised and goal */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-lg">
-            <span className="font-semibold text-foreground">{formatBRL(r.amount_raised)}</span>
-            <span className="text-muted-foreground">de {formatBRL(r.goal_amount)}</span>
-          </div>
-          
-          {/* Progress bar - backend truth only */}
-          <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          
-          {/* Progress info */}
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{pct}% arrecadado</span>
-            {!!r.participants_count && (
-              <span className="text-muted-foreground">{r.participants_count} participantes</span>
-            )}
-          </div>
-        </div>
-
-        {/* Last purchase or launch date */}
-        <div className="text-sm text-muted-foreground">
-          {r.last_paid_at ? (
-            <span>Última venda: {useRelativeTime(r.last_paid_at, "pt-BR")}</span>
-          ) : (
-            <span>—</span>
-          )}
-        </div>
-
-        {/* Buy button */}
-        <button className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-          Comprar Bilhete
-        </button>
       </div>
-    </Link>
+
+      {/* Title + excerpt */}
+      <div className="p-4 space-y-3">
+        <h3 className="font-semibold leading-snug line-clamp-1">{r.title}</h3>
+        {r.description && (
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.description}</p>
+        )}
+
+        {/* Money line */}
+        <p className="text-sm">
+          <span className="font-semibold">{brl(moneyNow)}</span> de <span>{brl(moneyGoal)}</span>
+        </p>
+
+        {/* Green progress bar (server truth) */}
+        <div className="h-2 rounded bg-muted overflow-hidden">
+          <div className="h-2 bg-green-500" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="text-xs">{pct}% arrecadado</p>
+
+        {/* Participants + last sale */}
+        <div className="text-xs text-muted-foreground space-y-1">
+          <div>{(r.participants_count ?? 0)} participantes</div>
+          <div>{r.last_paid_at ? `Última venda: ${timeAgo(r.last_paid_at)}` : "Sem vendas ainda"}</div>
+          {cityState && <div>{cityState}</div>}
+        </div>
+
+        {/* CTA */}
+        <Link to={`/ganhavel/${r.id}`} className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+          Comprar Bilhete
+        </Link>
+      </div>
+    </div>
   );
 }
+
+export default RaffleCard;

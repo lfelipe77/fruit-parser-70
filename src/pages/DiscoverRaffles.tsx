@@ -7,8 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CategoryStats, formatCurrency, formatDate, getProgressPercent } from "@/types/raffles";
-import { RafflePublicMoney } from "@/types/public-views";
+import { CategoryStats, formatCurrency, formatDate, getProgressPercent, RaffleCardInfo } from "@/types/raffles";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import RaffleCard from "@/components/RaffleCard";
 import { Link } from "react-router-dom";
@@ -16,7 +15,7 @@ import { Link } from "react-router-dom";
 const PAGE_SIZE = 12;
 
 export default function DiscoverRaffles() {
-  const [raffles, setRaffles] = useState<RafflePublicMoney[]>([]);
+  const [raffles, setRaffles] = useState<RaffleCardInfo[]>([]);
   const [categories, setCategories] = useState<CategoryStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,7 +95,7 @@ export default function DiscoverRaffles() {
       
       if (!cancelled) {
         if (!error) {
-          setRaffles((data || []) as RafflePublicMoney[]);
+          setRaffles((data || []) as RaffleCardInfo[]);
           setTotalCount(count || 0);
         }
         setLoading(false);

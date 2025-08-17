@@ -11,19 +11,20 @@ type CategoryInfo = {
 };
 
 type SubcategoryInfo = {
-  id: string;
-  name: string;
+  id: string | number;
   slug: string;
-  category_id: number;
-  active_count: number;
+  nome: string;
+  category_slug: string;
+  active_raffles: number;
 };
 
 type SubcatRow = {
-  id: string;
-  name: string;
+  id: string | number;
   slug: string;
-  category_id: number;
-  active_count: number;
+  nome: string;
+  category_slug: string;
+  sort_order: number;
+  active_raffles: number;
 };
 
 type RaffleRow = {
@@ -103,33 +104,50 @@ export default function SubcategoryDetailPage() {
         setCategoryInfo(categoryData);
 
         // Fetch subcategory info
-        const { data: subcatData, error: subcatError } = await supabase
+        const subcatQuery = await (supabase as any)
           .from("subcategory_stats")
           .select("*")
           .eq("category_slug", categorySlug)
-          .eq("slug", subSlug)
+          .eq("subcategory_slug", subSlug)
           .maybeSingle();
 
-        if (subcatError) {
-          console.error("[SubcategoryDetail] Subcategory error:", subcatError);
+        if (subcatQuery.error) {
+          console.error("[SubcategoryDetail] Subcategory error:", subcatQuery.error);
           setError("Subcategoria não encontrada");
           setLoading(false);
           return;
         }
 
-        setSubcategoryInfo(subcatData);
+        if (subcatQuery.data) {
+          const sub = subcatQuery.data as any;
+          setSubcategoryInfo({
+            id: sub.id,
+            slug: sub.subcategory_slug,
+            nome: sub.subcategory_name,
+            category_slug: sub.category_slug,
+            active_raffles: sub.raffles_count
+          });
+        }
 
         // Fetch all subcategories for chips
-        const { data: allSubcatsData, error: allSubcatsError } = await supabase
+        const subsQuery = await supabase
           .from('subcategory_stats')
           .select('*')
           .eq('category_slug', categorySlug)
-          .order('name');
+          .order('subcategory_name');
 
-        if (allSubcatsError) {
-          console.error("[SubcategoryDetail] All subcategories error:", allSubcatsError);
+        if (subsQuery.error) {
+          console.error("[SubcategoryDetail] All subcategories error:", subsQuery.error);
         } else {
-          setSubcategories(allSubcatsData || []);
+          const mappedSubs = (subsQuery.data || []).map((sub: any) => ({
+            id: sub.id,
+            slug: sub.subcategory_slug,
+            nome: sub.subcategory_name,
+            category_slug: sub.category_slug,
+            sort_order: 0,
+            active_raffles: sub.raffles_count
+          }));
+          setSubcategories(mappedSubs);
         }
 
         // Fetch raffles
@@ -176,7 +194,7 @@ export default function SubcategoryDetailPage() {
             )}
           </div>
           
-          <h2 className="text-xl text-muted-foreground mb-4">{subcategoryInfo?.name}</h2>
+          <h2 className="text-xl text-muted-foreground mb-4">{subcategoryInfo?.nome}</h2>
 
           {/* Subcategory chips */}
           {subcategories.length > 0 && (
@@ -188,7 +206,7 @@ export default function SubcategoryDetailPage() {
                   className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => window.location.href = `#/categorias/${categorySlug}/${sub.slug}`}
                 >
-                  {sub.name} ({sub.active_count})
+                  {sub.nome} ({sub.active_raffles})
                 </Badge>
               ))}
             </div>
