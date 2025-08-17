@@ -12,9 +12,25 @@ type CategoryInfo = {
 
 type SubcatRow = {
   id: string;
-  subcategory_slug: string;
-  subcategory_name: string;
-  raffles_count: number;
+  name: string;
+  slug: string;
+  category_id: number;
+  active_count: number;
+};
+
+type RaffleRow = {
+  id: string;
+  title: string;
+  image_url: string | null;
+  status: string;
+  category_slug: string | null;
+  subcategory_slug: string | null;
+  amount_raised: number | null;
+  goal_amount: number | null;
+  progress_pct_money: number | null;
+  last_paid_at: string | null;
+  ticket_price: number | null;
+  created_at: string | null;
 };
 
 export default function CategoryDetailPage() {
@@ -41,7 +57,6 @@ export default function CategoryDetailPage() {
     const { data, error } = await supabase
       .from('raffles_public_money_ext')
       .select('*')
-      .eq('category_slug', slug)
       .order('created_at', { ascending: false })
       .limit(60);
 
@@ -79,16 +94,24 @@ export default function CategoryDetailPage() {
         setCategoryInfo(categoryData);
 
         // Fetch subcategories
-        const { data: subs, error: subsError } = await supabase
-          .from('subcategory_stats')
-          .select('id, subcategory_slug, subcategory_name, raffles_count')
-          .eq('category_slug', categorySlug)
-          .order('subcategory_name');
+        try {
+          const subResult = await (supabase as any)
+            .from('subcategory_stats')
+            .select('*')
+            .eq('category_slug', categorySlug)
+            .order('name', { ascending: true });
+          
+          const subRows = subResult.data as SubcatRow[];
+          const subErr = subResult.error;
 
-        if (subsError) {
-          console.error("[CategoryDetail] Subcategories error:", subsError);
-        } else {
-          setSubcategories(subs || []);
+          if (subErr) {
+            console.warn("[CategoryDetail] sub error:", subErr);
+          } else {
+            setSubcategories(subRows || []);
+          }
+        } catch (e) {
+          console.warn("[CategoryDetail] subcategory fetch failed:", e);
+          setSubcategories([]);
         }
 
         // Fetch raffles
@@ -143,9 +166,9 @@ export default function CategoryDetailPage() {
                   key={sub.id}
                   variant="secondary"
                   className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                  onClick={() => window.location.href = `#/categorias/${categorySlug}/${sub.subcategory_slug}`}
+                  onClick={() => window.location.href = `#/categorias/${categorySlug}/${sub.slug}`}
                 >
-                  {sub.subcategory_name} ({sub.raffles_count})
+                  {sub.name} ({sub.active_count})
                 </Badge>
               ))}
             </div>
