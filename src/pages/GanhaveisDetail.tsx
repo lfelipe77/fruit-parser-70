@@ -105,13 +105,13 @@ export default function GanhaveisDetail() {
       // Load extras from base table
       const { data: baseData, error: baseError } = await supabase
         .from("raffles")
-        .select("user_id,description")
+        .select("user_id,description,vendor_link")
         .eq("id", id)
         .maybeSingle();
       if (baseError) console.warn("extras error", baseError);
       setExtrasRow(baseData ? { 
         user_id: baseData.user_id, 
-        vendor_url: "", 
+        vendor_url: baseData.vendor_link || "", 
         location_city: "", 
         location_state: "" 
       } : null);
@@ -282,6 +282,24 @@ export default function GanhaveisDetail() {
             >
               Comprar {qty} bilhetes
             </button>
+
+            {/* Direct Purchase Link */}
+            {extrasRow?.vendor_url && (
+              <div className="mt-6 pt-6 border-t border-emerald-200">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+                  <h4 className="text-md font-semibold text-blue-800 mb-3">🛒 Compra Direta</h4>
+                  <p className="text-sm text-blue-700 mb-3">Prefere comprar direto com o vendedor?</p>
+                  <a
+                    href={extrasRow.vendor_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200"
+                  >
+                    🔗 Compre Direto com o Vendedor
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* Regulamento Section */}
             <div className="mt-6 pt-6 border-t border-emerald-200">
