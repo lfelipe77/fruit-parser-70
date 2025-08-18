@@ -152,7 +152,6 @@ export default function ConfirmacaoPagamento() {
           user_id: user.id,
           buyer_user_id: user.id,
           amount: totalAmount,
-          type: 'charge',
           status: 'paid',
           provider: 'mock',
           provider_ref: providerRef,
@@ -215,8 +214,15 @@ export default function ConfirmacaoPagamento() {
       
     } catch (error) {
       console.error('[ConfirmacaoPagamento] Payment error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      
+      const err = error as any;
+      console.error('[ConfirmacaoPagamento] Supabase error details:', {
+        code: err?.code,
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        constraint: err?.constraint,
+      });
+      const errorMessage = err?.message ?? (error instanceof Error ? error.message : 'Erro desconhecido');
       // Show error toast instead of redirecting to error page
       toast.error('Erro no pagamento: ' + errorMessage);
     } finally {
