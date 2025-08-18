@@ -14,29 +14,19 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash2, Upload, Shield } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { GanhavelEditor } from '@/components/admin/GanhavelEditor';
 
-interface Raffle {
+interface Ganhavel {
   id: string;
   title: string;
-  description: string;
-  product_name: string;
-  product_value: number;
-  total_tickets: number;
-  ticket_price: number;
-  image_url: string;
-  status: string;
-  created_at: string;
-  user_id: string;
-}
-
-interface RaffleFormData {
-  title: string;
-  description: string;
-  product_name: string;
-  product_value: string;
-  total_tickets: string;
-  ticket_price: string;
-  status: string;
+  description: string | null;
+  product_name: string | null;
+  total_tickets: number | null;
+  ticket_price: number | null;
+  goal_amount: number | null;
+  image_url: string | null;
+  status: string | null;
+  created_at: string | null;
 }
 
 export default function AdminRaffles() {
@@ -59,6 +49,7 @@ export default function AdminRaffles() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingGanhavelId, setEditingGanhavelId] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
