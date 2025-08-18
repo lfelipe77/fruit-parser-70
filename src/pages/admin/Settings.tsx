@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,7 @@ import {
   Gift,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const platformSettings = {
   general: {
@@ -78,14 +79,7 @@ const platformSettings = {
   },
 };
 
-import { categoriesData as realCategoriesData } from "@/data/categoriesData";
-
-const categoriesDataForAdmin = Object.values(realCategoriesData).map((cat, index) => ({
-  id: index + 1,
-  name: cat.name,
-  subcategories: cat.subcategories,
-  status: "active" as const,
-}));
+// Categories and subcategories will be fetched from database
 
 const affiliatePartnersData = [
   { id: 1, name: "Amazon", domain: "amazon.com.br", status: "active", commission: 5 },
@@ -96,12 +90,51 @@ const affiliatePartnersData = [
 
 export default function Settings() {
   const [settings, setSettings] = useState(platformSettings);
-  const [categories, setCategories] = useState(categoriesDataForAdmin);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
   const [affiliatePartners, setAffiliatePartners] = useState(affiliatePartnersData);
-  const [newCategory, setNewCategory] = useState({ name: "", subcategories: [] });
-  const [newSubcategory, setNewSubcategory] = useState("");
+  const [newCategory, setNewCategory] = useState({ nome: "", slug: "", descricao: "", icone_url: "" });
+  const [newSubcategory, setNewSubcategory] = useState({ name: "", slug: "", category_id: null });
   const [newPartner, setNewPartner] = useState({ name: "", domain: "", commission: 0 });
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Fetch categories and subcategories from database
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*')
+          .order('sort_order', { ascending: true });
+
+        if (categoriesError) throw categoriesError;
+
+        // Fetch subcategories
+        const { data: subcategoriesData, error: subcategoriesError } = await supabase
+          .from('subcategories')
+          .select('*, categories(nome)')
+          .order('sort_order', { ascending: true });
+
+        if (subcategoriesError) throw subcategoriesError;
+
+        setCategories(categoriesData || []);
+        setSubcategories(subcategoriesData || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar as categorias.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
 
   const handleSaveSettings = () => {
     toast({
@@ -110,74 +143,120 @@ export default function Settings() {
     });
   };
 
-  const handleAddCategory = () => {
-    if (!newCategory.name.trim()) return;
+  const handleAddCategory = async () => {
+    if (!newCategory.nome.trim()) return;
     
-    const category = {
-      id: categories.length + 1,
-      name: newCategory.name,
-      subcategories: newCategory.subcategories,
-      status: "active" as const,
-    };
-    
-    setCategories([...categories, category]);
-    setNewCategory({ name: "", subcategories: [] });
-    toast({
-      title: "Categoria adicionada",
-      description: `A categoria "${category.name}" foi criada com sucesso.`,
-    });
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([{
+          nome: newCategory.nome,
+          slug: newCategory.slug || newCategory.nome.toLowerCase().replace(/\s+/g, '-'),
+          descricao: newCategory.descricao,
+          icone_url: newCategory.icone_url,
+          destaque: false
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories([...categories, data]);
+      setNewCategory({ nome: "", slug: "", descricao: "", icone_url: "" });
+      toast({
+        title: "Categoria adicionada",
+        description: `A categoria "${data.nome}" foi criada com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error adding category:', error);
+      toast({
+        title: "Erro ao adicionar categoria",
+        description: "Não foi possível adicionar a categoria.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleAddSubcategory = (categoryId: number) => {
-    if (!newSubcategory.trim()) return;
+  const handleAddSubcategory = async (categoryId: number) => {
+    if (!newSubcategory.name.trim()) return;
     
-    const updatedCategories = categories.map(cat => {
-      if (cat.id === categoryId) {
-        return {
-          ...cat,
-          subcategories: [...cat.subcategories, {
-            name: newSubcategory,
-            items: [],
-            count: 0,
-            slug: newSubcategory.toLowerCase().replace(/\s+/g, '-')
-          }]
-        };
-      }
-      return cat;
-    });
-    
-    setCategories(updatedCategories);
-    setNewSubcategory("");
-    toast({
-      title: "Subcategoria adicionada",
-      description: `A subcategoria "${newSubcategory}" foi adicionada com sucesso.`,
-    });
+    try {
+      const { data, error } = await supabase
+        .from('subcategories')
+        .insert([{
+          name: newSubcategory.name,
+          slug: newSubcategory.slug || newSubcategory.name.toLowerCase().replace(/\s+/g, '-'),
+          category_id: categoryId
+        }])
+        .select('*, categories(nome)')
+        .single();
+
+      if (error) throw error;
+
+      setSubcategories([...subcategories, data]);
+      setNewSubcategory({ name: "", slug: "", category_id: null });
+      toast({
+        title: "Subcategoria adicionada",
+        description: `A subcategoria "${data.name}" foi adicionada com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error adding subcategory:', error);
+      toast({
+        title: "Erro ao adicionar subcategoria",
+        description: "Não foi possível adicionar a subcategoria.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRemoveSubcategory = (categoryId: number, subcategoryIndex: number) => {
-    const updatedCategories = categories.map(cat => {
-      if (cat.id === categoryId) {
-        return {
-          ...cat,
-          subcategories: cat.subcategories.filter((_, index) => index !== subcategoryIndex)
-        };
-      }
-      return cat;
-    });
-    
-    setCategories(updatedCategories);
-    toast({
-      title: "Subcategoria removida",
-      description: "A subcategoria foi removida com sucesso.",
-    });
+  const handleRemoveSubcategory = async (subcategoryId: string) => {
+    try {
+      const { error } = await supabase
+        .from('subcategories')
+        .delete()
+        .eq('id', subcategoryId);
+
+      if (error) throw error;
+
+      setSubcategories(subcategories.filter(sub => sub.id !== subcategoryId));
+      toast({
+        title: "Subcategoria removida",
+        description: "A subcategoria foi removida com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error removing subcategory:', error);
+      toast({
+        title: "Erro ao remover subcategoria",
+        description: "Não foi possível remover a subcategoria.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteCategory = (id: number) => {
-    setCategories(categories.filter(cat => cat.id !== id));
-    toast({
-      title: "Categoria removida",
-      description: "A categoria foi removida com sucesso.",
-    });
+  const handleDeleteCategory = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setCategories(categories.filter(cat => cat.id !== id));
+      // Also remove related subcategories from state
+      setSubcategories(subcategories.filter(sub => sub.category_id !== id));
+      toast({
+        title: "Categoria removida",
+        description: "A categoria foi removida com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast({
+        title: "Erro ao remover categoria",
+        description: "Não foi possível remover a categoria.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddPartner = () => {
@@ -431,77 +510,84 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {categories.map((category) => (
-                    <Card key={category.id}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="text-lg">{category.name}</CardTitle>
-                            <CardDescription>
-                              {category.subcategories.length} subcategorias
-                            </CardDescription>
-                          </div>
-                          <div className="flex gap-2">
-                            {getStatusBadge(category.status)}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-                                  <Trash2 className="h-3 w-3" />
+                {loading ? (
+                  <div className="text-center py-8">Carregando categorias...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {categories.map((category) => {
+                      const categorySubcategories = subcategories.filter(sub => sub.category_id === category.id);
+                      return (
+                        <Card key={category.id}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle className="text-lg">{category.nome}</CardTitle>
+                                <CardDescription>
+                                  {categorySubcategories.length} subcategorias
+                                </CardDescription>
+                              </div>
+                              <div className="flex gap-2">
+                                <Badge variant="outline" className="text-green-600 border-green-200">Ativo</Badge>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Remover Categoria</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja remover a categoria "{category.nome}"? Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteCategory(category.id)}>
+                                        Remover
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              <div className="flex flex-wrap gap-2">
+                                {categorySubcategories.map((sub) => (
+                                  <Badge key={sub.id} variant="secondary" className="flex items-center gap-1">
+                                    {sub.name}
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                      onClick={() => handleRemoveSubcategory(sub.id)}
+                                    >
+                                      ×
+                                    </Button>
+                                  </Badge>
+                                ))}
+                              </div>
+                              
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Nova subcategoria..."
+                                  value={newSubcategory.name}
+                                  onChange={(e) => setNewSubcategory({ ...newSubcategory, name: e.target.value })}
+                                  onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory(category.id)}
+                                />
+                                <Button size="sm" onClick={() => handleAddSubcategory(category.id)}>
+                                  <Plus className="h-4 w-4" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remover Categoria</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja remover a categoria "{category.name}"? Esta ação não pode ser desfeita.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteCategory(category.id)}>
-                                    Remover
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap gap-2">
-                            {category.subcategories.map((sub, index) => (
-                              <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                                {sub.name}
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                                  onClick={() => handleRemoveSubcategory(category.id, index)}
-                                >
-                                  ×
-                                </Button>
-                              </Badge>
-                            ))}
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="Nova subcategoria..."
-                              value={newSubcategory}
-                              onChange={(e) => setNewSubcategory(e.target.value)}
-                              onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory(category.id)}
-                            />
-                            <Button size="sm" onClick={() => handleAddSubcategory(category.id)}>
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -511,13 +597,42 @@ export default function Settings() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryName">Nome da Categoria</Label>
+                      <Input
+                        id="categoryName"
+                        placeholder="Ex: Esportes"
+                        value={newCategory.nome}
+                        onChange={(e) => setNewCategory({ ...newCategory, nome: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="categorySlug">Slug</Label>
+                      <Input
+                        id="categorySlug"
+                        placeholder="Ex: esportes"
+                        value={newCategory.slug}
+                        onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })}
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label htmlFor="categoryName">Nome da Categoria</Label>
+                    <Label htmlFor="categoryDescription">Descrição</Label>
+                    <Textarea
+                      id="categoryDescription"
+                      placeholder="Descrição da categoria..."
+                      value={newCategory.descricao}
+                      onChange={(e) => setNewCategory({ ...newCategory, descricao: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="categoryIcon">URL do Ícone</Label>
                     <Input
-                      id="categoryName"
-                      placeholder="Ex: Esportes"
-                      value={newCategory.name}
-                      onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                      id="categoryIcon"
+                      placeholder="https://example.com/icon.png"
+                      value={newCategory.icone_url}
+                      onChange={(e) => setNewCategory({ ...newCategory, icone_url: e.target.value })}
                     />
                   </div>
                   <Button onClick={handleAddCategory}>
