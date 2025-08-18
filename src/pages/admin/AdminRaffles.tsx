@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 export default function AdminRaffles() {
+  console.log("[AdminRaffles] Component loading...");
+  
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 

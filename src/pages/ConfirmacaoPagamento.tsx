@@ -22,10 +22,14 @@ type RaffleRow = {
 };
 
 export default function ConfirmacaoPagamento() {
+  console.log("[ConfirmacaoPagamento] Component loading...");
+  
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+
+  console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
 
   // Get quantity from URL
   const qty = Math.max(1, Number(new URLSearchParams(location.search).get("qty") ?? "1"));
@@ -120,7 +124,7 @@ export default function ConfirmacaoPagamento() {
 
       // 2) Inputs
       const now = Date.now();
-      const providerRef = `mock-${id}-${now}-${crypto.getRandomValues(new Uint32Array(1))[0]}`;
+      const providerRef = `mock-${id}-${now}-${Math.floor(Math.random() * 1e9)}`;
       const safeQty = Math.max(1, Number(qty || 1));
       const unitPrice = Number(raffle?.ticket_price ?? 0);
       const uniqueNumbers = Array.from({ length: safeQty }, (_, i) =>

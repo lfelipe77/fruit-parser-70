@@ -59,6 +59,7 @@ async function oauthEarly() {
 // Boot AFTER handling OAuth. Do not hard-redirect.
 (async () => {
   console.log('[MAIN] Starting app boot...');
+  console.log('[MAIN] Current URL:', window.location.href);
   try {
     await oauthEarly();
     console.log('[MAIN] OAuth early completed, rendering app...');
