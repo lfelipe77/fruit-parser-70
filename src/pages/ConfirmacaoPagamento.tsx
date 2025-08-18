@@ -11,6 +11,8 @@ import { formatBRL } from "@/lib/formatters";
 import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 type RaffleRow = {
   id: string;
@@ -23,6 +25,7 @@ export default function ConfirmacaoPagamento() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
 
   // Get quantity from URL
   const qty = Math.max(1, Number(new URLSearchParams(location.search).get("qty") ?? "1"));
@@ -104,6 +107,16 @@ export default function ConfirmacaoPagamento() {
   // Handle form submission
   const handlePayment = async () => {
     console.log("[ConfirmacaoPagamento] Starting payment process...");
+    
+    // Check if user is logged in
+    if (!user) {
+      console.log("[ConfirmacaoPagamento] User not logged in, redirecting to login");
+      // Store current path to return after login
+      sessionStorage.setItem("lastPath", location.pathname + location.search);
+      navigate("/login");
+      return;
+    }
+    
     setIsProcessing(true);
     
     try {
@@ -120,66 +133,91 @@ export default function ConfirmacaoPagamento() {
 
       console.log("[ConfirmacaoPagamento] Payment data:", {
         rifaId: id,
+        userId: user.id,
         qty,
         unitPrice: raffle.ticket_price,
         numbersCount: selectedNumbers.length,
         total
       });
 
-      // Record the mock purchase in database using the admin function
-      const providerRef = `mock-${id}-${Date.now()}`;
-      const uniqueNumbers = Array.from({ length: qty }, (_, i) => `N${Date.now()}-${i}`);
+      const providerRef = `payment-${id}-${Date.now()}`;
+      const totalAmount = qty * raffle.ticket_price;
       
-      console.log("[ConfirmacaoPagamento] Calling record_mock_purchase_admin...");
-      const { data: result, error } = await supabase.rpc("record_mock_purchase_admin", {
-        p_buyer_user_id: "00000000-0000-0000-0000-000000000000", // Anonymous buyer for now
-        p_raffle_id: id,
-        p_qty: qty,
-        p_unit_price: Number(raffle.ticket_price),
-        p_numbers: uniqueNumbers,
-        p_provider_ref: providerRef
-      });
+      // Create transaction
+      console.log("[ConfirmacaoPagamento] Creating transaction...");
+      const { data: transaction, error: txError } = await supabase
+        .from('transactions')
+        .insert({
+          raffle_id: id,
+          user_id: user.id,
+          amount: totalAmount,
+          status: 'paid',
+          provider: 'mock',
+          provider_payment_id: providerRef,
+          selected_numbers: selectedNumbers,
+          type: 'payment'
+        })
+        .select('id')
+        .single();
 
-      if (error) {
-        console.error('[ConfirmacaoPagamento] Payment recording error:', error);
-        throw error;
+      if (txError) {
+        console.error('[ConfirmacaoPagamento] Transaction creation error:', txError);
+        throw new Error('Falha ao criar transação: ' + txError.message);
       }
 
-      console.log('[ConfirmacaoPagamento] Payment recorded successfully:', result);
+      // Create tickets
+      console.log("[ConfirmacaoPagamento] Creating tickets...");
+      const ticketsData = Array.from({ length: qty }, (_, index) => ({
+        raffle_id: id,
+        user_id: user.id,
+        quantity: 1,
+        total_amount: raffle.ticket_price,
+        status: 'paid' as const,
+        transaction_id: transaction.id,
+        ticket_number: index + 1,
+        numbers: [selectedNumbers[index] || `N${Date.now()}-${index}`]
+      }));
+
+      const { error: ticketsError } = await supabase
+        .from('tickets')
+        .insert(ticketsData);
+
+      if (ticketsError) {
+        console.error('[ConfirmacaoPagamento] Tickets creation error:', ticketsError);
+        throw new Error('Falha ao criar bilhetes: ' + ticketsError.message);
+      }
+
+      console.log('[ConfirmacaoPagamento] Payment processed successfully');
+      
+      // Show success message
+      toast.success('Pagamento processado com sucesso! Você já está participando da rifa.');
       
       // Trigger raffle update event for real-time updates
-      console.log('[ConfirmacaoPagamento] Dispatching raffleUpdated event...');
       window.dispatchEvent(new CustomEvent('raffleUpdated', { 
         detail: { raffleId: id } 
       }));
 
-      console.log('[ConfirmacaoPagamento] Redirecting to success page...');
-      // Redirect to success page with selected numbers
-      navigate(`/ganhavel/${id}/pagamento-sucesso?qty=${qty}`, {
+      // Redirect to success page
+      navigate(`/ganhavel/${id}/pagamento-sucesso`, {
         state: {
           rifaId: id,
           rifaTitle: raffle?.title,
           rifaImage: raffle?.image_url,
           selectedNumbers: selectedNumbers,
           quantity: qty,
-          totalAmount: total,
+          totalAmount: totalAmount,
           paymentId: providerRef,
-          paymentDate: new Date().toISOString()
+          paymentDate: new Date().toISOString(),
+          organizerName: "Organizador" // TODO: get from raffle data
         }
       });
       
     } catch (error) {
       console.error('[ConfirmacaoPagamento] Payment error:', error);
-      // Redirect to error page with error details
-      navigate(`/ganhavel/${id}/pagamento-erro`, {
-        state: {
-          rifaId: id,
-          rifaTitle: raffle?.title,
-          errorType: 'failed',
-          errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
-          attemptCount: 1
-        }
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      
+      // Show error toast instead of redirecting to error page
+      toast.error('Erro no pagamento: ' + errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -195,7 +233,7 @@ export default function ConfirmacaoPagamento() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  if (loading) return <div className="p-6">Carregando…</div>;
+  if (loading || authLoading) return <div className="p-6">Carregando…</div>;
   if (!raffle) return <div className="p-6">Rifa não encontrada.</div>;
 
   return (
@@ -479,7 +517,9 @@ export default function ConfirmacaoPagamento() {
                 className="w-full mt-4"
                 size="lg"
               >
-                {isProcessing ? 'Processando...' : `Pagar ${formatBRL(total)}`}
+                {isProcessing ? 'Processando...' : 
+                 !user ? "Fazer Login para Pagar" : 
+                 `Pagar ${formatBRL(total)}`}
               </Button>
               
               <p className="text-xs text-muted-foreground text-center">
