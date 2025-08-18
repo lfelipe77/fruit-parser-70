@@ -219,6 +219,33 @@ export default function GanhaveisDetail() {
               />
             </TabsContent>
           </Tabs>
+
+          {/* Organizer Profile Section */}
+          <div className="mt-8">
+            <DetalhesOrganizador 
+              organizer={{
+                name: organizerData?.full_name || organizerData?.username || "Organizador",
+                username: organizerData?.username || "user",
+                bio: organizerData?.bio || "Organizador experiente na plataforma.",
+                location: organizerData?.location || "Brasil",
+                memberSince: "Janeiro 2023", // TODO: wire from created_at
+                totalGanhaveisLancados: 47, // TODO: aggregate from raffles
+                ganhaveisCompletos: 43, // TODO: aggregate completed
+                totalGanhaveisParticipados: 156, // TODO: aggregate participations
+                ganhaveisGanhos: 2, // TODO: aggregate wins
+                avaliacaoMedia: 4.8, // TODO: wire from ratings
+                totalAvaliacoes: 234, // TODO: aggregate reviews
+                avatar: organizerData?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+                website: organizerData?.website_url || null,
+                socialLinks: {
+                  instagram: organizerData?.instagram || null,
+                  facebook: organizerData?.facebook || null,
+                  twitter: organizerData?.twitter || null,
+                  linkedin: null // TODO: wire linkedin field
+                }
+              }}
+            />
+          </div>
         </div>
 
         {/* Right: money box */}
@@ -341,33 +368,6 @@ export default function GanhaveisDetail() {
             </div>
           </div>
         </aside>
-      </div>
-
-      {/* Organizer Profile Section */}
-      <div className="mt-8">
-        <DetalhesOrganizador 
-          organizer={{
-            name: organizerData?.full_name || organizerData?.username || "Organizador",
-            username: organizerData?.username || "user",
-            bio: organizerData?.bio || "Organizador experiente na plataforma.",
-            location: organizerData?.location || "Brasil",
-            memberSince: "Janeiro 2023", // TODO: wire from created_at
-            totalGanhaveisLancados: 47, // TODO: aggregate from raffles
-            ganhaveisCompletos: 43, // TODO: aggregate completed
-            totalGanhaveisParticipados: 156, // TODO: aggregate participations
-            ganhaveisGanhos: 2, // TODO: aggregate wins
-            avaliacaoMedia: 4.8, // TODO: wire from ratings
-            totalAvaliacoes: 234, // TODO: aggregate reviews
-            avatar: organizerData?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-            website: organizerData?.website_url || null,
-            socialLinks: {
-              instagram: organizerData?.instagram || null,
-              facebook: organizerData?.facebook || null,
-              twitter: organizerData?.twitter || null,
-              linkedin: null // TODO: wire linkedin field
-            }
-          }}
-        />
       </div>
       </div>
     </>
