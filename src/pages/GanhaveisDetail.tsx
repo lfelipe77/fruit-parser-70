@@ -220,40 +220,6 @@ export default function GanhaveisDetail() {
             </TabsContent>
           </Tabs>
 
-          {/* Campaign Progress Section - Mobile only */}
-          <div className="mt-6 md:hidden">
-            <div className="rounded-2xl border p-6 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-lg">
-              <h3 className="text-lg font-semibold text-emerald-800 mb-3">Progresso da Campanha</h3>
-              <div className="text-sm text-gray-600 mb-2">
-                {formatBRL(moneyRow?.amount_raised || 0)} <span className="text-gray-400">de</span> {formatBRL(moneyRow?.goal_amount || 0)}
-              </div>
-              <div className="mt-2">
-                {(() => {
-                  // Use backend progress_pct_money with defensive fallback
-                  const progress = moneyRow?.progress_pct_money ?? (
-                    (moneyRow?.goal_amount ?? 0) > 0 
-                      ? Math.min(100, Math.max(0, Math.round(((moneyRow?.amount_raised ?? 0) / (moneyRow?.goal_amount ?? 1)) * 100)))
-                      : 0
-                  );
-                  const pct = Math.max(0, Math.min(100, progress));
-                  
-                  return (
-                    <>
-                      <div className="w-full bg-emerald-200 rounded-full h-3">
-                        <div 
-                          className="bg-primary h-3 rounded-full transition-all duration-300"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <div className="mt-2 text-sm text-emerald-700 font-medium">{pct}% arrecadado</div>
-                    </>
-                  );
-                })()}
-              </div>
-              <div className="text-sm text-gray-600">Último pagamento: {moneyRow?.last_paid_at ? lastPaidAgo : "—"}</div>
-            </div>
-          </div>
-
           {/* Organizer Profile Section - Hidden on mobile */}
           <div className="mt-8 hidden md:block">
             <DetalhesOrganizador 
