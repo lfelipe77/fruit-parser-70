@@ -72,13 +72,19 @@ export default function LanceSeuGanhavel() {
 
   // form state
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState(""); // vamos anexar "local/afiliado" aqui no submit (para não mudar o schema)
+  const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [subcategory, setSubcategory] = useState<string>("");
   const [locationType, setLocationType] = useState<"online" | "cidade">("online");
   const [city, setCity] = useState("");
   const [affiliateUrl, setAffiliateUrl] = useState("");
 
+  // numeric fields as strings
+  const [valueGoal, setValueGoal] = useState<string>("");
+  const [valueTicket, setValueTicket] = useState<string>("");
+  const [valueTotal, setValueTotal] = useState<string>("");
+  
+  // legacy for calculations
   const [ticketPrice, setTicketPrice] = useState<number | "">("");
   const [prizeValue, setPrizeValue] = useState<number | "">("");
 
@@ -154,6 +160,20 @@ export default function LanceSeuGanhavel() {
     }
   }
 
+  // numeric coercion utility
+  const toNum = (v: any, fallback = null) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  // validation - require title and check numeric fields are >= 0
+  const canSave = useMemo(() => {
+    return (title ?? "").trim().length > 0 &&
+      (valueGoal === "" || Number(valueGoal) >= 0) &&
+      (valueTicket === "" || Number(valueTicket) >= 0) &&
+      (valueTotal === "" || Number(valueTotal) >= 0);
+  }, [title, valueGoal, valueTicket, valueTotal]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
@@ -163,8 +183,8 @@ export default function LanceSeuGanhavel() {
       setErrorMsg("Você precisa estar logado para criar um Ganhavel.");
       return;
     }
-    if (!title || !ticketPrice || !prizeValue) {
-      setErrorMsg("Preencha Título, Preço do Bilhete e Valor do Prêmio.");
+    if (!title || !valueTicket || !valueGoal) {
+      setErrorMsg("Preencha Título, Preço do Bilhete e Meta de Arrecadação.");
       return;
     }
     if (!images.length) {
@@ -176,7 +196,7 @@ export default function LanceSeuGanhavel() {
     try {
       const uid = session.user.id;
 
-      // 1) upload primeira imagem como capa -> raffles.image_url
+      // upload primeira imagem como capa
       const cover = images[0];
       const path = `${uid}/${Date.now()}-${cover.name}`;
       const up = await supabase.storage.from("raffle-images").upload(path, cover, {
@@ -188,39 +208,46 @@ export default function LanceSeuGanhavel() {
       const coverUrl = pub.data?.publicUrl;
       if (!coverUrl) throw new Error("Falha ao obter URL pública da imagem");
 
-      // 2) calcular total_tickets (campo exigido pela RPC)
-      const basePrize = Number(prizeValue);
-      const baseTicket = Number(ticketPrice);
-      if (!(basePrize > 0) || !(baseTicket > 0)) throw new Error("Valores inválidos");
-      const totalTickets = Math.max(1, Math.ceil((basePrize * 1.02) / baseTicket));
+      // prepare payload with numeric coercion
+      const payload = {
+        title: (title ?? "").trim(),
+        description: (description ?? "").trim() || null,
+        image_url: coverUrl,
+        
+        // 🔑 numeric fields (coerced)
+        goal_amount: valueGoal !== "" ? toNum(valueGoal, null) : null,
+        ticket_price: valueTicket !== "" ? toNum(valueTicket, null) : null,
+        total_tickets: valueTotal !== "" ? toNum(valueTotal, null) : null,
 
-      // 3) chamar RPC de criação (status = under_review)
-      const { data: newId, error: rpcErr } = await supabase.rpc("create_raffle", {
-        p_title: title,
-        p_description: description || null,
-        p_category_id: categoryId ? Number(categoryId) : null,
-        p_image_url: coverUrl,
-        p_prize_value: basePrize,
-        p_total_tickets: totalTickets,
-        p_ticket_price: baseTicket,
-        p_draw_date: null,                           // **SEM** data de sorteio
-      });
-      if (rpcErr) throw rpcErr;
+        status: "active",
+        category_id: categoryId ? Number(categoryId) : null,
+        subcategory: subcategory || null,
+        city: locationType === "cidade" ? city : null,
+        state: locationType === "cidade" ? city : null,
+        vendor_link: affiliateUrl || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      // 4) (opcional) log audit
-      await supabase.rpc("log_user_action", {
-        p_user_id: uid,
-        p_action: "create_ganhavel",
-        p_payload: { raffle_id: newId, title, category_id: categoryId, vendor_link: affiliateUrl },
-      });
+      console.log("[create ganhavel] payload", payload);
 
-      setSuccessMsg("Ganhavel enviado para análise!");
-      setToastMsg("✅ Ganhavel lançado! Status: Pendente. Ele já está em Admin → Pendentes.");
+      const { data, error } = await supabase
+        .from("raffles")                 // ← write to raffles (not a view)
+        .insert(payload)
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("[create ganhavel] error:", error);
+        setErrorMsg("Falha ao lançar ganhavel. Verifique os campos.");
+        return;
+      }
+
+      setSuccessMsg("Ganhavel lançado com sucesso!");
+      setToastMsg("✅ Ganhavel lançado! Navegando para a página do ganhavel...");
       setToastOpen(true);
       redirectTimerRef.current = window.setTimeout(() => {
-        const lastPath = sessionStorage.getItem("lastPath");
-        const redirectTo = lastPath && lastPath !== "/lance-seu-ganhavel" ? lastPath : "/";
-        navigate(redirectTo);
+        navigate(`/ganhavel/${data.id}`);
       }, 1800);
     } catch (err: any) {
       console.error(err);
@@ -398,38 +425,49 @@ export default function LanceSeuGanhavel() {
             </div>
           </section>
 
-          {/* Configurações (sem mostrar "bilhetes calculados") */}
+          {/* Configurações */}
           <section className="bg-gray-50 rounded-xl border p-4 shadow-sm">
             <h2 className="text-lg font-semibold mb-2">Configurações</h2>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium">Preço do Bilhete (R$) *</label>
+                <label className="block text-sm font-medium">Meta de Arrecadação (R$) *</label>
                 <input
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   className="mt-1 w-full border rounded-lg p-2"
-                  value={ticketPrice}
-                  onChange={(e) => setTicketPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                  value={valueGoal}
+                  onChange={(e) => setValueGoal(e.target.value)}
+                  placeholder="Ex: 3500.00"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium">Valor do Prêmio (R$) *</label>
+                <label className="block text-sm font-medium">Preço do Bilhete (R$) *</label>
                 <input
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   className="mt-1 w-full border rounded-lg p-2"
-                  value={prizeValue}
-                  onChange={(e) => setPrizeValue(e.target.value === "" ? "" : Number(e.target.value))}
+                  value={valueTicket}
+                  onChange={(e) => setValueTicket(e.target.value)}
+                  placeholder="Ex: 25.00"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Total de Bilhetes</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="mt-1 w-full border rounded-lg p-2"
+                  value={valueTotal}
+                  onChange={(e) => setValueTotal(e.target.value)}
+                  placeholder="Ex: 140"
                 />
               </div>
             </div>
 
             <p className="text-sm text-gray-600 mt-3">
-              A meta inclui 2% de taxa de processamento. O sorteio será definido automaticamente quando a meta for atingida.
+              Configure a meta de arrecadação, preço dos bilhetes e opcionalmente o total de bilhetes. O sorteio será definido automaticamente quando a meta for atingida.
             </p>
           </section>
 
@@ -466,11 +504,11 @@ export default function LanceSeuGanhavel() {
           <div className="flex flex-wrap gap-3">
             <button
               type="submit"
-              disabled={submitting || uploading}
+              disabled={submitting || uploading || !canSave}
               className="inline-flex items-center justify-center rounded-lg bg-black text-white px-4 py-2 disabled:opacity-60"
-              title={uploading ? "Enviando imagem..." : "Enviar para análise"}
+              title={uploading ? "Enviando imagem..." : canSave ? "Lançar Ganhavel" : "Preencha os campos obrigatórios"}
             >
-              {submitting ? "Enviando..." : uploading ? "Processando imagens..." : "Enviar para Análise"}
+              {submitting ? "Enviando..." : uploading ? "Processando imagens..." : "Lançar"}
             </button>
 
             <button
