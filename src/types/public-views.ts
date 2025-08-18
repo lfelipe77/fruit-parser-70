@@ -52,6 +52,7 @@ export type RaffleCardInfo = {
   draw_date: string | null;
   category_name: string | null;
   subcategory_name: string | null;
+  direct_purchase_link?: string | null;
 };
 
 export type PublicProfile = {

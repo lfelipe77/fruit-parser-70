@@ -61,6 +61,7 @@ export default function GanhaveisDetail() {
   const [organizerData, setOrganizerData] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [qty, setQty] = React.useState(1);
+  const [directLink, setDirectLink] = React.useState<string | null>(null);
 
   // ---- Data normalization
   const raffle = React.useMemo(() => 
@@ -78,8 +79,8 @@ export default function GanhaveisDetail() {
       setLoading(true);
       
       // Load raffle data (standardized money view)
-      const RAFFLE_CARD_SELECT =
-        "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count";
+  const RAFFLE_CARD_SELECT =
+    "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count,direct_purchase_link";
 
       const { data: v, error: moneyError } = await (supabase as any)
         .from('raffles_public_money_ext')
@@ -97,12 +98,17 @@ export default function GanhaveisDetail() {
         .eq("id", id)
         .maybeSingle();
       if (baseError) console.warn("extras error", baseError);
-      setExtrasRow(baseData ? { 
-        user_id: baseData.user_id, 
-        vendor_url: baseData.direct_purchase_link || "", 
-        location_city: "", 
-        location_state: "" 
-      } : null);
+      if (baseData) {
+        setExtrasRow({
+          user_id: baseData.user_id, 
+          vendor_url: baseData.direct_purchase_link || "", 
+          location_city: "", 
+          location_state: "" 
+        });
+        // Set direct purchase link from fallback or view
+        const link = (v && 'direct_purchase_link' in v && v.direct_purchase_link) || baseData.direct_purchase_link;
+        setDirectLink(link || null);
+      }
 
       // Load organizer profile if available
       if (baseData?.user_id) {
@@ -303,18 +309,18 @@ export default function GanhaveisDetail() {
             </button>
 
             {/* Direct Purchase Link */}
-            {extrasRow?.vendor_url && (
+            {directLink && (
               <div className="mt-6 pt-6 border-t border-emerald-200">
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
                   <h4 className="text-md font-semibold text-blue-800 mb-3">🛒 Compra Direta</h4>
                   <p className="text-sm text-blue-700 mb-3">Prefere comprar direto com o vendedor?</p>
                   <a
-                    href={extrasRow.vendor_url}
+                    href={directLink}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noopener noreferrer nofollow"
                     className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200"
                   >
-                    🔗 Compre Direto com o Vendedor
+                    🔗 Comprar diretamente
                   </a>
                 </div>
               </div>

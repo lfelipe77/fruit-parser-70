@@ -251,7 +251,7 @@ export default function LanceSeuGanhavel() {
         subcategory_id: subcategoryId || null,
         city: locationType === "cidade" ? city : null,
         state: locationType === "cidade" ? city : null,
-        direct_purchase_link: affiliateUrl || null,
+        direct_purchase_link: (affiliateUrl ?? '').trim() || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

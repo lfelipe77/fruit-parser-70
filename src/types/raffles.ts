@@ -16,6 +16,7 @@ export type RaffleCardInfo = {
   location_city: string | null;
   location_state: string | null;
   participants_count: number | null;
+  direct_purchase_link?: string | null;
 };
 
 export type CategoryStats = {
