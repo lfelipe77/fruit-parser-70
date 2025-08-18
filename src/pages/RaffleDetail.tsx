@@ -16,6 +16,8 @@ type Raffle = {
   draw_date: string | null;
   status: string;
   amount_collected?: number;
+  goal_amount?: number;
+  progress_pct?: number;
 };
 
 type Provider = "asaas" | "stripe";
@@ -39,23 +41,46 @@ export default function RaffleDetail() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // fetch raffle (by id; if your view also has slug and you want fallback, add .eq("slug", id))
+  // fetch raffle with enhanced financial data from existing views
   useEffect(() => {
     let mounted = true;
     async function run() {
       if (!id) return;
       setLoading(true);
-      const { data, error } = await (supabase as any)
-        .from('raffles_public_ext')
-        .select('id,title,description,image_url,ticket_price,total_tickets,paid_tickets,tickets_remaining,draw_date,status')
+      
+      // Get raffle details from money view (enhanced with financial data)
+      const { data: raffleData, error: raffleError } = await supabase
+        .from('raffles_public_money_ext')
+        .select('*')
         .eq("id", id)
         .maybeSingle();
+      
       if (!mounted) return;
-      if (error) {
-        console.error(error);
+      if (raffleError) {
+        console.error('Raffle data error:', raffleError);
         setErrorMsg("Falha ao carregar a rifa.");
+        setLoading(false);
+        return;
       }
-      setRaffle(data as Raffle | null);
+      
+      if (raffleData) {
+        setRaffle({
+          id: raffleData.id,
+          title: raffleData.title,
+          description: raffleData.description,
+          image_url: raffleData.image_url,
+          draw_date: raffleData.draw_date,
+          status: raffleData.status,
+          ticket_price: raffleData.ticket_price,
+          total_tickets: raffleData.participants_count || 0,
+          paid_tickets: raffleData.participants_count || 0,
+          tickets_remaining: Math.max(0, 1000 - (raffleData.participants_count || 0)), // Fallback calculation
+          amount_collected: raffleData.amount_raised,
+          goal_amount: raffleData.goal_amount,
+          progress_pct: raffleData.progress_pct_money
+        } as Raffle);
+      }
+      
       setLoading(false);
     }
     run();
@@ -197,14 +222,18 @@ export default function RaffleDetail() {
               <div className="text-lg font-medium">R$ {raffle.ticket_price?.toFixed(2)}</div>
             </div>
             <div className="p-3 rounded-lg border">
-              <div className="text-gray-500">Disponíveis</div>
-              <div className="text-lg font-medium">{raffle.tickets_remaining}</div>
+              <div className="text-gray-500">Meta</div>
+              <div className="text-lg font-medium">R$ {raffle.goal_amount?.toFixed(2) || "—"}</div>
             </div>
             <div className="p-3 rounded-lg border">
-              <div className="text-gray-500">Vendidos</div>
-              <div className="text-lg font-medium">{raffle.paid_tickets}</div>
+              <div className="text-gray-500">Arrecadado</div>
+              <div className="text-lg font-medium">R$ {raffle.amount_collected?.toFixed(2) || "0.00"}</div>
             </div>
             <div className="p-3 rounded-lg border">
+              <div className="text-gray-500">Progresso</div>
+              <div className="text-lg font-medium">{raffle.progress_pct?.toFixed(1) || "0"}%</div>
+            </div>
+            <div className="p-3 rounded-lg border col-span-2">
               <div className="text-gray-500">Sorteio</div>
               <div className="text-lg font-medium">
                 {raffle.draw_date ? new Date(raffle.draw_date).toLocaleString() : "—"}

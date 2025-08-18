@@ -77,7 +77,7 @@ export default function GanhaveisDetail() {
     try {
       setLoading(true);
       
-      // Load raffle data (money view)
+      // Load raffle data (existing money view with enhanced display)
       const RAFFLE_CARD_SELECT =
         "id,title,description,image_url,status," +
         "ticket_price,goal_amount,amount_raised,progress_pct_money," +
@@ -90,7 +90,7 @@ export default function GanhaveisDetail() {
         .select(RAFFLE_CARD_SELECT)
         .eq('id', id)
         .maybeSingle();
-      
+        
       if (moneyError) console.warn("money error", moneyError);
       setMoneyRow(v ? v as unknown as MoneyRow : null);
 

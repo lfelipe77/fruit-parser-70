@@ -74,10 +74,10 @@ export default function Dashboard() {
         console.error('Error counting active raffles:', rafflesError);
       }
 
-      // Get recent transactions for spending calculation
+      // Get recent transactions for spending calculation - using existing table
       const { data: transactions, error: transactionsError } = await supabase
         .from('transactions')
-        .select('amount, status, created_at, id')
+        .select('amount, status, created_at, id, raffle_id')
         .eq('user_id', uid)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -309,10 +309,10 @@ export default function Dashboard() {
                             R$ {((transaction.amount || 0) / 100).toFixed(2)}
                           </p>
                           <p className={`text-xs ${
-                            transaction.status === 'completed' ? 'text-green-600' : 
+                            transaction.status === 'completed' || transaction.status === 'paid' ? 'text-green-600' : 
                             transaction.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
                           }`}>
-                            {transaction.status === 'completed' ? 'Pago' : 
+                            {transaction.status === 'completed' || transaction.status === 'paid' ? 'Pago' : 
                              transaction.status === 'pending' ? 'Pendente' : 'Falhou'}
                           </p>
                         </div>
