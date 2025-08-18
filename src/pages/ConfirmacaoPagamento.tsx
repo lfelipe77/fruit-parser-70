@@ -152,9 +152,11 @@ export default function ConfirmacaoPagamento() {
           user_id: user.id,
           buyer_user_id: user.id,
           amount: totalAmount,
+          type: 'purchase',
           status: 'paid',
           provider: 'mock',
           provider_ref: providerRef,
+          provider_payment_id: null,
           selected_numbers: selectedNumbers,
         })
         .select('id')
