@@ -28,27 +28,23 @@ export default function CompartilheRifa({ raffleId, size = 168, className }: Pro
 
   return (
     <div className={className}>
-      <h4 className="text-sm font-medium text-emerald-800 mb-3">Compartilhe</h4>
-
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col items-center gap-3">
         <div className="rounded-lg bg-white p-2 shadow-sm">
           <QRCodeCanvas value={url} size={100} includeMargin ref={qrRef as any} />
         </div>
 
-        <div className="flex-1">
-          <button
-            type="button"
-            onClick={copyLink}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition text-sm"
-            aria-label="Copiar link do ganhavel"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" className="opacity-80">
-              <path fill="currentColor" d="M10 4H6a2 2 0 0 0-2 2v10h2V6h4z"/>
-              <path fill="currentColor" d="M18 8h-6a2 2 0 0 0-2 2v8h8a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2m0 8h-6v-6h6z"/>
-            </svg>
-            Copiar link
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={copyLink}
+          className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition text-sm font-medium"
+          aria-label="Copiar link do ganhavel"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" className="opacity-80">
+            <path fill="currentColor" d="M10 4H6a2 2 0 0 0-2 2v10h2V6h4z"/>
+            <path fill="currentColor" d="M18 8h-6a2 2 0 0 0-2 2v8h8a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2m0 8h-6v-6h6z"/>
+          </svg>
+          Copiar link
+        </button>
       </div>
     </div>
   );
