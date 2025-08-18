@@ -284,7 +284,7 @@ export default function GanhaveisDetail() {
 
           <div className="space-y-4">
             <div className="space-y-1">
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Valor do Prêmio</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Valor do Ganhavel</div>
               <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.goal)}</div>
             </div>
 
