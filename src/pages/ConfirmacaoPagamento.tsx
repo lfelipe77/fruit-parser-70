@@ -106,63 +106,129 @@ export default function ConfirmacaoPagamento() {
 
   // Handle form submission
   const handlePayment = async () => {
+    console.log("[ConfirmacaoPagamento] Starting payment process...");
+    
+    // Check if user is logged in
+    if (!user) {
+      console.log("[ConfirmacaoPagamento] User not logged in, redirecting to login");
+      // Store current path to return after login
+      sessionStorage.setItem("lastPath", location.pathname + location.search);
+      navigate("/login");
+      return;
+    }
+    
+    setIsProcessing(true);
+    
     try {
-      // 1) Require auth
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        const url = new URL("/login", window.location.origin);
-        url.searchParams.set("redirectTo", location.pathname + location.search);
-        navigate(url.pathname + url.search, { replace: true });
-        return;
+      // Validate required data
+      if (!id) {
+        throw new Error("ID da rifa não encontrado");
+      }
+      if (!raffle?.ticket_price) {
+        throw new Error("Preço do bilhete não encontrado");
+      }
+      if (selectedNumbers.length === 0) {
+        throw new Error("Números da sorte não gerados");
       }
 
-      // 2) Inputs
-      const now = Date.now();
-      const providerRef = `mock-${id}-${now}-${crypto.getRandomValues(new Uint32Array(1))[0]}`;
-      const safeQty = Math.max(1, Number(qty || 1));
-      const unitPrice = Number(raffle?.ticket_price ?? 0);
-      const uniqueNumbers = Array.from({ length: safeQty }, (_, i) =>
-        `N${now}-${i}-${Math.floor(Math.random() * 1e6)}`
-      );
-
-      // 3) Call RPC (server writes type='charge', status='paid')
-      const { data: txId, error } = await supabase.rpc("record_mock_purchase_admin", {
-        p_buyer_user_id: session.user.id,
-        p_raffle_id: id,
-        p_qty: safeQty,
-        p_unit_price: unitPrice,
-        p_numbers: uniqueNumbers,      // array -> JSONB automatically
-        p_provider_ref: providerRef,   // must be unique
+      console.log("[ConfirmacaoPagamento] Payment data:", {
+        rifaId: id,
+        userId: user.id,
+        qty,
+        unitPrice: raffle.ticket_price,
+        numbersCount: selectedNumbers.length,
+        total
       });
 
-      if (error) {
-        console.error("[payment] rpc error", {
-          code: (error as any)?.code,
-          message: (error as any)?.message,
-          details: (error as any)?.details,
-          hint: (error as any)?.hint,
-          constraint: (error as any)?.constraint,
-        });
-        toast.error("Pagamento falhou. Tente novamente.");
-        return;
+      const providerRef = `payment-${id}-${Date.now()}`;
+      const totalAmount = qty * raffle.ticket_price;
+      
+      // Create transaction
+      console.log("[ConfirmacaoPagamento] Creating transaction...");
+      const { data: transaction, error: txError } = await (supabase as any)
+        .from('transactions')
+        .insert({
+          raffle_id: id,
+          user_id: user.id,
+          buyer_user_id: user.id,
+          amount: totalAmount,
+          type: 'purchase',
+          status: 'paid',
+          provider: 'mock',
+          provider_ref: providerRef,
+          provider_payment_id: null,
+          selected_numbers: selectedNumbers,
+        })
+        .select('id')
+        .single();
+
+      if (txError) {
+        console.error('[ConfirmacaoPagamento] Transaction creation error:', txError);
+        throw new Error('Falha ao criar transação: ' + txError.message);
       }
 
-      // 4) Refresh cards + redirect to success
-      window.dispatchEvent(new CustomEvent("raffleUpdated"));
+      // Create tickets
+      console.log("[ConfirmacaoPagamento] Creating tickets...");
+      const ticketsData = Array.from({ length: qty }, (_, index) => ({
+        raffle_id: id,
+        user_id: user.id,
+        quantity: 1,
+        total_amount: raffle.ticket_price,
+        status: 'paid' as const,
+        transaction_id: transaction.id,
+        ticket_number: index + 1,
+        numbers: [selectedNumbers[index] || `N${Date.now()}-${index}`]
+      }));
+
+      const { error: ticketsError } = await supabase
+        .from('tickets')
+        .insert(ticketsData);
+
+      if (ticketsError) {
+        console.error('[ConfirmacaoPagamento] Tickets creation error:', ticketsError);
+        throw new Error('Falha ao criar bilhetes: ' + ticketsError.message);
+      }
+
+      console.log('[ConfirmacaoPagamento] Payment processed successfully');
+      
+      // Show success message
+      toast.success('Pagamento processado com sucesso! Você já está participando da rifa.');
+      
+      // Trigger raffle update event for real-time updates
+      window.dispatchEvent(new CustomEvent('raffleUpdated', { 
+        detail: { raffleId: id } 
+      }));
+
+      // Redirect to success page
       navigate(`/ganhavel/${id}/pagamento-sucesso`, {
-        replace: true,
         state: {
-          raffleId: id,
-          txId,                         // uuid returned by RPC
-          quantity: safeQty,
-          unitPrice,
-          totalPaid: unitPrice * safeQty,
-          numbers: uniqueNumbers,
-        },
+          rifaId: id,
+          rifaTitle: raffle?.title,
+          rifaImage: raffle?.image_url,
+          selectedNumbers: selectedNumbers,
+          quantity: qty,
+          totalAmount: totalAmount,
+          paymentId: providerRef,
+          paymentDate: new Date().toISOString(),
+          organizerName: "Organizador" // TODO: get from raffle data
+        }
       });
-    } catch (e: any) {
-      console.error("[payment] unexpected", e);
-      toast.error("Pagamento falhou. Tente novamente.");
+      
+    } catch (error) {
+      console.error('[ConfirmacaoPagamento] Payment error:', error);
+      const err = error as any;
+      console.error('[ConfirmacaoPagamento] Supabase error details:', {
+        code: err?.code,
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        constraint: err?.constraint,
+      });
+      const errorMessage = err?.message ?? (error instanceof Error ? error.message : 'Erro desconhecido');
+      // Show error toast instead of redirecting to error page
+      toast.error('Erro no pagamento: ' + errorMessage);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
