@@ -220,8 +220,42 @@ export default function GanhaveisDetail() {
             </TabsContent>
           </Tabs>
 
-          {/* Organizer Profile Section */}
-          <div className="mt-8">
+          {/* Campaign Progress Section - Mobile only */}
+          <div className="mt-6 md:hidden">
+            <div className="rounded-2xl border p-6 bg-gradient-to-br from-emerald-50 to-emerald-100/50 shadow-lg">
+              <h3 className="text-lg font-semibold text-emerald-800 mb-3">Progresso da Campanha</h3>
+              <div className="text-sm text-gray-600 mb-2">
+                {formatBRL(moneyRow?.amount_raised || 0)} <span className="text-gray-400">de</span> {formatBRL(moneyRow?.goal_amount || 0)}
+              </div>
+              <div className="mt-2">
+                {(() => {
+                  // Use backend progress_pct_money with defensive fallback
+                  const progress = moneyRow?.progress_pct_money ?? (
+                    (moneyRow?.goal_amount ?? 0) > 0 
+                      ? Math.min(100, Math.max(0, Math.round(((moneyRow?.amount_raised ?? 0) / (moneyRow?.goal_amount ?? 1)) * 100)))
+                      : 0
+                  );
+                  const pct = Math.max(0, Math.min(100, progress));
+                  
+                  return (
+                    <>
+                      <div className="w-full bg-emerald-200 rounded-full h-3">
+                        <div 
+                          className="bg-primary h-3 rounded-full transition-all duration-300"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <div className="mt-2 text-sm text-emerald-700 font-medium">{pct}% arrecadado</div>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="text-sm text-gray-600">Último pagamento: {moneyRow?.last_paid_at ? lastPaidAgo : "—"}</div>
+            </div>
+          </div>
+
+          {/* Organizer Profile Section - Hidden on mobile */}
+          <div className="mt-8 hidden md:block">
             <DetalhesOrganizador 
               organizer={{
                 name: organizerData?.full_name || organizerData?.username || "Organizador",
@@ -368,6 +402,33 @@ export default function GanhaveisDetail() {
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* Organizer Profile Section - Mobile only */}
+      <div className="mt-8 md:hidden">
+        <DetalhesOrganizador 
+          organizer={{
+            name: organizerData?.full_name || organizerData?.username || "Organizador",
+            username: organizerData?.username || "user",
+            bio: organizerData?.bio || "Organizador experiente na plataforma.",
+            location: organizerData?.location || "Brasil",
+            memberSince: "Janeiro 2023", // TODO: wire from created_at
+            totalGanhaveisLancados: 47, // TODO: aggregate from raffles
+            ganhaveisCompletos: 43, // TODO: aggregate completed
+            totalGanhaveisParticipados: 156, // TODO: aggregate participations
+            ganhaveisGanhos: 2, // TODO: aggregate wins
+            avaliacaoMedia: 4.8, // TODO: wire from ratings
+            totalAvaliacoes: 234, // TODO: aggregate reviews
+            avatar: organizerData?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+            website: organizerData?.website_url || null,
+            socialLinks: {
+              instagram: organizerData?.instagram || null,
+              facebook: organizerData?.facebook || null,
+              twitter: organizerData?.twitter || null,
+              linkedin: null // TODO: wire linkedin field
+            }
+          }}
+        />
       </div>
       </div>
     </>
