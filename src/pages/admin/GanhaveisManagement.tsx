@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,42 @@ import { supabase } from "@/integrations/supabase/client";
 import { RafflePublicMoney } from "@/types/public-views";
 import { AdminRaffleRow } from "@/components/AdminRaffleRow";
 
+const PAUSE_TO = "archived"; // toggle policy: active <-> archived
+const RESUME_TO = "active";
+
+function useRaffleActions(setRows: Function) {
+  const navigate = useNavigate();
+
+  async function onView(id: string) {
+    navigate(`/ganhavel/${id}`); // open public page
+  }
+
+  async function onToggleStatus(row: any) {
+    const current = (row?.status ?? "active").toLowerCase();
+    const next = current === "active" ? PAUSE_TO : RESUME_TO;
+
+    const { data, error } = await (supabase as any)
+      .from("raffles")
+      .update({ status: next, updated_at: new Date().toISOString() })
+      .eq("id", row.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("[Admin Ganhaveis] toggle status error:", error);
+      alert("Falha ao atualizar status.");
+      return;
+    }
+
+    // refresh the item in local state (list comes from view; we can patch locally)
+    setRows((prev: any[]) =>
+      prev.map(r => r.id === row.id ? { ...r, status: next } : r)
+    );
+  }
+
+  return { onView, onToggleStatus };
+}
+
 export default function GanhaveisManagement() {
   // ✅ All hooks at the top of the component
   const [selectedTab, setSelectedTab] = useState("todas");
@@ -36,6 +73,7 @@ export default function GanhaveisManagement() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { logAdminAction } = useAuditLogger();
+  const { onView, onToggleStatus } = useRaffleActions(setRaffles);
 
   // Load raffles from database
   useEffect(() => {
@@ -446,6 +484,8 @@ export default function GanhaveisManagement() {
                           onReactivate={handleReactivate}
                           onSaveNotes={handleSaveNotes}
                           onVerifyAffiliate={handleVerifyAffiliate}
+                          onView={onView}
+                          onToggleStatus={onToggleStatus}
                         />
                       ))
                     )}

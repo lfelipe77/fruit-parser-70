@@ -1,260 +1,119 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  BarChart3,
-  TrendingUp,
-  Users,
-  Gift,
-  DollarSign,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Eye,
-  Ban,
-  Check,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const stats = [
-  {
-    title: "Total de Ganhaveis",
-    value: "156",
-    description: "+12% em relação ao mês passado",
-    icon: Gift,
-    trend: "up",
-  },
-  {
-    title: "Usuários Ativos",
-    value: "2,847",
-    description: "+5% novos usuários esta semana",
-    icon: Users,
-    trend: "up",
-  },
-  {
-    title: "Receita Total",
-    value: "R$ 89,450",
-    description: "+18% em relação ao mês passado",
-    icon: DollarSign,
-    trend: "up",
-  },
-  {
-    title: "Taxa de Conversão",
-    value: "73.5%",
-    description: "+2.1% melhoria este mês",
-    icon: TrendingUp,
-    trend: "up",
-  },
-];
+type MoneyRow = {
+  id: string;
+  amount_raised: number | null;
+  participants_count: number | null;
+  last_paid_at: string | null;
+  created_at: string | null;
+};
 
-const pendingRifas = [
-  {
-    id: "RF001",
-    title: "iPhone 15 Pro Max 256GB",
-    organizer: "João Silva",
-    value: "R$ 6.000",
-    participants: 120,
-    status: "pending",
-    category: "Eletrônicos",
-    created: "2024-01-15",
-  },
-  {
-    id: "RF002",
-    title: "Honda Civic 2024",
-    organizer: "Maria Santos",
-    value: "R$ 120.000",
-    participants: 85,
-    status: "pending",
-    category: "Automóveis",
-    created: "2024-01-14",
-  },
-  {
-    id: "RF003",
-    title: "Apartamento 2 Quartos - Alphaville",
-    organizer: "Carlos Mendes",
-    value: "R$ 350.000",
-    participants: 45,
-    status: "review",
-    category: "Imóveis",
-    created: "2024-01-13",
-  },
-];
+type TxAgg = { count: number };
 
-const recentActivities = [
-  {
-    type: "approval",
-    message: "Ganhavel 'PS5 + Setup Gamer' foi aprovada",
-    time: "2 min atrás",
-    icon: CheckCircle,
-    color: "text-green-600",
-  },
-  {
-    type: "new_user",
-    message: "Novo usuário registrado: Ana Costa",
-    time: "15 min atrás",
-    icon: Users,
-    color: "text-blue-600",
-  },
-  {
-    type: "alert",
-    message: "Ganhavel suspeito detectado - ID: RF004",
-    time: "1h atrás",
-    icon: AlertTriangle,
-    color: "text-orange-600",
-  },
-  {
-    type: "payment",
-    message: "Pagamento de R$ 2.500 liberado para João S.",
-    time: "2h atrás",
-    icon: DollarSign,
-    color: "text-green-600",
-  },
-];
+const PAID = ["paid","settled","confirmed","approved","success","succeeded"];
 
-export default function Dashboard() {
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="outline" className="text-orange-600 border-orange-200">Pendente</Badge>;
-      case "review":
-        return <Badge variant="outline" className="text-blue-600 border-blue-200">Em Análise</Badge>;
-      default:
-        return <Badge variant="outline">Desconhecido</Badge>;
+export default function AdminDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<MoneyRow[]>([]);
+  const [tx7d, setTx7d] = useState<number>(0);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+
+      // 1) Pull recent raffles from the money view
+      const { data: vdata, error: verr } = await (supabase as any)
+        .from("raffles_public_money_ext")
+        .select("id, amount_raised, participants_count, last_paid_at, created_at")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (verr) console.error("[AdminDashboard] view error:", verr);
+      setRows(vdata ?? []);
+
+      // 2) Last 7 days successful transactions count
+      const since = new Date(Date.now() - 7*24*3600*1000).toISOString();
+      const { data: txdata, error: txerr } = await (supabase as any)
+        .from("transactions")
+        .select("id", { count: "exact", head: true })
+        .in("status", PAID)
+        .gte("created_at", since);
+      if (txerr) console.error("[AdminDashboard] tx 7d error:", txerr);
+      setTx7d(txdata?.length ? txdata.length : (txdata as any)?.count ?? (txerr ? 0 : 0)); // head:true => count in header; some libs return count on .count property
+
+      setLoading(false);
+    })();
+  }, []);
+
+  const totals = useMemo(() => {
+    let totalRaised = 0;
+    let totalParticipants = 0;
+    for (const r of rows) {
+      totalRaised += Number(r.amount_raised ?? 0);
+      totalParticipants += Number(r.participants_count ?? 0);
     }
-  };
+    return { totalRaised, totalParticipants };
+  }, [rows]);
+
+  // Active raffles count from view by progress / presence (approx) – or add a status select if exposed
+  const totalRaffles = rows.length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground">
-          Visão geral do sistema de ganhaveis e métricas importantes
-        </p>
+    <div className="p-6 space-y-6">
+      <h1 className="text-xl font-semibold">Dashboard</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardStat title="Ganhavéis (total)" value={totalRaffles} loading={loading} />
+        <CardStat title="Total arrecadado" value={formatBRL(totals.totalRaised)} loading={loading} />
+        <CardStat title="Participantes (estimado)" value={totals.totalParticipants} loading={loading} />
+        <CardStat title="Transações (últimos 7 dias)" value={tx7d} loading={loading} />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Rifas Pendentes */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Ganhaveis Pendentes de Aprovação
-            </CardTitle>
-            <CardDescription>
-              Ganhaveis que precisam de revisão e aprovação
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Organizador</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Participantes</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingRifas.map((rifa) => (
-                    <TableRow key={rifa.id}>
-                      <TableCell className="font-medium">{rifa.id}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{rifa.title}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {rifa.category}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{rifa.organizer}</TableCell>
-                      <TableCell>{rifa.value}</TableCell>
-                      <TableCell>{rifa.participants}</TableCell>
-                      <TableCell>{getStatusBadge(rifa.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700">
-                            <Check className="h-3 w-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-                            <Ban className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Atividades Recentes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Atividades Recentes
-            </CardTitle>
-            <CardDescription>
-              Últimas ações no sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => {
-                const Icon = activity.icon;
-                return (
-                  <div key={index} className="flex items-start gap-3">
-                    <Icon className={`h-4 w-4 mt-0.5 ${activity.color}`} />
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {activity.time}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <h2 className="font-semibold mb-3">Rifas recentes</h2>
+        <div className="text-sm opacity-80">Últimas 10 por criação</div>
+        <table className="w-full text-sm mt-3">
+          <thead className="text-left opacity-60">
+            <tr>
+              <th className="py-2">ID</th>
+              <th>Arrecadado</th>
+              <th>Participantes</th>
+              <th>Última compra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(rows ?? []).slice(0,10).map(r => (
+              <tr key={r.id} className="border-t border-white/10">
+                <td className="py-2">{r.id.slice(0,8)}…</td>
+                <td>{formatBRL(Number(r.amount_raised ?? 0))}</td>
+                <td>{Number(r.participants_count ?? 0)}</td>
+                <td>{r.last_paid_at ? timeAgo(r.last_paid_at) : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
+}
+
+function CardStat({ title, value, loading }: { title: string; value: any; loading?: boolean}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <div className="text-xs opacity-70">{title}</div>
+      <div className="text-2xl font-semibold mt-1">{loading ? "…" : value}</div>
+    </div>
+  );
+}
+function formatBRL(n: number) {
+  try { return n.toLocaleString("pt-BR",{ style:"currency", currency:"BRL" }); }
+  catch { return `R$ ${n.toFixed(2)}`; }
+}
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff/3600000);
+  if (h < 1) return "agora";
+  if (h < 24) return `${h}h atrás`;
+  const d = Math.floor(h/24);
+  return `${d}d atrás`;
 }

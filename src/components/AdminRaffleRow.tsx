@@ -59,6 +59,8 @@ interface AdminRaffleRowProps {
   onReactivate: (id: string) => void;
   onSaveNotes: (id: string, notes: string) => void;
   onVerifyAffiliate: (link: string) => void;
+  onView?: (id: string) => void;
+  onToggleStatus?: (row: any) => void;
 }
 
 export function AdminRaffleRow({ 
@@ -68,7 +70,9 @@ export function AdminRaffleRow({
   onSuspend, 
   onReactivate, 
   onSaveNotes, 
-  onVerifyAffiliate 
+  onVerifyAffiliate,
+  onView,
+  onToggleStatus
 }: AdminRaffleRowProps) {
   // ✅ All hooks at the top
   const [selectedGanhavel, setSelectedGanhavel] = useState<any>(null);
@@ -192,6 +196,22 @@ export function AdminRaffleRow({
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => onView?.(raffle.id)}
+          >
+            <Eye className="h-3 w-3" />
+          </Button>
+          
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => onToggleStatus?.(raffle)}
+          >
+            {raffle.status === 'active' ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+          </Button>
+          
           <Button 
             size="sm" 
             variant="outline" 
