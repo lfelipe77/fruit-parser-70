@@ -5,11 +5,11 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
-import { ArrowLeft, Share2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import DetalhesOrganizador from "@/components/DetalhesOrganizador";
-import ShareButton from "@/components/ShareButton";
+import CompartilheRifa from "@/components/CompartilheRifa";
 import { toRaffleView, type MoneyRow, type RaffleExtras } from "@/adapters/raffleAdapters";
 import { toConfirm } from "@/lib/nav";
 
@@ -186,18 +186,8 @@ export default function GanhaveisDetail() {
           </Button>
         </div>
 
-        {/* Header bar */}
-        <div className="flex items-center justify-end">
-          <div className="flex items-center gap-2">
-            <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200">
-              <Share2 className="h-4 w-4 mr-2" />
-              <ShareButton 
-                title={raffle.title} 
-                url={pageUrl}
-              />
-            </Button>
-          </div>
-        </div>
+        {/* Share section */}
+        {raffle?.id && <CompartilheRifa raffleId={raffle.id} className="mt-6" />}
 
       {/* Image + Title */}
       <div className="grid gap-6 md:grid-cols-[1fr,360px]">
