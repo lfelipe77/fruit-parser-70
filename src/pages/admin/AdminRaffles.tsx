@@ -4,6 +4,10 @@ import { GanhavelEditor } from "@/components/admin/GanhavelEditor";
 import type { GanhavelRow } from "@/types/ganhaveis";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 export default function AdminRaffles() {
   const { toast } = useToast();
@@ -13,19 +17,43 @@ export default function AdminRaffles() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<GanhavelRow | null>(null);
+  
+  // Pagination and filtering
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const itemsPerPage = 12;
 
   // Load ganhaveis with financial data
-  const loadGanhaveis = async () => {
+  const loadGanhaveis = async (page = 1) => {
     setLoading(true);
     try {
-      // Get both base data and financial overview
-      const { data: baseData, error: baseError } = await supabase
+      const from = (page - 1) * itemsPerPage;
+      const to = from + itemsPerPage - 1;
+
+      // Build query
+      let query = supabase
         .from("ganhaveis")
-        .select("*")
+        .select("*", { count: 'exact' })
         .order("updated_at", { ascending: false })
-        .limit(200);
+        .range(from, to);
+
+      // Apply search filter
+      if (searchTerm.trim()) {
+        query = query.ilike("title", `%${searchTerm.trim()}%`);
+      }
+
+      // Apply status filter
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      const { data: baseData, error: baseError, count } = await query;
 
       if (baseError) throw baseError;
+
+      setTotalCount(count || 0);
 
       // Get financial data from the money view
       const { data: moneyData, error: moneyError } = await supabase
@@ -60,8 +88,8 @@ export default function AdminRaffles() {
   };
 
   useEffect(() => {
-    loadGanhaveis();
-  }, []);
+    loadGanhaveis(currentPage);
+  }, [currentPage, searchTerm, statusFilter]);
 
   // Auto-open with ?edit=<id>
   useEffect(() => {
@@ -92,7 +120,7 @@ export default function AdminRaffles() {
     setOpen(false);
     setEditing(null);
     // Reload to get fresh financial data
-    loadGanhaveis();
+    loadGanhaveis(currentPage);
   };
 
   const handleClose = () => {
@@ -105,16 +133,58 @@ export default function AdminRaffles() {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   };
 
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    loadGanhaveis(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Ganháveis (Admin)</h1>
-        <button
-          className="rounded-lg border px-4 py-2 hover:bg-primary/10"
-          onClick={() => setOpen(true)}
-        >
+        <Button onClick={() => setOpen(true)}>
           Novo Ganhável
-        </button>
+        </Button>
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div className="flex gap-4 mb-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar por título..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filtrar por status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="active">Ativos</SelectItem>
+            <SelectItem value="pending">Pendentes</SelectItem>
+            <SelectItem value="archived">Arquivados</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={handleSearch}>
+          <Search className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Results Info */}
+      <div className="text-sm text-muted-foreground mb-4">
+        Mostrando {rows.length} de {totalCount} ganháveis
       </div>
 
       {loading ? (
@@ -175,6 +245,57 @@ export default function AdminRaffles() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage <= 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage >= totalPages}
+          >
+            Próxima
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       )}
 
