@@ -32,11 +32,27 @@ export default function AdminRaffles() {
       const from = (page - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
 
-      // Build query
+      // Use the same data source as GanhaveisManagement for consistency
       let query = supabase
-        .from("ganhaveis")
-        .select("*", { count: 'exact' })
-        .order("updated_at", { ascending: false })
+        .from("raffles_public_money_ext")
+        .select(`
+          id,
+          title,
+          description,
+          image_url,
+          status,
+          ticket_price,
+          goal_amount,
+          amount_raised,
+          progress_pct_money,
+          last_paid_at,
+          created_at,
+          draw_date,
+          category_name,
+          subcategory_name,
+          participants_count
+        `, { count: 'exact' })
+        .order("created_at", { ascending: false })
         .range(from, to);
 
       // Apply search filter
@@ -49,32 +65,41 @@ export default function AdminRaffles() {
         query = query.eq("status", statusFilter);
       }
 
-      const { data: baseData, error: baseError, count } = await query;
+      const { data, error, count } = await query;
 
-      if (baseError) throw baseError;
+      if (error) throw error;
 
       setTotalCount(count || 0);
 
-      // Get financial data from the money view
-      const { data: moneyData, error: moneyError } = await supabase
-        .from("raffles_public_money_ext")
-        .select("id, amount_raised, goal_amount, progress_pct_money");
+      // Transform to match GanhavelRow interface
+      const transformedData = (data || []).map(raffle => ({
+        id: raffle.id,
+        creator_id: null, // Not available in view
+        title: raffle.title || 'Sem título',
+        description: raffle.description,
+        image_url: raffle.image_url,
+        category: raffle.category_name,
+        subcategory: raffle.subcategory_name,
+        ticket_price: raffle.ticket_price,
+        total_tickets: null, // Not in money view
+        sold_tickets: null, // Calculated from participants
+        goal_amount: raffle.goal_amount,
+        raised_amount: raffle.amount_raised,
+        status: raffle.status,
+        lottery_type: null,
+        location: null,
+        country_region: null,
+        affiliate_link: null,
+        direct_purchase_link: null,
+        start_date: raffle.created_at,
+        end_date: raffle.draw_date,
+        created_at: raffle.created_at,
+        updated_at: raffle.created_at,
+        category_id: null,
+        subcategory_id: null,
+      }));
 
-      if (moneyError) {
-        console.warn("Could not load financial data:", moneyError);
-      }
-
-      // Merge the data
-      const combined = (baseData as GanhavelRow[]).map(row => {
-        const money = moneyData?.find(m => m.id === row.id);
-        return {
-          ...row,
-          raised_amount: money?.amount_raised || 0,
-          goal_amount: money?.goal_amount || row.goal_amount,
-        };
-      });
-
-      setRows(combined);
+      setRows(transformedData as GanhavelRow[]);
     } catch (error) {
       console.error("Error loading ganhaveis:", error);
       toast({
