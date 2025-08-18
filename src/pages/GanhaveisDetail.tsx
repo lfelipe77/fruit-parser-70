@@ -93,13 +93,13 @@ export default function GanhaveisDetail() {
       // Load extras from base table
       const { data: baseData, error: baseError } = await supabase
         .from("raffles")
-        .select("user_id,description,vendor_link")
+        .select("user_id,description,direct_purchase_link")
         .eq("id", id)
         .maybeSingle();
       if (baseError) console.warn("extras error", baseError);
       setExtrasRow(baseData ? { 
         user_id: baseData.user_id, 
-        vendor_url: baseData.vendor_link || "", 
+        vendor_url: baseData.direct_purchase_link || "", 
         location_city: "", 
         location_state: "" 
       } : null);
