@@ -50,13 +50,24 @@ export default function CategoryDetailPage() {
     };
 
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
-    return () => window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+    const interval = setInterval(() => {
+      if (categorySlug) {
+        fetchRaffles(categorySlug);
+      }
+    }, 30000); // safety refresh
+    return () => { 
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate); 
+      clearInterval(interval); 
+    };
   }, [categorySlug]);
 
+  const RAFFLE_CARD_SELECT =
+    "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count";
+
   const fetchRaffles = async (slug: string) => {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('raffles_public_money_ext')
-      .select('*')
+      .select(RAFFLE_CARD_SELECT)
       .eq('category_slug', slug)
       .order('created_at', { ascending: false })
       .limit(60);

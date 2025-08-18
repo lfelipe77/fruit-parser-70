@@ -60,7 +60,15 @@ export default function SubcategoryDetailPage() {
     };
 
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
-    return () => window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+    const interval = setInterval(() => {
+      if (categorySlug && subSlug) {
+        fetchRaffles(categorySlug, subSlug);
+      }
+    }, 30000); // safety refresh
+    return () => { 
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate); 
+      clearInterval(interval); 
+    };
   }, [categorySlug, subSlug]);
 
   const fetchRaffles = async (catSlug: string, subSlug: string) => {
