@@ -268,8 +268,8 @@ export default function GanhaveisDetail() {
           </div>
 
           <div className="space-y-4">
-            <div className="text-xs text-gray-500 uppercase tracking-wide">Bilhete</div>
-            <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.ticketPrice)}</div>
+            <div className="text-xs text-gray-500 uppercase tracking-wide">Valor do Prêmio</div>
+            <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.goal)}</div>
 
             <div className="flex items-center gap-3 bg-white rounded-lg p-2">
               <button 
