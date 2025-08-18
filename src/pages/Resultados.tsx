@@ -5,95 +5,154 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Calendar, Users, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { timeAgo, formatCurrency } from "@/types/raffles";
 
-const recentResults = [
-  {
-    id: 1,
-    title: "Honda Civic 0KM 2024",
-    winner: "João S. ****",
-    date: "28/07/2025",
-    contest: "05675",
-    winningNumber: "45",
-    totalTickets: 1000,
-    participants: 1000,
-    prizeValue: "R$ 120.000",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    title: "iPhone 15 Pro Max 256GB",
-    winner: "Maria F. ****",
-    date: "21/07/2025",
-    contest: "05672",
-    winningNumber: "156",
-    totalTickets: 500,
-    participants: 500,
-    prizeValue: "R$ 8.500",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 3,
-    title: "R$ 50.000 em Dinheiro",
-    winner: "Carlos R. ****",
-    date: "14/07/2025",
-    contest: "05669",
-    winningNumber: "789",
-    totalTickets: 1000,
-    participants: 1000,
-    prizeValue: "R$ 50.000",
-    image: "/placeholder.svg"
-  }
-];
+interface LotteryResult {
+  id: string;
+  ganhavel_id: string;
+  winning_ticket_id: string | null;
+  lottery_draw_numbers: string | null;
+  result_date: string;
+  verified: boolean;
+  raffle_title: string;
+  raffle_goal_amount: number;
+  raffle_image_url: string | null;
+  winner_name: string | null;
+}
 
-const upcomingDraws = [
-  {
-    id: 1,
-    title: "Casa em Condomínio - Alphaville",
-    drawDate: "10/08/2025",
-    contest: "05679",
-    totalTickets: 2000,
-    soldTickets: 2000,
-    prizeValue: "R$ 850.000",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    title: "Yamaha MT-03 0KM 2024",
-    drawDate: "17/08/2025",
-    contest: "05680",
-    totalTickets: 800,
-    soldTickets: 800,
-    prizeValue: "R$ 25.000",
-    image: "/placeholder.svg"
-  }
-];
+interface CompleteRaffle {
+  id: string;
+  title: string;
+  image_url: string | null;
+  goal_amount: number;
+  amount_raised: number;
+  progress_pct_money: number;
+  participants_count: number;
+  draw_date: string | null;
+}
 
-const almostCompleteDraws = [
-  {
-    id: 1,
-    title: "Setup Gamer Completo + PS5",
-    drawDate: "15/08/2025",
-    contest: "05681",
-    totalTickets: 1000,
-    soldTickets: 850,
-    prizeValue: "R$ 15.000",
-    ticketPrice: 5,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    title: "Casa em Condomínio - Alphaville",
-    drawDate: "20/08/2025",
-    contest: "05682",
-    totalTickets: 1000,
-    soldTickets: 850,
-    prizeValue: "R$ 850.000",
-    ticketPrice: 5,
-    image: "/placeholder.svg"
-  }
-];
+interface AlmostCompleteRaffle extends CompleteRaffle {
+  ticket_price: number;
+}
+
 
 export default function Resultados() {
+  const [recentResults, setRecentResults] = useState<LotteryResult[]>([]);
+  const [completeRaffles, setCompleteRaffles] = useState<CompleteRaffle[]>([]);
+  const [almostCompleteRaffles, setAlmostCompleteRaffles] = useState<AlmostCompleteRaffle[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchResultsData();
+    
+    // Real-time updates
+    const onUpdated = () => fetchResultsData();
+    window.addEventListener("raffleUpdated", onUpdated);
+    const interval = setInterval(fetchResultsData, 30000);
+    
+    return () => {
+      window.removeEventListener("raffleUpdated", onUpdated);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const fetchResultsData = async () => {
+    try {
+      // Fetch completed raffles with lottery results
+      const { data: results, error: resultsError } = await (supabase as any)
+        .from('lottery_results')
+        .select(`
+          id,
+          ganhavel_id,
+          winning_ticket_id,
+          lottery_draw_numbers,
+          result_date,
+          verified,
+          raffles_public_money_ext!inner(
+            title,
+            goal_amount,
+            image_url
+          ),
+          user_profiles(full_name)
+        `)
+        .eq('verified', true)
+        .order('result_date', { ascending: false })
+        .limit(10);
+
+      if (resultsError) {
+        console.error('Error fetching results:', resultsError);
+      } else {
+        const formattedResults: LotteryResult[] = (results || []).map((r: any) => ({
+          id: r.id,
+          ganhavel_id: r.ganhavel_id,
+          winning_ticket_id: r.winning_ticket_id,
+          lottery_draw_numbers: r.lottery_draw_numbers,
+          result_date: r.result_date,
+          verified: r.verified,
+          raffle_title: r.raffles_public_money_ext?.title || 'Título não encontrado',
+          raffle_goal_amount: r.raffles_public_money_ext?.goal_amount || 0,
+          raffle_image_url: r.raffles_public_money_ext?.image_url,
+          winner_name: r.user_profiles?.full_name ? 
+            `${r.user_profiles.full_name.split(' ')[0]} ${r.user_profiles.full_name.split(' ')[1]?.[0]}. ****` :
+            'Ganhador ****'
+        }));
+        setRecentResults(formattedResults);
+      }
+
+      // Fetch complete raffles (100% funded, awaiting draw)
+      const { data: completeData, error: completeError } = await (supabase as any)
+        .from('raffles_public_money_ext')
+        .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date')
+        .eq('status', 'active')
+        .eq('progress_pct_money', 100)
+        .order('draw_date', { ascending: true })
+        .limit(10);
+
+      if (completeError) {
+        console.error('Error fetching complete raffles:', completeError);
+      } else {
+        setCompleteRaffles(completeData || []);
+      }
+
+      // Fetch almost complete raffles (80%+ funded)
+      const { data: almostData, error: almostError } = await (supabase as any)
+        .from('raffles_public_money_ext')
+        .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price')
+        .eq('status', 'active')
+        .gte('progress_pct_money', 80)
+        .lt('progress_pct_money', 100)
+        .order('progress_pct_money', { ascending: false })
+        .limit(10);
+
+      if (almostError) {
+        console.error('Error fetching almost complete raffles:', almostError);
+      } else {
+        setAlmostCompleteRaffles(almostData || []);
+      }
+
+    } catch (error) {
+      console.error('Error fetching results data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando resultados...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -152,54 +211,67 @@ export default function Resultados() {
               </div>
               
               <div className="grid gap-6">
-                {recentResults.map((result) => {
-                  const rifaId = result.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                  return (
-                    <Link key={result.id} to={`/ganhavel/${rifaId}`}>
-                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                        <CardContent className="p-6">
-                          <div className="grid md:grid-cols-4 gap-6 items-center">
-                            <div className="md:col-span-1">
-                              <div className="flex items-start space-x-4">
-                                <div className="w-16 h-16 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <Trophy className="w-8 h-8 text-white" />
-                                </div>
-                                <div>
-                                  <h3 className="text-lg font-semibold mb-1">{result.title}</h3>
-                                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                    <span className="flex items-center">
-                                      <Calendar className="w-4 h-4 mr-1" />
-                                      {result.date}
-                                    </span>
-                                    <span>Concurso {result.contest}</span>
-                                  </div>
-                                </div>
+                {recentResults.length === 0 ? (
+                  <Card className="p-8 text-center">
+                    <div className="text-muted-foreground">
+                      <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Nenhum resultado disponível ainda.</p>
+                      <p className="text-sm mt-2">Os resultados aparecerão aqui após os sorteios.</p>
+                    </div>
+                  </Card>
+                ) : recentResults.map((result) => (
+                  <Link key={result.id} to={`/ganhavel/${result.ganhavel_id}`}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                      <CardContent className="p-6">
+                        <div className="grid md:grid-cols-4 gap-6 items-center">
+                          <div className="md:col-span-1">
+                            <div className="flex items-start space-x-4">
+                              <div className="w-16 h-16 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Trophy className="w-8 h-8 text-white" />
                               </div>
-                            </div>
-                            
-                            <div className="text-center">
-                              <div className="text-sm text-muted-foreground mb-1">Valor Total</div>
-                              <div className="font-bold text-xl text-primary">{result.prizeValue}</div>
-                            </div>
-                            
-                            <div className="text-center">
-                              <div className="text-sm text-muted-foreground mb-1">Ganhador</div>
-                              <div className="font-semibold text-lg">{result.winner}</div>
-                            </div>
-                            
-                            <div className="text-center">
-                              <div className="text-sm text-muted-foreground mb-1">100% Vendido</div>
-                              <div className="font-semibold text-green-600">{result.participants}/{result.totalTickets}</div>
-                              <div className="text-sm text-green-600 font-medium">
-                                ✓ Completo
+                              <div>
+                                <h3 className="text-lg font-semibold mb-1">{result.raffle_title}</h3>
+                                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                  <span className="flex items-center">
+                                    <Calendar className="w-4 h-4 mr-1" />
+                                    {new Date(result.result_date).toLocaleDateString('pt-BR')}
+                                  </span>
+                                  {result.lottery_draw_numbers && (
+                                    <span>Números: {result.lottery_draw_numbers}</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  );
-                })}
+                          
+                          <div className="text-center">
+                            <div className="text-sm text-muted-foreground mb-1">Valor Total</div>
+                            <div className="font-bold text-xl text-primary">{formatCurrency(result.raffle_goal_amount)}</div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-sm text-muted-foreground mb-1">Ganhador</div>
+                            <div className="font-semibold text-lg">{result.winner_name}</div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-sm text-muted-foreground mb-1">Status</div>
+                            <div className="font-semibold text-green-600">
+                              {result.verified ? (
+                                <div className="flex items-center justify-center gap-1">
+                                  <CheckCircle className="w-4 h-4" />
+                                  Verificado
+                                </div>
+                              ) : (
+                                <div className="text-yellow-600">Pendente</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
               </div>
             </TabsContent>
 
@@ -217,53 +289,59 @@ export default function Resultados() {
               </div>
               
               <div className="grid md:grid-cols-2 gap-8">
-                {upcomingDraws.map((draw) => {
-                  const rifaId = draw.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
-                  return (
-                    <Card key={draw.id} className="border-green-200 bg-green-50/50">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span>{draw.title}</span>
-                          <Badge className="bg-green-100 text-green-800">
-                            100% Completa
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
+                {completeRaffles.length === 0 ? (
+                  <Card className="p-8 text-center md:col-span-2">
+                    <div className="text-muted-foreground">
+                      <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Nenhuma rifa completa aguardando sorteio.</p>
+                    </div>
+                  </Card>
+                ) : completeRaffles.map((draw) => (
+                  <Card key={draw.id} className="border-green-200 bg-green-50/50">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="truncate">{draw.title}</span>
+                        <Badge className="bg-green-100 text-green-800 flex-shrink-0">
+                          100% Completa
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {draw.draw_date && (
                           <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Próximo Sorteio:</span>
-                            <span className="font-semibold">{draw.drawDate}</span>
+                            <span className="font-semibold">
+                              {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                            </span>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Valor Total:</span>
-                            <span className="font-bold text-lg text-primary">{draw.prizeValue}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Concurso:</span>
-                            <span className="font-semibold">{draw.contest}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Total de Números:</span>
-                            <span className="font-semibold">{draw.totalTickets}</span>
-                          </div>
-                          <div className="w-full bg-green-200 rounded-full h-3">
-                            <div className="bg-green-500 h-3 rounded-full w-full" />
-                          </div>
-                          <div className="text-center text-sm text-green-700 font-medium">
-                            Todos os números vendidos!
-                          </div>
-                          <Link to={`/ganhavel/${rifaId}`}>
-                            <Button variant="outline" className="w-full">
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Ver Detalhes
-                            </Button>
-                          </Link>
+                        )}
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Valor Total:</span>
+                          <span className="font-bold text-lg text-primary">
+                            {formatCurrency(draw.goal_amount)}
+                          </span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Participantes:</span>
+                          <span className="font-semibold">{draw.participants_count || 0}</span>
+                        </div>
+                        <div className="w-full bg-green-200 rounded-full h-3">
+                          <div className="bg-green-500 h-3 rounded-full w-full" />
+                        </div>
+                        <div className="text-center text-sm text-green-700 font-medium">
+                          Meta atingida - aguardando sorteio!
+                        </div>
+                        <Link to={`/ganhavel/${draw.id}`}>
+                          <Button variant="outline" className="w-full">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Ver Detalhes
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </TabsContent>
 
@@ -281,54 +359,64 @@ export default function Resultados() {
               </div>
               
               <div className="grid md:grid-cols-2 gap-8">
-                {almostCompleteDraws.map((draw) => {
-                  const percentage = Math.round((draw.soldTickets / draw.totalTickets) * 100);
-                  const raised = draw.soldTickets * draw.ticketPrice;
-                  const goal = draw.totalTickets * draw.ticketPrice;
+                {almostCompleteRaffles.length === 0 ? (
+                  <Card className="p-8 text-center md:col-span-2">
+                    <div className="text-muted-foreground">
+                      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Nenhuma rifa próxima de completar.</p>
+                    </div>
+                  </Card>
+                ) : almostCompleteRaffles.map((draw) => {
+                  const percentage = draw.progress_pct_money || 0;
+                  const raised = draw.amount_raised || 0;
+                  const goal = draw.goal_amount || 0;
                   const missing = goal - raised;
-                  const rifaId = draw.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
                   
                   return (
                     <Card key={draw.id} className="border-orange-200 bg-orange-50/50">
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
-                          <span>{draw.title}</span>
-                          <Badge variant="outline" className="text-orange-600 border-orange-600">
+                          <span className="truncate">{draw.title}</span>
+                          <Badge variant="outline" className="text-orange-600 border-orange-600 flex-shrink-0">
                             {percentage}% Completa
                           </Badge>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Data Limite:</span>
-                            <span className="font-semibold">{draw.drawDate}</span>
-                          </div>
+                          {draw.draw_date && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Data Limite:</span>
+                              <span className="font-semibold">
+                                {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+                          )}
                           
                           {/* Money Progress */}
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span className="font-medium">R$ {raised.toLocaleString('pt-BR')}</span>
-                              <span className="text-muted-foreground">de R$ {goal.toLocaleString('pt-BR')}</span>
+                              <span className="font-medium">{formatCurrency(raised)}</span>
+                              <span className="text-muted-foreground">de {formatCurrency(goal)}</span>
                             </div>
                             <div className="w-full bg-orange-200 rounded-full h-3">
                               <div 
                                 className="bg-orange-500 h-3 rounded-full transition-all duration-300"
-                                style={{ width: `${percentage}%` }}
+                                style={{ width: `${Math.min(percentage, 100)}%` }}
                               />
                             </div>
                             <div className="flex justify-between text-sm text-muted-foreground">
                               <span>{percentage}% arrecadado</span>
-                              <span>{draw.soldTickets} participantes</span>
+                              <span>{draw.participants_count || 0} participantes</span>
                             </div>
                           </div>
                           
                           <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Faltam:</span>
-                            <span className="font-semibold text-orange-600">R$ {missing.toLocaleString('pt-BR')}</span>
+                            <span className="font-semibold text-orange-600">{formatCurrency(missing)}</span>
                           </div>
                           
-                          <Link to={`/ganhavel/${rifaId}`}>
+                          <Link to={`/ganhavel/${draw.id}`}>
                             <Button className="w-full bg-orange-500 hover:bg-orange-600">
                               <Clock className="w-4 h-4 mr-2" />
                               Últimas Chances!

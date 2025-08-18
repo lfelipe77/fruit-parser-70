@@ -34,6 +34,24 @@ export default function Dashboard() {
     if (user && !authLoading) {
       fetchDashboardData();
     }
+
+    // Real-time updates for dashboard
+    const onUpdated = () => {
+      if (user && !authLoading) {
+        fetchDashboardData();
+      }
+    };
+    window.addEventListener("raffleUpdated", onUpdated);
+    const interval = setInterval(() => {
+      if (user && !authLoading) {
+        fetchDashboardData();
+      }
+    }, 60000); // Refresh every minute
+
+    return () => {
+      window.removeEventListener("raffleUpdated", onUpdated);
+      clearInterval(interval);
+    };
   }, [user, authLoading]);
 
   const fetchDashboardData = async () => {
@@ -51,52 +69,67 @@ export default function Dashboard() {
         return;
       }
 
-      // Performant count queries using HEAD requests
-      
-      // Count tickets purchased by user
-      const { count: ticketsCount, error: ticketsError } = await supabase
-        .from('tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', uid);
+      // Parallel queries for better performance
+      const [ticketsResult, rafflesResult, transactionsResult] = await Promise.all([
+        // Count tickets purchased by user (using correct buyer_user_id field)
+        supabase
+          .from('tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('buyer_user_id', uid)
+          .eq('status', 'paid'),
 
-      if (ticketsError) {
-        console.error('Error counting tickets:', ticketsError);
+        // Count active raffles created by user  
+        supabase
+          .from('raffles')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', uid)
+          .eq('status', 'active'),
+
+        // Get recent transactions with raffle details
+        supabase
+          .from('transactions')
+          .select(`
+            id,
+            amount,
+            status,
+            created_at,
+            raffle_id,
+            raffles!inner(title)
+          `)
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false })
+          .limit(10)
+      ]);
+
+      // Handle results and errors
+      if (ticketsResult.error) {
+        console.error('Error counting tickets:', ticketsResult.error);
       }
 
-      // Count active raffles launched by user  
-      const { count: activeLaunchedCount, error: rafflesError } = await supabase
-        .from('raffles')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', uid)
-        .eq('status', 'active');
-
-      if (rafflesError) {
-        console.error('Error counting active raffles:', rafflesError);
+      if (rafflesResult.error) {
+        console.error('Error counting active raffles:', rafflesResult.error);
       }
 
-      // Get recent transactions for spending calculation - using existing table
-      const { data: transactions, error: transactionsError } = await supabase
-        .from('transactions')
-        .select('amount, status, created_at, id, raffle_id')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (transactionsError) {
-        console.error('Error fetching transactions:', transactionsError);
+      if (transactionsResult.error) {
+        console.error('Error fetching transactions:', transactionsResult.error);
       }
 
-      // Calculate total spent from completed transactions
+      // Calculate total spent from paid transactions
+      const transactions = transactionsResult.data || [];
       const totalSpent = transactions
-        ?.filter(t => t.status === 'completed' || t.status === 'paid')
-        ?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+        .filter(t => ['completed', 'paid', 'approved', 'succeeded'].includes(t.status))
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
       setStats({
-        totalTickets: ticketsCount ?? 0,
+        totalTickets: ticketsResult.count ?? 0,
         totalSpent: totalSpent,
-        activeGanhaveis: activeLaunchedCount ?? 0,
-        recentTransactions: transactions?.slice(0, 5) || []
+        activeGanhaveis: rafflesResult.count ?? 0,
+        recentTransactions: transactions.slice(0, 5).map(t => ({
+          ...t,
+          raffle_title: t.raffles?.title || 'Rifa removida'
+        }))
       });
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Erro ao carregar dados do dashboard');
@@ -294,11 +327,11 @@ export default function Dashboard() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {stats.recentTransactions.slice(0, 3).map((transaction) => (
+                    {stats.recentTransactions.slice(0, 3).map((transaction: any) => (
                       <div key={transaction.id} className="flex justify-between items-center py-2 border-b border-border/50">
-                        <div>
+                        <div className="flex-1">
                           <p className="text-sm font-medium">
-                            Pagamento #{transaction.id.slice(0, 8)}
+                            {transaction.raffle_title || `Pagamento #${transaction.id.slice(0, 8)}`}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
@@ -309,10 +342,10 @@ export default function Dashboard() {
                             R$ {((transaction.amount || 0) / 100).toFixed(2)}
                           </p>
                           <p className={`text-xs ${
-                            transaction.status === 'completed' || transaction.status === 'paid' ? 'text-green-600' : 
+                            ['completed', 'paid', 'approved', 'succeeded'].includes(transaction.status) ? 'text-green-600' : 
                             transaction.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
                           }`}>
-                            {transaction.status === 'completed' || transaction.status === 'paid' ? 'Pago' : 
+                            {['completed', 'paid', 'approved', 'succeeded'].includes(transaction.status) ? 'Pago' : 
                              transaction.status === 'pending' ? 'Pendente' : 'Falhou'}
                           </p>
                         </div>
