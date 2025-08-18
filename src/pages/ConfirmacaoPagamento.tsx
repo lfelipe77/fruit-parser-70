@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/formatters";
+import { asNumber } from "@/utils/money";
 import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
@@ -125,8 +126,9 @@ export default function ConfirmacaoPagamento() {
       // 2) Inputs
       const now = Date.now();
       const providerRef = `mock-${id}-${now}-${Math.floor(Math.random() * 1e9)}`;
-      const safeQty = Math.max(1, Number(qty || 1));
-      const unitPrice = Number(raffle?.ticket_price ?? 0);
+      const safeQty = Math.max(1, asNumber(qty, 1));
+      const unitPrice = asNumber(raffle?.ticket_price, 0);
+      const totalPaid = +(unitPrice * safeQty).toFixed(2); // number
       const uniqueNumbers = Array.from({ length: safeQty }, (_, i) =>
         `N${now}-${i}-${Math.floor(Math.random() * 1e6)}`
       );
@@ -160,9 +162,9 @@ export default function ConfirmacaoPagamento() {
         state: {
           raffleId: id,
           txId,                         // uuid returned by RPC
-          quantity: safeQty,
-          unitPrice,
-          totalPaid: unitPrice * safeQty,
+          quantity: safeQty,            // number
+          unitPrice,                    // number
+          totalPaid,                    // number
           numbers: uniqueNumbers,
         },
       });

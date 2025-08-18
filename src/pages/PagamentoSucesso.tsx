@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toBRL, asNumber } from "@/utils/money";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,15 +21,21 @@ import { useToast } from "@/hooks/use-toast";
 import { usePersistMock } from "@/hooks/usePersistMock";
 
 interface PaymentSuccessData {
-  rifaId: string;
-  rifaTitle: string;
-  rifaImage: string;
-  selectedNumbers: string[];
-  quantity: number;
-  totalAmount: number;
-  organizerName: string;
-  paymentId: string;
-  paymentDate: string;
+  raffleId?: string;
+  txId?: string;
+  quantity?: number;
+  unitPrice?: number;
+  totalPaid?: number;
+  numbers?: string[];
+  // Legacy fields for compatibility
+  rifaId?: string;
+  rifaTitle?: string;
+  rifaImage?: string;
+  selectedNumbers?: string[];
+  totalAmount?: number;
+  organizerName?: string;
+  paymentId?: string;
+  paymentDate?: string;
 }
 
 export default function PagamentoSucesso() {
@@ -35,16 +43,59 @@ export default function PagamentoSucesso() {
   const navigate = useNavigate();
   const { rifaId } = useParams();
   const { toast } = useToast();
-  const paymentData: PaymentSuccessData = location.state || {
-    rifaId: rifaId || "honda-civic-0km-2024",
-    rifaTitle: "Honda Civic 0KM 2024",
-    rifaImage: "/src/assets/honda-civic-2024.jpg",
-    selectedNumbers: ["(12-43-24-56-78-90)", "(34-67-89-12-45-78)", "(56-89-23-45-67-34)"],
-    quantity: 3,
-    totalAmount: 15,
-    organizerName: "AutoRifas Premium",
-    paymentId: "MP_1234567890",
-    paymentDate: new Date().toISOString()
+  const s = location.state as PaymentSuccessData || {};
+  const [rehydrated, setRehydrated] = useState<PaymentSuccessData>(s);
+
+  useEffect(() => {
+    // If we have new format state, we're good
+    if (s?.txId && s?.raffleId) return;
+
+    // Attempt rehydrate via latest successful tx for this user (fallback)
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      // Grab latest "paid" tx from the user
+      const { data: tx, error } = await supabase
+        .from("transactions")
+        .select("id, raffle_id, amount")
+        .eq("buyer_user_id", session.user.id)
+        .eq("status", "paid")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && tx) {
+        setRehydrated({
+          raffleId: tx.raffle_id,
+          txId: tx.id,
+          quantity: 1, // Default since we don't have qty in transactions
+          totalPaid: asNumber(tx.amount, 0),
+          unitPrice: asNumber(tx.amount, 0),
+        });
+      }
+    })();
+  }, [s?.txId, s?.raffleId]);
+
+  // Support both new and legacy formats
+  const quantity = asNumber(rehydrated.quantity || rehydrated.quantity, 1);
+  const unitPrice = asNumber(rehydrated.unitPrice, rehydrated.totalPaid ? asNumber(rehydrated.totalPaid || rehydrated.totalAmount, 0) / Math.max(1, quantity) : 0);
+  const totalPaid = asNumber(rehydrated.totalPaid || rehydrated.totalAmount, unitPrice * quantity);
+  const numbers = rehydrated.numbers || rehydrated.selectedNumbers || [];
+  const raffleId = rehydrated.raffleId || rehydrated.rifaId || rifaId;
+  const paymentId = rehydrated.txId || rehydrated.paymentId || "N/A";
+  const paymentDate = rehydrated.paymentDate || new Date().toISOString();
+
+  const paymentData = {
+    rifaId: raffleId,
+    rifaTitle: rehydrated.rifaTitle || "Sorteio",
+    rifaImage: rehydrated.rifaImage || "/placeholder.svg",
+    selectedNumbers: numbers,
+    quantity,
+    totalAmount: totalPaid,
+    organizerName: rehydrated.organizerName || "Ganhavel",
+    paymentId,
+    paymentDate
   };
 
   // Process mock purchase using RPC
@@ -70,7 +121,7 @@ export default function PagamentoSucesso() {
 
 🎯 Prêmio: ${paymentData.rifaTitle}
 🎫 Bilhetes: ${paymentData.quantity}
-💰 Valor: R$ ${paymentData.totalAmount.toFixed(2)}
+💰 Valor: ${toBRL(paymentData.totalAmount)}
 🏆 Organizado por: ${paymentData.organizerName}
 
 Participe você também e concorra a este prêmio incrível! 🚀`;
@@ -146,9 +197,9 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Valor Pago</p>
-                      <p className="text-lg font-semibold text-green-600">
-                        R$ {paymentData.totalAmount.toFixed(2)}
-                      </p>
+                       <p className="text-lg font-semibold text-green-600">
+                         {toBRL(paymentData.totalAmount)}
+                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Status</p>
