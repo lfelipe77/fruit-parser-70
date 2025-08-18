@@ -79,6 +79,7 @@ export default function CategoriesView() {
       const { data } = await (supabase as any)
         .from('raffles_public_money_ext')
         .select(RAFFLE_CARD_SELECT)
+        .in('status', ['active','completed'])
         .order('created_at', { ascending: false })
         .limit(12);
       

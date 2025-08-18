@@ -171,6 +171,7 @@ export default function SubcategoryDetailPage() {
           .select(RAFFLE_CARD_SELECT)
           .eq('category_slug', categorySlug)
           .eq('subcategory_slug', subSlug)
+          .in('status', ['active','completed'])
           .order('created_at', { ascending: false })
           .limit(60);
 

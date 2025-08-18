@@ -63,7 +63,8 @@ export default function DiscoverRaffles() {
 
       let query = (supabase as any)
         .from('raffles_public_money_ext')
-        .select(RAFFLE_CARD_SELECT, { count: "exact" });
+        .select(RAFFLE_CARD_SELECT, { count: "exact" })
+        .in('status', ['active','completed']);
 
       if (searchTerm) {
         query = query.ilike("title", `%${searchTerm}%`);
