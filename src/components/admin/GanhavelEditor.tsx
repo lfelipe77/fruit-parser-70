@@ -1,19 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { GanhavelRow } from "@/types/ganhaveis";
+import { useToast } from "@/hooks/use-toast";
+import { nanoid } from "nanoid";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
-import { nanoid } from "nanoid";
 
-export interface GanhavelEditorProps {
-  id: string | null;
+interface GanhavelEditorProps {
+  open: boolean;
+  row: GanhavelRow | null;
   onClose: () => void;
-  onSaved: (id: string) => void;
+  onSaved: (row: GanhavelRow) => void;
 }
 
 interface FormState {
@@ -35,8 +35,7 @@ interface FormState {
   direct_purchase_link: string;
 }
 
-export function GanhavelEditor({ id, onClose, onSaved }: GanhavelEditorProps) {
-  const { user } = useAuth();
+export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorProps) {
   const { toast } = useToast();
 
   const [form, setForm] = useState<FormState>({
@@ -59,53 +58,33 @@ export function GanhavelEditor({ id, onClose, onSaved }: GanhavelEditorProps) {
   });
 
   const [raisedAmount, setRaisedAmount] = useState<number | null>(null);
-  const [loading, setLoading] = useState<boolean>(!!id);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
-  // Load row
+  // Load row data when opened
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      if (!id) return; // new
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("ganhaveis")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (!active) return;
-      if (error) {
-        console.error("Erro ao carregar ganhavel:", error);
-        toast({ title: "Erro", description: "Falha ao carregar ganhavel.", variant: "destructive" });
-      } else if (data) {
-        const row: any = data as any;
-        setForm({
-          title: row.title ?? "",
-          description: row.description ?? "",
-          image_url: row.image_url ?? null,
-          goal_amount: row.goal_amount != null ? String(row.goal_amount) : "",
-          ticket_price: row.ticket_price != null ? String(row.ticket_price) : "",
-          total_tickets: row.total_tickets != null ? String(row.total_tickets) : "",
-          status: (row.status as FormState["status"]) ?? "pending",
-          product_name: row.product_name ?? "",
-          category: row.category ?? "",
-          subcategory: row.subcategory ?? "",
-          start_date: row.start_date ? toLocalInput(row.start_date) : "",
-          end_date: row.end_date ? toLocalInput(row.end_date) : "",
-          location: row.location ?? "",
-          country_region: row.country_region ?? "",
-          affiliate_link: row.affiliate_link ?? "",
-          direct_purchase_link: row.direct_purchase_link ?? "",
-        });
-        setRaisedAmount(typeof row.raised_amount === "number" ? row.raised_amount : Number(row.raised_amount ?? 0));
-      }
-      setLoading(false);
-    };
-    load();
-    return () => { active = false; };
-  }, [id, toast]);
+    if (!open || !row) return;
+    setForm({
+      title: row.title ?? "",
+      description: row.description ?? "",
+      image_url: row.image_url ?? null,
+      goal_amount: row.goal_amount != null ? String(row.goal_amount) : "",
+      ticket_price: row.ticket_price != null ? String(row.ticket_price) : "",
+      total_tickets: row.total_tickets != null ? String(row.total_tickets) : "",
+      status: (row.status as FormState["status"]) ?? "pending",
+      product_name: "",
+      category: row.category ?? "",
+      subcategory: row.subcategory ?? "",
+      start_date: row.start_date ? toLocalInput(row.start_date) : "",
+      end_date: row.end_date ? toLocalInput(row.end_date) : "",
+      location: row.location ?? "",
+      country_region: row.country_region ?? "",
+      affiliate_link: row.affiliate_link ?? "",
+      direct_purchase_link: row.direct_purchase_link ?? "",
+    });
+    setRaisedAmount(typeof row.raised_amount === "number" ? row.raised_amount : Number(row.raised_amount ?? 0));
+  }, [open, row]);
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -127,7 +106,7 @@ export function GanhavelEditor({ id, onClose, onSaved }: GanhavelEditorProps) {
     setUploading(true);
     try {
       const ext = imageFile.name.split(".").pop();
-      const key = `images/${id ?? nanoid()}/${Date.now()}-${nanoid()}.${ext}`;
+      const key = `images/${row?.id ?? nanoid()}/${Date.now()}-${nanoid()}.${ext}`;
       const { error } = await supabase.storage.from("ganhaveis").upload(key, imageFile, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("ganhaveis").getPublicUrl(key);
@@ -175,29 +154,19 @@ export function GanhavelEditor({ id, onClose, onSaved }: GanhavelEditorProps) {
         updated_at: new Date().toISOString(),
       };
 
-      let savedId = id;
-      if (id) {
-        const { data, error } = await supabase
-          .from("ganhaveis")
-          .update(payload)
-          .eq("id", id)
-          .select()
-          .single();
-        if (error) throw error;
-        savedId = data?.id ?? id;
-        toast({ title: "Ganhavel atualizado", description: "As alterações foram salvas." });
-      } else {
-        const { data, error } = await supabase
-          .from("ganhaveis")
-          .insert([{ ...payload, creator_id: user?.id ?? null }])
-          .select()
-          .single();
-        if (error) throw error;
-        savedId = data?.id;
-        toast({ title: "Ganhavel criado", description: "Registro criado com sucesso." });
-      }
-
-      if (savedId) onSaved(savedId);
+      if (!row) return;
+      
+      const { data, error } = await supabase
+        .from("ganhaveis")
+        .update(payload)
+        .eq("id", row.id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      toast({ title: "Ganhavel atualizado", description: "As alterações foram salvas." });
+      onSaved((data as GanhavelRow) ?? { ...row, ...payload });
     } catch (err) {
       console.error("Save error", err);
       toast({ title: "Erro", description: "Falha ao salvar ganhavel.", variant: "destructive" });
@@ -208,11 +177,15 @@ export function GanhavelEditor({ id, onClose, onSaved }: GanhavelEditorProps) {
 
   const currency = (n: number | null | undefined) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(n || 0));
 
+  if (!open || !row) return null;
+
   return (
-    <div className="grid gap-4 py-2">
-      {loading ? (
-        <div className="animate-pulse h-24 bg-muted rounded" />
-      ) : null}
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+      <div className="w-[680px] max-w-[96vw] rounded-2xl bg-background p-6 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-semibold mb-2">Editar Ganhavel</h2>
+        <p className="text-sm text-muted-foreground mb-6">Edite as informações do ganhavel.</p>
+
+        <div className="grid gap-4">{/* Form content */}
 
       <div className="grid gap-2">
         <Label htmlFor="title">Título</Label>
@@ -329,11 +302,22 @@ export function GanhavelEditor({ id, onClose, onSaved }: GanhavelEditorProps) {
         </Card>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="outline" onClick={onClose}>Cancelar</Button>
-        <Button onClick={handleSave} disabled={!isValid || saving || uploading}>
-          {saving ? "Salvando..." : uploading ? "Enviando..." : "Salvar"}
-        </Button>
+        <div className="flex justify-end gap-2 pt-4">
+          <button 
+            className="border rounded-lg px-4 py-2 hover:bg-muted/50" 
+            onClick={onClose}
+          >
+            Cancelar
+          </button>
+          <button
+            className="rounded-lg px-4 py-2 bg-primary text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
+            disabled={!isValid || saving || uploading}
+            onClick={handleSave}
+          >
+            {saving ? "Salvando..." : uploading ? "Enviando..." : "Salvar"}
+          </button>
+        </div>
+        </div>
       </div>
     </div>
   );
