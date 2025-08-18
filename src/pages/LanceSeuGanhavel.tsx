@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 // inline toast to avoid new imports/files
 function ToastInline({
@@ -82,11 +83,6 @@ export default function LanceSeuGanhavel() {
   // numeric fields as strings
   const [valueGoal, setValueGoal] = useState<string>("");
   const [valueTicket, setValueTicket] = useState<string>("");
-  const [valueTotal, setValueTotal] = useState<string>("");
-  
-  // legacy for calculations
-  const [ticketPrice, setTicketPrice] = useState<number | "">("");
-  const [prizeValue, setPrizeValue] = useState<number | "">("");
 
   const [images, setImages] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -123,19 +119,15 @@ export default function LanceSeuGanhavel() {
 
   const userId = useMemo(() => session?.user?.id ?? null, [session]);
 
-  // Cálculo interno (não exibimos "bilhetes calculados" na UI)
+  // Cálculo interno para exibir taxa e meta
   const calc = useMemo(() => {
-    const pv = Number(prizeValue || 0);
-    const tp = Number(ticketPrice || 0);
+    const pv = Number(valueGoal || 0);
+    const tp = Number(valueTicket || 0);
     const fee = Math.round(pv * 0.02 * 100) / 100; // 2% arredondado para centavos
     const goal = Math.round((pv + fee) * 100) / 100;
 
-    // tickets = ceil(goal / ticketPrice) — apenas para salvar em p_total_tickets (não mostrar)
-    const tickets =
-      tp > 0 ? Math.max(1, Math.ceil(goal / tp)) : 0;
-
-    return { pv, tp, fee, goal, tickets };
-  }, [prizeValue, ticketPrice]);
+    return { pv, tp, fee, goal };
+  }, [valueGoal, valueTicket]);
 
   function onFilesSelected(files: FileList | null) {
     if (!files) return;
@@ -148,11 +140,11 @@ export default function LanceSeuGanhavel() {
     try {
       const path = `${uid}/${Date.now()}-${file.name}`;
       const { error: upErr } = await supabase.storage
-        .from("raffle-images")
+        .from("raffles")
         .upload(path, file, { cacheControl: "3600", upsert: false });
       if (upErr) throw upErr;
 
-      const { data: pub } = supabase.storage.from("raffle-images").getPublicUrl(path);
+      const { data: pub } = supabase.storage.from("raffles").getPublicUrl(path);
       if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública da imagem");
       return pub.publicUrl as string;
     } finally {
@@ -169,22 +161,36 @@ export default function LanceSeuGanhavel() {
   // validation - require title and check numeric fields are >= 0
   const canSave = useMemo(() => {
     return (title ?? "").trim().length > 0 &&
-      (valueGoal === "" || Number(valueGoal) >= 0) &&
-      (valueTicket === "" || Number(valueTicket) >= 0) &&
-      (valueTotal === "" || Number(valueTotal) >= 0);
-  }, [title, valueGoal, valueTicket, valueTotal]);
+      Number(valueGoal) >= 0 &&
+      Number(valueTicket) >= 0 &&
+      valueGoal !== "" &&
+      valueTicket !== "";
+  }, [title, valueGoal, valueTicket]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    if (!session?.user?.id) {
-      setErrorMsg("Você precisa estar logado para criar um Ganhavel.");
+    // Get current user for user_id
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setErrorMsg("Você precisa estar logado.");
+      navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`);
       return;
     }
-    if (!title || !valueTicket || !valueGoal) {
-      setErrorMsg("Preencha Título, Preço do Bilhete e Meta de Arrecadação.");
+
+    // Basic validation
+    if (!title.trim()) {
+      setErrorMsg("Título é obrigatório.");
+      return;
+    }
+    if (!valueGoal || toNum(valueGoal) === null || toNum(valueGoal)! < 0) {
+      setErrorMsg("Informe um valor de meta válido.");
+      return;
+    }
+    if (!valueTicket || toNum(valueTicket) === null || toNum(valueTicket)! < 0) {
+      setErrorMsg("Informe um preço de bilhete válido.");
       return;
     }
     if (!images.length) {
@@ -196,28 +202,29 @@ export default function LanceSeuGanhavel() {
     try {
       const uid = session.user.id;
 
-      // upload primeira imagem como capa
+      // Upload image to raffles bucket
       const cover = images[0];
       const path = `${uid}/${Date.now()}-${cover.name}`;
-      const up = await supabase.storage.from("raffle-images").upload(path, cover, {
-        upsert: false, cacheControl: "3600",
-      });
-      if (up.error) throw up.error;
+      const { error: upErr } = await supabase.storage
+        .from("raffles")
+        .upload(path, cover, { upsert: true, contentType: cover.type });
+      
+      if (upErr) {
+        console.error(upErr);
+        setErrorMsg("Falha ao subir imagem.");
+        return;
+      }
 
-      const pub = supabase.storage.from("raffle-images").getPublicUrl(path);
-      const coverUrl = pub.data?.publicUrl;
-      if (!coverUrl) throw new Error("Falha ao obter URL pública da imagem");
+      const imageUrlPublic = supabase.storage.from("raffles").getPublicUrl(path).data.publicUrl;
 
-      // prepare payload with numeric coercion
       const payload = {
-        title: (title ?? "").trim(),
-        description: (description ?? "").trim() || null,
-        image_url: coverUrl,
-        
-        // 🔑 numeric fields (coerced)
-        goal_amount: valueGoal !== "" ? toNum(valueGoal, null) : null,
-        ticket_price: valueTicket !== "" ? toNum(valueTicket, null) : null,
-        total_tickets: valueTotal !== "" ? toNum(valueTotal, null) : null,
+        user_id: session.user.id,
+        title: title.trim(),
+        description: description.trim() || null,
+        image_url: imageUrlPublic,
+
+        goal_amount: toNum(valueGoal),
+        ticket_price: toNum(valueTicket),
 
         status: "active",
         category_id: categoryId ? Number(categoryId) : null,
@@ -229,16 +236,20 @@ export default function LanceSeuGanhavel() {
         updated_at: new Date().toISOString(),
       };
 
-      console.log("[create ganhavel] payload", payload);
-
+      console.log("[lancar ganhavel] payload", payload);
       const { data, error } = await supabase
-        .from("raffles")                 // ← write to raffles (not a view)
+        .from("raffles")
         .insert(payload)
         .select("*")
         .single();
 
       if (error) {
-        console.error("[create ganhavel] error:", error);
+        console.error("[lancar ganhavel] insert error", {
+          code: (error as any)?.code,
+          message: (error as any)?.message,
+          details: (error as any)?.details,
+          hint: (error as any)?.hint,
+        });
         setErrorMsg("Falha ao lançar ganhavel. Verifique os campos.");
         return;
       }
@@ -428,7 +439,7 @@ export default function LanceSeuGanhavel() {
           {/* Configurações */}
           <section className="bg-gray-50 rounded-xl border p-4 shadow-sm">
             <h2 className="text-lg font-semibold mb-2">Configurações</h2>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium">Meta de Arrecadação (R$) *</label>
                 <input
@@ -453,21 +464,10 @@ export default function LanceSeuGanhavel() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium">Total de Bilhetes</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="mt-1 w-full border rounded-lg p-2"
-                  value={valueTotal}
-                  onChange={(e) => setValueTotal(e.target.value)}
-                  placeholder="Ex: 140"
-                />
-              </div>
             </div>
 
             <p className="text-sm text-gray-600 mt-3">
-              Configure a meta de arrecadação, preço dos bilhetes e opcionalmente o total de bilhetes. O sorteio será definido automaticamente quando a meta for atingida.
+              Configure a meta de arrecadação e preço dos bilhetes. O sorteio será definido automaticamente quando a meta for atingida.
             </p>
           </section>
 
