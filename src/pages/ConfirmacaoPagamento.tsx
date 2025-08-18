@@ -103,32 +103,56 @@ export default function ConfirmacaoPagamento() {
 
   // Handle form submission
   const handlePayment = async () => {
+    console.log("[ConfirmacaoPagamento] Starting payment process...");
     setIsProcessing(true);
+    
     try {
+      // Validate required data
+      if (!id) {
+        throw new Error("ID da rifa não encontrado");
+      }
+      if (!raffle?.ticket_price) {
+        throw new Error("Preço do bilhete não encontrado");
+      }
+      if (selectedNumbers.length === 0) {
+        throw new Error("Números da sorte não gerados");
+      }
+
+      console.log("[ConfirmacaoPagamento] Payment data:", {
+        rifaId: id,
+        qty,
+        unitPrice: raffle.ticket_price,
+        numbersCount: selectedNumbers.length,
+        total
+      });
+
       // Record the mock purchase in database using the admin function
       const providerRef = `PAY_${Date.now()}`;
       
+      console.log("[ConfirmacaoPagamento] Calling record_mock_purchase_admin...");
       const { data: result, error } = await supabase.rpc("record_mock_purchase_admin", {
         p_buyer_user_id: "00000000-0000-0000-0000-000000000000", // Anonymous buyer for now
         p_raffle_id: id,
         p_qty: qty,
-        p_unit_price: raffle?.ticket_price || 0,
+        p_unit_price: raffle.ticket_price,
         p_numbers: selectedNumbers,
         p_provider_ref: providerRef
       });
 
       if (error) {
-        console.error('Payment recording error:', error);
+        console.error('[ConfirmacaoPagamento] Payment recording error:', error);
         throw error;
       }
 
-      console.log('Payment recorded successfully:', result);
+      console.log('[ConfirmacaoPagamento] Payment recorded successfully:', result);
       
       // Trigger raffle update event for real-time updates
+      console.log('[ConfirmacaoPagamento] Dispatching raffleUpdated event...');
       window.dispatchEvent(new CustomEvent('raffleUpdated', { 
         detail: { raffleId: id } 
       }));
 
+      console.log('[ConfirmacaoPagamento] Redirecting to success page...');
       // Redirect to success page with selected numbers
       navigate(`/ganhavel/${id}/pagamento-sucesso?qty=${qty}`, {
         state: {
@@ -142,10 +166,19 @@ export default function ConfirmacaoPagamento() {
           paymentDate: new Date().toISOString()
         }
       });
+      
     } catch (error) {
-      console.error('Payment error:', error);
-      // Redirect to error page
-      navigate(`/ganhavel/${id}/pagamento-erro`);
+      console.error('[ConfirmacaoPagamento] Payment error:', error);
+      // Redirect to error page with error details
+      navigate(`/ganhavel/${id}/pagamento-erro`, {
+        state: {
+          rifaId: id,
+          rifaTitle: raffle?.title,
+          errorType: 'failed',
+          errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+          attemptCount: 1
+        }
+      });
     } finally {
       setIsProcessing(false);
     }
