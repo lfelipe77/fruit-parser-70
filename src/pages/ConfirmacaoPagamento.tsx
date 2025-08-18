@@ -127,15 +127,16 @@ export default function ConfirmacaoPagamento() {
       });
 
       // Record the mock purchase in database using the admin function
-      const providerRef = `PAY_${Date.now()}`;
+      const providerRef = `mock-${id}-${Date.now()}`;
+      const uniqueNumbers = Array.from({ length: qty }, (_, i) => `N${Date.now()}-${i}`);
       
       console.log("[ConfirmacaoPagamento] Calling record_mock_purchase_admin...");
       const { data: result, error } = await supabase.rpc("record_mock_purchase_admin", {
         p_buyer_user_id: "00000000-0000-0000-0000-000000000000", // Anonymous buyer for now
         p_raffle_id: id,
         p_qty: qty,
-        p_unit_price: raffle.ticket_price,
-        p_numbers: selectedNumbers,
+        p_unit_price: Number(raffle.ticket_price),
+        p_numbers: uniqueNumbers,
         p_provider_ref: providerRef
       });
 
