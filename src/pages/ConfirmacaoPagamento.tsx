@@ -145,17 +145,18 @@ export default function ConfirmacaoPagamento() {
       
       // Create transaction
       console.log("[ConfirmacaoPagamento] Creating transaction...");
-      const { data: transaction, error: txError } = await supabase
+      const { data: transaction, error: txError } = await (supabase as any)
         .from('transactions')
         .insert({
           raffle_id: id,
           user_id: user.id,
+          buyer_user_id: user.id,
           amount: totalAmount,
+          type: 'charge',
           status: 'paid',
           provider: 'mock',
-          provider_payment_id: providerRef,
+          provider_ref: providerRef,
           selected_numbers: selectedNumbers,
-          type: 'payment'
         })
         .select('id')
         .single();
