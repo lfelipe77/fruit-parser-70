@@ -134,31 +134,29 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       const vTicket = form.ticket_price.trim();
       const vTotal = form.total_tickets.trim();
 
-      const payload: any = {
+      // Map payload to raffles table (we now edit items coming from raffles_public_money_ext)
+      const payloadRaffles: any = {
         title: form.title.trim(),
         description: form.description.trim() || null,
         image_url: imageUrl ?? form.image_url ?? null,
         goal_amount: vGoal !== "" ? Number(vGoal) : null,
         ticket_price: vTicket !== "" ? Number(vTicket) : null,
-        total_tickets: vTotal !== "" ? Number(vTotal) : null,
+        // We intentionally do NOT send total_tickets, start/end dates as they are not used here
         status: form.status,
         product_name: form.product_name.trim() || null,
         category: form.category.trim() || null,
-        subcategory: form.subcategory.trim() || null,
-        start_date: form.start_date || null,
-        end_date: form.end_date || null,
+        // subcategory text column may not exist in raffles; omit to avoid errors
         location: form.location.trim() || null,
-        country_region: form.country_region.trim() || null,
-        affiliate_link: form.affiliate_link.trim() || null,
-        direct_purchase_link: form.direct_purchase_link.trim() || null,
+        // country_region column does not exist in raffles; omit
+        vendor_link: form.direct_purchase_link.trim() || null,
         updated_at: new Date().toISOString(),
       };
 
       if (!row) return;
       
       const { data, error } = await supabase
-        .from("ganhaveis")
-        .update(payload)
+        .from("raffles")
+        .update(payloadRaffles)
         .eq("id", row.id)
         .select()
         .single();
@@ -166,7 +164,18 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       if (error) throw error;
       
       toast({ title: "Ganhavel atualizado", description: "As alterações foram salvas." });
-      onSaved((data as GanhavelRow) ?? { ...row, ...payload });
+      const updatedRow = ({
+        ...row,
+        title: data?.title ?? form.title.trim(),
+        description: (data?.description as string | null) ?? (form.description.trim() || null),
+        image_url: (data?.image_url as string | null) ?? imageUrl ?? row.image_url ?? null,
+        goal_amount: (data?.goal_amount as number | null) ?? (vGoal !== "" ? Number(vGoal) : row.goal_amount ?? null),
+        ticket_price: (data?.ticket_price as number | null) ?? (vTicket !== "" ? Number(vTicket) : row.ticket_price ?? null),
+        status: (data?.status as GanhavelRow["status"]) ?? form.status,
+        category: (data?.category as string | null) ?? (form.category.trim() || null),
+        updated_at: (data?.updated_at as string | null) ?? new Date().toISOString(),
+      } as unknown) as GanhavelRow;
+      onSaved(updatedRow);
     } catch (err) {
       console.error("Save error", err);
       toast({ title: "Erro", description: "Falha ao salvar ganhavel.", variant: "destructive" });
