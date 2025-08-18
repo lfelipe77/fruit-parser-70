@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { GanhavelEditor } from "@/components/admin/GanhavelEditor";
-import type { GanhavelRow } from "@/types/ganhaveis";
+import type { RaffleRow, RaffleCardInfo } from "@/types/raffles";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,10 @@ export default function AdminRaffles() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
-  const [rows, setRows] = useState<GanhavelRow[]>([]);
+  const [rows, setRows] = useState<RaffleCardInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<GanhavelRow | null>(null);
+  const [editing, setEditing] = useState<RaffleRow | null>(null);
   
   // Pagination and filtering
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,16 +27,30 @@ export default function AdminRaffles() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const itemsPerPage = 12;
 
-  // Load ganhaveis from the writable table (for admin CRUD)
+  // Helper to fetch editable raffle from table
+  async function fetchEditableRaffle(id: string): Promise<RaffleRow | null> {
+    const { data, error } = await (supabase as any)
+      .from("raffles")
+      .select("id,user_id,title,description,image_url,goal_amount,ticket_price,category_id,subcategory_id,location_city,location_state,direct_purchase_link,status,created_at,updated_at")
+      .eq("id", id)
+      .single();
+    if (error) {
+      console.error("[AdminRaffles] load editable raffle error:", error);
+      return null;
+    }
+    return data as RaffleRow;
+  }
+
+  // Load ganhaveis from the view (for dashboard stats)
   const loadGanhaveis = async (page = 1) => {
     setLoading(true);
     try {
       const from = (page - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
 
-      // Use the writable table for admin access (not the read-only view)
-      let query = supabase
-        .from("raffles")
+      // Use the view for listing with proper money data
+      let query = (supabase as any)
+        .from("raffles_public_money_ext")
         .select(`
           id,
           title,
@@ -45,14 +59,17 @@ export default function AdminRaffles() {
           status,
           ticket_price,
           goal_amount,
-          prize_value,
-          total_tickets,
+          amount_raised,
+          progress_pct_money,
+          last_paid_at,
           created_at,
           draw_date,
-          category_id,
-          subcategory_id,
-          user_id,
-          owner_user_id
+          category_name,
+          subcategory_name,
+          location_city,
+          location_state,
+          participants_count,
+          direct_purchase_link
         `, { count: 'exact' })
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -72,36 +89,7 @@ export default function AdminRaffles() {
       if (error) throw error;
 
       setTotalCount(count || 0);
-
-      // Transform to match GanhavelRow interface from the writable table
-      const transformedData = (data || []).map(raffle => ({
-        id: raffle.id,
-        creator_id: raffle.user_id,
-        title: raffle.title || 'Sem título',
-        description: raffle.description,
-        image_url: raffle.image_url,
-        category: null, // Will need lookup if needed
-        subcategory: null, // Will need lookup if needed
-        ticket_price: raffle.ticket_price,
-        total_tickets: raffle.total_tickets,
-        sold_tickets: 0, // Can be calculated separately if needed
-        goal_amount: raffle.goal_amount,
-        raised_amount: 0, // Can be calculated from payments if needed
-        status: raffle.status,
-        lottery_type: null,
-        location: null,
-        country_region: null,
-        affiliate_link: null,
-        direct_purchase_link: null,
-        start_date: raffle.created_at,
-        end_date: raffle.draw_date,
-        created_at: raffle.created_at,
-        updated_at: raffle.created_at,
-        category_id: raffle.category_id,
-        subcategory_id: raffle.subcategory_id,
-      }));
-
-      setRows(transformedData as GanhavelRow[]);
+      setRows(data || []);
     } catch (error) {
       console.error("Error loading ganhaveis:", error);
       toast({
@@ -122,27 +110,41 @@ export default function AdminRaffles() {
   useEffect(() => {
     const id = searchParams.get("edit");
     if (!id || !rows.length) return;
-    const row = rows.find(r => r.id === id) || null;
-    if (row) {
-      setEditing(row);
-      setOpen(true);
+    const rowFromView = rows.find(r => r.id === id);
+    if (rowFromView) {
+      handleEdit(rowFromView);
     }
   }, [searchParams, rows]);
 
-  const handleEdit = (row: GanhavelRow) => {
-    setEditing(row);
+  const handleEdit = async (rowFromView: RaffleCardInfo) => {
+    const full = await fetchEditableRaffle(rowFromView.id);
+    if (!full) return;
+    setEditing(full);
     setOpen(true);
   };
 
-  const handleSaved = (saved: GanhavelRow) => {
+  const handleSaved = (saved: RaffleRow) => {
+    // Update the list row in memory
     setRows(prev => {
       const ix = prev.findIndex(p => p.id === saved.id);
       if (ix >= 0) {
         const copy = prev.slice();
-        copy[ix] = saved;
+        // Update with saved data where possible
+        copy[ix] = {
+          ...copy[ix],
+          title: saved.title,
+          description: saved.description,
+          image_url: saved.image_url,
+          status: saved.status,
+          ticket_price: saved.ticket_price,
+          goal_amount: saved.goal_amount,
+          location_city: saved.location_city,
+          location_state: saved.location_state,
+          direct_purchase_link: saved.direct_purchase_link,
+        };
         return copy;
       }
-      return [saved, ...prev];
+      return prev;
     });
     setOpen(false);
     setEditing(null);
@@ -248,19 +250,19 @@ export default function AdminRaffles() {
                 </div>
                 <div className="flex justify-between">
                   <span>Arrecadado:</span>
-                  <span className="font-medium text-primary">{fmtBRL(r.raised_amount)}</span>
+                  <span className="font-medium text-primary">{fmtBRL(r.amount_raised)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Ticket:</span>
                   <span className="font-medium">{fmtBRL(r.ticket_price)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total Bilhetes:</span>
-                  <span className="font-medium">{r.total_tickets ?? 0}</span>
+                  <span>Progresso:</span>
+                  <span className="font-medium">{r.progress_pct_money ?? 0}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Vendidos:</span>
-                  <span className="font-medium">{r.sold_tickets ?? 0}</span>
+                  <span>Participantes:</span>
+                  <span className="font-medium">{r.participants_count ?? 0}</span>
                 </div>
               </div>
               

@@ -1,3 +1,50 @@
+// Single source of truth for raffle types
+export interface RaffleRow {
+  id: string;                 // uuid
+  user_id: string | null;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+
+  goal_amount: number | null;
+  ticket_price: number | null;
+
+  // categorization (ids)
+  category_id: number | null;     // bigint
+  subcategory_id: string | null;  // uuid
+
+  // location
+  location_city: string | null;
+  location_state: string | null;
+
+  // links
+  direct_purchase_link: string | null;
+
+  status: 'active' | 'pending' | 'archived' | string;
+
+  created_at: string | null;  // ISO
+  updated_at: string | null;  // ISO
+}
+
+export type RaffleFormData = {
+  title: string;
+  description: string | null;
+  image_url: string | null;
+
+  goal_amount: number | null;
+  ticket_price: number | null;
+
+  category_id: number | null;
+  subcategory_id: string | null;
+
+  location_city: string | null;
+  location_state: string | null;
+
+  direct_purchase_link: string | null;
+
+  status: 'active' | 'pending' | 'archived' | string;
+};
+
 export type RaffleCardInfo = {
   id: string;
   title: string;
