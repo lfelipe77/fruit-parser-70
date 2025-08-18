@@ -235,25 +235,33 @@ export default function Settings() {
 
   const handleDeleteCategory = async (id: number) => {
     try {
-      const { error } = await supabase
+      // Remove related subcategories first to avoid potential constraints
+      const { error: subErr } = await supabase
+        .from('subcategories')
+        .delete()
+        .eq('category_id', id);
+      if (subErr) throw subErr;
+
+      // Then delete the category itself
+      const { error: catErr } = await supabase
         .from('categories')
         .delete()
         .eq('id', id);
+      if (catErr) throw catErr;
 
-      if (error) throw error;
-
+      // Update local state
       setCategories(categories.filter(cat => cat.id !== id));
-      // Also remove related subcategories from state
       setSubcategories(subcategories.filter(sub => sub.category_id !== id));
+
       toast({
         title: "Categoria removida",
         description: "A categoria foi removida com sucesso.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting category:', error);
       toast({
         title: "Erro ao remover categoria",
-        description: "Não foi possível remover a categoria.",
+        description: error?.message || "Não foi possível remover a categoria.",
         variant: "destructive"
       });
     }
