@@ -64,7 +64,7 @@ function Reveal({ show, children }: { show: boolean; children: React.ReactNode }
 }
 
 type Category = { id: number; nome: string };
-
+ type Subcat = { id: string; name: string; category_id: number; slug: string };
 export default function LanceSeuGanhavel() {
   const navigate = useNavigate();
 
@@ -75,7 +75,8 @@ export default function LanceSeuGanhavel() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [subcategory, setSubcategory] = useState<string>("");
+  const [subcategoryId, setSubcategoryId] = useState<string>("");
+  const [subs, setSubs] = useState<Subcat[]>([]);
   const [locationType, setLocationType] = useState<"online" | "cidade">("online");
   const [city, setCity] = useState("");
   const [affiliateUrl, setAffiliateUrl] = useState("");
@@ -116,6 +117,25 @@ export default function LanceSeuGanhavel() {
         if (data) setCategories(data as Category[]);
       });
   }, []);
+
+  // subcategorias
+  useEffect(() => {
+    supabase
+      .from("subcategories")
+      .select("id, name, category_id, slug")
+      .order("name", { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.error(error);
+        if (data) setSubs(data as Subcat[]);
+      });
+  }, []);
+
+  const subOptions = useMemo(() => {
+    const cat = categoryId ? Number(categoryId) : null;
+    return subs.filter((s) => (cat ? s.category_id === cat : true));
+  }, [subs, categoryId]);
+
+  useEffect(() => { setSubcategoryId(""); }, [categoryId]);
 
   const userId = useMemo(() => session?.user?.id ?? null, [session]);
 
@@ -228,7 +248,7 @@ export default function LanceSeuGanhavel() {
 
         status: "active",
         category_id: categoryId ? Number(categoryId) : null,
-        subcategory: subcategory || null,
+        subcategory_id: subcategoryId || null,
         city: locationType === "cidade" ? city : null,
         state: locationType === "cidade" ? city : null,
         vendor_link: affiliateUrl || null,
@@ -372,12 +392,17 @@ export default function LanceSeuGanhavel() {
 
                 <div>
                   <label className="block text-sm font-medium">Subcategoria (opcional)</label>
-                  <input
+                  <select
                     className="mt-1 w-full border rounded-lg p-2"
-                    value={subcategory}
-                    onChange={(e) => setSubcategory(e.target.value)}
-                    placeholder="Ex: Smartphones, Sofás, Eletrônicos..."
-                  />
+                    value={subcategoryId}
+                    onChange={(e) => setSubcategoryId(e.target.value)}
+                    disabled={!categoryId}
+                  >
+                    <option value="">{categoryId ? "Selecione uma subcategoria" : "Selecione uma categoria primeiro"}</option>
+                    {subOptions.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
