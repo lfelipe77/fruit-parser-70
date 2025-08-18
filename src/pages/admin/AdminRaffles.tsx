@@ -25,16 +25,16 @@ export default function AdminRaffles() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const itemsPerPage = 12;
 
-  // Load ganhaveis with financial data
+  // Load ganhaveis from the writable table (for admin CRUD)
   const loadGanhaveis = async (page = 1) => {
     setLoading(true);
     try {
       const from = (page - 1) * itemsPerPage;
       const to = from + itemsPerPage - 1;
 
-      // Use the same data source as GanhaveisManagement for consistency
+      // Use the writable table for admin access (not the read-only view)
       let query = supabase
-        .from("raffles_public_money_ext")
+        .from("raffles")
         .select(`
           id,
           title,
@@ -43,14 +43,14 @@ export default function AdminRaffles() {
           status,
           ticket_price,
           goal_amount,
-          amount_raised,
-          progress_pct_money,
-          last_paid_at,
+          prize_value,
+          total_tickets,
           created_at,
           draw_date,
-          category_name,
-          subcategory_name,
-          participants_count
+          category_id,
+          subcategory_id,
+          user_id,
+          owner_user_id
         `, { count: 'exact' })
         .order("created_at", { ascending: false })
         .range(from, to);
@@ -71,20 +71,20 @@ export default function AdminRaffles() {
 
       setTotalCount(count || 0);
 
-      // Transform to match GanhavelRow interface
+      // Transform to match GanhavelRow interface from the writable table
       const transformedData = (data || []).map(raffle => ({
         id: raffle.id,
-        creator_id: null, // Not available in view
+        creator_id: raffle.user_id,
         title: raffle.title || 'Sem título',
         description: raffle.description,
         image_url: raffle.image_url,
-        category: raffle.category_name,
-        subcategory: raffle.subcategory_name,
+        category: null, // Will need lookup if needed
+        subcategory: null, // Will need lookup if needed
         ticket_price: raffle.ticket_price,
-        total_tickets: null, // Not in money view
-        sold_tickets: null, // Calculated from participants
+        total_tickets: raffle.total_tickets,
+        sold_tickets: 0, // Can be calculated separately if needed
         goal_amount: raffle.goal_amount,
-        raised_amount: raffle.amount_raised,
+        raised_amount: 0, // Can be calculated from payments if needed
         status: raffle.status,
         lottery_type: null,
         location: null,
@@ -95,8 +95,8 @@ export default function AdminRaffles() {
         end_date: raffle.draw_date,
         created_at: raffle.created_at,
         updated_at: raffle.created_at,
-        category_id: null,
-        subcategory_id: null,
+        category_id: raffle.category_id,
+        subcategory_id: raffle.subcategory_id,
       }));
 
       setRows(transformedData as GanhavelRow[]);
