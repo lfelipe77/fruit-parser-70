@@ -19,13 +19,13 @@ export function usePersistMock(
 
     const executePurchase = async () => {
       try {
-        const result = await supabase.rpc("record_mock_purchase", {
+        const result = await supabase.rpc("record_mock_purchase_admin", {
           p_buyer_user_id: user.id,
           p_raffle_id: raffleId,
           p_qty: qty,
           p_unit_price: unitPrice,
           p_numbers: numbers,
-          p_payment_provider: "mock"
+          p_provider_ref: `MOCK_${raffleId}_${Date.now()}`
         });
 
         if (result.error) {

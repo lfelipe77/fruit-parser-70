@@ -49,9 +49,9 @@ export default function GanhaveisManagement() {
     try {
       setLoading(true);
       
-      // Use base raffles table with joins for admin access
+      // Use financial view with full data for admin access
       const query = supabase
-        .from('raffles')
+        .from('raffles_public_money_ext')
         .select(`
           id,
           title,
@@ -59,14 +59,15 @@ export default function GanhaveisManagement() {
           image_url,
           status,
           ticket_price,
-          total_tickets,
-          draw_date,
+          goal_amount,
+          amount_raised,
+          progress_pct_money,
+          last_paid_at,
           created_at,
-          owner_user_id,
-          category_id,
-          subcategory_id,
-          categories(nome),
-          subcategories(name)
+          draw_date,
+          category_name,
+          subcategory_name,
+          participants_count
         `)
         .order('created_at', { ascending: false });
 
@@ -74,7 +75,7 @@ export default function GanhaveisManagement() {
       
       if (error) throw error;
       
-      // Transform data to match expected format with all required fields
+      // Transform data to match expected format
       const transformedData = (data || []).map(raffle => ({
         id: raffle.id,
         title: raffle.title || 'Sem título',
@@ -82,17 +83,17 @@ export default function GanhaveisManagement() {
         image_url: raffle.image_url,
         status: raffle.status || 'pending',
         ticket_price: raffle.ticket_price || 0,
-        total_tickets: raffle.total_tickets || 0,
+        total_tickets: null, // Not used in money view
         draw_date: raffle.draw_date,
         created_at: raffle.created_at,
-        category_id: raffle.category_id,
-        subcategory_id: raffle.subcategory_id,
-        category_name: raffle.categories?.nome || null,
-        subcategory_name: raffle.subcategories?.name || null,
-        amount_raised: 0, // placeholder - will be enhanced later
-        goal_amount: 0, // placeholder - will be enhanced later
-        progress_pct_money: 0, // placeholder - will be enhanced later
-        last_paid_at: null // placeholder - will be enhanced later
+        category_id: null, // Not needed for display
+        subcategory_id: null, // Not needed for display
+        category_name: raffle.category_name,
+        subcategory_name: raffle.subcategory_name,
+        amount_raised: raffle.amount_raised || 0,
+        goal_amount: raffle.goal_amount || 0,
+        progress_pct_money: raffle.progress_pct_money || 0,
+        last_paid_at: raffle.last_paid_at
       }));
 
       console.log('admin-rows', transformedData.length, transformedData.slice(0, 3));

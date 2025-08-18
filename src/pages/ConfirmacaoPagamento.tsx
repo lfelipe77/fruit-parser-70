@@ -105,12 +105,30 @@ export default function ConfirmacaoPagamento() {
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      // TODO: Create transaction record in database
-      // TODO: Reserve tickets in tickets table
-      // TODO: Integrate with Asaas payment provider
-      // For now, we'll simulate the process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Record the mock purchase in database using the admin function
+      const providerRef = `PAY_${Date.now()}`;
       
+      const { data: result, error } = await supabase.rpc("record_mock_purchase_admin", {
+        p_buyer_user_id: "00000000-0000-0000-0000-000000000000", // Anonymous buyer for now
+        p_raffle_id: id,
+        p_qty: qty,
+        p_unit_price: raffle?.ticket_price || 0,
+        p_numbers: selectedNumbers,
+        p_provider_ref: providerRef
+      });
+
+      if (error) {
+        console.error('Payment recording error:', error);
+        throw error;
+      }
+
+      console.log('Payment recorded successfully:', result);
+      
+      // Trigger raffle update event for real-time updates
+      window.dispatchEvent(new CustomEvent('raffleUpdated', { 
+        detail: { raffleId: id } 
+      }));
+
       // Redirect to success page with selected numbers
       navigate(`/ganhavel/${id}/pagamento-sucesso?qty=${qty}`, {
         state: {
@@ -120,7 +138,7 @@ export default function ConfirmacaoPagamento() {
           selectedNumbers: selectedNumbers,
           quantity: qty,
           totalAmount: total,
-          paymentId: `PAY_${Date.now()}`, // TODO: Real payment ID from provider
+          paymentId: providerRef,
           paymentDate: new Date().toISOString()
         }
       });
