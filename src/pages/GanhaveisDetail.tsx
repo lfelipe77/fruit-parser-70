@@ -186,8 +186,6 @@ export default function GanhaveisDetail() {
           </Button>
         </div>
 
-        {/* Share section */}
-        {raffle?.id && <CompartilheRifa raffleId={raffle.id} className="mt-6" />}
 
       {/* Image + Title */}
       <div className="grid gap-6 md:grid-cols-[1fr,360px]">
@@ -299,6 +297,13 @@ export default function GanhaveisDetail() {
             >
               Comprar {qty} bilhetes
             </button>
+
+            {/* Share section */}
+            {raffle?.id && (
+              <div className="mt-4 pt-4 border-t border-emerald-200">
+                <CompartilheRifa raffleId={raffle.id} className="" />
+              </div>
+            )}
 
             {/* Direct Purchase Link */}
             {directLink && (

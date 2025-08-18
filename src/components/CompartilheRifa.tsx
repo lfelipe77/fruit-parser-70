@@ -27,36 +27,30 @@ export default function CompartilheRifa({ raffleId, size = 168, className }: Pro
   };
 
   return (
-    <section className={`rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5 ${className ?? ""}`}>
-      <h3 className="mb-3 text-base md:text-lg font-semibold flex items-center gap-2">
-        Compartilhe <span className="text-xs md:text-sm font-normal opacity-70">e faça acontecer</span>
-      </h3>
+    <div className={className}>
+      <h4 className="text-sm font-medium text-emerald-800 mb-3">Compartilhe</h4>
 
-      <div className="flex items-center gap-4 md:gap-6">
-        <div className="rounded-xl bg-white p-2 shadow-sm">
-          <QRCodeCanvas value={url} size={size} includeMargin ref={qrRef as any} />
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-white p-2 shadow-sm">
+          <QRCodeCanvas value={url} size={100} includeMargin ref={qrRef as any} />
         </div>
 
-        <div className="flex-1 min-w-[200px]">
-          <div className="text-xs md:text-sm break-all opacity-80 mb-3">{url}</div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={copyLink}
-              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 border border-white/20 hover:bg-white/10 transition"
-              aria-label="Copiar link do ganhavel"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" className="opacity-80">
-                <path fill="currentColor" d="M10 4H6a2 2 0 0 0-2 2v10h2V6h4z"/>
-                <path fill="currentColor" d="M18 8h-6a2 2 0 0 0-2 2v8h8a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2m0 8h-6v-6h6z"/>
-              </svg>
-              Copiar link
-            </button>
-          </div>
+        <div className="flex-1">
+          <button
+            type="button"
+            onClick={copyLink}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition text-sm"
+            aria-label="Copiar link do ganhavel"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" className="opacity-80">
+              <path fill="currentColor" d="M10 4H6a2 2 0 0 0-2 2v10h2V6h4z"/>
+              <path fill="currentColor" d="M18 8h-6a2 2 0 0 0-2 2v8h8a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2m0 8h-6v-6h6z"/>
+            </svg>
+            Copiar link
+          </button>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
