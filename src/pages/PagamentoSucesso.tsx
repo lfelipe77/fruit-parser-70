@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toBRL, asNumber } from "@/utils/money";
 import { Button } from "@/components/ui/button";
@@ -38,53 +38,82 @@ interface PaymentSuccessData {
   paymentDate?: string;
 }
 
+function formatComboString(input: unknown): string {
+  if (typeof input === "string") return input.replace(/[^\d()-]/g, "");
+  if (Array.isArray(input)) return input.join("-");
+  return String(input ?? "").replace(/[^\d()-]/g, "");
+}
+
 export default function PagamentoSucesso() {
   const location = useLocation();
   const navigate = useNavigate();
   const { rifaId } = useParams();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const s = location.state as PaymentSuccessData || {};
   const [rehydrated, setRehydrated] = useState<PaymentSuccessData>(s);
+  const [combos, setCombos] = useState<string[] | null>(s?.selectedNumbers ?? null);
+
+  const txId = s?.txId ?? searchParams.get("tx") ?? undefined;
 
   useEffect(() => {
-    // If we have new format state, we're good
-    if (s?.txId && s?.raffleId) return;
+    // If we already have combos from nav state, we're good
+    if (combos && combos.length) return;
+    if (!txId) return;
 
-    // Attempt rehydrate via latest successful tx for this user (fallback)
+    // Fetch numbers from database using txId
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      // Grab latest "paid" tx from the user
       const { data: tx, error } = await supabase
         .from("transactions")
-        .select("id, raffle_id, amount")
-        .eq("buyer_user_id", session.user.id)
-        .eq("status", "paid")
-        .order("created_at", { ascending: false })
-        .limit(1)
+        .select("id, numbers, buyer_user_id, raffle_id, amount")
+        .eq("id", txId)
         .maybeSingle();
 
-      if (!error && tx) {
+      if (error) {
+        console.error("Error fetching transaction:", error);
+        return;
+      }
+
+      if (tx) {
+        const raw = tx.numbers;
+        let arr: string[] = [];
+        if (Array.isArray(raw)) {
+          arr = raw as string[];
+        } else if (typeof raw === "string") {
+          try { 
+            arr = JSON.parse(raw); 
+          } catch { 
+            arr = []; 
+          }
+        }
+        setCombos(arr.map(formatComboString));
+        
+        // Also update rehydrated data
         setRehydrated({
           raffleId: tx.raffle_id,
           txId: tx.id,
-          quantity: 1, // Default since we don't have qty in transactions
+          quantity: arr.length || 1,
           totalPaid: asNumber(tx.amount, 0),
-          unitPrice: asNumber(tx.amount, 0),
+          unitPrice: asNumber(tx.amount, 0) / Math.max(1, arr.length),
         });
       }
     })();
-  }, [s?.txId, s?.raffleId]);
+  }, [txId, combos]);
 
   // Support both new and legacy formats
   const quantity = asNumber(rehydrated.quantity || rehydrated.quantity, 1);
   const unitPrice = asNumber(rehydrated.unitPrice, rehydrated.totalPaid ? asNumber(rehydrated.totalPaid || rehydrated.totalAmount, 0) / Math.max(1, quantity) : 0);
   const totalPaid = asNumber(rehydrated.totalPaid || rehydrated.totalAmount, unitPrice * quantity);
-  const numbers = rehydrated.numbers || rehydrated.selectedNumbers || [];
+  const numbers = combos || rehydrated.numbers || rehydrated.selectedNumbers || [];
   const raffleId = rehydrated.raffleId || rehydrated.rifaId || rifaId;
   const paymentId = rehydrated.txId || rehydrated.paymentId || "N/A";
   const paymentDate = rehydrated.paymentDate || new Date().toISOString();
+
+  if (!txId) return <div className="p-6">Transação não encontrada.</div>;
+  if (!combos) return <div className="p-6">Carregando seus números…</div>;
 
   const paymentData = {
     rifaId: raffleId,

@@ -129,9 +129,6 @@ export default function ConfirmacaoPagamento() {
       const safeQty = Math.max(1, asNumber(qty, 1));
       const unitPrice = asNumber(raffle?.ticket_price, 0);
       const totalPaid = +(unitPrice * safeQty).toFixed(2); // number
-      const uniqueNumbers = Array.from({ length: safeQty }, (_, i) =>
-        `N${now}-${i}-${Math.floor(Math.random() * 1e6)}`
-      );
 
       // 3) Call RPC (server writes type='charge', status='paid')
       const { data: txId, error } = await supabase.rpc("record_mock_purchase_admin", {
@@ -139,7 +136,7 @@ export default function ConfirmacaoPagamento() {
         p_raffle_id: id,
         p_qty: safeQty,
         p_unit_price: unitPrice,
-        p_numbers: uniqueNumbers,      // array -> JSONB automatically
+        p_numbers: selectedNumbers,    // Use the correctly formatted numbers from UI
         p_provider_ref: providerRef,   // must be unique
       });
 
@@ -165,7 +162,7 @@ export default function ConfirmacaoPagamento() {
           quantity: safeQty,            // number
           unitPrice,                    // number
           totalPaid,                    // number
-          numbers: uniqueNumbers,
+          selectedNumbers,              // Pass the formatted numbers from UI
         },
       });
     } catch (e: any) {
