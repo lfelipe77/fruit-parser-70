@@ -1,365 +1,82 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Ticket, Calendar, DollarSign, ArrowLeft, Search, Plus, Share2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import ProgressBar from '@/components/ui/progress-bar';
-import CompartilheRifa from '@/components/CompartilheRifa';
-import { formatBRL } from '@/lib/formatters';
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import MyTicketCard from "@/components/MyTicketCard";
 
-// Helper to safely convert numbers to string combos
-function toComboString(input: unknown): string {
-  try {
-    if (typeof input === "string") return input.replace(/[^\d-]/g, "");
-    if (Array.isArray(input)) {
-      const flat = (input as unknown[]).flat(2).map(x => String(x).replace(/[^\d]/g, ""));
-      return flat.filter(Boolean).join("-");
-    }
-    return String(input ?? "").replace(/[^\d-]/g, "");
-  } catch {
-    return "";
-  }
-}
-
-interface TransactionWithRaffle {
-  id: string;
+type Row = {
+  transaction_id: string;
   raffle_id: string;
-  amount: number;
-  status: string;
-  created_at: string;
-  numbers: unknown;
-  selected_numbers: unknown;
-  raffles_public_money_ext: {
-    id: string;
-    title: string;
-    description: string;
-    image_url: string;
-    ticket_price: number;
-    goal_amount: number;
-    amount_raised: number;
-    progress_pct_money: number;
-    status: string;
-  } | null;
-}
+  raffle_title: string;
+  raffle_image_url: string | null;
+  purchase_date: string;
+  tx_status: string;
+  value: number;
+  ticket_count: number;
+  purchased_numbers: any;
+  goal_amount: number;
+  amount_raised: number;
+  progress_pct_money: number;
+  draw_date?: string | null;
+  winner_ticket_id?: string | null;
+};
 
-export default function MyTickets() {
+export default function MyTicketsPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [transactions, setTransactions] = useState<TransactionWithRaffle[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
-  const [expandedNumbers, setExpandedNumbers] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!user) return;
+    if (!user) return;
+    
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("my_tickets_ext" as any)
+        .select("*")
+        .order("purchase_date", { ascending: false });
 
-      try {
-        const { data, error } = await supabase
-          .from('transactions')
-          .select(`
-            id,
-            raffle_id,
-            amount,
-            status,
-            created_at,
-            numbers,
-            selected_numbers,
-            raffles_public_money_ext!inner(
-              id,
-              title,
-              description,
-              image_url,
-              ticket_price,
-              goal_amount,
-              amount_raised,
-              progress_pct_money,
-              status
-            )
-          `)
-          .eq('buyer_user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        setTransactions(data || []);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error("[MyTickets] fetch error", error);
       }
-    };
-
-    fetchTransactions();
+      if (mounted) setRows((data as unknown as Row[]) ?? []);
+      setLoading(false);
+    })();
+    return () => { mounted = false; };
   }, [user]);
 
-  const formatCurrency = (amount: number) => {
-    return formatBRL(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'default';
-      case 'pending':
-        return 'secondary';
-      case 'expired':
-      case 'cancelled':
-        return 'destructive';
-      case 'completed':
-        return 'default';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'Pago';
-      case 'pending':
-        return 'Pendente';
-      case 'expired':
-        return 'Expirado';
-      case 'cancelled':
-        return 'Cancelado';
-      case 'completed':
-        return 'Concluído';
-      default:
-        return String(status || 'Desconhecido');
-    }
-  };
-
-  if (loading) {
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Meus Tickets</h1>
-        
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/raffles')}>
-            <Search className="w-4 h-4 mr-2" />
-            Explorar Ganhaveis
-          </Button>
-          <Button onClick={() => navigate('/lance-seu-ganhavel')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Lançar Ganhavel
-          </Button>
+  if (!user) {
+    return (
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
+        <div className="text-center text-gray-600 py-16">
+          Faça login para ver seus tickets.
         </div>
       </div>
-        <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-muted rounded-lg animate-pulse"></div>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
+      <h1 className="text-2xl font-bold mb-4">Meus Tickets</h1>
+
+      {loading && (
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-36 rounded-2xl bg-gray-100 animate-pulse" />
           ))}
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (transactions.length === 0) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Meus Tickets</h1>
-          
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/raffles')}>
-              <Search className="w-4 h-4 mr-2" />
-              Explorar Ganhaveis
-            </Button>
-            <Button onClick={() => navigate('/lance-seu-ganhavel')}>
-              <Plus className="w-4 h-4 mr-2" />
-              Lançar Ganhavel
-            </Button>
-          </div>
+      {!loading && rows.length === 0 && (
+        <div className="text-center text-gray-600 py-16">
+          Você ainda não possui tickets.
         </div>
-        
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Ticket className="w-16 h-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Nenhum ticket encontrado</h3>
-            <p className="text-muted-foreground text-center mb-6">
-              Você ainda não participou de nenhum ganhavel. Explore os ganhaveis disponíveis e tente a sorte!
-            </p>
-            <Button asChild>
-              <Link to="/raffles">Ver Ganhaveis Disponíveis</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+      )}
 
-  const displayedTransactions = showAll ? transactions : transactions.slice(0, 2);
-
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Meus Tickets</h1>
-        
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/raffles')}>
-            <Search className="w-4 h-4 mr-2" />
-            Explorar Ganhaveis
-          </Button>
-          <Button onClick={() => navigate('/lance-seu-ganhavel')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Lançar Ganhavel
-          </Button>
-        </div>
-      </div>
-      
-      {/* Centered content */}
-      <div className="max-w-2xl mx-auto space-y-4">
-        {displayedTransactions.map((transaction) => {
-          const raffle = transaction.raffles_public_money_ext;
-          const rawNumbers = transaction.numbers || transaction.selected_numbers;
-          const numbersArray = Array.isArray(rawNumbers) 
-            ? (rawNumbers as unknown[]).map(toComboString).filter(Boolean)
-            : [];
-          
-          const quantity = Math.max(1, numbersArray.length);
-          const pct = Math.max(0, Math.min(100, Number(raffle?.progress_pct_money) || 0));
-          const moneyNow = Number(raffle?.amount_raised) || 0;
-          const moneyGoal = Number(raffle?.goal_amount) || 0;
-
-          return (
-            <Card key={transaction.id} className="overflow-hidden border bg-card shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex h-32">
-                {/* Image Section */}
-                <div className="relative w-32 h-32 flex-shrink-0">
-                  {raffle?.image_url ? (
-                    <img src={raffle.image_url} alt={String(raffle.title)} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <Ticket className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="absolute top-2 left-2">
-                    <Badge variant={getStatusColor(transaction.status)} className="text-xs px-1.5 py-0.5">
-                      {getStatusLabel(transaction.status)}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Content Section */}
-                <div className="flex-1 p-4 space-y-3">
-                  {/* Title and Money */}
-                  <div>
-                    <h3 className="font-semibold text-sm leading-tight line-clamp-1 mb-1">
-                      {String(raffle?.title || 'Ganhavel Indisponível')}
-                    </h3>
-                    <div className="text-xs font-medium">
-                      {formatCurrency(moneyNow)} de {formatCurrency(moneyGoal)}
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div 
-                        className="h-2 bg-gradient-to-r from-success to-success/80 transition-[width] duration-500 ease-out" 
-                        style={{ width: `${pct}%` }} 
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{pct}%</span>
-                      <span>{quantity} bilhetes</span>
-                    </div>
-                  </div>
-
-                  {/* Lucky Numbers */}
-                  {numbersArray.length > 0 && (
-                    <div className="flex gap-1.5 flex-wrap">
-                      {(expandedNumbers === transaction.id ? numbersArray : numbersArray.slice(0, 4)).map((combo, idx) => (
-                        <div key={idx} className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded border">
-                          {String(combo)}
-                        </div>
-                      ))}
-                      {numbersArray.length > 4 && expandedNumbers !== transaction.id && (
-                        <button 
-                          onClick={() => setExpandedNumbers(transaction.id)}
-                          className="text-xs text-muted-foreground px-2 py-1 hover:text-primary cursor-pointer"
-                        >
-                          +{numbersArray.length - 4}
-                        </button>
-                      )}
-                      {expandedNumbers === transaction.id && numbersArray.length > 4 && (
-                        <button 
-                          onClick={() => setExpandedNumbers(null)}
-                          className="text-xs text-muted-foreground px-2 py-1 hover:text-primary cursor-pointer"
-                        >
-                          Ver menos
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Centered QR Section */}
-                <div className="w-20 sm:w-24 h-32 flex flex-col items-center justify-center border-l bg-muted/30 p-2 sm:p-3">
-                  {raffle?.id && (
-                    <div className="flex flex-col items-center">
-                      <CompartilheRifa raffleId={raffle.id} size={50} className="w-10 h-10 sm:w-14 sm:h-14 mb-1" />
-                      <div className="text-xs text-center text-muted-foreground leading-tight hidden sm:block">
-                        Compartilhar
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div className="px-4 pb-3">
-                {raffle?.id && (
-                  <Button variant="outline" size="sm" className="w-full h-8 text-xs" asChild>
-                    <Link to={`/ganhaveis/${raffle.id}`}>
-                      Ver Ganhavel
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-
-        {/* Show More Button */}
-        {transactions.length > 2 && (
-          <div className="text-center pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAll(!showAll)}
-              className="px-8"
-            >
-              {showAll ? 'Ver Menos' : `Ver Todos (${transactions.length})`}
-            </Button>
-          </div>
-        )}
+      <div className="space-y-4">
+        {rows.map((r) => (
+          <MyTicketCard key={r.transaction_id} row={r} />
+        ))}
       </div>
     </div>
   );
