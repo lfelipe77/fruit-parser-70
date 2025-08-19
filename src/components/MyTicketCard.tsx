@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
 import { brl, shortDateTime, toComboString, statusLabel } from "@/lib/format";
-import { Share2, Copy, TicketIcon, ChevronDown } from "lucide-react";
+import { Share2, TicketIcon, ChevronDown } from "lucide-react";
 
 type Row = {
   transaction_id: string;
@@ -32,16 +32,32 @@ export default function MyTicketCard({ row }: { row: Row }) {
   async function onShare() {
     try {
       if (navigator.share) {
-        await navigator.share({ title: row.raffle_title, url });
-      } else {
+        await navigator.share({
+          title: row.raffle_title,
+          text: "Participe comigo deste Ganhavel!",
+          url,
+        });
+        return;
+      }
+      // Fallback → copy link
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
         alert("Link copiado!");
+        return;
       }
-    } catch { /* user canceled */ }
-  }
-
-  function onCopy() {
-    navigator.clipboard.writeText(url).then(() => alert("Link copiado!"));
+      // Last‑resort fallback (older browsers)
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      alert("Link copiado!");
+    } catch {
+      // ignore user cancel; optionally show a toast
+    }
   }
 
   const pct = Math.max(0, Math.min(100, Number(row.progress_pct_money ?? 0)));
@@ -140,16 +156,19 @@ export default function MyTicketCard({ row }: { row: Row }) {
         <div className="bg-white p-1.5 rounded-lg border">
           <QRCode value={url} size={88} />
         </div>
-        <div className="flex sm:flex-col gap-2">
-          <button onClick={onShare} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700">
-            <Share2 className="h-3.5 w-3.5" /> Compartilhar
-          </button>
-          <button onClick={onCopy} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border hover:bg-gray-50">
-            <Copy className="h-3.5 w-3.5" /> Copiar link
+        <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
+          <button
+            onClick={onShare}
+            className="inline-flex items-center justify-center gap-1 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto"
+            aria-label="Compartilhar Ganhavel"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Compartilhar
           </button>
           <a
             href={`#/ganhavel/${row.raffle_id}`}
-            className="inline-flex items-center justify-center text-xs px-2 py-1 rounded border hover:bg-gray-50"
+            className="inline-flex items-center justify-center text-xs px-2 py-1 rounded border hover:bg-gray-50 w-full sm:w-auto"
+            aria-label="Ver Ganhavel"
           >
             Ver Ganhavel
           </a>
