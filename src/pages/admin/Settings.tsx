@@ -99,6 +99,11 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Edit category dialog state
+  const [editingCategory, setEditingCategory] = useState<any | null>(null);
+  const [editCategoryData, setEditCategoryData] = useState({ nome: "", slug: "", descricao: "", icone_url: "" });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
   // Fetch categories and subcategories from database
   useEffect(() => {
     const fetchData = async () => {
@@ -235,6 +240,21 @@ export default function Settings() {
 
   const handleDeleteCategory = async (id: number) => {
     try {
+      // Check if category is used by any raffles
+      const { count, error: countErr } = await supabase
+        .from('raffles')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', id);
+      if (countErr) throw countErr;
+      if ((count ?? 0) > 0) {
+        toast({
+          title: "Categoria em uso",
+          description: "Existem rifas vinculadas a esta categoria. Reatribua ou arquive antes de remover.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Remove related subcategories first to avoid potential constraints
       const { error: subErr } = await supabase
         .from('subcategories')
@@ -259,9 +279,52 @@ export default function Settings() {
       });
     } catch (error: any) {
       console.error('Error deleting category:', error);
+      let description = error?.message || "Não foi possível remover a categoria.";
+      if (description.toLowerCase().includes('foreign key')) {
+        description = "Não é possível remover: existem registros dependentes vinculados a esta categoria.";
+      }
       toast({
         title: "Erro ao remover categoria",
-        description: error?.message || "Não foi possível remover a categoria.",
+        description,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleStartEditCategory = (category: any) => {
+    setEditingCategory(category);
+    setEditCategoryData({
+      nome: category.nome || "",
+      slug: category.slug || "",
+      descricao: category.descricao || "",
+      icone_url: category.icone_url || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory) return;
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .update(editCategoryData)
+        .eq('id', editingCategory.id)
+        .select()
+        .single();
+      if (error) throw error;
+
+      setCategories(categories.map(cat => cat.id === editingCategory.id ? data : cat));
+      setEditingCategory(null);
+      setEditDialogOpen(false);
+      toast({
+        title: "Categoria atualizada",
+        description: `A categoria "${data?.nome}" foi atualizada com sucesso.`,
+      });
+    } catch (error: any) {
+      console.error('Error updating category:', error);
+      toast({
+        title: "Erro ao atualizar categoria",
+        description: error?.message || "Não foi possível atualizar a categoria.",
         variant: "destructive"
       });
     }
@@ -536,6 +599,9 @@ export default function Settings() {
                               </div>
                               <div className="flex gap-2">
                                 <Badge variant="outline" className="text-green-600 border-green-200">Ativo</Badge>
+                                <Button size="sm" variant="outline" onClick={() => handleStartEditCategory(category)}>
+                                  <Edit className="h-3 w-3" />
+                                </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
@@ -596,6 +662,48 @@ export default function Settings() {
                     })}
                   </div>
                 )}
+                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Editar Categoria</DialogTitle>
+                      <DialogDescription>Atualize os dados da categoria.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Nome</Label>
+                        <Input
+                          value={editCategoryData.nome}
+                          onChange={(e) => setEditCategoryData({ ...editCategoryData, nome: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Slug</Label>
+                        <Input
+                          value={editCategoryData.slug}
+                          onChange={(e) => setEditCategoryData({ ...editCategoryData, slug: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Descrição</Label>
+                        <Textarea
+                          value={editCategoryData.descricao}
+                          onChange={(e) => setEditCategoryData({ ...editCategoryData, descricao: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>URL do Ícone</Label>
+                        <Input
+                          value={editCategoryData.icone_url}
+                          onChange={(e) => setEditCategoryData({ ...editCategoryData, icone_url: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleUpdateCategory}>Salvar</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
 
