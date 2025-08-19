@@ -50,6 +50,7 @@ export default function MyTickets() {
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<TransactionWithRaffle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -209,6 +210,8 @@ export default function MyTickets() {
     );
   }
 
+  const displayedTransactions = showAll ? transactions : transactions.slice(0, 2);
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-8">
@@ -230,8 +233,9 @@ export default function MyTickets() {
         </div>
       </div>
       
-      <div className="grid gap-4">
-        {transactions.map((transaction) => {
+      {/* Centered content */}
+      <div className="max-w-2xl mx-auto space-y-4">
+        {displayedTransactions.map((transaction) => {
           const raffle = transaction.raffles_public_money_ext;
           const rawNumbers = transaction.numbers || transaction.selected_numbers;
           const numbersArray = Array.isArray(rawNumbers) 
@@ -305,15 +309,15 @@ export default function MyTickets() {
                   )}
                 </div>
 
-                {/* QR Section */}
-                <div className="w-20 h-32 flex flex-col items-center justify-center border-l bg-muted/30 p-2">
+                {/* Centered QR Section */}
+                <div className="w-24 h-32 flex flex-col items-center justify-center border-l bg-muted/30 p-3">
                   {raffle?.id && (
-                    <>
-                      <CompartilheRifa raffleId={raffle.id} size={60} className="w-12 h-12 mb-2" />
-                      <div className="text-xs text-center text-muted-foreground">
-                        Compartilhar
+                    <div className="flex flex-col items-center">
+                      <CompartilheRifa raffleId={raffle.id} size={60} className="w-14 h-14 mb-1" />
+                      <div className="text-xs text-center text-muted-foreground leading-tight">
+                        QR
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
@@ -331,6 +335,19 @@ export default function MyTickets() {
             </Card>
           );
         })}
+
+        {/* Show More Button */}
+        {transactions.length > 2 && (
+          <div className="text-center pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAll(!showAll)}
+              className="px-8"
+            >
+              {showAll ? 'Ver Menos' : `Ver Todos (${transactions.length})`}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
