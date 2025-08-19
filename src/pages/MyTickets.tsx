@@ -51,6 +51,7 @@ export default function MyTickets() {
   const [transactions, setTransactions] = useState<TransactionWithRaffle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [expandedNumbers, setExpandedNumbers] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -294,28 +295,39 @@ export default function MyTickets() {
 
                   {/* Lucky Numbers */}
                   {numbersArray.length > 0 && (
-                    <div className="flex gap-1.5">
-                      {numbersArray.slice(0, 4).map((combo, idx) => (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {(expandedNumbers === transaction.id ? numbersArray : numbersArray.slice(0, 4)).map((combo, idx) => (
                         <div key={idx} className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded border">
                           {String(combo)}
                         </div>
                       ))}
-                      {numbersArray.length > 4 && (
-                        <div className="text-xs text-muted-foreground px-2 py-1">
+                      {numbersArray.length > 4 && expandedNumbers !== transaction.id && (
+                        <button 
+                          onClick={() => setExpandedNumbers(transaction.id)}
+                          className="text-xs text-muted-foreground px-2 py-1 hover:text-primary cursor-pointer"
+                        >
                           +{numbersArray.length - 4}
-                        </div>
+                        </button>
+                      )}
+                      {expandedNumbers === transaction.id && numbersArray.length > 4 && (
+                        <button 
+                          onClick={() => setExpandedNumbers(null)}
+                          className="text-xs text-muted-foreground px-2 py-1 hover:text-primary cursor-pointer"
+                        >
+                          Ver menos
+                        </button>
                       )}
                     </div>
                   )}
                 </div>
 
                 {/* Centered QR Section */}
-                <div className="w-24 h-32 flex flex-col items-center justify-center border-l bg-muted/30 p-3">
+                <div className="w-20 sm:w-24 h-32 flex flex-col items-center justify-center border-l bg-muted/30 p-2 sm:p-3">
                   {raffle?.id && (
                     <div className="flex flex-col items-center">
-                      <CompartilheRifa raffleId={raffle.id} size={60} className="w-14 h-14 mb-1" />
-                      <div className="text-xs text-center text-muted-foreground leading-tight">
-                        QR
+                      <CompartilheRifa raffleId={raffle.id} size={50} className="w-10 h-10 sm:w-14 sm:h-14 mb-1" />
+                      <div className="text-xs text-center text-muted-foreground leading-tight hidden sm:block">
+                        Compartilhar
                       </div>
                     </div>
                   )}
