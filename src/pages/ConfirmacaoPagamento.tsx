@@ -58,7 +58,9 @@ export default function ConfirmacaoPagamento() {
   const [loading, setLoading] = React.useState(true);
   const [paymentMethod, setPaymentMethod] = React.useState<'pix' | 'card' | 'bank'>('pix');
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [selectedNumbers, setSelectedNumbers] = React.useState<string[]>([]);
+  const [selectedNumbers, setSelectedNumbers] = React.useState<string[]>(
+    () => generateNumbers(qty).map(toComboString).filter(Boolean)
+  );
   const [showAllNumbers, setShowAllNumbers] = React.useState(false);
   
   // Form data
@@ -97,13 +99,21 @@ export default function ConfirmacaoPagamento() {
   // Generate numbers when qty changes
   React.useEffect(() => {
     const numbers = generateNumbers(qty);
-    setSelectedNumbers(numbers);
-    persistTicketsPreview(numbers); // TODO: Connect to DB
+    const safeNumbers = numbers.map(toComboString).filter(Boolean);
+    setSelectedNumbers(safeNumbers);
+    persistTicketsPreview(safeNumbers); // TODO: Connect to DB
   }, [qty]);
 
   // Load raffle data
   React.useEffect(() => {
-    let alive = true;
+    let mounted = true;
+    const onUpdate = (e: Event) => {
+      if (!mounted) return;
+      // Safely handle raffle updates
+    };
+    
+    window.addEventListener('raffleUpdated', onUpdate);
+    
     (async () => {
       try {
         setLoading(true);
@@ -113,13 +123,17 @@ export default function ConfirmacaoPagamento() {
           .eq("id", id)
           .maybeSingle();
         
-        if (!alive) return;
+        if (!mounted) return;
         setRaffle((data ?? null) as RaffleRow | null);
       } finally {
-        if (alive) setLoading(false);
+        if (mounted) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    
+    return () => {
+      mounted = false;
+      window.removeEventListener('raffleUpdated', onUpdate);
+    };
   }, [id]);
 
   // Calculations
@@ -193,8 +207,9 @@ export default function ConfirmacaoPagamento() {
 
   const handleRegenerateNumbers = () => {
     const numbers = generateNumbers(qty);
-    setSelectedNumbers(numbers);
-    persistTicketsPreview(numbers); // TODO: Connect to DB
+    const safeNumbers = numbers.map(toComboString).filter(Boolean);
+    setSelectedNumbers(safeNumbers);
+    persistTicketsPreview(safeNumbers); // TODO: Connect to DB
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -266,9 +281,9 @@ export default function ConfirmacaoPagamento() {
                   </Button>
                 </div>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {selectedNumbers.map((combination, index) => (
+                  {(Array.isArray(selectedNumbers) ? selectedNumbers : []).map((combination, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                      <span className="font-mono text-sm font-semibold text-emerald-800">{String(combination)}</span>
+                      <span className="font-mono text-sm font-semibold text-emerald-800">{String(combination ?? '')}</span>
                       <div className="text-xs text-emerald-600 font-medium">
                         Bilhete #{index + 1}
                       </div>
@@ -291,10 +306,10 @@ export default function ConfirmacaoPagamento() {
                         <DialogTitle>Todos os Seus Números da Sorte</DialogTitle>
                       </DialogHeader>
                       <div className="max-h-96 overflow-y-auto space-y-3 p-4">
-                        {selectedNumbers.map((combination, index) => (
+                        {(Array.isArray(selectedNumbers) ? selectedNumbers : []).map((combination, index) => (
                           <div key={index} className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                             <div>
-                              <span className="font-mono text-lg font-bold text-emerald-800">{String(combination)}</span>
+                              <span className="font-mono text-lg font-bold text-emerald-800">{String(combination ?? '')}</span>
                             </div>
                             <div className="text-sm text-emerald-600 font-medium bg-emerald-100 px-3 py-1 rounded-full">
                               Bilhete #{index + 1}
