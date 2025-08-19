@@ -90,18 +90,9 @@ export default function CategoriesPage() {
                 {c.descricao || "Explore ganhaveis nesta categoria"}
               </p>
 
-              <div className="text-sm text-muted-foreground mb-4">
+              <div className="text-sm text-muted-foreground">
                 Ativas: <span className="font-semibold text-foreground">{c.active_raffles}</span>
               </div>
-
-              {c.icone_url && (
-                <img
-                  src={c.icone_url}
-                  alt={c.nome}
-                  className="h-10 w-10 object-contain opacity-90 group-hover:opacity-100"
-                  loading="lazy"
-                />
-              )}
             </Link>
           ))}
         </div>
