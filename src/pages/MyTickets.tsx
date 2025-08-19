@@ -4,22 +4,43 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Ticket, Calendar, DollarSign, ArrowLeft, Search, Plus } from 'lucide-react';
+import { Ticket, Calendar, DollarSign, ArrowLeft, Search, Plus, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import ProgressBar from '@/components/ui/progress-bar';
+import CompartilheRifa from '@/components/CompartilheRifa';
+import { formatBRL } from '@/lib/formatters';
 
-interface TicketWithRaffle {
+// Helper to safely convert numbers to string combos
+function toComboString(input: unknown): string {
+  try {
+    if (typeof input === "string") return input.replace(/[^\d-]/g, "");
+    if (Array.isArray(input)) {
+      const flat = (input as unknown[]).flat(2).map(x => String(x).replace(/[^\d]/g, ""));
+      return flat.filter(Boolean).join("-");
+    }
+    return String(input ?? "").replace(/[^\d-]/g, "");
+  } catch {
+    return "";
+  }
+}
+
+interface TransactionWithRaffle {
   id: string;
-  ticket_number: number;
-  quantity: number;
-  total_amount: number;
-  payment_status: string;
+  raffle_id: string;
+  amount: number;
+  status: string;
   created_at: string;
-  raffles: {
+  numbers: unknown;
+  selected_numbers: unknown;
+  raffles_public_money_ext: {
     id: string;
     title: string;
-    product_name: string;
-    ticket_price: number;
+    description: string;
     image_url: string;
+    ticket_price: number;
+    goal_amount: number;
+    amount_raised: number;
+    progress_pct_money: number;
     status: string;
   } | null;
 }
@@ -27,53 +48,54 @@ interface TicketWithRaffle {
 export default function MyTickets() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState<TicketWithRaffle[]>([]);
+  const [transactions, setTransactions] = useState<TransactionWithRaffle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTickets = async () => {
+    const fetchTransactions = async () => {
       if (!user) return;
 
       try {
         const { data, error } = await supabase
-          .from('tickets')
+          .from('transactions')
           .select(`
             id,
-            ticket_number,
-            quantity,
-            total_amount,
-            payment_status,
+            raffle_id,
+            amount,
+            status,
             created_at,
-            raffles (
+            numbers,
+            selected_numbers,
+            raffles_public_money_ext!inner(
               id,
               title,
-              product_name,
-              ticket_price,
+              description,
               image_url,
+              ticket_price,
+              goal_amount,
+              amount_raised,
+              progress_pct_money,
               status
             )
           `)
-          .eq('user_id', user.id)
+          .eq('buyer_user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        setTickets(data || []);
+        setTransactions(data || []);
       } catch (error) {
-        console.error('Error fetching tickets:', error);
+        console.error('Error fetching transactions:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTickets();
+    fetchTransactions();
   }, [user]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(amount / 100);
+    return formatBRL(amount);
   };
 
   const formatDate = (dateString: string) => {
@@ -89,10 +111,14 @@ export default function MyTickets() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-      case 'pending':
         return 'default';
+      case 'pending':
+        return 'secondary';
+      case 'expired':
       case 'cancelled':
         return 'destructive';
+      case 'completed':
+        return 'default';
       default:
         return 'secondary';
     }
@@ -104,10 +130,14 @@ export default function MyTickets() {
         return 'Pago';
       case 'pending':
         return 'Pendente';
+      case 'expired':
+        return 'Expirado';
       case 'cancelled':
         return 'Cancelado';
+      case 'completed':
+        return 'Concluído';
       default:
-        return status;
+        return String(status || 'Desconhecido');
     }
   };
 
@@ -141,7 +171,7 @@ export default function MyTickets() {
     );
   }
 
-  if (tickets.length === 0) {
+  if (transactions.length === 0) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-between mb-8">
@@ -201,56 +231,109 @@ export default function MyTickets() {
       </div>
       
       <div className="grid gap-4">
-        {tickets.map((ticket) => (
-          <Card key={ticket.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="flex items-center gap-2">
-                    <Ticket className="w-5 h-5" />
-                    {ticket.raffles?.title || 'Ganhavel Indisponível'}
-                    {ticket.ticket_number && (
-                      <Badge variant="outline">#{ticket.ticket_number}</Badge>
+        {transactions.map((transaction) => {
+          const raffle = transaction.raffles_public_money_ext;
+          // Get numbers from either numbers or selected_numbers field
+          const rawNumbers = transaction.numbers || transaction.selected_numbers;
+          const numbersArray = Array.isArray(rawNumbers) 
+            ? (rawNumbers as unknown[]).map(toComboString).filter(Boolean)
+            : [];
+          
+          // Calculate quantity from numbers array length or default to 1
+          const quantity = Math.max(1, numbersArray.length);
+
+          return (
+            <Card key={transaction.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="flex items-center gap-2">
+                      <Ticket className="w-5 h-5" />
+                      {String(raffle?.title || 'Ganhavel Indisponível')}
+                    </CardTitle>
+                    <CardDescription>
+                      {String(raffle?.description || '')}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getStatusColor(transaction.status)}>
+                      {getStatusLabel(transaction.status)}
+                    </Badge>
+                    {raffle?.id && (
+                      <CompartilheRifa raffleId={raffle.id} size={120} className="w-6 h-6" />
                     )}
-                  </CardTitle>
-                  <CardDescription>
-                    {ticket.raffles?.product_name}
-                  </CardDescription>
+                  </div>
                 </div>
-                <Badge variant={getStatusColor(ticket.payment_status)}>
-                  {getStatusLabel(ticket.payment_status)}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  <span>Valor: {formatCurrency(ticket.total_amount || 0)}</span>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Transaction Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-muted-foreground" />
+                      <span>Valor: {formatCurrency(Number(transaction.amount) || 0)}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span>Compra: {formatDate(transaction.created_at)}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Ticket className="w-4 h-4 text-muted-foreground" />
+                      <span>Quantidade: {quantity} ticket(s)</span>
+                    </div>
+                  </div>
+
+                  {/* Purchased Numbers */}
+                  {numbersArray.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-2">Números Comprados:</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {numbersArray.map((combo, idx) => (
+                          <div key={idx} className="text-xs font-mono bg-muted px-2 py-1 rounded">
+                            {String(combo)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Raffle Progress */}
+                  {raffle && (
+                    <div>
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span>Progresso da Rifa:</span>
+                        <span className="font-medium">
+                          {formatCurrency(Number(raffle.amount_raised) || 0)} / {formatCurrency(Number(raffle.goal_amount) || 0)}
+                        </span>
+                      </div>
+                      <ProgressBar 
+                        value={Number(raffle.progress_pct_money) || 0} 
+                        className="h-2"
+                        showLabel={false}
+                      />
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {Number(raffle.progress_pct_money) || 0}% concluído
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    {raffle?.id && (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/ganhaveis/${raffle.id}`}>
+                          Ver Ganhavel
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>Compra: {formatDate(ticket.created_at)}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span>Quantidade: {ticket.quantity || 1} ticket(s)</span>
-                </div>
-              </div>
-              
-              {ticket.raffles && (
-                <div className="mt-4">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/raffles/${ticket.raffles.id}`}>
-                      Ver Ganhavel
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
