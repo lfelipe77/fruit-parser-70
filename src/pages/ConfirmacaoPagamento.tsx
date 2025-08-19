@@ -22,21 +22,40 @@ type RaffleRow = {
   ticket_price: number;
 };
 
+// 1) Helpers FIRST (hoisted function declaration = no TDZ)
 function toComboString(input: unknown): string {
-  // handles "11-22-33...", ["11","22",...], [11,22,...], [[11,22,...]], or objects
   try {
-    if (typeof input === "string") {
-      // keep digits & dashes only; strip wrappers like "(...)"
-      return input.replace(/[^\d-]/g, "");
-    }
+    if (typeof input === "string") return input.replace(/[^\d-]/g, "");
     if (Array.isArray(input)) {
-      const flat = input.flat(2).map(x => String(x).replace(/[^\d]/g, ""));
+      const flat = (input as unknown[]).flat(2).map(x => String(x).replace(/[^\d]/g, ""));
       return flat.filter(Boolean).join("-");
     }
-    // last resort: stringify then sanitize
     return String(input ?? "").replace(/[^\d-]/g, "");
   } catch {
     return "";
+  }
+}
+
+// derive initial qty safely from URL hash (or pass location in if you prefer)
+function deriveInitialQty(): number {
+  try {
+    const hash = window.location.hash || "";
+    const qs = hash.includes("?") ? hash.split("?")[1] : "";
+    const sp = new URLSearchParams(qs);
+    const q = Number(sp.get("qty"));
+    return Number.isFinite(q) && q > 0 ? q : 1;
+  } catch {
+    return 1;
+  }
+}
+
+// derive initial combos ONLY from the navigation state we receive
+function deriveInitialCombos(navState: any): string[] {
+  try {
+    const raw = Array.isArray(navState?.selectedNumbers) ? navState.selectedNumbers : [];
+    return raw.map(toComboString).filter(Boolean);
+  } catch {
+    return [];
   }
 }
 
@@ -50,17 +69,40 @@ export default function ConfirmacaoPagamento() {
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
 
-  // Get quantity from URL
-  const qty = Math.max(1, Number(new URLSearchParams(location.search).get("qty") ?? "1"));
+  const navState = (location.state ?? {}) as {
+    selectedNumbers?: unknown[];
+    quantity?: number;
+    // ... any other primitives you pass here
+  };
+
+  // 2) INITIAL STATE: use lazy initializers that do not reference variables declared below
+  const [qty] = React.useState<number>(() =>
+    Number.isFinite(Number(navState.quantity)) && Number(navState.quantity) > 0
+      ? Number(navState.quantity)
+      : deriveInitialQty()
+  );
+
+  const [selectedNumbers, setSelectedNumbers] = React.useState<string[]>(() => {
+    const fromNav = deriveInitialCombos(navState);
+    if (fromNav.length > 0) return fromNav;
+    // Fallback to generating new numbers
+    const numbers = [];
+    for (let i = 0; i < qty; i++) {
+      const combo = [];
+      for (let j = 0; j < 6; j++) {
+        const num = String(Math.floor(Math.random() * 89) + 10).padStart(2, '0');
+        combo.push(num);
+      }
+      numbers.push(`(${combo.join('-')})`);
+    }
+    return numbers.map(toComboString).filter(Boolean);
+  });
   
   // State
   const [raffle, setRaffle] = React.useState<RaffleRow | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [paymentMethod, setPaymentMethod] = React.useState<'pix' | 'card' | 'bank'>('pix');
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [selectedNumbers, setSelectedNumbers] = React.useState<string[]>(
-    () => generateNumbers(qty).map(toComboString).filter(Boolean)
-  );
   const [showAllNumbers, setShowAllNumbers] = React.useState(false);
   
   // Form data
@@ -96,13 +138,7 @@ export default function ConfirmacaoPagamento() {
     console.log('Tickets to persist:', numbers);
   };
 
-  // Generate numbers when qty changes
-  React.useEffect(() => {
-    const numbers = generateNumbers(qty);
-    const safeNumbers = numbers.map(toComboString).filter(Boolean);
-    setSelectedNumbers(safeNumbers);
-    persistTicketsPreview(safeNumbers); // TODO: Connect to DB
-  }, [qty]);
+  // Numbers are initialized properly in useState, no need for qty effect since qty doesn't change
 
   // Load raffle data
   React.useEffect(() => {
