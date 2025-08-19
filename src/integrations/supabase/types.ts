@@ -1332,6 +1332,7 @@ export type Database = {
           fee_fixed: number | null
           fee_pct: number | null
           id: string
+          numbers: Json | null
           payment_id: string | null
           payment_provider: string | null
           payment_reference: string | null
@@ -1359,6 +1360,7 @@ export type Database = {
           fee_fixed?: number | null
           fee_pct?: number | null
           id?: string
+          numbers?: Json | null
           payment_id?: string | null
           payment_provider?: string | null
           payment_reference?: string | null
@@ -1386,6 +1388,7 @@ export type Database = {
           fee_fixed?: number | null
           fee_pct?: number | null
           id?: string
+          numbers?: Json | null
           payment_id?: string | null
           payment_provider?: string | null
           payment_reference?: string | null
@@ -2929,14 +2932,23 @@ export type Database = {
         Returns: string
       }
       record_mock_purchase_admin: {
-        Args: {
-          p_buyer_user_id: string
-          p_numbers: Json
-          p_provider_ref: string
-          p_qty: number
-          p_raffle_id: string
-          p_unit_price: number
-        }
+        Args:
+          | {
+              p_buyer_user_id: string
+              p_numbers: string[]
+              p_provider_ref: string
+              p_qty: number
+              p_raffle_id: string
+              p_unit_price: number
+            }
+          | {
+              p_buyer_user_id: string
+              p_numbers: Json
+              p_provider_ref: string
+              p_qty: number
+              p_raffle_id: string
+              p_unit_price: number
+            }
         Returns: string
       }
       request_password_reset: {
