@@ -8,8 +8,11 @@ import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png
 
 export default function HeroSection() {
   const { t } = useTranslation();
-  // Static text per session
-  const { headline, subline } = useHeroCopy({ persist: "session" });
+  // Auto-rotating text every 2 minutes
+  const { headline, subline } = useHeroCopy({ 
+    autoRotateMs: 120000, // 2 minutes
+    persist: "none" 
+  });
   
   return (
     <section className="relative bg-gradient-hero py-12 md:py-20 lg:py-32 overflow-hidden">
