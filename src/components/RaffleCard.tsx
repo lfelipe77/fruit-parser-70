@@ -20,9 +20,9 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
 
       {/* Title + excerpt */}
       <div className="p-4 space-y-3">
-        <h3 className="font-semibold leading-snug line-clamp-1">{r.title}</h3>
+        <h3 className="font-semibold leading-snug line-clamp-1">{String(r.title ?? '')}</h3>
         {r.description && (
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{r.description}</p>
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{String(r.description ?? '')}</p>
         )}
 
         {/* Money line */}
@@ -38,7 +38,7 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
 
         {/* Participants + last sale */}
         <div className="text-xs text-muted-foreground space-y-1">
-          <div>{(r.participants_count ?? 0)} participantes</div>
+          <div>{Number(r.participants_count ?? 0)} participantes</div>
           <div>{r.last_paid_at ? `Última venda: ${timeAgo(r.last_paid_at)}` : "Sem vendas ainda"}</div>
           {cityState && <div>{cityState}</div>}
         </div>

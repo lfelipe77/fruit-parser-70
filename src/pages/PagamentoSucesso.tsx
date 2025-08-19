@@ -38,10 +38,22 @@ interface PaymentSuccessData {
   paymentDate?: string;
 }
 
-function formatComboString(input: unknown): string {
-  if (typeof input === "string") return input.replace(/[^\d()-]/g, "");
-  if (Array.isArray(input)) return input.join("-");
-  return String(input ?? "").replace(/[^\d()-]/g, "");
+function toComboString(input: unknown): string {
+  // handles "11-22-33...", ["11","22",...], [11,22,...], [[11,22,...]], or objects
+  try {
+    if (typeof input === "string") {
+      // keep digits & dashes only; strip wrappers like "(...)"
+      return input.replace(/[^\d-]/g, "");
+    }
+    if (Array.isArray(input)) {
+      const flat = input.flat(2).map(x => String(x).replace(/[^\d]/g, ""));
+      return flat.filter(Boolean).join("-");
+    }
+    // last resort: stringify then sanitize
+    return String(input ?? "").replace(/[^\d-]/g, "");
+  } catch {
+    return "";
+  }
 }
 
 export default function PagamentoSucesso() {
@@ -52,7 +64,9 @@ export default function PagamentoSucesso() {
   const { toast } = useToast();
   const s = location.state as PaymentSuccessData || {};
   const [rehydrated, setRehydrated] = useState<PaymentSuccessData>(s);
-  const [combos, setCombos] = useState<string[] | null>(s?.selectedNumbers ?? null);
+  const [combos, setCombos] = useState<string[] | null>(
+    s?.selectedNumbers?.map(toComboString) ?? null
+  );
 
   const txId = s?.txId ?? searchParams.get("tx") ?? undefined;
 
@@ -89,7 +103,7 @@ export default function PagamentoSucesso() {
             arr = []; 
           }
         }
-        setCombos(arr.map(formatComboString));
+        setCombos(arr.map(toComboString).filter(Boolean));
         
         // Also update rehydrated data
         setRehydrated({
@@ -253,8 +267,8 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                       className="w-20 h-20 object-cover rounded-lg"
                     />
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{paymentData.rifaTitle}</h3>
-                      <p className="text-muted-foreground">Por: {paymentData.organizerName}</p>
+                      <h3 className="font-semibold text-lg">{String(paymentData.rifaTitle ?? '')}</h3>
+                      <p className="text-muted-foreground">Por: {String(paymentData.organizerName ?? '')}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <Trophy className="h-4 w-4 text-yellow-500" />
                         <span className="text-sm text-muted-foreground">
@@ -269,9 +283,9 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                   <div>
                     <h4 className="font-medium mb-2">Seus Números da Sorte:</h4>
                     <div className="space-y-2">
-                      {paymentData.selectedNumbers.map((combination, index) => (
+                    {(Array.isArray(paymentData.selectedNumbers) ? paymentData.selectedNumbers : []).map((combination, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <span className="font-mono text-sm">{combination}</span>
+                          <span className="font-mono text-sm">({String(combination)})</span>
                           <Badge variant="outline" className="border-green-300 text-green-700">
                             Bilhete #{index + 1}
                           </Badge>

@@ -22,6 +22,24 @@ type RaffleRow = {
   ticket_price: number;
 };
 
+function toComboString(input: unknown): string {
+  // handles "11-22-33...", ["11","22",...], [11,22,...], [[11,22,...]], or objects
+  try {
+    if (typeof input === "string") {
+      // keep digits & dashes only; strip wrappers like "(...)"
+      return input.replace(/[^\d-]/g, "");
+    }
+    if (Array.isArray(input)) {
+      const flat = input.flat(2).map(x => String(x).replace(/[^\d]/g, ""));
+      return flat.filter(Boolean).join("-");
+    }
+    // last resort: stringify then sanitize
+    return String(input ?? "").replace(/[^\d-]/g, "");
+  } catch {
+    return "";
+  }
+}
+
 export default function ConfirmacaoPagamento() {
   console.log("[ConfirmacaoPagamento] Component loading...");
   
@@ -162,7 +180,7 @@ export default function ConfirmacaoPagamento() {
           quantity: safeQty,            // number
           unitPrice,                    // number
           totalPaid,                    // number
-          selectedNumbers,              // Pass the formatted numbers from UI
+          selectedNumbers: selectedNumbers.map(toComboString), // ensure strings
         },
       });
     } catch (e: any) {
@@ -228,9 +246,9 @@ export default function ConfirmacaoPagamento() {
                   className="h-16 w-24 rounded object-cover"
                 />
                 <div className="flex-1">
-                  <h3 className="font-semibold">{raffle.title}</h3>
+                  <h3 className="font-semibold">{String(raffle.title ?? '')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {qty} bilhete{qty > 1 ? 's' : ''} × {formatBRL(raffle.ticket_price)}
+                    {Number(qty ?? 0)} bilhete{qty > 1 ? 's' : ''} × {formatBRL(Number(raffle.ticket_price ?? 0))}
                   </p>
                 </div>
               </div>
@@ -250,7 +268,7 @@ export default function ConfirmacaoPagamento() {
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {selectedNumbers.map((combination, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                      <span className="font-mono text-sm font-semibold text-emerald-800">{combination}</span>
+                      <span className="font-mono text-sm font-semibold text-emerald-800">{String(combination)}</span>
                       <div className="text-xs text-emerald-600 font-medium">
                         Bilhete #{index + 1}
                       </div>
@@ -276,7 +294,7 @@ export default function ConfirmacaoPagamento() {
                         {selectedNumbers.map((combination, index) => (
                           <div key={index} className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                             <div>
-                              <span className="font-mono text-lg font-bold text-emerald-800">{combination}</span>
+                              <span className="font-mono text-lg font-bold text-emerald-800">{String(combination)}</span>
                             </div>
                             <div className="text-sm text-emerald-600 font-medium bg-emerald-100 px-3 py-1 rounded-full">
                               Bilhete #{index + 1}
@@ -286,7 +304,7 @@ export default function ConfirmacaoPagamento() {
                       </div>
                       <div className="flex justify-between items-center pt-4 border-t">
                         <div className="text-sm text-muted-foreground">
-                          Total: {selectedNumbers.length} bilhete{selectedNumbers.length > 1 ? 's' : ''}
+                           Total: {Number(selectedNumbers.length ?? 0)} bilhete{selectedNumbers.length > 1 ? 's' : ''}
                         </div>
                         <Button onClick={handleRegenerateNumbers} variant="outline">
                           🎲 Gerar Novos Números

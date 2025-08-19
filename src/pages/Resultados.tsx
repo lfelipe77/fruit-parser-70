@@ -49,11 +49,11 @@ export default function Resultados() {
     
     // Real-time updates
     const onUpdated = () => fetchResultsData();
-    window.addEventListener("raffleUpdated", onUpdated);
+    window.addEventListener("raffleUpdated", onUpdated as any);
     const interval = setInterval(fetchResultsData, 30000);
     
     return () => {
-      window.removeEventListener("raffleUpdated", onUpdated);
+      window.removeEventListener("raffleUpdated", onUpdated as any);
       clearInterval(interval);
     };
   }, []);
@@ -230,14 +230,14 @@ export default function Resultados() {
                                 <Trophy className="w-8 h-8 text-white" />
                               </div>
                               <div>
-                                <h3 className="text-lg font-semibold mb-1">{result.raffle_title}</h3>
+                                <h3 className="text-lg font-semibold mb-1">{String(result.raffle_title ?? '')}</h3>
                                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                                   <span className="flex items-center">
                                     <Calendar className="w-4 h-4 mr-1" />
                                     {new Date(result.result_date).toLocaleDateString('pt-BR')}
                                   </span>
                                   {result.lottery_draw_numbers && (
-                                    <span>Números: {result.lottery_draw_numbers}</span>
+                                    <span>Números: {String(result.lottery_draw_numbers ?? '')}</span>
                                   )}
                                 </div>
                               </div>
@@ -246,12 +246,12 @@ export default function Resultados() {
                           
                           <div className="text-center">
                             <div className="text-sm text-muted-foreground mb-1">Valor Total</div>
-                            <div className="font-bold text-xl text-primary">{formatCurrency(result.raffle_goal_amount)}</div>
+                            <div className="font-bold text-xl text-primary">{formatCurrency(Number(result.raffle_goal_amount ?? 0))}</div>
                           </div>
                           
                           <div className="text-center">
                             <div className="text-sm text-muted-foreground mb-1">Ganhador</div>
-                            <div className="font-semibold text-lg">{result.winner_name}</div>
+                            <div className="font-semibold text-lg">{String(result.winner_name ?? '')}</div>
                           </div>
                           
                           <div className="text-center">
@@ -300,7 +300,7 @@ export default function Resultados() {
                   <Card key={draw.id} className="border-green-200 bg-green-50/50">
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
-                        <span className="truncate">{draw.title}</span>
+                          <span className="truncate">{String(draw.title ?? '')}</span>
                         <Badge className="bg-green-100 text-green-800 flex-shrink-0">
                           100% Completa
                         </Badge>
@@ -319,12 +319,12 @@ export default function Resultados() {
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground">Valor Total:</span>
                           <span className="font-bold text-lg text-primary">
-                            {formatCurrency(draw.goal_amount)}
+                            {formatCurrency(Number(draw.goal_amount ?? 0))}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground">Participantes:</span>
-                          <span className="font-semibold">{draw.participants_count || 0}</span>
+                          <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
                         </div>
                         <div className="w-full bg-green-200 rounded-full h-3">
                           <div className="bg-green-500 h-3 rounded-full w-full" />
@@ -376,9 +376,9 @@ export default function Resultados() {
                     <Card key={draw.id} className="border-orange-200 bg-orange-50/50">
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
-                          <span className="truncate">{draw.title}</span>
+                          <span className="truncate">{String(draw.title ?? '')}</span>
                           <Badge variant="outline" className="text-orange-600 border-orange-600 flex-shrink-0">
-                            {percentage}% Completa
+                            {Number(percentage ?? 0)}% Completa
                           </Badge>
                         </CardTitle>
                       </CardHeader>

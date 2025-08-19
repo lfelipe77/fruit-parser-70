@@ -25,14 +25,14 @@ export default function HeroSection() {
                 duration={600}
                 className="text-3xl md:text-4xl lg:text-6xl font-bold leading-tight"
               >
-                {headline}
+                {String(headline ?? '')}
               </FadeText>
               <FadeText 
                 as="p" 
                 duration={600}
                 className="text-lg md:text-xl text-muted-foreground leading-relaxed"
               >
-                {subline}
+                {String(subline ?? '')}
               </FadeText>
             </div>
             
