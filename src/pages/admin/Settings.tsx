@@ -105,39 +105,40 @@ export default function Settings() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Fetch categories and subcategories from database
-  const fetchAll = async () => {
-    try {
-      setLoading(true);
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .order('sort_order', { ascending: true });
-
-      if (categoriesError) throw categoriesError;
-
-      const { data: subcategoriesData, error: subcategoriesError } = await supabase
-        .from('subcategories')
-        .select('*, categories(nome)')
-        .order('sort_order', { ascending: true });
-
-      if (subcategoriesError) throw subcategoriesError;
-
-      setCategories(categoriesData || []);
-      setSubcategories(subcategoriesData || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar as categorias.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchAll();
+    const fetchData = async () => {
+      try {
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*')
+          .order('sort_order', { ascending: true });
+
+        if (categoriesError) throw categoriesError;
+
+        // Fetch subcategories
+        const { data: subcategoriesData, error: subcategoriesError } = await supabase
+          .from('subcategories')
+          .select('*, categories(nome)')
+          .order('sort_order', { ascending: true });
+
+        if (subcategoriesError) throw subcategoriesError;
+
+        setCategories(categoriesData || []);
+        setSubcategories(subcategoriesData || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar as categorias.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [toast]);
 
   const handleSaveSettings = () => {
@@ -171,7 +172,6 @@ export default function Settings() {
         title: "Categoria adicionada",
         description: `A categoria "${data.nome}" foi criada com sucesso.`,
       });
-      fetchAll();
     } catch (error) {
       console.error('Error adding category:', error);
       toast({
@@ -204,7 +204,6 @@ export default function Settings() {
         title: "Subcategoria adicionada",
         description: `A subcategoria "${data.name}" foi adicionada com sucesso.`,
       });
-      fetchAll();
     } catch (error) {
       console.error('Error adding subcategory:', error);
       toast({
@@ -278,7 +277,6 @@ export default function Settings() {
         title: "Categoria removida",
         description: "A categoria foi removida com sucesso.",
       });
-      fetchAll();
     } catch (error: any) {
       console.error('Error deleting category:', error);
       let description = error?.message || "Não foi possível remover a categoria.";
@@ -322,7 +320,6 @@ export default function Settings() {
         title: "Categoria atualizada",
         description: `A categoria "${data?.nome}" foi atualizada com sucesso.`,
       });
-      fetchAll();
     } catch (error: any) {
       console.error('Error updating category:', error);
       toast({
