@@ -1,12 +1,12 @@
 import { 
+  Monitor, 
   Smartphone, 
-  Watch, 
   Gamepad2,
-  Zap,
-  DollarSign, 
+  ChefHat,
+  Gift, 
   Car,
   TrendingUp,
-  Home
+  Sparkles
 } from "lucide-react";
 
 export interface CategoryData {
@@ -26,7 +26,7 @@ export interface CategoryData {
 export const categoriesData: Record<string, CategoryData> = {
   eletronicos: {
     name: "Eletrônicos",
-    icon: Smartphone,
+    icon: Monitor,
     color: "text-blue-500",
     count: 156,
     slug: "eletronicos",
@@ -39,7 +39,7 @@ export const categoriesData: Record<string, CategoryData> = {
   },
   "celulares-smartwatches": {
     name: "Celulares & Smartwatches", 
-    icon: Watch,
+    icon: Smartphone,
     color: "text-purple-500",
     count: 89,
     slug: "celulares-smartwatches",
@@ -65,7 +65,7 @@ export const categoriesData: Record<string, CategoryData> = {
   },
   eletrodomesticos: {
     name: "Eletrodomésticos",
-    icon: Zap,
+    icon: ChefHat,
     color: "text-yellow-500",
     count: 45,
     slug: "eletrodomesticos",
@@ -78,7 +78,7 @@ export const categoriesData: Record<string, CategoryData> = {
   },
   "dinheiro-giftcards": {
     name: "Gift Cards",
-    icon: DollarSign,
+    icon: Gift,
     color: "text-green-500",
     count: 67,
     slug: "dinheiro-giftcards",
@@ -117,7 +117,7 @@ export const categoriesData: Record<string, CategoryData> = {
   },
   diversos: {
     name: "Diversos (com Propriedades)",
-    icon: Home,
+    icon: Sparkles,
     color: "text-emerald-500",
     count: 34,
     slug: "diversos",
@@ -132,14 +132,14 @@ export const categoriesData: Record<string, CategoryData> = {
 
 // Simple categories for display
 export const categoriesSimple = [
-  { name: "Eletrônicos", icon: Smartphone, count: 156, color: "text-blue-500", slug: "eletronicos" },
-  { name: "Celulares & Smartwatches", icon: Watch, count: 89, color: "text-purple-500", slug: "celulares-smartwatches" },
+  { name: "Eletrônicos", icon: Monitor, count: 156, color: "text-blue-500", slug: "eletronicos" },
+  { name: "Celulares & Smartwatches", icon: Smartphone, count: 89, color: "text-purple-500", slug: "celulares-smartwatches" },
   { name: "Games & Consoles", icon: Gamepad2, count: 78, color: "text-pink-500", slug: "games-consoles" },
-  { name: "Eletrodomésticos", icon: Zap, count: 45, color: "text-yellow-500", slug: "eletrodomesticos" },
-  { name: "Gift Cards", icon: DollarSign, count: 67, color: "text-green-500", slug: "dinheiro-giftcards" },
+  { name: "Eletrodomésticos", icon: ChefHat, count: 45, color: "text-yellow-500", slug: "eletrodomesticos" },
+  { name: "Gift Cards", icon: Gift, count: 67, color: "text-green-500", slug: "dinheiro-giftcards" },
   { name: "Carros & Motos", icon: Car, count: 134, color: "text-red-500", slug: "carros-motos" },
   { name: "Produtos Virais", icon: TrendingUp, count: 92, color: "text-orange-500", slug: "produtos-virais" },
-  { name: "Diversos (com Propriedades)", icon: Home, count: 34, color: "text-emerald-500", slug: "diversos" },
+  { name: "Diversos (com Propriedades)", icon: Sparkles, count: 34, color: "text-emerald-500", slug: "diversos" },
 ];
 
 export const getAllCategories = () => categoriesSimple;
