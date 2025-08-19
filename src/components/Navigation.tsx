@@ -5,6 +5,11 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { 
   Search, 
   Heart, 
@@ -15,7 +20,8 @@ import {
   ChevronDown,
   Shield,
   BarChart3,
-  Eye
+  Eye,
+  Menu
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -59,6 +65,7 @@ export default function Navigation() {
   const { user } = useAuth();
   const [userRole, setUserRole] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = useIsAdmin();
 
   // Verificar role do usuário e avatar
@@ -174,6 +181,67 @@ export default function Navigation() {
             </div>
             
             <div className="flex items-center space-x-2 md:space-x-4">
+              {/* Mobile Menu */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="sm" className="lg:hidden">
+                    <Menu className="w-4 h-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72">
+                  <div className="flex flex-col space-y-4 mt-6">
+                    <Link 
+                      to="/descobrir" 
+                      className="text-foreground hover:text-primary transition-colors py-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t('discover')}
+                    </Link>
+                    <Link 
+                      to="/categorias" 
+                      className="text-foreground hover:text-primary transition-colors py-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t('categories')}
+                    </Link>
+                    <Link 
+                      to="/resultados" 
+                      className="text-foreground hover:text-primary transition-colors py-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t('results')}
+                    </Link>
+                    <Link 
+                      to="/como-funciona" 
+                      className="text-foreground hover:text-primary transition-colors py-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t('howItWorks')}
+                    </Link>
+                    {isAdmin && (
+                      <Link 
+                        to="/admin" 
+                        className="text-foreground hover:text-primary transition-colors py-2 flex items-center gap-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Settings className="w-4 h-4" />
+                        Admin
+                      </Link>
+                    )}
+                    {!user && (
+                      <Link 
+                        to="/login" 
+                        className="text-foreground hover:text-primary transition-colors py-2 flex items-center gap-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <User className="w-4 h-4" />
+                        {t('login')}
+                      </Link>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+
               <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <Search className="w-4 h-4" />
               </Button>
