@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { RAFFLE_IMAGE_BUCKET, pathForRaffleImage } from "@/lib/storage";
 
 // inline toast to avoid new imports/files
 function ToastInline({
@@ -158,15 +159,15 @@ export default function LanceSeuGanhavel() {
   async function uploadCoverAndGetUrl(file: File, uid: string) {
     setUploading(true);
     try {
-      const path = `${uid}/${Date.now()}-${file.name}`;
+      const path = pathForRaffleImage(uid, file.name);
       const { error: upErr } = await supabase.storage
-        .from("raffles")
-        .upload(path, file, { cacheControl: "3600", upsert: false });
+        .from(RAFFLE_IMAGE_BUCKET)
+        .upload(path, file, { upsert: true, contentType: file.type });
       if (upErr) throw upErr;
 
-      const { data: pub } = supabase.storage.from("raffles").getPublicUrl(path);
-      if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública da imagem");
-      return pub.publicUrl as string;
+      const { data } = supabase.storage.from(RAFFLE_IMAGE_BUCKET).getPublicUrl(path);
+      if (!data?.publicUrl) throw new Error("Falha ao obter URL pública da imagem");
+      return data.publicUrl as string;
     } finally {
       setUploading(false);
     }
@@ -224,18 +225,19 @@ export default function LanceSeuGanhavel() {
 
       // Upload image to raffles bucket
       const cover = images[0];
-      const path = `${uid}/${Date.now()}-${cover.name}`;
+      const path = pathForRaffleImage(uid, cover.name);
       const { error: upErr } = await supabase.storage
-        .from("raffles")
+        .from(RAFFLE_IMAGE_BUCKET)
         .upload(path, cover, { upsert: true, contentType: cover.type });
-      
       if (upErr) {
-        console.error(upErr);
+        console.error("[upload]", upErr);
+        toast.error("Falha ao subir imagem");
         setErrorMsg("Falha ao subir imagem.");
         return;
       }
 
-      const imageUrlPublic = supabase.storage.from("raffles").getPublicUrl(path).data.publicUrl;
+      const { data: pub } = supabase.storage.from(RAFFLE_IMAGE_BUCKET).getPublicUrl(path);
+      const imageUrlPublic = pub.publicUrl;
 
       const payload = {
         user_id: session.user.id,
