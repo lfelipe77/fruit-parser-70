@@ -6,14 +6,25 @@ export const shortDateTime = (iso?: string) =>
   iso ? new Date(iso).toLocaleString("pt-BR") : "";
 
 export function toComboString(input: unknown): string {
+  console.log("[toComboString] Input:", input, "Type:", typeof input);
+  
   try {
-    if (typeof input === "string") return input.replace(/[^\d-]/g, "");
+    if (typeof input === "string") {
+      const result = input.replace(/[^\d-]/g, "");
+      console.log("[toComboString] String result:", result);
+      return result;
+    }
     if (Array.isArray(input)) {
       const flat = (input as unknown[]).flat(2).map(x => String(x).replace(/[^\d]/g, ""));
-      return flat.filter(Boolean).join("-");
+      const result = flat.filter(Boolean).join("-");
+      console.log("[toComboString] Array result:", result);
+      return result;
     }
-    return String(input ?? "").replace(/[^\d-]/g, "");
-  } catch {
+    const result = String(input ?? "").replace(/[^\d-]/g, "");
+    console.log("[toComboString] Default result:", result);
+    return result;
+  } catch (error) {
+    console.log("[toComboString] Error:", error);
     return "";
   }
 }

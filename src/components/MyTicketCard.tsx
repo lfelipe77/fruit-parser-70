@@ -27,11 +27,21 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const [showModal, setShowModal] = useState(false);
 
   const combos = useMemo(() => {
-    console.log("[MyTicketCard] purchased_numbers:", row.purchased_numbers);
+    console.log("[MyTicketCard] Raw purchased_numbers:", row.purchased_numbers);
+    console.log("[MyTicketCard] Type:", typeof row.purchased_numbers);
+    console.log("[MyTicketCard] Is array:", Array.isArray(row.purchased_numbers));
+    
     const raw = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-    console.log("[MyTicketCard] raw numbers:", raw);
-    const processed = raw.map(toComboString).filter(Boolean);
-    console.log("[MyTicketCard] processed combos:", processed);
+    console.log("[MyTicketCard] Raw array:", raw);
+    
+    const processed = raw.map((item, index) => {
+      console.log(`[MyTicketCard] Processing item ${index}:`, item, typeof item);
+      const result = toComboString(item);
+      console.log(`[MyTicketCard] toComboString result for item ${index}:`, result);
+      return result;
+    }).filter(Boolean);
+    
+    console.log("[MyTicketCard] Final processed combos:", processed);
     return processed;
   }, [row.purchased_numbers]);
 
