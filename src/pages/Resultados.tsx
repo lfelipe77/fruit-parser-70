@@ -22,6 +22,16 @@ interface LotteryResult {
   winner_name: string | null;
 }
 
+interface FederalDraw {
+  id: number;
+  concurso_number: string;
+  draw_date: string;
+  first_prize: string | null;
+  prizes: any[];
+  source_url: string | null;
+  created_at: string;
+}
+
 interface CompleteRaffle {
   id: string;
   title: string;
@@ -42,6 +52,7 @@ export default function Resultados() {
   const [recentResults, setRecentResults] = useState<LotteryResult[]>([]);
   const [completeRaffles, setCompleteRaffles] = useState<CompleteRaffle[]>([]);
   const [almostCompleteRaffles, setAlmostCompleteRaffles] = useState<AlmostCompleteRaffle[]>([]);
+  const [federalDraws, setFederalDraws] = useState<FederalDraw[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -132,6 +143,19 @@ export default function Resultados() {
         setAlmostCompleteRaffles(almostData || []);
       }
 
+      // Fetch federal draws from CAIXA
+      const { data: federalData, error: federalError } = await (supabase as any)
+        .from('federal_draws')
+        .select('id,concurso_number,draw_date,first_prize,prizes,source_url,created_at')
+        .order('draw_date', { ascending: false })
+        .limit(10);
+
+      if (federalError) {
+        console.error('Error fetching federal draws:', federalError);
+      } else {
+        setFederalDraws(federalData || []);
+      }
+
     } catch (error) {
       console.error('Error fetching results data:', error);
     } finally {
@@ -187,8 +211,9 @@ export default function Resultados() {
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Tabs defaultValue="premiadas" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="premiadas">Ganhaveis Premiados</TabsTrigger>
+              <TabsTrigger value="federal">Loteria Federal</TabsTrigger>
               <TabsTrigger value="completas">Rifas Completas</TabsTrigger>
               <TabsTrigger value="quase-completas">Quase Completas</TabsTrigger>
             </TabsList>
@@ -271,6 +296,88 @@ export default function Resultados() {
                       </CardContent>
                     </Card>
                   </Link>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Federal Lottery Results */}
+            <TabsContent value="federal" className="space-y-6 mt-8">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                    Resultados da Loteria Federal
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Últimos sorteios oficiais da Caixa Econômica Federal
+                  </p>
+                </div>
+                <Button variant="outline" asChild>
+                  <a 
+                    href="https://loterias.caixa.gov.br/Paginas/Federal.aspx" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Site Oficial
+                  </a>
+                </Button>
+              </div>
+              
+              <div className="grid gap-6">
+                {federalDraws.length === 0 ? (
+                  <Card className="p-8 text-center">
+                    <div className="text-muted-foreground">
+                      <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Nenhum resultado da Loteria Federal ainda.</p>
+                      <p className="text-sm mt-2">Os resultados aparecerão aqui após os sorteios serem sincronizados.</p>
+                    </div>
+                  </Card>
+                ) : federalDraws.map((draw) => (
+                  <Card key={draw.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="grid md:grid-cols-4 gap-6 items-center">
+                        <div className="md:col-span-1">
+                          <div className="flex items-start space-x-4">
+                            <div className="w-16 h-16 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Trophy className="w-8 h-8 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold mb-1">Concurso {draw.concurso_number}</h3>
+                              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                <span className="flex items-center">
+                                  <Calendar className="w-4 h-4 mr-1" />
+                                  {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground mb-1">1º Prêmio</div>
+                          <div className="font-bold text-xl text-primary">
+                            {draw.first_prize || 'N/A'}
+                          </div>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground mb-1">Total de Prêmios</div>
+                          <div className="font-semibold text-lg">{draw.prizes?.length || 0}</div>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-sm text-muted-foreground mb-1">Status</div>
+                          <div className="font-semibold text-green-600">
+                            <div className="flex items-center justify-center gap-1">
+                              <CheckCircle className="w-4 h-4" />
+                              Oficial
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </TabsContent>

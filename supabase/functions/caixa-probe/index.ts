@@ -10,6 +10,8 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const supabase = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
 
+console.log("🔍 Caixa Probe Function - Testing connectivity to CAIXA API");
+
 serve(withCORS(async (_req: Request) => {
   const url = "https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados";
   try {

@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { withCORS } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+console.log("🎯 Federal Sync Function - Ready to fetch Federal lottery results");
+
 // Sync latest results of Loteria Federal into public.federal_draws
 // Requires SUPABASE_SERVICE_ROLE_KEY (service role) to bypass RLS for inserts.
 

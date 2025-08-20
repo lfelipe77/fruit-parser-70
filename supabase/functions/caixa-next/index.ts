@@ -7,6 +7,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Set SUPABASE_SERVICE_ROLE_KEY in Functions Secrets.
 
 serve(withCORS(async (req: Request) => {
+  console.log("📡 Caixa Next Function - Fetching next draws from CAIXA API");
+  
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
   }
@@ -14,6 +16,7 @@ serve(withCORS(async (req: Request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) {
+    console.error("❌ Missing environment variables");
     return new Response(JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }), { status: 500 });
   }
 
