@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
-import { brl, shortDateTime, statusLabel } from "@/lib/format";
-import { Share2, TicketIcon, ChevronDown, Ticket } from "lucide-react";
-import NumbersModal from "./NumbersModal";
+import { brl, shortDateTime, toComboString, statusLabel } from "@/lib/format";
+import { Share2, TicketIcon, ChevronDown } from "lucide-react";
 
 type Row = {
   transaction_id: string;
@@ -21,59 +20,14 @@ type Row = {
   winner_ticket_id?: string | null;  // via raffles
 };
 
-function toComboString(x: unknown): string {
-  if (Array.isArray(x)) return x.join("-");                // [12,34,56,78,90,11]
-  if (typeof x === "string") return x.replace(/[()]/g, ""); // "(12-34-..)" → "12-34-.."
-  return "";
-}
-
-function parsePurchasedNumbers(input: unknown): string[] {
-  if (!input) return [];
-  // Already string[]?
-  if (Array.isArray(input)) {
-    // Could be ["12-34-..","(..)", [12,34,..]]
-    return (input as unknown[])
-      .map(toComboString)
-      .map(s => s.trim())
-      .filter(Boolean);
-  }
-  if (typeof input === "string") {
-    // Could be serialized list "(..)(..)" or CSV/JSONy
-    const cleaned = input.replace(/\s+/g, "");
-    // split by comma *outside* parens, or by ")(" boundaries
-    const parts = cleaned
-      .replace(/^\[|\]$/g, "")
-      .split(/,(?![^()]*\))|(?<=\))(?=\()/g)
-      .map(s => s.replace(/[()]/g, ""))
-      .filter(Boolean);
-    return parts;
-  }
-  // wrapped objects { numbers: [...] }
-  if (typeof input === "object" && input && "numbers" in (input as any)) {
-    return parsePurchasedNumbers((input as any).numbers);
-  }
-  return [];
-}
-
 export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
 
-  const combos = useMemo(
-    () => parsePurchasedNumbers(row.purchased_numbers),
-    [row.purchased_numbers]
-  );
-
-  // Supabase may send bigint as string; always coerce to number and
-  // fall back to combos length when tickets rows don't exist.
-  const ticketCount = useMemo(() => {
-    const raw = (row as any).ticket_count;
-    const n = typeof raw === "string" ? parseInt(raw, 10) : Number(raw ?? 0);
-    return Number.isFinite(n) && n > 0 ? n : combos.length;
-  }, [row, combos]);
-
-  const hasNumbers = combos.length > 0;
-  const previewCombos = combos.slice(0, 3);
+  const combos = useMemo(() => {
+    const raw = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
+    return raw.map(toComboString).filter(Boolean);
+  }, [row.purchased_numbers]);
 
   async function onShare() {
     try {
@@ -154,29 +108,46 @@ export default function MyTicketCard({ row }: { row: Row }) {
           />
         </div>
 
-        {/* Numbers preview (only if we truly have numbers) */}
-        {hasNumbers && (
-          <div className="mt-2 flex flex-wrap gap-2 items-center text-xs">
-            {previewCombos.map((c, i) => (
-              <span key={i} className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200">
+        {/* Combos preview line (first 3) */}
+        {combos.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {combos.slice(0, 3).map((c, i) => (
+              <span key={i} className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded">
                 {c}
               </span>
             ))}
             {combos.length > 3 && (
               <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="text-emerald-700 hover:underline ml-2"
+                className="text-xs inline-flex items-center gap-1 text-emerald-700 hover:underline"
+                onClick={() => setOpen(v => !v)}
               >
+                <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
                 Ver todos ({combos.length})
               </button>
             )}
           </div>
         )}
 
-        {/* Meta line: ALWAYS show a single count, fed by ticketCount */}
-        <div className="mt-2 text-xs text-gray-600">
-          {ticketCount} bilhetes • Compra: {shortDateTime(row.purchase_date)} • Valor: {brl(row.value)}
+        {/* Expand list */}
+        {open && combos.length > 0 && (
+          <ul className="mt-2 grid sm:grid-cols-2 gap-2 text-sm">
+            {combos.map((c, i) => (
+              <li key={i} className="rounded border px-2 py-1">
+                ({c}) <span className="text-xs text-gray-500">Bilhete #{i + 1}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Meta row */}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mt-2">
+          <span className="inline-flex items-center gap-1">
+            <TicketIcon className="h-3.5 w-3.5" /> {row.ticket_count} bilhetes
+          </span>
+          <span>•</span>
+          <span>Compra: {shortDateTime(row.purchase_date)}</span>
+          <span>•</span>
+          <span>Valor: {brl(row.value)}</span>
         </div>
       </div>
 
@@ -203,17 +174,6 @@ export default function MyTicketCard({ row }: { row: Row }) {
           </a>
         </div>
       </div>
-
-      {/* Modal receives the same combos */}
-      {open && (
-        <NumbersModal
-          title={row.raffle_title}
-          ticketCount={ticketCount}
-          value={row.value}
-          numbers={combos}
-          onClose={() => setOpen(false)}
-        />
-      )}
     </article>
   );
 }
