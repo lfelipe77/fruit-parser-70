@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
 import { Button } from "@/components/ui/button";
@@ -9,83 +8,48 @@ import { Link } from "react-router-dom";
 type Row = Parameters<typeof MyTicketCard>[0]["row"];
 
 function dedupeByTxId(arr: Row[] | null | undefined): Row[] {
-  const map = new Map<string, Row>();
-  for (const r of arr || []) if (r?.transaction_id) map.set(r.transaction_id, r);
-  return Array.from(map.values());
+  const seen = new Map<string, Row>();
+  for (const r of arr || []) {
+    if (r?.transaction_id) seen.set(r.transaction_id, r);
+  }
+  return Array.from(seen.values());
 }
 
 export default function MyTicketsPage() {
-  const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [errorText, setErrorText] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const fetchedOnce = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
     if (fetchedOnce.current) return;
     fetchedOnce.current = true;
 
     let alive = true;
-
-    async function run() {
-      setLoading(true);
-      setErrorText(null);
-
-      // helper to fetch from a given view name
-      const getFrom = async (view: string) => {
-        return supabase
-          .from(view as any)
+    (async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("my_tickets_ext_v3" as any)     // ← use the new view
           .select("*")
           .order("progress_pct_money", { ascending: false })
           .order("amount_raised", { ascending: false })
           .order("purchase_date", { ascending: false });
-      };
 
-      try {
-        // try v2 first
-        let { data, error } = await getFrom("my_tickets_ext_v2");
-
-        // if the view doesn't exist, retry with the original view
-        if (error && (error as any)?.code === "42P01") {
-          console.warn("[MyTickets] v2 view missing, retrying my_tickets_ext");
-          ({ data, error } = await getFrom("my_tickets_ext"));
-        }
-
-        if (error) {
-          console.error("[MyTickets] fetch error:", error);
-          if (alive) {
-            setErrorText("Não foi possível carregar seus tickets. Tente novamente em instantes.");
-            setRows([]);
-          }
-        } else {
-          const unique = dedupeByTxId(data as any);
-          if (alive) setRows(unique);
+        if (error) console.error("[MyTickets] fetch error:", error);
+        const unique = dedupeByTxId(data as any);
+        if (alive) {
+          setRows(unique);               // replace (don't append)
+          setLoading(false);
         }
       } catch (e) {
         console.error("[MyTickets] unexpected error:", e);
-        if (alive) setErrorText("Houve um erro ao carregar seus tickets.");
-      } finally {
         if (alive) setLoading(false);
       }
-    }
+    })();
 
-    run();
-    return () => {
-      alive = false;
-    };
-  }, [user]);
-
-  if (!user) {
-    return (
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
-        <div className="text-center text-gray-600 py-16">
-          Faça login para ver seus tickets.
-        </div>
-      </div>
-    );
-  }
+    return () => { alive = false; };
+  }, []);
 
   const visible = showAll ? rows : rows.slice(0, 10);
 
@@ -131,19 +95,13 @@ export default function MyTicketsPage() {
         </div>
       )}
 
-      {!loading && errorText && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorText}
-        </div>
-      )}
-
-      {!loading && !errorText && rows.length === 0 && (
+      {!loading && rows.length === 0 && (
         <div className="text-center text-gray-600 py-16">
           Você ainda não possui tickets.
         </div>
       )}
 
-      {!loading && !errorText && rows.length > 0 && (
+      {!loading && rows.length > 0 && (
         <>
           <div className="space-y-4">
             {visible.map((r) => (
