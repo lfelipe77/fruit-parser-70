@@ -1,8 +1,14 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { withCORS } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Optional: Edge runtime types for editor intellisense only
 // import * as _mod from "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+// Initialize Supabase client (service role) - not used for DB writes here, but ensures secrets are wired
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const supabase = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
 
 serve(withCORS(async (_req: Request) => {
   const url = "https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados";

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Trophy, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LotteryDraw {
   id: string;
@@ -38,16 +40,33 @@ export default function CaixaLotterySection() {
     }
   ];
 
-  useEffect(() => {
-    // TODO: Replace with actual API call to Supabase edge function
+useEffect(() => {
     const fetchLotteryData = async () => {
       try {
         setLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setLotteryData(sampleData);
+        const { data, error } = await (supabase as any)
+          .from('lottery_next_draws')
+          .select('game_slug, game_name, next_date, next_time')
+          .order('game_slug', { ascending: true });
+
+        if (error) throw error;
+
+        const mapped: LotteryDraw[] = (data ?? []).map((row: any) => {
+          const nextDate = row.next_date ? new Date(row.next_date) : null;
+          const nextDraw = nextDate ? nextDate.toLocaleDateString('pt-BR') : '—';
+          const timeStr = row.next_time ? String(row.next_time).slice(0, 5) : '—';
+          return {
+            id: row.game_slug,
+            name: row.game_name,
+            nextDraw,
+            time: timeStr,
+          };
+        });
+
+        setLotteryData(mapped.length > 0 ? mapped : sampleData);
       } catch (error) {
         console.error('Error fetching lottery data:', error);
+        setLotteryData(sampleData);
       } finally {
         setLoading(false);
       }
@@ -55,6 +74,7 @@ export default function CaixaLotterySection() {
 
     fetchLotteryData();
   }, []);
+
 
   if (loading) {
     return (
@@ -139,17 +159,24 @@ export default function CaixaLotterySection() {
         </div>
 
         <div className="text-center">
-          <Button variant="secondary" asChild>
-            <a 
-              href="https://loterias.caixa.gov.br" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Acessar site oficial da Caixa
-            </a>
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            <Button variant="secondary" asChild>
+              <a 
+                href="https://loterias.caixa.gov.br" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Acessar site oficial da Caixa
+              </a>
+            </Button>
+            <Button asChild>
+              <Link to="/resultados" aria-label="Ver últimos números e ganhadores">
+                Últimos Números (Ganhadores)
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </section>
