@@ -5,14 +5,21 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home, Ticket, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
-type Row = Parameters<typeof MyTicketCard>[0]["row"];
+type Row = Parameters<typeof MyTicketCard>[0]["row"] & {
+  buyer_user_id?: string;
+};
 
-function dedupeByTxId(arr: Row[] | null | undefined): Row[] {
-  const seen = new Map<string, Row>();
+function sigOf(r: Row): string {
+  return `${r.buyer_user_id || 'unknown'}|${r.raffle_id}|${JSON.stringify(r.purchased_numbers || [])}`;
+}
+
+function dedupeBySignature(arr: Row[] | null | undefined): Row[] {
+  const map = new Map<string, Row>();
   for (const r of arr || []) {
-    if (r?.transaction_id) seen.set(r.transaction_id, r);
+    const sig = sigOf(r);
+    if (!map.has(sig)) map.set(sig, r);
   }
-  return Array.from(seen.values());
+  return Array.from(map.values());
 }
 
 export default function MyTicketsPage() {
@@ -30,20 +37,21 @@ export default function MyTicketsPage() {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from("my_tickets_ext_v3" as any)     // ← use the new view
+          .from("my_tickets_ext_v3" as any)
           .select("*")
           .order("progress_pct_money", { ascending: false })
           .order("amount_raised", { ascending: false })
           .order("purchase_date", { ascending: false });
 
         if (error) console.error("[MyTickets] fetch error:", error);
-        const unique = dedupeByTxId(data as any);
+
+        const unique = dedupeBySignature(data as any);
         if (alive) {
-          setRows(unique);               // replace (don't append)
+          setRows(unique); // replace, don't append
           setLoading(false);
         }
       } catch (e) {
-        console.error("[MyTickets] unexpected error:", e);
+        console.error("[MyTickets] unexpected:", e);
         if (alive) setLoading(false);
       }
     })();
@@ -105,7 +113,7 @@ export default function MyTicketsPage() {
         <>
           <div className="space-y-4">
             {visible.map((r) => (
-              <MyTicketCard key={r.transaction_id} row={r} />
+              <MyTicketCard key={sigOf(r)} row={r} />
             ))}
           </div>
 
