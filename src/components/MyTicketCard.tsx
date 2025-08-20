@@ -145,9 +145,12 @@ export default function MyTicketCard({ row }: { row: Row }) {
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mt-2">
-          <span className="inline-flex items-center gap-1">
+          <button 
+            className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
+            onClick={() => setOpen(v => !v)}
+          >
             <TicketIcon className="h-3.5 w-3.5" /> {row.ticket_count} bilhetes
-          </span>
+          </button>
           <span>•</span>
           <span>Compra: {shortDateTime(row.purchase_date)}</span>
           <span>•</span>
