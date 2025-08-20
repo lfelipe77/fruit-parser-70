@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
-import { brl, shortDateTime, toComboString, statusLabel } from "@/lib/format";
+import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { Share2, TicketIcon, ChevronDown, Ticket } from "lucide-react";
 import NumbersModal from "./NumbersModal";
 
@@ -21,60 +21,59 @@ type Row = {
   winner_ticket_id?: string | null;  // via raffles
 };
 
+function toComboString(x: unknown): string {
+  if (Array.isArray(x)) return x.join("-");                // [12,34,56,78,90,11]
+  if (typeof x === "string") return x.replace(/[()]/g, ""); // "(12-34-..)" → "12-34-.."
+  return "";
+}
+
 function parsePurchasedNumbers(input: unknown): string[] {
   if (!input) return [];
-  
-  // Handle direct array
+  // Already string[]?
   if (Array.isArray(input)) {
-    return (input as any[])
-      .flatMap((x) => {
-        if (typeof x === "string") {
-          // Handle formats like "34-17-89-47-83-25" or "(34,17,89,47,83,25)"
-          const cleaned = x.replace(/[()]/g, "").trim();
-          if (cleaned.includes('-')) return cleaned;
-          if (cleaned.includes(',')) return cleaned.replace(/,/g, '-');
-          return cleaned;
-        }
-        if (Array.isArray(x)) return x.join("-");
-        if (typeof x === "number") return x.toString();
-        return null;
-      })
-      .filter(Boolean) as string[];
-  }
-  
-  // Handle string formats
-  if (typeof input === "string") {
-    const cleaned = input.replace(/\s+/g, "").replace(/^\[|\]$/g, "");
-    
-    // Split by comma or parentheses patterns
-    const parts = cleaned
-      .split(/,(?![^()]*\))|(?<=\))(?=\()/g)
-      .map((s) => s.replace(/[()]/g, "").trim())
+    // Could be ["12-34-..","(..)", [12,34,..]]
+    return (input as unknown[])
+      .map(toComboString)
+      .map(s => s.trim())
       .filter(Boolean);
-    
+  }
+  if (typeof input === "string") {
+    // Could be serialized list "(..)(..)" or CSV/JSONy
+    const cleaned = input.replace(/\s+/g, "");
+    // split by comma *outside* parens, or by ")(" boundaries
+    const parts = cleaned
+      .replace(/^\[|\]$/g, "")
+      .split(/,(?![^()]*\))|(?<=\))(?=\()/g)
+      .map(s => s.replace(/[()]/g, ""))
+      .filter(Boolean);
     return parts;
   }
-  
-  // Handle wrapped objects
+  // wrapped objects { numbers: [...] }
   if (typeof input === "object" && input && "numbers" in (input as any)) {
     return parsePurchasedNumbers((input as any).numbers);
   }
-  
   return [];
 }
 
 export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
-  const [showModal, setShowModal] = useState(false);
 
-  const combos = useMemo(() => {
-    const raw = parsePurchasedNumbers(row.purchased_numbers);
-    return raw.map(toComboString).filter(Boolean);
-  }, [row.purchased_numbers]);
+  const combos = useMemo(
+    () => parsePurchasedNumbers(row.purchased_numbers),
+    [row.purchased_numbers]
+  );
 
-  // show the larger of (DB ticket_count) or (combos length)
-  const ticketCountShown = Math.max(Number(row.ticket_count ?? 0), combos.length);
+  // Supabase may send bigint as string; always coerce to number and
+  // fall back to combos length when tickets rows don't exist.
+  const ticketCount = useMemo(() => {
+    const raw = (row as any).ticket_count;
+    const n = typeof raw === "string" ? parseInt(raw, 10) : Number(raw ?? 0);
+    return Number.isFinite(n) && n > 0 ? n : combos.length;
+  }, [row, combos]);
+
+  const hasNumbers = combos.length > 0;
+  const previewCombos = combos.slice(0, 3);
 
   async function onShare() {
     try {
@@ -155,18 +154,19 @@ export default function MyTicketCard({ row }: { row: Row }) {
           />
         </div>
 
-        {/* Combos preview line (first 3) */}
-        {combos.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {combos.slice(0, 3).map((c, i) => (
-              <span key={i} className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded">
+        {/* Numbers preview (only if we truly have numbers) */}
+        {hasNumbers && (
+          <div className="mt-2 flex flex-wrap gap-2 items-center text-xs">
+            {previewCombos.map((c, i) => (
+              <span key={i} className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200">
                 {c}
               </span>
             ))}
             {combos.length > 3 && (
               <button
-                className="text-xs inline-flex items-center gap-1 text-emerald-700 hover:underline"
-                onClick={() => setShowModal(true)}
+                type="button"
+                onClick={() => setOpen(true)}
+                className="text-emerald-700 hover:underline ml-2"
               >
                 Ver todos ({combos.length})
               </button>
@@ -174,30 +174,9 @@ export default function MyTicketCard({ row }: { row: Row }) {
           </div>
         )}
 
-        {/* Expand list */}
-        {open && combos.length > 0 && (
-          <ul className="mt-2 grid sm:grid-cols-2 gap-2 text-sm">
-            {combos.map((c, i) => (
-              <li key={i} className="rounded border px-2 py-1">
-                ({c}) <span className="text-xs text-gray-500">Bilhete #{i + 1}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* Meta row uses the consistent count */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mt-2">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
-            onClick={() => setShowModal(true)}
-          >
-            {ticketCountShown} bilhetes
-          </button>
-          <span>•</span>
-          <span>Compra: {shortDateTime(row.purchase_date)}</span>
-          <span>•</span>
-          <span>Valor: {brl(row.value)}</span>
+        {/* Meta line: ALWAYS show a single count, fed by ticketCount */}
+        <div className="mt-2 text-xs text-gray-600">
+          {ticketCount} bilhetes • Compra: {shortDateTime(row.purchase_date)} • Valor: {brl(row.value)}
         </div>
       </div>
 
@@ -207,14 +186,6 @@ export default function MyTicketCard({ row }: { row: Row }) {
           <QRCode value={url} size={88} />
         </div>
         <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setShowModal(true)}
-            className="inline-flex items-center justify-center gap-1 text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 w-full sm:w-auto"
-            aria-label="Ver Meus Bilhetes"
-          >
-            <Ticket className="h-3.5 w-3.5" />
-            Ver Bilhetes
-          </button>
           <button
             onClick={onShare}
             className="inline-flex items-center justify-center gap-1 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto"
@@ -233,14 +204,14 @@ export default function MyTicketCard({ row }: { row: Row }) {
         </div>
       </div>
 
-      {/* Modal sees the exact same combos */}
-      {showModal && (
+      {/* Modal receives the same combos */}
+      {open && (
         <NumbersModal
           title={row.raffle_title}
-          ticketCount={ticketCountShown}
+          ticketCount={ticketCount}
           value={row.value}
           numbers={combos}
-          onClose={() => setShowModal(false)}
+          onClose={() => setOpen(false)}
         />
       )}
     </article>
