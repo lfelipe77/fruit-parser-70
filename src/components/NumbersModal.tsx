@@ -2,10 +2,19 @@ import React from "react";
 import { X, TicketIcon } from "lucide-react";
 import { brl } from "@/lib/format";
 
-type Props = { title: string; price: number; qty: number; numbers: string[]; onClose: () => void };
+type Props = {
+  title: string;
+  price: number;
+  qty: number;
+  numbers?: string[];
+  onClose: () => void;
+};
 
-export function NumbersModal({ title, price, qty, numbers, onClose }: Props) {
+export function NumbersModal({ title, price, qty, numbers = [], onClose }: Props) {
   const hasNumbers = Array.isArray(numbers) && numbers.length > 0;
+
+  // Debug logging
+  console.log("[NumbersModal] received numbers:", numbers);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
