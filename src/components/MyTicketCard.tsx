@@ -23,25 +23,43 @@ type Row = {
 
 function parsePurchasedNumbers(input: unknown): string[] {
   if (!input) return [];
+  
+  // Handle direct array
   if (Array.isArray(input)) {
     return (input as any[])
       .flatMap((x) => {
-        if (typeof x === "string") return x.trim();
+        if (typeof x === "string") {
+          // Handle formats like "34-17-89-47-83-25" or "(34,17,89,47,83,25)"
+          const cleaned = x.replace(/[()]/g, "").trim();
+          if (cleaned.includes('-')) return cleaned;
+          if (cleaned.includes(',')) return cleaned.replace(/,/g, '-');
+          return cleaned;
+        }
         if (Array.isArray(x)) return x.join("-");
+        if (typeof x === "number") return x.toString();
         return null;
       })
       .filter(Boolean) as string[];
   }
+  
+  // Handle string formats
   if (typeof input === "string") {
     const cleaned = input.replace(/\s+/g, "").replace(/^\[|\]$/g, "");
-    return cleaned
+    
+    // Split by comma or parentheses patterns
+    const parts = cleaned
       .split(/,(?![^()]*\))|(?<=\))(?=\()/g)
-      .map((s) => s.replace(/[()]/g, ""))
+      .map((s) => s.replace(/[()]/g, "").trim())
       .filter(Boolean);
+    
+    return parts;
   }
+  
+  // Handle wrapped objects
   if (typeof input === "object" && input && "numbers" in (input as any)) {
     return parsePurchasedNumbers((input as any).numbers);
   }
+  
   return [];
 }
 
