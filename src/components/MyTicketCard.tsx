@@ -25,8 +25,12 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const [open, setOpen] = useState(false);
 
   const combos = useMemo(() => {
+    console.log("[MyTicketCard] purchased_numbers:", row.purchased_numbers);
     const raw = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-    return raw.map(toComboString).filter(Boolean);
+    console.log("[MyTicketCard] raw numbers:", raw);
+    const processed = raw.map(toComboString).filter(Boolean);
+    console.log("[MyTicketCard] processed combos:", processed);
+    return processed;
   }, [row.purchased_numbers]);
 
   async function onShare() {
