@@ -71,10 +71,10 @@ export default function Dashboard() {
 
       // Parallel queries for better performance
       const [ticketsResult, rafflesResult, transactionsResult] = await Promise.all([
-        // Count tickets purchased by user (using correct buyer_user_id field)
+        // Get all paid transactions with their ticket counts to calculate total tickets
         supabase
-          .from('tickets')
-          .select('*', { count: 'exact', head: true })
+          .from('transactions')
+          .select('id, numbers, status')
           .eq('buyer_user_id', uid)
           .eq('status', 'paid'),
 
@@ -103,7 +103,7 @@ export default function Dashboard() {
 
       // Handle results and errors
       if (ticketsResult.error) {
-        console.error('Error counting tickets:', ticketsResult.error);
+        console.error('Error fetching tickets:', ticketsResult.error);
       }
 
       if (rafflesResult.error) {
@@ -114,6 +114,16 @@ export default function Dashboard() {
         console.error('Error fetching transactions:', transactionsResult.error);
       }
 
+      // Calculate total tickets from transaction numbers (each array element represents one ticket)
+      const totalTickets = (ticketsResult.data || [])
+        .reduce((sum, transaction) => {
+          const numbers = transaction.numbers;
+          if (Array.isArray(numbers)) {
+            return sum + numbers.length;
+          }
+          return sum;
+        }, 0);
+
       // Calculate total spent from paid transactions
       const transactions = transactionsResult.data || [];
       const totalSpent = transactions
@@ -121,7 +131,7 @@ export default function Dashboard() {
         .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
       setStats({
-        totalTickets: ticketsResult.count ?? 0,
+        totalTickets: totalTickets,
         totalSpent: totalSpent,
         activeGanhaveis: rafflesResult.count ?? 0,
         recentTransactions: transactions.slice(0, 5).map(t => ({
