@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
@@ -23,19 +23,33 @@ type Row = {
   winner_ticket_id?: string | null;
 };
 
+function dedupeByTxId(arr: Row[] | null | undefined): Row[] {
+  const map = new Map<string, Row>();
+  for (const r of arr || []) {
+    if (r?.transaction_id) map.set(r.transaction_id, r);
+  }
+  return Array.from(map.values());
+}
+
 export default function MyTicketsPage() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
 
+  // guard against accidental double run
+  const fetched = useRef(false);
+
   useEffect(() => {
     if (!user) return;
-    
-    let mounted = true;
+    if (fetched.current) return;
+    fetched.current = true;
+
+    let alive = true;
+
     (async () => {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from("my_tickets_ext_v2" as any)
         .select("*")
@@ -45,29 +59,22 @@ export default function MyTicketsPage() {
 
       if (error) {
         console.error("[MyTickets] fetch error", error);
-        if (mounted) {
-          setRows([]);
-          setLoading(false);
-        }
-        return;
       }
-      
-      console.log("[MyTickets] Raw data length:", data?.length);
-      
-      // de‑dupe by transaction_id as an extra guard
-      const deduped = Array.from(
-        new Map((data ?? []).map((row: any) => [row.transaction_id, row])).values()
-      );
-      
-      console.log("[MyTickets] Deduped length:", deduped.length);
-      
-      // IMPORTANT: replace state (don't append)
-      if (mounted) {
-        setRows(deduped as Row[]);
+
+      const unique = dedupeByTxId(data as any);
+      if (alive) {
+        // REPLACE (don't append)
+        setRows(unique);
         setLoading(false);
+        console.log(
+          `[MyTickets] fetched=${(data as any[] | null)?.length ?? 0} unique=${unique.length}`
+        );
       }
     })();
-    return () => { mounted = false; };
+
+    return () => {
+      alive = false;
+    };
   }, [user]);
 
   if (!user) {
@@ -79,6 +86,8 @@ export default function MyTicketsPage() {
       </div>
     );
   }
+
+  const visible = useMemo(() => (showAll ? rows : rows.slice(0, 10)), [rows, showAll]);
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
@@ -128,17 +137,18 @@ export default function MyTicketsPage() {
         </div>
       )}
 
+      {/* SINGLE render path: only map 'visible' */}
       <div className="space-y-4">
-        {(showAll ? rows : rows.slice(0, 2)).map((r) => (
+        {visible.map((r) => (
           <MyTicketCard key={r.transaction_id} row={r} />
         ))}
       </div>
 
-      {rows.length > 2 && (
+      {!loading && rows.length > 10 && (
         <div className="mt-4 flex justify-center">
           <button
-            onClick={() => setShowAll(v => !v)}
-            className="text-sm text-emerald-700 hover:underline"
+            onClick={() => setShowAll((v) => !v)}
+            className="text-sm px-3 py-1.5 rounded border hover:bg-gray-50"
           >
             {showAll ? "Ver menos" : `Ver todos (${rows.length})`}
           </button>
