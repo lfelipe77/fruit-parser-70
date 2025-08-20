@@ -27,6 +27,7 @@ export default function MyTicketsPage() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -44,7 +45,14 @@ export default function MyTicketsPage() {
       if (error) {
         console.error("[MyTickets] fetch error", error);
       }
-      if (mounted) setRows((data as unknown as Row[]) ?? []);
+      
+      // de‑dupe by transaction_id as an extra guard
+      const deduped = Array.from(
+        new Map((data ?? []).map((row: any) => [row.transaction_id, row])).values()
+      );
+      
+      // IMPORTANT: replace state (don't append)
+      if (mounted) setRows(deduped as Row[]);
       setLoading(false);
     })();
     return () => { mounted = false; };
@@ -109,10 +117,21 @@ export default function MyTicketsPage() {
       )}
 
       <div className="space-y-4">
-        {rows.map((r) => (
+        {(showAll ? rows : rows.slice(0, 2)).map((r) => (
           <MyTicketCard key={r.transaction_id} row={r} />
         ))}
       </div>
+
+      {rows.length > 2 && (
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={() => setShowAll(v => !v)}
+            className="text-sm text-emerald-700 hover:underline"
+          >
+            {showAll ? "Ver menos" : `Ver todos (${rows.length})`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
