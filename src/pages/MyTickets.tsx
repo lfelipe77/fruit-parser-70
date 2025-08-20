@@ -37,7 +37,7 @@ export default function MyTicketsPage() {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from("my_tickets_ext_v3" as any)
+          .from("my_tickets_ext_v6" as any)
           .select("*")
           .order("progress_pct_money", { ascending: false })
           .order("amount_raised", { ascending: false })

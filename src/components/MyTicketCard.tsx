@@ -20,27 +20,29 @@ type Row = {
   winner_ticket_id?: string | null;  // via raffles
 };
 
-// Robust parser for various purchased_numbers formats
-function parsePurchasedNumbers(input: unknown): string[] {
+function normalizePurchasedNumbers(input: unknown): string[] {
   if (!input) return [];
+  // Already an array?
   if (Array.isArray(input)) {
     return input
-      .map((x) =>
-        Array.isArray(x) ? x.join("-")
-        : typeof x === "string" ? x.trim()
-        : ""
-      )
+      .map((x) => {
+        if (typeof x === "string") return x.replace(/[()]/g, "").trim();
+        if (Array.isArray(x)) return x.join("-");
+        return "";
+      })
       .filter(Boolean);
   }
+  // String (csv or "(...)(...)")
   if (typeof input === "string") {
     const cleaned = input.replace(/\s+/g, "").replace(/^\[|\]$/g, "");
     return cleaned
-      .split(/,(?![^()]*\))|(?<=\))(?=\()/g) // comma OR ")("
+      .split(/,(?![^()]*\))|(?<=\))(?=\()/g)
       .map((s) => s.replace(/[()]/g, ""))
       .filter(Boolean);
   }
+  // Wrapped { numbers: [...] }
   if (typeof input === "object" && input && "numbers" in (input as any)) {
-    return parsePurchasedNumbers((input as any).numbers);
+    return normalizePurchasedNumbers((input as any).numbers);
   }
   return [];
 }
@@ -49,11 +51,12 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
 
-  const rawCombos = parsePurchasedNumbers(row.purchased_numbers);
-  const combos = useMemo(() => rawCombos.map(toComboString).filter(Boolean), [rawCombos]);
+  // derive numbers once
+  const rawList = normalizePurchasedNumbers(row.purchased_numbers);
+  const combos = useMemo(() => rawList.map(toComboString).filter(Boolean), [rawList]);
 
-  // Never trust ticket_count alone — take the max
-  const ticketCount = Math.max(Number(row.ticket_count ?? 0), combos.length);
+  // ticket count to display on the chip row / meta line
+  const ticketCount = (typeof row.ticket_count === "number" ? row.ticket_count : 0) || combos.length;
 
   async function onShare() {
     try {
