@@ -144,13 +144,8 @@ export default function MyTicketCard({ row }: { row: Row }) {
                 ))}
               </ul>
             ) : (
-              <div className="text-sm text-gray-600 border rounded px-3 py-2">
-                <p>Números dos bilhetes:</p>
-                <p className="text-xs mt-1">
-                  {Array.isArray(row.purchased_numbers) && row.purchased_numbers.length > 0 
-                    ? JSON.stringify(row.purchased_numbers)
-                    : "Dados não disponíveis"}
-                </p>
+              <div className="text-sm text-muted-foreground/70 border rounded px-3 py-2 bg-muted/30">
+                <p className="text-xs italic">Compra anterior ao novo sistema de números.</p>
               </div>
             )}
           </div>
