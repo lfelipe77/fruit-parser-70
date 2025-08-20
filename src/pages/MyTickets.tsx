@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
@@ -6,29 +6,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home, Ticket, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
-type Row = {
-  transaction_id: string;
-  raffle_id: string;
-  raffle_title: string;
-  raffle_image_url: string | null;
-  purchase_date: string;
-  tx_status: string;
-  value: number;
-  ticket_count: number;
-  purchased_numbers: any;
-  goal_amount: number;
-  amount_raised: number;
-  progress_pct_money: number;
-  draw_date?: string | null;
-  winner_ticket_id?: string | null;
-};
+type Row = Parameters<typeof MyTicketCard>[0]["row"];
 
 function dedupeByTxId(arr: Row[] | null | undefined): Row[] {
-  const map = new Map<string, Row>();
+  const seen = new Map<string, Row>();
   for (const r of arr || []) {
-    if (r?.transaction_id) map.set(r.transaction_id, r);
+    if (r?.transaction_id) seen.set(r.transaction_id, r);
   }
-  return Array.from(map.values());
+  return Array.from(seen.values());
 }
 
 export default function MyTicketsPage() {
@@ -37,38 +22,41 @@ export default function MyTicketsPage() {
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
 
-  // guard against accidental double run
-  const fetched = useRef(false);
+  // prevent accidental double fetch
+  const fetchedOnce = useRef(false);
 
   useEffect(() => {
     if (!user) return;
-    if (fetched.current) return;
-    fetched.current = true;
+    if (fetchedOnce.current) return;
+    fetchedOnce.current = true;
 
     let alive = true;
 
     (async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("my_tickets_ext_v2" as any)
+          .select("*")
+          .order("progress_pct_money", { ascending: false })
+          .order("amount_raised", { ascending: false })
+          .order("purchase_date", { ascending: false });
 
-      const { data, error } = await supabase
-        .from("my_tickets_ext_v2" as any)
-        .select("*")
-        .order("progress_pct_money", { ascending: false })
-        .order("amount_raised", { ascending: false })
-        .order("purchase_date", { ascending: false });
+        if (error) {
+          console.error("[MyTickets] fetch error:", error);
+        }
 
-      if (error) {
-        console.error("[MyTickets] fetch error", error);
-      }
-
-      const unique = dedupeByTxId(data as any);
-      if (alive) {
-        // REPLACE (don't append)
-        setRows(unique);
-        setLoading(false);
-        console.log(
-          `[MyTickets] fetched=${(data as any[] | null)?.length ?? 0} unique=${unique.length}`
-        );
+        const unique = dedupeByTxId(data as any);
+        if (alive) {
+          setRows(unique); // REPLACE, don't append
+          setLoading(false);
+          console.log(
+            `[MyTickets] fetched=${(data as any[] | null)?.length ?? 0} unique=${unique.length}`
+          );
+        }
+      } catch (e) {
+        console.error("[MyTickets] unexpected error:", e);
+        if (alive) setLoading(false);
       }
     })();
 
@@ -87,7 +75,7 @@ export default function MyTicketsPage() {
     );
   }
 
-  const visible = useMemo(() => (showAll ? rows : rows.slice(0, 10)), [rows, showAll]);
+  const visible = showAll ? rows : rows.slice(0, 10); // no useMemo → no hook churn
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
@@ -137,22 +125,25 @@ export default function MyTicketsPage() {
         </div>
       )}
 
-      {/* SINGLE render path: only map 'visible' */}
-      <div className="space-y-4">
-        {visible.map((r) => (
-          <MyTicketCard key={r.transaction_id} row={r} />
-        ))}
-      </div>
+      {!loading && rows.length > 0 && (
+        <>
+          <div className="space-y-4">
+            {visible.map((r) => (
+              <MyTicketCard key={r.transaction_id} row={r} />
+            ))}
+          </div>
 
-      {!loading && rows.length > 10 && (
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={() => setShowAll((v) => !v)}
-            className="text-sm px-3 py-1.5 rounded border hover:bg-gray-50"
-          >
-            {showAll ? "Ver menos" : `Ver todos (${rows.length})`}
-          </button>
-        </div>
+          {rows.length > 10 && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="text-sm px-3 py-1.5 rounded border hover:bg-gray-50"
+              >
+                {showAll ? "Ver menos" : `Ver todos (${rows.length})`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
