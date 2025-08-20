@@ -20,14 +20,40 @@ type Row = {
   winner_ticket_id?: string | null;  // via raffles
 };
 
+// Robust parser for various purchased_numbers formats
+function parsePurchasedNumbers(input: unknown): string[] {
+  if (!input) return [];
+  if (Array.isArray(input)) {
+    return input
+      .map((x) =>
+        Array.isArray(x) ? x.join("-")
+        : typeof x === "string" ? x.trim()
+        : ""
+      )
+      .filter(Boolean);
+  }
+  if (typeof input === "string") {
+    const cleaned = input.replace(/\s+/g, "").replace(/^\[|\]$/g, "");
+    return cleaned
+      .split(/,(?![^()]*\))|(?<=\))(?=\()/g) // comma OR ")("
+      .map((s) => s.replace(/[()]/g, ""))
+      .filter(Boolean);
+  }
+  if (typeof input === "object" && input && "numbers" in (input as any)) {
+    return parsePurchasedNumbers((input as any).numbers);
+  }
+  return [];
+}
+
 export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
 
-  const combos = useMemo(() => {
-    const raw = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-    return raw.map(toComboString).filter(Boolean);
-  }, [row.purchased_numbers]);
+  const rawCombos = parsePurchasedNumbers(row.purchased_numbers);
+  const combos = useMemo(() => rawCombos.map(toComboString).filter(Boolean), [rawCombos]);
+
+  // Never trust ticket_count alone — take the max
+  const ticketCount = Math.max(Number(row.ticket_count ?? 0), combos.length);
 
   async function onShare() {
     try {
@@ -142,7 +168,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mt-2">
           <span className="inline-flex items-center gap-1">
-            <TicketIcon className="h-3.5 w-3.5" /> {row.ticket_count} bilhetes
+            <TicketIcon className="h-3.5 w-3.5" /> {ticketCount} bilhetes
           </span>
           <span>•</span>
           <span>Compra: {shortDateTime(row.purchase_date)}</span>
