@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
 import { brl, shortDateTime, toComboString, statusLabel } from "@/lib/format";
-import { Share2, TicketIcon, ChevronDown } from "lucide-react";
+import { Share2, TicketIcon, ChevronDown, X } from "lucide-react";
 
 type Row = {
   transaction_id: string;
@@ -23,6 +23,7 @@ type Row = {
 export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const combos = useMemo(() => {
     console.log("[MyTicketCard] purchased_numbers:", row.purchased_numbers);
@@ -68,6 +69,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const statusTxt = statusLabel[row.tx_status] ?? row.tx_status ?? "—";
 
   return (
+    <>
     <article className="w-full rounded-2xl border bg-white shadow-sm p-4 sm:p-5 grid grid-cols-12 gap-4">
       {/* Left: image */}
       <div className="col-span-12 sm:col-span-2 flex items-start">
@@ -154,8 +156,8 @@ export default function MyTicketCard({ row }: { row: Row }) {
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mt-2">
           <button 
-            className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
-            onClick={() => setOpen(v => !v)}
+            className="inline-flex items-center gap-1 text-emerald-700 hover:underline font-medium"
+            onClick={() => setShowModal(true)}
           >
             <TicketIcon className="h-3.5 w-3.5" /> {row.ticket_count} bilhetes
           </button>
@@ -190,5 +192,51 @@ export default function MyTicketCard({ row }: { row: Row }) {
         </div>
       </div>
     </article>
+
+    {/* Numbers Modal */}
+    {showModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="font-semibold text-lg">Meus Números</h3>
+            <button
+              onClick={() => setShowModal(false)}
+              className="p-1 hover:bg-gray-100 rounded"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          <div className="p-4 max-h-96 overflow-y-auto">
+            <div className="mb-3">
+              <p className="text-sm text-gray-600">
+                {row.raffle_title}
+              </p>
+              <p className="text-xs text-gray-500">
+                {row.ticket_count} bilhetes • {brl(row.value)}
+              </p>
+            </div>
+
+            {combos.length > 0 ? (
+              <div className="space-y-2">
+                {combos.map((combo, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+                    <span className="font-mono text-sm font-medium">({combo})</span>
+                    <span className="text-xs text-emerald-700">Bilhete #{i + 1}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <TicketIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Compra anterior ao novo sistema de números</p>
+                <p className="text-xs mt-1">Números não disponíveis para esta compra</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
