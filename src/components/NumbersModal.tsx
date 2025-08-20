@@ -2,20 +2,10 @@ import React from "react";
 import { X, TicketIcon } from "lucide-react";
 import { brl } from "@/lib/format";
 
-export function NumbersModal({
-  title,
-  ticketCount,
-  value,
-  numbers,
-  onClose,
-}: {
-  title: string;
-  ticketCount: number;
-  value: number;
-  numbers: string[];   // already processed
-  onClose: () => void;
-}) {
-  const list = Array.isArray(numbers) ? numbers : [];
+type Props = { title: string; price: number; qty: number; numbers: string[]; onClose: () => void };
+
+export function NumbersModal({ title, price, qty, numbers, onClose }: Props) {
+  const hasNumbers = Array.isArray(numbers) && numbers.length > 0;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -36,24 +26,21 @@ export function NumbersModal({
               {title}
             </p>
             <p className="text-xs text-gray-500">
-              {ticketCount} bilhetes • {brl(value)}
+              {qty} bilhetes • {brl(price)}
             </p>
           </div>
 
-          {list.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <TicketIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Compra anterior ao novo sistema de números</p>
-              <p className="text-xs mt-1">Números não disponíveis para esta compra</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {list.map((combo, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                  <span className="font-mono text-sm font-medium">({combo})</span>
-                  <span className="text-xs text-emerald-700">Bilhete #{i + 1}</span>
-                </div>
+          {hasNumbers ? (
+            <ul className="mt-3 grid gap-2">
+              {numbers.map((c, i) => (
+                <li key={i} className="rounded border px-2 py-1 text-sm">{c}</li>
               ))}
+            </ul>
+          ) : (
+            <div className="mt-6 text-center text-sm text-gray-500">
+              <div className="text-4xl mb-2">🎟️</div>
+              Compra anterior ao novo sistema de números
+              <div className="mt-1">Números não disponíveis para esta compra</div>
             </div>
           )}
         </div>

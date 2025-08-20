@@ -22,6 +22,41 @@ type Row = {
 
 const PREVIEW_COUNT = 4;
 
+// helper: accepts array, JSON string, CSV string, or "(...)" variants
+function parsePurchasedNumbers(input: unknown): string[] {
+  if (!input) return [];
+
+  // Already a list of combos?
+  if (Array.isArray(input)) {
+    return input
+      .flatMap((x) => {
+        if (typeof x === "string") return x.trim();
+        if (Array.isArray(x)) return x.join("-"); // e.g. [60,72,40,60,26,39]
+        return null;
+      })
+      .filter(Boolean) as string[];
+  }
+
+  // String: normalize and split
+  if (typeof input === "string") {
+    const cleaned = input
+      .replace(/\s+/g, "")     // remove spaces
+      .replace(/^\[|\]$/g, ""); // trim JSON-like brackets
+    return cleaned
+      // split by comma OR by close+open paren when stored as "(...)(...)" etc.
+      .split(/,(?![^()]*\))|(?<=\))(?=\()/g)
+      .map(s => s.replace(/[()]/g, "")) // drop parens
+      .filter(Boolean);
+  }
+
+  // Objects that wrap the list
+  if (typeof input === "object" && input && "numbers" in (input as any)) {
+    return parsePurchasedNumbers((input as any).numbers);
+  }
+
+  return [];
+}
+
 export default function MyTicketCard({ row }: { row: Row }) {
   const [showModal, setShowModal] = useState(false);
 
@@ -29,11 +64,8 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
 
   // One source of truth for numbers: derive once on the card
-  const raw = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-  const combos = useMemo(
-    () => raw.map((x) => toComboString(x)).filter(Boolean),
-    [raw]
-  );
+  const rawCombos = parsePurchasedNumbers(row.purchased_numbers);
+  const combos = useMemo(() => rawCombos.map(toComboString).filter(Boolean), [rawCombos]);
 
   // Progress % (clamped 0..100)
   const pct = Math.max(0, Math.min(100, Number(row.progress_pct_money ?? 0)));
@@ -188,8 +220,8 @@ export default function MyTicketCard({ row }: { row: Row }) {
       {showModal && (
         <NumbersModal
           title={row.raffle_title}
-          ticketCount={row.ticket_count ?? combos.length}
-          value={row.value}
+          price={row.value}
+          qty={row.ticket_count ?? combos.length}
           numbers={combos}
           onClose={() => setShowModal(false)}
         />
