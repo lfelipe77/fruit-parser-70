@@ -117,6 +117,13 @@ export default function ConfirmacaoPagamento() {
     cardName: ''
   });
 
+  // Form validation states
+  const [formErrors, setFormErrors] = React.useState({
+    name: '',
+    phone: '',
+    cpf: ''
+  });
+
   // Generate lottery combinations (6 two-digit numbers, like: (12-43-24-56-78-90))
   const generateLotteryCombination = () => {
     const numbers = [];
@@ -180,7 +187,13 @@ export default function ConfirmacaoPagamento() {
   // Handle form submission
   async function handlePayment() {
     try {
-      // 1) Require auth
+      // 1) Validate form first
+      if (!validateForm()) {
+        toast.error("Por favor, corrija os erros no formulário");
+        return;
+      }
+
+      // 2) Require auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         const url = new URL("/login", window.location.origin);
@@ -191,21 +204,24 @@ export default function ConfirmacaoPagamento() {
 
       setIsProcessing(true);
 
-      // 2) Inputs
+      // 3) Inputs
       const now = Date.now();
       const providerRef = `mock-${id}-${now}-${Math.floor(Math.random() * 1e9)}`;
       const safeQty = Math.max(1, asNumber(qty, 1));
       const unitPrice = asNumber(raffle?.ticket_price, 0);
       const totalPaid = +(unitPrice * safeQty).toFixed(2); // number
 
-      // 3) Call RPC (server writes type='charge', status='paid')
-      const { data: txId, error } = await supabase.rpc("record_mock_purchase_admin", {
+      // 4) Call new RPC with customer data
+      const { data: txId, error } = await (supabase as any).rpc("record_purchase_v2", {
         p_buyer_user_id: session.user.id,
         p_raffle_id: id,
         p_qty: safeQty,
         p_unit_price: unitPrice,
         p_numbers: selectedNumbers,    // Use the correctly formatted numbers from UI
         p_provider_ref: providerRef,   // must be unique
+        p_customer_name: formData.fullName,
+        p_customer_phone: digits(formData.phone),
+        p_customer_cpf: digits(formData.cpf),
       });
 
       if (error) {
@@ -248,8 +264,43 @@ export default function ConfirmacaoPagamento() {
     persistTicketsPreview(safeNumbers); // TODO: Connect to DB
   };
 
+  // Helper function to extract only digits
+  const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
+
+  // Validate form data
+  const validateForm = () => {
+    const errors = { name: '', phone: '', cpf: '' };
+    
+    if (formData.fullName.trim().length < 2) {
+      errors.name = 'Nome deve ter pelo menos 2 caracteres';
+    }
+    
+    const phoneDigits = digits(formData.phone);
+    if (phoneDigits.length < 10 || phoneDigits.length > 13) {
+      errors.phone = 'Telefone deve ter entre 10 e 13 dígitos';
+    }
+    
+    const cpfDigits = digits(formData.cpf);
+    if (cpfDigits.length !== 11) {
+      errors.cpf = 'CPF deve ter exatamente 11 dígitos';
+    }
+    
+    setFormErrors(errors);
+    return !errors.name && !errors.phone && !errors.cpf;
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error for this field when user starts typing
+    if (field === 'fullName' && formErrors.name) {
+      setFormErrors(prev => ({ ...prev, name: '' }));
+    }
+    if (field === 'phone' && formErrors.phone) {
+      setFormErrors(prev => ({ ...prev, phone: '' }));
+    }
+    if (field === 'cpf' && formErrors.cpf) {
+      setFormErrors(prev => ({ ...prev, cpf: '' }));
+    }
   };
 
   if (loading || authLoading) return <div className="p-6">Carregando…</div>;
@@ -376,22 +427,30 @@ export default function ConfirmacaoPagamento() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="fullName">Nome Completo</Label>
+                  <Label htmlFor="fullName">Nome Completo *</Label>
                   <Input
                     id="fullName"
                     value={formData.fullName}
                     onChange={(e) => handleInputChange('fullName', e.target.value)}
                     placeholder="Seu nome completo"
+                    className={formErrors.name ? "border-red-500" : ""}
                   />
+                  {formErrors.name && (
+                    <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor="cpf">CPF</Label>
+                  <Label htmlFor="cpf">CPF *</Label>
                   <Input
                     id="cpf"
                     value={formData.cpf}
                     onChange={(e) => handleInputChange('cpf', e.target.value)}
                     placeholder="000.000.000-00"
+                    className={formErrors.cpf ? "border-red-500" : ""}
                   />
+                  {formErrors.cpf && (
+                    <p className="text-sm text-red-500 mt-1">{formErrors.cpf}</p>
+                  )}
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -406,13 +465,17 @@ export default function ConfirmacaoPagamento() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Telefone</Label>
+                  <Label htmlFor="phone">Telefone *</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder="(11) 99999-9999"
+                    className={formErrors.phone ? "border-red-500" : ""}
                   />
+                  {formErrors.phone && (
+                    <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -532,13 +595,16 @@ export default function ConfirmacaoPagamento() {
               
               <Button 
                 onClick={handlePayment}
-                disabled={isProcessing}
-                className="w-full mt-4"
+                disabled={!user || isProcessing || formData.fullName.trim().length < 2 || digits(formData.phone).length < 10 || digits(formData.cpf).length !== 11}
+                className="w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 size="lg"
               >
-                {isProcessing ? 'Processando...' : 
-                 !user ? "Fazer Login para Pagar" : 
-                 `Pagar ${formatBRL(total)}`}
+                {isProcessing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Processando...
+                  </>
+                ) : !user ? "Fazer Login para Pagar" : `Pagar ${formatBRL(total)}`}
               </Button>
               
               <p className="text-xs text-muted-foreground text-center">
