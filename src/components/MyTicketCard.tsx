@@ -21,19 +21,17 @@ type Row = {
   winner_ticket_id?: string | null;  // via raffles
 };
 
-function normalizePurchasedNumbers(input: unknown): string[] {
+function parsePurchasedNumbers(input: unknown): string[] {
   if (!input) return [];
-  // Already an array?
   if (Array.isArray(input)) {
-    return input
-      .map((x) => {
-        if (typeof x === "string") return x.replace(/[()]/g, "").trim();
+    return (input as any[])
+      .flatMap((x) => {
+        if (typeof x === "string") return x.trim();
         if (Array.isArray(x)) return x.join("-");
-        return "";
+        return null;
       })
-      .filter(Boolean);
+      .filter(Boolean) as string[];
   }
-  // String (csv or "(...)(...)")
   if (typeof input === "string") {
     const cleaned = input.replace(/\s+/g, "").replace(/^\[|\]$/g, "");
     return cleaned
@@ -41,9 +39,8 @@ function normalizePurchasedNumbers(input: unknown): string[] {
       .map((s) => s.replace(/[()]/g, ""))
       .filter(Boolean);
   }
-  // Wrapped { numbers: [...] }
   if (typeof input === "object" && input && "numbers" in (input as any)) {
-    return normalizePurchasedNumbers((input as any).numbers);
+    return parsePurchasedNumbers((input as any).numbers);
   }
   return [];
 }
@@ -53,12 +50,13 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const [open, setOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  // derive numbers once
-  const rawList = normalizePurchasedNumbers(row.purchased_numbers);
-  const combos = useMemo(() => rawList.map(toComboString).filter(Boolean), [rawList]);
+  const combos = useMemo(() => {
+    const raw = parsePurchasedNumbers(row.purchased_numbers);
+    return raw.map(toComboString).filter(Boolean);
+  }, [row.purchased_numbers]);
 
-  // ticket count to display on the chip row / meta line
-  const ticketCount = (typeof row.ticket_count === "number" ? row.ticket_count : 0) || combos.length;
+  // show the larger of (DB ticket_count) or (combos length)
+  const ticketCountShown = Math.max(Number(row.ticket_count ?? 0), combos.length);
 
   async function onShare() {
     try {
@@ -150,9 +148,8 @@ export default function MyTicketCard({ row }: { row: Row }) {
             {combos.length > 3 && (
               <button
                 className="text-xs inline-flex items-center gap-1 text-emerald-700 hover:underline"
-                onClick={() => setOpen(v => !v)}
+                onClick={() => setShowModal(true)}
               >
-                <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
                 Ver todos ({combos.length})
               </button>
             )}
@@ -170,11 +167,15 @@ export default function MyTicketCard({ row }: { row: Row }) {
           </ul>
         )}
 
-        {/* Meta row */}
+        {/* Meta row uses the consistent count */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mt-2">
-          <span className="inline-flex items-center gap-1">
-            <TicketIcon className="h-3.5 w-3.5" /> {ticketCount} bilhetes
-          </span>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-emerald-700 hover:underline"
+            onClick={() => setShowModal(true)}
+          >
+            {ticketCountShown} bilhetes
+          </button>
           <span>•</span>
           <span>Compra: {shortDateTime(row.purchase_date)}</span>
           <span>•</span>
@@ -214,11 +215,11 @@ export default function MyTicketCard({ row }: { row: Row }) {
         </div>
       </div>
 
-      {/* Numbers Modal */}
+      {/* Modal sees the exact same combos */}
       {showModal && (
         <NumbersModal
           title={row.raffle_title}
-          ticketCount={ticketCount}
+          ticketCount={ticketCountShown}
           value={row.value}
           numbers={combos}
           onClose={() => setShowModal(false)}

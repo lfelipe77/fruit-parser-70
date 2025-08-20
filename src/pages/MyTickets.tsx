@@ -6,19 +6,22 @@ import { ArrowLeft, Home, Ticket, User } from "lucide-react";
 import { Link } from "react-router-dom";
 
 type Row = Parameters<typeof MyTicketCard>[0]["row"] & {
-  buyer_user_id?: string;
+  buyer_user_id?: string | null;
+  purchased_numbers?: unknown;
+  ticket_count?: number | null;
+  raffle_id: string;
+  transaction_id: string;
 };
 
-function sigOf(r: Row): string {
-  return `${r.buyer_user_id || 'unknown'}|${r.raffle_id}|${JSON.stringify(r.purchased_numbers || [])}`;
+function sigOf(r: Row) {
+  const buyer = r.buyer_user_id ?? "NA";
+  const nums = JSON.stringify(r.purchased_numbers ?? []);
+  return `${buyer}|${r.raffle_id}|${nums}`;
 }
 
 function dedupeBySignature(arr: Row[] | null | undefined): Row[] {
   const map = new Map<string, Row>();
-  for (const r of arr || []) {
-    const sig = sigOf(r);
-    if (!map.has(sig)) map.set(sig, r);
-  }
+  for (const r of arr || []) map.set(sigOf(r), r);
   return Array.from(map.values());
 }
 
@@ -34,32 +37,26 @@ export default function MyTicketsPage() {
 
     let alive = true;
     (async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from("my_tickets_ext_v6" as any)
-          .select("*")
-          .order("progress_pct_money", { ascending: false })
-          .order("amount_raised", { ascending: false })
-          .order("purchase_date", { ascending: false });
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("my_tickets_ext_v6" as any)
+        .select("*")
+        .order("progress_pct_money", { ascending: false })
+        .order("amount_raised", { ascending: false })
+        .order("purchase_date", { ascending: false });
 
-        if (error) console.error("[MyTickets] fetch error:", error);
-
-        const unique = dedupeBySignature(data as any);
-        if (alive) {
-          setRows(unique); // replace, don't append
-          setLoading(false);
-        }
-      } catch (e) {
-        console.error("[MyTickets] unexpected:", e);
-        if (alive) setLoading(false);
+      if (error) console.error("[MyTickets] fetch error", error);
+      const unique = dedupeBySignature(data as any);
+      if (alive) {
+        setRows(unique); // REPLACE (don't append)
+        setLoading(false);
       }
     })();
 
     return () => { alive = false; };
   }, []);
 
-  const visible = showAll ? rows : rows.slice(0, 10);
+  const visible = showAll ? rows : rows.slice(0, 6);
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
@@ -117,10 +114,10 @@ export default function MyTicketsPage() {
             ))}
           </div>
 
-          {rows.length > 10 && (
+          {rows.length > 6 && (
             <div className="mt-4 flex justify-center">
               <button
-                onClick={() => setShowAll((v) => !v)}
+                onClick={() => setShowAll(v => !v)}
                 className="text-sm px-3 py-1.5 rounded border hover:bg-gray-50"
               >
                 {showAll ? "Ver menos" : `Ver todos (${rows.length})`}
