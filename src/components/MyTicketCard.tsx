@@ -25,8 +25,16 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const [open, setOpen] = useState(false);
 
   const combos = useMemo(() => {
+    if (!row.purchased_numbers) return [];
+    
+    // Handle both array of numbers and nested array structures
     const raw = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-    return raw.map(toComboString).filter(Boolean);
+    const flattened = raw.flat(2); // Flatten nested arrays from consolidated data
+    
+    return flattened
+      .map(toComboString)
+      .filter(Boolean)
+      .filter((combo, index, arr) => arr.indexOf(combo) === index); // Remove duplicates
   }, [row.purchased_numbers]);
 
   async function onShare() {
@@ -142,12 +150,13 @@ export default function MyTicketCard({ row }: { row: Row }) {
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mt-2">
           <span className="inline-flex items-center gap-1">
-            <TicketIcon className="h-3.5 w-3.5" /> {row.ticket_count} bilhetes
+            <TicketIcon className="h-3.5 w-3.5" /> 
+            {Math.max(row.ticket_count, combos.length)} bilhetes
           </span>
           <span>•</span>
-          <span>Compra: {shortDateTime(row.purchase_date)}</span>
+          <span>Última compra: {shortDateTime(row.purchase_date)}</span>
           <span>•</span>
-          <span>Valor: {brl(row.value)}</span>
+          <span>Total gasto: {brl(row.value)}</span>
         </div>
       </div>
 

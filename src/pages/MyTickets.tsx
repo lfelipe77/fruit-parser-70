@@ -23,6 +23,38 @@ type Row = {
   winner_ticket_id?: string | null;
 };
 
+// Aggregate multiple transactions for the same raffle into one display card
+function consolidateByRaffle(rows: Row[]): Row[] {
+  const raffleMap = new Map<string, Row>();
+  
+  for (const row of rows) {
+    const existing = raffleMap.get(row.raffle_id);
+    
+    if (!existing) {
+      // First transaction for this raffle
+      raffleMap.set(row.raffle_id, { ...row });
+    } else {
+      // Merge with existing transaction for same raffle
+      existing.value += row.value; // Sum total spent
+      existing.ticket_count += row.ticket_count; // Sum ticket count
+      
+      // Merge purchased numbers arrays
+      const existingNumbers = Array.isArray(existing.purchased_numbers) ? existing.purchased_numbers : [];
+      const newNumbers = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
+      existing.purchased_numbers = [...existingNumbers, ...newNumbers];
+      
+      // Keep the most recent purchase date
+      if (new Date(row.purchase_date) > new Date(existing.purchase_date)) {
+        existing.purchase_date = row.purchase_date;
+        existing.tx_status = row.tx_status;
+        existing.transaction_id = row.transaction_id; // Use most recent transaction ID
+      }
+    }
+  }
+  
+  return Array.from(raffleMap.values());
+}
+
 export default function MyTicketsPage() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
@@ -35,15 +67,21 @@ export default function MyTicketsPage() {
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("my_tickets_ext" as any)
+        .from("my_tickets_ext_v6" as any)
         .select("*")
         .order("purchase_date", { ascending: false });
 
       if (error) {
         console.error("[MyTickets] fetch error", error);
       }
-      if (mounted) setRows((data as unknown as Row[]) ?? []);
-      setLoading(false);
+      
+      if (mounted) {
+        const rawRows = (data as unknown as Row[]) ?? [];
+        // Consolidate multiple transactions per raffle into single cards
+        const consolidatedRows = consolidateByRaffle(rawRows);
+        setRows(consolidatedRows);
+        setLoading(false);
+      }
     })();
     return () => { mounted = false; };
   }, [user]);
@@ -108,7 +146,7 @@ export default function MyTicketsPage() {
 
       <div className="space-y-4">
         {rows.map((r) => (
-          <MyTicketCard key={r.transaction_id} row={r} />
+          <MyTicketCard key={r.raffle_id} row={r} />
         ))}
       </div>
     </div>
