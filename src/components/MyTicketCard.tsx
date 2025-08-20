@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
 import { brl, shortDateTime, toComboString, statusLabel } from "@/lib/format";
-import { Share2, TicketIcon, ChevronDown } from "lucide-react";
+import { Share2, TicketIcon, ChevronDown, Ticket } from "lucide-react";
+import NumbersModal from "./NumbersModal";
 
 type Row = {
   transaction_id: string;
@@ -50,6 +51,7 @@ function normalizePurchasedNumbers(input: unknown): string[] {
 export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // derive numbers once
   const rawList = normalizePurchasedNumbers(row.purchased_numbers);
@@ -187,6 +189,14 @@ export default function MyTicketCard({ row }: { row: Row }) {
         </div>
         <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
           <button
+            onClick={() => setShowModal(true)}
+            className="inline-flex items-center justify-center gap-1 text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 w-full sm:w-auto"
+            aria-label="Ver Meus Bilhetes"
+          >
+            <Ticket className="h-3.5 w-3.5" />
+            Ver Bilhetes
+          </button>
+          <button
             onClick={onShare}
             className="inline-flex items-center justify-center gap-1 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto"
             aria-label="Compartilhar Ganhavel"
@@ -203,6 +213,17 @@ export default function MyTicketCard({ row }: { row: Row }) {
           </a>
         </div>
       </div>
+
+      {/* Numbers Modal */}
+      {showModal && (
+        <NumbersModal
+          title={row.raffle_title}
+          ticketCount={ticketCount}
+          value={row.value}
+          numbers={combos}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </article>
   );
 }
