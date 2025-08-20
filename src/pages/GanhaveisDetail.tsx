@@ -8,7 +8,6 @@ import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
-import SEOHead from "@/components/SEOHead";
 import DetalhesOrganizador from "@/components/DetalhesOrganizador";
 import CompartilheRifa from "@/components/CompartilheRifa";
 import { toRaffleView, type MoneyRow, type RaffleExtras } from "@/adapters/raffleAdapters";
@@ -173,27 +172,6 @@ export default function GanhaveisDetail() {
 
   return (
     <>
-      <SEOHead
-        title={`${raffle.title} - Ganhavel`}
-        description={raffle.descShort ? raffle.descShort.substring(0, 160) : `Participe do Ganhavel "${raffle.title}" e concorra a prêmios incríveis com transparência total.`}
-        ogImage={raffle.img || "/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png"}
-        canonical={pageUrl}
-        ogType="product"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          "name": raffle.title,
-          "description": raffle.descShort,
-          "image": raffle.img,
-          "url": pageUrl,
-          "offers": {
-            "@type": "Offer",
-            "price": raffle.ticketPrice,
-            "priceCurrency": "BRL",
-            "availability": isActive ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
-          }
-        }}
-      />
       <Navigation />
       <div className="container mx-auto p-4 space-y-4">
         {/* Back button */}
