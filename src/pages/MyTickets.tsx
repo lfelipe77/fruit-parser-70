@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Home, Ticket, User } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type Row = {
   transaction_id: string;
@@ -57,7 +60,37 @@ export default function MyTicketsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
-      <h1 className="text-2xl font-bold mb-4">Meus Tickets</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">Meus Tickets</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/" className="flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Início
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/descobrir" className="flex items-center gap-2">
+              <Ticket className="h-4 w-4" />
+              Descobrir
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </Button>
+        </div>
+      </div>
 
       {loading && (
         <div className="space-y-3">
