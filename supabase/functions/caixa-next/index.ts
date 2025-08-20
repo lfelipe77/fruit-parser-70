@@ -14,7 +14,7 @@ serve(withCORS(async (req: Request) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceKey) {
     console.error("❌ Missing environment variables");
     return new Response(JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }), { status: 500 });
@@ -36,21 +36,68 @@ serve(withCORS(async (req: Request) => {
     let json: unknown;
     try { json = JSON.parse(text); } catch { json = { rawText: text }; }
 
-    // Normalize into an array of games minimally: slug + name
-    const rows: { game_slug: string; game_name: string; source_url?: string; raw?: unknown }[] = [];
+    // Normalize into an array of games with dates and times: slug + name + next_date + next_time
+    const rows: { game_slug: string; game_name: string; next_date?: string; next_time?: string; source_url?: string; raw?: unknown }[] = [];
 
     // The CAIXA payload shape varies; we try to extract keys robustly
     if (Array.isArray(json)) {
       for (const item of json) {
         const name = (item as any)?.loteria || (item as any)?.modalidade || (item as any)?.tipoJogo || "unknown";
         const slug = String(name).toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-        rows.push({ game_slug: slug, game_name: String(name), source_url: sourceUrl, raw: item });
+        
+        // Extract next draw date and time
+        const nextDraw = (item as any)?.dataProximoConcurso || (item as any)?.proximoConcurso || (item as any)?.proximoSorteio;
+        let nextDate: string | undefined;
+        let nextTime: string | undefined;
+        
+        if (nextDraw) {
+          try {
+            const date = new Date(nextDraw);
+            if (!isNaN(date.getTime())) {
+              nextDate = date.toISOString().split('T')[0];
+              nextTime = "20:00"; // Default CAIXA time
+            }
+          } catch (e) {
+            // Parse string format like "DD/MM/YYYY"
+            const match = String(nextDraw).match(/(\d{2})\/(\d{2})\/(\d{4})/);
+            if (match) {
+              const [, day, month, year] = match;
+              nextDate = `${year}-${month}-${day}`;
+              nextTime = "20:00";
+            }
+          }
+        }
+        
+        rows.push({ game_slug: slug, game_name: String(name), next_date: nextDate, next_time: nextTime, source_url: sourceUrl, raw: item });
       }
     } else if (json && typeof json === "object") {
       for (const [key, val] of Object.entries(json as Record<string, unknown>)) {
         const name = (val as any)?.loteria || (val as any)?.modalidade || key;
         const slug = String(key || name).toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-        rows.push({ game_slug: slug, game_name: String(name), source_url: sourceUrl, raw: val });
+        
+        // Extract next draw date and time
+        const nextDraw = (val as any)?.dataProximoConcurso || (val as any)?.proximoConcurso || (val as any)?.proximoSorteio;
+        let nextDate: string | undefined;
+        let nextTime: string | undefined;
+        
+        if (nextDraw) {
+          try {
+            const date = new Date(nextDraw);
+            if (!isNaN(date.getTime())) {
+              nextDate = date.toISOString().split('T')[0];
+              nextTime = "20:00";
+            }
+          } catch (e) {
+            const match = String(nextDraw).match(/(\d{2})\/(\d{2})\/(\d{4})/);
+            if (match) {
+              const [, day, month, year] = match;
+              nextDate = `${year}-${month}-${day}`;
+              nextTime = "20:00";
+            }
+          }
+        }
+        
+        rows.push({ game_slug: slug, game_name: String(name), next_date: nextDate, next_time: nextTime, source_url: sourceUrl, raw: val });
       }
     }
 
@@ -69,13 +116,26 @@ serve(withCORS(async (req: Request) => {
       if (existing) {
         const { error: updErr } = await supabase
           .from("lottery_next_draws")
-          .update({ game_name: r.game_name, source_url: r.source_url, raw: r.raw })
+          .update({ 
+            game_name: r.game_name, 
+            next_date: r.next_date, 
+            next_time: r.next_time, 
+            source_url: r.source_url, 
+            raw: r.raw 
+          })
           .eq("id", (existing as any).id);
         results.push({ game: r.game_slug, updated: !updErr, error: updErr?.message });
       } else {
         const { error: insErr } = await supabase
           .from("lottery_next_draws")
-          .insert({ game_slug: r.game_slug, game_name: r.game_name, source_url: r.source_url, raw: r.raw });
+          .insert({ 
+            game_slug: r.game_slug, 
+            game_name: r.game_name, 
+            next_date: r.next_date, 
+            next_time: r.next_time, 
+            source_url: r.source_url, 
+            raw: r.raw 
+          });
         results.push({ game: r.game_slug, inserted: !insErr, error: insErr?.message });
       }
     }

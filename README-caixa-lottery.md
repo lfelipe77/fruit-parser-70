@@ -1,155 +1,173 @@
-# CAIXA Lottery Integration - Complete Setup & Testing Guide
+# CAIXA Lottery Integration - Complete Setup Guide
 
-## Overview
-Complete end-to-end implementation of CAIXA lottery data integration with Supabase Edge Functions, database storage, and frontend display.
+Este documento contém o guia completo para configurar, testar e manter a integração com os dados das loterias da CAIXA no projeto Ganhavel.
 
-## Backend Architecture
+## 📋 Visão Geral
 
-### 1. Supabase Edge Functions
+A integração permite:
+- Buscar próximos sorteios da CAIXA automaticamente
+- Sincronizar resultados da Loteria Federal
+- Exibir dados reais na homepage (seção "Próximos Sorteios da Caixa")
+- Mostrar resultados oficiais na página /resultados
 
-#### Function: `caixa-probe`
-- **Purpose**: Tests connectivity to CAIXA API
+## 🚀 Backend - Edge Functions
+
+### 1. Edge Functions Criadas
+
+**Local**: `supabase/functions/`
+
+#### caixa-probe (GET)
+- **Função**: Testa conectividade com API da CAIXA
 - **Endpoint**: `https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-probe`
-- **Method**: GET
-- **Returns**: Connection status and API response preview
+- **Retorna**: Status HTTP, content-type, primeiros 600 chars da resposta
 
-#### Function: `caixa-next`
-- **Purpose**: Fetches upcoming lottery draws and stores in `lottery_next_draws`
+#### caixa-next (POST)
+- **Função**: Busca próximos sorteios e upsert em `lottery_next_draws`
 - **Endpoint**: `https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-next`
-- **Method**: POST
-- **Action**: UPSERT into `public.lottery_next_draws`
+- **API Source**: `https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados`
+- **Normaliza**: game_slug, game_name, next_date, next_time
 
-#### Function: `federal-sync`
-- **Purpose**: Fetches Federal lottery results and stores in `federal_draws`
+#### federal-sync (POST)
+- **Função**: Busca resultados da Loteria Federal e upsert em `federal_draws`
 - **Endpoint**: `https://whqxpuyjxoiufzhvqneg.functions.supabase.co/federal-sync`
-- **Method**: POST
-- **Action**: UPSERT into `public.federal_draws`
+- **API Source**: `https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados`
+- **Normaliza**: concurso_number, draw_date, prizes, first_prize
 
-### 2. Database Schema
+### 2. Configuração de Secrets
 
-#### Table: `lottery_next_draws`
+Necessários no Supabase Edge Function Secrets:
+```
+SUPABASE_URL=https://whqxpuyjxoiufzhvqneg.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+```
+
+### 3. User-Agent e Headers
+
+Todas as funções usam:
+```javascript
+headers: {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0 Safari/537.36",
+  "Accept": "application/json, text/plain, */*",
+}
+```
+
+## 🗄️ Database Schema
+
+### Tables
+
+#### lottery_next_draws
 ```sql
-- id: bigint (primary key)
-- game_slug: text (not null)
-- game_name: text (not null)
-- next_date: date
-- next_time: time
-- source_url: text
-- raw: jsonb
-- updated_at: timestamp with time zone
+CREATE TABLE public.lottery_next_draws (
+  id bigserial PRIMARY KEY,
+  game_slug text UNIQUE NOT NULL,
+  game_name text NOT NULL,
+  next_date date,
+  next_time text,
+  source_url text,
+  raw jsonb,
+  updated_at timestamp with time zone DEFAULT now()
+);
 ```
 
-#### Table: `federal_draws`
+#### federal_draws
 ```sql
-- id: bigint (primary key)
-- concurso_number: text (not null)
-- draw_date: date (not null)
-- first_prize: text
-- prizes: jsonb (not null, default '[]')
-- source_url: text
-- raw: jsonb
-- created_at: timestamp with time zone
-- updated_at: timestamp with time zone
+CREATE TABLE public.federal_draws (
+  id bigserial PRIMARY KEY,
+  concurso_number text UNIQUE NOT NULL,
+  draw_date date NOT NULL,
+  first_prize text,
+  prizes jsonb NOT NULL DEFAULT '[]'::jsonb,
+  source_url text,
+  raw jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
+);
 ```
 
-### 3. Row Level Security (RLS)
-Both tables have RLS enabled with policies:
-- **SELECT**: Allow anonymous and authenticated users to read
-- **INSERT/UPDATE/DELETE**: Only service role (edge functions)
+### Row Level Security (RLS)
 
-## Frontend Implementation
+Ambas as tabelas têm RLS habilitado com políticas:
+- **SELECT**: Permitido para todos (anon/authenticated)
+- **INSERT/UPDATE/DELETE**: Apenas service role
 
-### 1. Homepage - CaixaLotterySection Component
-- Location: `src/components/CaixaLotterySection.tsx`
-- **Data Source**: `supabase.from('lottery_next_draws')`
-- **Features**:
-  - Displays upcoming lottery draws with dates/times
-  - Fallback to sample data if no real data available
-  - "Últimos Números (Ganhadores)" button linking to `/resultados`
-  - Official CAIXA logo and link
+## 🎨 Frontend Components
 
-### 2. Results Page - Resultados Component
-- Location: `src/pages/Resultados.tsx`
-- **Data Sources**: 
-  - `lottery_results` (Ganhavel winners)
-  - `federal_draws` (Official Federal lottery results)
-  - `raffles_public_money_ext` (Complete/almost complete raffles)
-- **Features**:
-  - Four tabs: Premiados, Loteria Federal, Rifas Completas, Quase Completas
-  - Real-time updates every 30 seconds
-  - Official verification indicators
+### 1. CaixaLotterySection.tsx
 
-## Deployment & Testing
+**Localização**: `src/components/CaixaLotterySection.tsx`
 
-### 1. Deploy Functions
+**Funcionamento**:
+- Remove `sampleData` hardcoded
+- Busca dados reais via Supabase:
+  ```javascript
+  supabase.from("lottery_next_draws")
+    .select("game_slug, game_name, next_date, next_time")
+    .order("game_slug");
+  ```
+- Renderiza cards com datas/horários reais
+- Fallback suave para placeholder se vazio/erro
+- Botão "Últimos Números (Ganhadores)" → `/resultados`
+
+### 2. Página Resultados
+
+**Localização**: `src/pages/Resultados.tsx`
+
+**Novidades**:
+- Nova aba "Loteria Federal" 
+- Busca dados de `federal_draws`
+- Exibe últimos 10 resultados oficiais
+- Formato: concurso_number, draw_date (pt-BR), lista de prêmios
+- Empty state se sem dados
+
+## 🧪 Testing & Commands
+
+### 1. Teste das Edge Functions
+
 ```bash
-# Deploy all three functions
-supabase functions deploy caixa-probe
-supabase functions deploy caixa-next  
-supabase functions deploy federal-sync
-```
-
-### 2. Test API Connectivity
-```bash
-# Test probe (checks CAIXA API accessibility)
+# 1) Teste de conectividade
 curl -s https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-probe | jq .
 
-# Expected: 200 status with JSON response showing CAIXA API data
-# If 403: CAIXA is blocking your region/IP
-```
-
-### 3. Populate Database
-```bash
-# Fetch and store next draws
+# 2) Executar sync de próximos sorteios
 curl -s -X POST https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-next | jq .
 
-# Fetch and store federal results  
+# 3) Executar sync da Loteria Federal
 curl -s -X POST https://whqxpuyjxoiufzhvqneg.functions.supabase.co/federal-sync | jq .
-
-# Expected: JSON with sourceUrl, count, and results array
 ```
 
-### 4. Verify Database Data
+### 2. Verificação no Database
+
 ```sql
--- Check next draws data
-SELECT game_slug, game_name, next_date, next_time 
-FROM lottery_next_draws 
+-- Verificar próximos sorteios
+SELECT game_slug, game_name, next_date, next_time, updated_at 
+FROM public.lottery_next_draws 
 ORDER BY game_slug;
 
--- Check federal draws data
-SELECT concurso_number, draw_date, first_prize, 
-       jsonb_array_length(prizes) as prize_count
-FROM federal_draws 
+-- Verificar resultados da Federal
+SELECT concurso_number, draw_date, first_prize, jsonb_array_length(prizes) as prizes_count, created_at
+FROM public.federal_draws 
 ORDER BY draw_date DESC, concurso_number DESC 
 LIMIT 5;
+
+-- Contar total de registros
+SELECT 
+  (SELECT COUNT(*) FROM lottery_next_draws) as next_draws_count,
+  (SELECT COUNT(*) FROM federal_draws) as federal_draws_count;
 ```
 
-### 5. Load Testing
+### 3. Load Testing (Opcional)
 
-#### Using curl (basic test)
 ```bash
-# Test multiple rapid requests
-for i in {1..10}; do
-  curl -s -X POST https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-next &
-done
-wait
-```
+# Teste de carga com hey
+hey -n 500 -c 50 https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-probe
 
-#### Using hey (recommended)
-```bash
-# Install hey: go install github.com/rakyll/hey@latest
-
-# Load test caixa-next function
-hey -n 100 -c 10 -m POST https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-next
-
-# Load test PostgREST endpoint
+# Teste PostgREST endpoint
 hey -n 100 -c 10 -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndocXhwdXlqeG9pdWZ6aHZxbmVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYyODMsImV4cCI6MjA2OTc0MjI4M30.lXLlvJkB48KSUsroImqkZSjNLpQjg7Pe_bYH5h6ztjo" \
-    "https://whqxpuyjxoiufzhvqneg.supabase.co/rest/v1/lottery_next_draws?select=*"
+  "https://whqxpuyjxoiufzhvqneg.supabase.co/rest/v1/lottery_next_draws?select=game_slug,game_name,next_date,next_time"
 ```
 
-#### Using k6 (advanced)
+### 4. k6 Script Exemplo
+
 ```javascript
-// load-test.js
 import http from 'k6/http';
 import { check } from 'k6';
 
@@ -157,105 +175,89 @@ export let options = {
   stages: [
     { duration: '30s', target: 20 },
     { duration: '1m', target: 20 },
-    { duration: '20s', target: 0 },
+    { duration: '30s', target: 0 },
   ],
 };
 
-export default function() {
-  let response = http.post('https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-next');
+export default function () {
+  let response = http.get('https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-probe');
   check(response, {
     'status is 200': (r) => r.status === 200,
-    'response time < 5000ms': (r) => r.timings.duration < 5000,
+    'response time < 2000ms': (r) => r.timings.duration < 2000,
   });
 }
 ```
 
+## 🔄 Deployment
+
+As Edge Functions são deployadas automaticamente com o código. Para deploy manual:
+
 ```bash
-# Run k6 test
-k6 run load-test.js
+supabase functions deploy caixa-probe
+supabase functions deploy caixa-next  
+supabase functions deploy federal-sync
 ```
 
-## Environment Variables Required
+## 🔧 Manutenção & Monitoramento
 
-### Edge Functions Secrets (already configured)
-- `SUPABASE_URL`: https://whqxpuyjxoiufzhvqneg.supabase.co
-- `SUPABASE_SERVICE_ROLE_KEY`: [configured in Supabase Dashboard]
+### 1. Logs das Functions
+- Acesse: [Edge Function Logs](https://supabase.com/dashboard/project/whqxpuyjxoiufzhvqneg/functions)
+- Monitore erros, timeouts, rate limits
 
-## Configuration Files
+### 2. Schedule Automático (Recomendado)
+Configure cron jobs ou triggers para executar:
+- `caixa-next`: Diariamente às 9h e 18h
+- `federal-sync`: Após cada sorteio da Federal (ter/sex 20h)
 
-### supabase/config.toml
-```toml
-project_id = "whqxpuyjxoiufzhvqneg"
+### 3. Alertas de Erro
+Monitore falhas via:
+- Supabase Dashboard → Functions → Logs
+- Logs de erro no browser (DevTools)
+- Métricas de availability
 
-[functions.caixa-probe]
-verify_jwt = false
+## 🐛 Troubleshooting
 
-[functions.caixa-next]
-verify_jwt = false
+### Problema: Functions retornam 403
+- ✅ Verificar secrets configurados
+- ✅ Confirmar SERVICE_ROLE_KEY válida
+- ✅ RLS policies corretas
 
-[functions.federal-sync]
-verify_jwt = false
-```
+### Problema: Tabelas vazias
+- ✅ Executar POST requests (caixa-next, federal-sync)
+- ✅ Verificar logs das functions
+- ✅ Testar caixa-probe primeiro
 
-## Troubleshooting
+### Problema: Frontend sem dados
+- ✅ Verificar network tab no DevTools
+- ✅ Confirmar RLS permite SELECT public
+- ✅ Testar query Supabase SQL Editor
 
-### 1. 403 Errors from CAIXA API
-- CAIXA blocks certain cloud IPs/regions
-- Consider using a Brazilian proxy service
-- Alternative: Use paid APIs like apiloterias.com.br
+### Problema: CORS errors
+- ✅ Verificar origin headers
+- ✅ Functions usam withCORS wrapper
+- ✅ Adicionar domínio em ALLOWED_ORIGINS
 
-### 2. Empty Database Tables
-- Check function logs in Supabase dashboard
-- Verify secrets are configured correctly
-- Run functions manually via curl
+## ✅ Critérios de Sucesso
 
-### 3. Frontend Not Showing Data
-- Check browser console for errors
-- Verify RLS policies allow read access
-- Confirm tables have data using SQL queries
+1. **Homepage carrega dados reais** - sem hardcoded sampleData
+2. **caixa-probe retorna status 200** com contentType válido  
+3. **caixa-next popula lottery_next_draws** com game_slug, dates
+4. **federal-sync popula federal_draws** com concursos recentes
+5. **Página /resultados mostra Federal** - aba funcional
+6. **Botão "Últimos Números" funciona** - rota para /resultados
+7. **Load testing passa** - 500 requests sem timeout
+8. **Logs limpos** - sem errors críticos
 
-## Monitoring & Maintenance
+## 📞 Suporte
 
-### 1. Automated Sync (Optional)
-Set up cron jobs to run functions periodically:
-```sql
--- Run every hour
-SELECT cron.schedule(
-  'sync-lottery-data',
-  '0 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://whqxpuyjxoiufzhvqneg.functions.supabase.co/caixa-next',
-    headers := '{"Content-Type": "application/json"}'::jsonb
-  );
-  $$
-);
-```
+Para issues relacionadas à integração CAIXA:
+1. Verificar logs das Edge Functions
+2. Testar endpoints CAIXA diretamente  
+3. Confirmar schema das tabelas
+4. Revisar RLS policies
+5. Validar secrets configurados
 
-### 2. Error Monitoring
-- Check Edge Function logs in Supabase Dashboard
-- Set up alerts for function failures
-- Monitor database growth and performance
+---
 
-## Success Criteria ✅
-
-- [ ] All three edge functions deploy successfully
-- [ ] `caixa-probe` returns 200 status with CAIXA data
-- [ ] `caixa-next` populates `lottery_next_draws` table
-- [ ] `federal-sync` populates `federal_draws` table
-- [ ] Homepage shows live lottery data (not hardcoded)
-- [ ] `/resultados` page displays Federal lottery results
-- [ ] "Últimos Números" button works and routes correctly
-- [ ] Load tests pass without errors
-- [ ] RLS policies allow proper access control
-
-## Next Steps
-
-1. **Deploy functions** using the commands above
-2. **Test connectivity** with the curl commands
-3. **Verify data** in Supabase SQL editor
-4. **Check frontend** displays live data
-5. **Run load tests** to ensure performance
-6. **Set up monitoring** for production use
-
-Total implementation time: ~30 minutes for deployment and testing.
+**Última atualização**: 2025-01-20  
+**Versão**: 1.0.0

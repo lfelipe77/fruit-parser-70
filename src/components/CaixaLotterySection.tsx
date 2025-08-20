@@ -18,24 +18,24 @@ export default function CaixaLotterySection() {
   const [lotteryData, setLotteryData] = useState<LotteryDraw[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Sample data - replace with actual API call
-  const sampleData: LotteryDraw[] = [
+  // Placeholder data for empty state
+  const placeholderData: LotteryDraw[] = [
     {
       id: 'mega-sena',
       name: 'Mega-Sena',
-      nextDraw: '10/08/2024',
+      nextDraw: 'Em breve',
       time: '20:00'
     },
     {
       id: 'quina',
       name: 'Quina',
-      nextDraw: '09/08/2024',
+      nextDraw: 'Em breve',
       time: '20:00'
     },
     {
       id: 'lotofacil',
       name: 'Lotofácil',
-      nextDraw: '09/08/2024',
+      nextDraw: 'Em breve',
       time: '20:00'
     }
   ];
@@ -63,10 +63,10 @@ useEffect(() => {
           };
         });
 
-        setLotteryData(mapped.length > 0 ? mapped : sampleData);
+        setLotteryData(mapped.length > 0 ? mapped : placeholderData);
       } catch (error) {
         console.error('Error fetching lottery data:', error);
-        setLotteryData(sampleData);
+        setLotteryData(placeholderData);
       } finally {
         setLoading(false);
       }
