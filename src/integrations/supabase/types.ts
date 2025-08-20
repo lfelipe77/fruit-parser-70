@@ -288,6 +288,13 @@ export type Database = {
             foreignKeyName: "ganhaveis_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "categories_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ganhaveis_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
@@ -770,6 +777,7 @@ export type Database = {
           updated_at: string
           user_id: string
           vendor_link: string | null
+          winner_ticket_id: string | null
           winner_user_id: string | null
           winners: Json | null
           winning_numbers: Json | null
@@ -810,6 +818,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vendor_link?: string | null
+          winner_ticket_id?: string | null
           winner_user_id?: string | null
           winners?: Json | null
           winning_numbers?: Json | null
@@ -850,6 +859,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vendor_link?: string | null
+          winner_ticket_id?: string | null
           winner_user_id?: string | null
           winners?: Json | null
           winning_numbers?: Json | null
@@ -887,6 +897,13 @@ export type Database = {
             foreignKeyName: "raffles_category_fk"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "categories_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_fk"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
@@ -902,6 +919,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories_public_ext"
             referencedColumns: ["id"]
           },
           {
@@ -972,6 +996,13 @@ export type Database = {
             columns: ["subcategory_id"]
             isOneToOne: false
             referencedRelation: "subcategory_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_ticket_id_fkey"
+            columns: ["winner_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
           {
@@ -1103,6 +1134,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories_public_ext"
             referencedColumns: ["id"]
           },
           {
@@ -1288,6 +1326,13 @@ export type Database = {
             foreignKeyName: "tickets_transaction_id_fkey"
             columns: ["transaction_id"]
             isOneToOne: false
+            referencedRelation: "my_tickets_ext"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
             referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
@@ -1326,13 +1371,16 @@ export type Database = {
           amount: number | null
           buyer_user_id: string | null
           created_at: string | null
+          customer_cpf: string | null
           customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
           due_date: string | null
           fee_amount: number | null
           fee_fixed: number | null
           fee_pct: number | null
           id: string
-          numbers: Json | null
+          numbers: Json
           payment_id: string | null
           payment_provider: string | null
           payment_reference: string | null
@@ -1354,13 +1402,16 @@ export type Database = {
           amount?: number | null
           buyer_user_id?: string | null
           created_at?: string | null
+          customer_cpf?: string | null
           customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           due_date?: string | null
           fee_amount?: number | null
           fee_fixed?: number | null
           fee_pct?: number | null
           id?: string
-          numbers?: Json | null
+          numbers?: Json
           payment_id?: string | null
           payment_provider?: string | null
           payment_reference?: string | null
@@ -1382,13 +1433,16 @@ export type Database = {
           amount?: number | null
           buyer_user_id?: string | null
           created_at?: string | null
+          customer_cpf?: string | null
           customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           due_date?: string | null
           fee_amount?: number | null
           fee_fixed?: number | null
           fee_pct?: number | null
           id?: string
-          numbers?: Json | null
+          numbers?: Json
           payment_id?: string | null
           payment_provider?: string | null
           payment_reference?: string | null
@@ -1729,6 +1783,42 @@ export type Database = {
         }
         Relationships: []
       }
+      categories_public_ext: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          icon_emoji: string | null
+          icon_url: string | null
+          id: number | null
+          name: string | null
+          slug: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          icon_emoji?: string | null
+          icon_url?: string | null
+          id?: number | null
+          name?: string | null
+          slug?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          featured?: boolean | null
+          icon_emoji?: string | null
+          icon_url?: string | null
+          id?: number | null
+          name?: string | null
+          slug?: string | null
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       category_stats: {
         Row: {
           active_count: number | null
@@ -1755,6 +1845,93 @@ export type Database = {
           sort_order: number | null
         }
         Relationships: []
+      }
+      my_tickets_ext: {
+        Row: {
+          amount_raised: number | null
+          buyer_user_id: string | null
+          customer_cpf_mask: string | null
+          customer_full_legal_name: string | null
+          customer_phone: string | null
+          draw_date: string | null
+          goal_amount: number | null
+          progress_pct_money: number | null
+          purchase_date: string | null
+          purchased_numbers: Json | null
+          raffle_id: string | null
+          raffle_image_url: string | null
+          raffle_title: string | null
+          ticket_count: number | null
+          transaction_id: string | null
+          tx_status: string | null
+          value: number | null
+          winner_ticket_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffles_winner_ticket_id_fkey"
+            columns: ["winner_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+        ]
       }
       paid_statuses: {
         Row: {
@@ -1939,6 +2116,13 @@ export type Database = {
             foreignKeyName: "raffles_category_fk"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "categories_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_fk"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
@@ -1954,6 +2138,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories_public_ext"
             referencedColumns: ["id"]
           },
           {
@@ -2044,6 +2235,13 @@ export type Database = {
             foreignKeyName: "raffles_category_fk"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "categories_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_fk"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
@@ -2059,6 +2257,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories_public_ext"
             referencedColumns: ["id"]
           },
           {
@@ -2171,6 +2376,13 @@ export type Database = {
             foreignKeyName: "raffles_category_fk"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "categories_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_fk"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
@@ -2186,6 +2398,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories_public_ext"
             referencedColumns: ["id"]
           },
           {
@@ -2310,6 +2529,13 @@ export type Database = {
             foreignKeyName: "raffles_category_fk"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "categories_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_fk"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
@@ -2325,6 +2551,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories_public_ext"
             referencedColumns: ["id"]
           },
           {
@@ -2429,6 +2662,13 @@ export type Database = {
             foreignKeyName: "subcategories_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
+            referencedRelation: "categories_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
             referencedRelation: "category_stats"
             referencedColumns: ["id"]
           },
@@ -2457,6 +2697,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories_public_ext"
             referencedColumns: ["id"]
           },
           {
@@ -2932,23 +3179,28 @@ export type Database = {
         Returns: string
       }
       record_mock_purchase_admin: {
-        Args:
-          | {
-              p_buyer_user_id: string
-              p_numbers: string[]
-              p_provider_ref: string
-              p_qty: number
-              p_raffle_id: string
-              p_unit_price: number
-            }
-          | {
-              p_buyer_user_id: string
-              p_numbers: Json
-              p_provider_ref: string
-              p_qty: number
-              p_raffle_id: string
-              p_unit_price: number
-            }
+        Args: {
+          p_buyer_user_id: string
+          p_numbers: string[]
+          p_provider_ref: string
+          p_qty: number
+          p_raffle_id: string
+          p_unit_price: number
+        }
+        Returns: string
+      }
+      record_purchase_v2: {
+        Args: {
+          p_buyer_user_id: string
+          p_customer_cpf: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_numbers: string[]
+          p_provider_ref: string
+          p_qty: number
+          p_raffle_id: string
+          p_unit_price: number
+        }
         Returns: string
       }
       request_password_reset: {
