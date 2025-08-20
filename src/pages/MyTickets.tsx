@@ -35,6 +35,7 @@ export default function MyTicketsPage() {
     let mounted = true;
     (async () => {
       setLoading(true);
+      
       const { data, error } = await supabase
         .from("my_tickets_ext_v2" as any)
         .select("*")
@@ -44,16 +45,27 @@ export default function MyTicketsPage() {
 
       if (error) {
         console.error("[MyTickets] fetch error", error);
+        if (mounted) {
+          setRows([]);
+          setLoading(false);
+        }
+        return;
       }
+      
+      console.log("[MyTickets] Raw data length:", data?.length);
       
       // de‑dupe by transaction_id as an extra guard
       const deduped = Array.from(
         new Map((data ?? []).map((row: any) => [row.transaction_id, row])).values()
       );
       
+      console.log("[MyTickets] Deduped length:", deduped.length);
+      
       // IMPORTANT: replace state (don't append)
-      if (mounted) setRows(deduped as Row[]);
-      setLoading(false);
+      if (mounted) {
+        setRows(deduped as Row[]);
+        setLoading(false);
+      }
     })();
     return () => { mounted = false; };
   }, [user]);
