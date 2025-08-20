@@ -133,14 +133,27 @@ export default function MyTicketCard({ row }: { row: Row }) {
         )}
 
         {/* Expand list */}
-        {open && combos.length > 0 && (
-          <ul className="mt-2 grid sm:grid-cols-2 gap-2 text-sm">
-            {combos.map((c, i) => (
-              <li key={i} className="rounded border px-2 py-1">
-                ({c}) <span className="text-xs text-gray-500">Bilhete #{i + 1}</span>
-              </li>
-            ))}
-          </ul>
+        {open && (
+          <div className="mt-2">
+            {combos.length > 0 ? (
+              <ul className="grid sm:grid-cols-2 gap-2 text-sm">
+                {combos.map((c, i) => (
+                  <li key={i} className="rounded border px-2 py-1">
+                    ({c}) <span className="text-xs text-gray-500">Bilhete #{i + 1}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-sm text-gray-600 border rounded px-3 py-2">
+                <p>Números dos bilhetes:</p>
+                <p className="text-xs mt-1">
+                  {Array.isArray(row.purchased_numbers) && row.purchased_numbers.length > 0 
+                    ? JSON.stringify(row.purchased_numbers)
+                    : "Dados não disponíveis"}
+                </p>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Meta row */}
