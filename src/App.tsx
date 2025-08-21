@@ -1,9 +1,11 @@
-import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nextProvider } from 'react-i18next';
 import i18n from "@/i18n";
+import './index.css';
+import './i18n';
 import Index from "./pages/Index";
 import DiscoverRaffles from "./pages/DiscoverRaffles";
 import CategoriesPage from "./pages/CategoriesPage";
@@ -272,11 +274,9 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <DevErrorBoundary>
-          <Router>
             <GlobalAuthDebugOverlay />
             <RouteBadge />
             <AppContent />
-          </Router>
         </DevErrorBoundary>
       </TooltipProvider>
     </I18nextProvider>
