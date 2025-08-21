@@ -1,9 +1,12 @@
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App.tsx'
 import './index.css'
 import './i18n'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
+import GlobalErrorBoundary from "@/components/GlobalErrorBoundary"
+import { unregisterServiceWorkersAndClearCaches, wireGlobalUnhandledHandlers } from "@/lib/safeBoot"
 
 // --- EARLY OAUTH HANDLER (runs before router/guards) ---
 import { supabase } from '@/integrations/supabase/client';
@@ -60,16 +63,25 @@ async function oauthEarly() {
 (async () => {
   console.log('[MAIN] Starting app boot...');
   console.log('[MAIN] Current URL:', window.location.href);
+  
+  // Wire global error handlers and clean up service workers
+  wireGlobalUnhandledHandlers();
+  await unregisterServiceWorkersAndClearCaches();
+  
   try {
     await oauthEarly();
     console.log('[MAIN] OAuth early completed, rendering app...');
     // existing React render here (unchanged):
     createRoot(document.getElementById("root")!).render(
-      <AppErrorBoundary>
-        <HelmetProvider>
-          <App />
-        </HelmetProvider>
-      </AppErrorBoundary>
+      <React.StrictMode>
+        <GlobalErrorBoundary>
+          <AppErrorBoundary>
+            <HelmetProvider>
+              <App />
+            </HelmetProvider>
+          </AppErrorBoundary>
+        </GlobalErrorBoundary>
+      </React.StrictMode>
     );
     console.log('[MAIN] App rendered successfully');
   } catch (error) {
