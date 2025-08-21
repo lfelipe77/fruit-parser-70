@@ -21,7 +21,6 @@ export default function LotteryFederalTab() {
   useEffect(() => {
     (async () => {
       try {
-        // Use a simple query directly to the database with any() cast for compatibility
         const { data, error } = await (supabase as any)
           .from('federal_draws')
           .select('concurso_number, draw_date, prizes')
@@ -56,7 +55,7 @@ export default function LotteryFederalTab() {
   if (!row) return <div className="text-sm opacity-70">Sem dados disponíveis.</div>;
 
   const dataStr = dateBR(row.draw_date);
-  const numeros = Array.isArray(row.numbers) ? row.numbers.join(" ") : "";
+  const nums = Array.isArray(row.numbers) ? row.numbers.join(" ") : "";
 
   return (
     <div className="rounded-2xl border border-gray-200 p-4 shadow-sm bg-white">
@@ -66,7 +65,7 @@ export default function LotteryFederalTab() {
         {dataStr ? ` – ${dataStr}` : ""}
       </div>
       <div className="mt-2 text-base font-semibold">
-        Números: <span className="font-mono">{numeros || "-"}</span>
+        Números: <span className="font-mono">{nums || "-"}</span>
       </div>
     </div>
   );
