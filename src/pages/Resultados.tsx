@@ -2,7 +2,7 @@ import Navigation from "@/components/Navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SimpleTabs from "@/components/SimpleTabs";
 import { Trophy, Calendar, Users, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -65,20 +65,6 @@ export default function Resultados() {
   const [federalDraws, setFederalDraws] = useState<FederalDraw[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // If you read tab from query/hash, keep that — just sanitize it.
-  const url = new URL(window.location.href);
-  const fromQuery = url.searchParams.get("tab") ?? new URLSearchParams(window.location.hash.split("?")[1]).get("tab");
-
-  const [tab, setTab] = React.useState<TabValue>(() => sanitizeTab(fromQuery));
-
-  const onTabChange = (next: string) => {
-    const safe = sanitizeTab(next);
-    setTab(safe);
-    // optional: write back to URL (keeps UX but safe)
-    const u = new URL(window.location.href);
-    u.searchParams.set("tab", safe);
-    history.replaceState({}, "", u.toString());
-  };
 
   useEffect(() => {
     fetchResultsData();
@@ -242,127 +228,42 @@ export default function Resultados() {
       {/* Tabbed Results */}
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {(() => {
-            const TABS = [
-              { label: "Quase Completas",    value: "quase" },
-              { label: "Rifas Completas",    value: "completas" },
-              { label: "Ganháveis Premiados", value: "premiados" },
-            ] as const;
-
-            return (
-              <Tabs value={tab} onValueChange={onTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  {TABS.map(t => (
-                    <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>
-                  ))}
-                </TabsList>
-
-                <TabsContent value="quase" className="space-y-6 mt-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                        Rifas Quase Completas
-                      </h2>
-                      <p className="text-muted-foreground">
-                        Rifas com mais de 80% dos números vendidos
-                      </p>
-                    </div>
+          <SimpleTabs
+            initial="quase"
+            renderQuase={
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                      Rifas Quase Completas
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Rifas com mais de 80% dos números vendidos
+                    </p>
                   </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {almostCompleteRaffles.length === 0 ? (
-                      <Card className="p-8 text-center md:col-span-2">
-                        <div className="text-muted-foreground">
-                          <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p>Nenhuma rifa próxima de completar.</p>
-                        </div>
-                      </Card>
-                    ) : almostCompleteRaffles.map((draw) => {
-                      const percentage = draw.progress_pct_money || 0;
-                      const raised = draw.amount_raised || 0;
-                      const goal = draw.goal_amount || 0;
-                      const missing = goal - raised;
-                      
-                      return (
-                        <Card key={draw.id} className="border-orange-200 bg-orange-50/50">
-                          <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                              <span className="truncate">{String(draw.title ?? '')}</span>
-                              <Badge className="bg-orange-100 text-orange-800 flex-shrink-0">
-                                {Math.round(percentage)}% Completa
-                              </Badge>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {draw.draw_date && (
-                                <div className="flex justify-between items-center">
-                                  <span className="text-muted-foreground">Próximo Sorteio:</span>
-                                  <span className="font-semibold">
-                                    {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
-                                  </span>
-                                </div>
-                              )}
-                              <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Faltam:</span>
-                                <span className="font-bold text-lg text-orange-600">
-                                  {formatCurrency(missing)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Participantes:</span>
-                                <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-3">
-                                <div 
-                                  className="bg-orange-500 h-3 rounded-full transition-all" 
-                                  style={{ width: `${percentage}%` }}
-                                />
-                              </div>
-                              <div className="text-center text-sm text-orange-700 font-medium">
-                                Apenas {Math.round((100 - percentage) * 100) / 100}% restante!
-                              </div>
-                              <Link to={`/ganhavel/${draw.id}`}>
-                                <Button variant="outline" className="w-full">
-                                  <ExternalLink className="w-4 h-4 mr-2" />
-                                  Participar Agora
-                                </Button>
-                              </Link>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="completas" className="space-y-6 mt-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                        Rifas Completas
-                      </h2>
-                      <p className="text-muted-foreground">
-                        100% dos números vendidos - aguardando próximo sorteio
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {completeRaffles.length === 0 ? (
-                      <Card className="p-8 text-center md:col-span-2">
-                        <div className="text-muted-foreground">
-                          <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                          <p>Nenhuma rifa completa aguardando sorteio.</p>
-                        </div>
-                      </Card>
-                    ) : completeRaffles.map((draw) => (
-                      <Card key={draw.id} className="border-green-200 bg-green-50/50">
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  {almostCompleteRaffles.length === 0 ? (
+                    <Card className="p-8 text-center md:col-span-2">
+                      <div className="text-muted-foreground">
+                        <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Nenhuma rifa próxima de completar.</p>
+                      </div>
+                    </Card>
+                  ) : almostCompleteRaffles.map((draw) => {
+                    const percentage = draw.progress_pct_money || 0;
+                    const raised = draw.amount_raised || 0;
+                    const goal = draw.goal_amount || 0;
+                    const missing = goal - raised;
+                    
+                    return (
+                      <Card key={draw.id} className="border-orange-200 bg-orange-50/50">
                         <CardHeader>
                           <CardTitle className="flex items-center justify-between">
-                              <span className="truncate">{String(draw.title ?? '')}</span>
-                            <Badge className="bg-green-100 text-green-800 flex-shrink-0">
-                              100% Completa
+                            <span className="truncate">{String(draw.title ?? '')}</span>
+                            <Badge className="bg-orange-100 text-orange-800 flex-shrink-0">
+                              {Math.round(percentage)}% Completa
                             </Badge>
                           </CardTitle>
                         </CardHeader>
@@ -377,117 +278,178 @@ export default function Resultados() {
                               </div>
                             )}
                             <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">Valor Total:</span>
-                              <span className="font-bold text-lg text-primary">
-                                {formatCurrency(Number(draw.goal_amount ?? 0))}
+                              <span className="text-muted-foreground">Faltam:</span>
+                              <span className="font-bold text-lg text-orange-600">
+                                {formatCurrency(missing)}
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-muted-foreground">Participantes:</span>
                               <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
                             </div>
-                            <div className="w-full bg-green-200 rounded-full h-3">
-                              <div className="bg-green-500 h-3 rounded-full w-full" />
+                            <div className="w-full bg-gray-200 rounded-full h-3">
+                              <div 
+                                className="bg-orange-500 h-3 rounded-full transition-all" 
+                                style={{ width: `${percentage}%` }}
+                              />
                             </div>
-                            <div className="text-center text-sm text-green-700 font-medium">
-                              Meta atingida - aguardando sorteio!
+                            <div className="text-center text-sm text-orange-700 font-medium">
+                              Apenas {Math.round((100 - percentage) * 100) / 100}% restante!
                             </div>
                             <Link to={`/ganhavel/${draw.id}`}>
                               <Button variant="outline" className="w-full">
                                 <ExternalLink className="w-4 h-4 mr-2" />
-                                Ver Detalhes
+                                Participar Agora
                               </Button>
                             </Link>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="premiados" className="space-y-6 mt-8">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                    Ganhadores
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Sorteios já realizados com ganhadores confirmados
-                  </p>
+                    );
+                  })}
                 </div>
-                <Badge variant="outline" className="flex items-center space-x-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>Verificados</span>
-                </Badge>
               </div>
-              
-              <div className="grid gap-6">
-                {recentResults.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <div className="text-muted-foreground">
-                      <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhum resultado disponível ainda.</p>
-                      <p className="text-sm mt-2">Os resultados aparecerão aqui após os sorteios.</p>
-                    </div>
-                  </Card>
-                ) : recentResults.map((result) => (
-                  <Link key={result.id} to={`/ganhavel/${result.ganhavel_id}`}>
-                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                      <CardContent className="p-6">
-                        <div className="grid md:grid-cols-4 gap-6 items-center">
-                          <div className="md:col-span-1">
-                            <div className="flex items-start space-x-4">
-                              <div className="w-16 h-16 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Trophy className="w-8 h-8 text-white" />
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-semibold mb-1">{String(result.raffle_title ?? '')}</h3>
-                                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                  <span className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-1" />
-                                    {new Date(result.result_date).toLocaleDateString('pt-BR')}
-                                  </span>
-                                  {result.lottery_draw_numbers && (
-                                    <span>Números: {String(result.lottery_draw_numbers ?? '')}</span>
-                                  )}
-                                </div>
-                              </div>
+            }
+            renderCompletas={
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                      Rifas Completas
+                    </h2>
+                    <p className="text-muted-foreground">
+                      100% dos números vendidos - aguardando próximo sorteio
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  {completeRaffles.length === 0 ? (
+                    <Card className="p-8 text-center md:col-span-2">
+                      <div className="text-muted-foreground">
+                        <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Nenhuma rifa completa aguardando sorteio.</p>
+                      </div>
+                    </Card>
+                  ) : completeRaffles.map((draw) => (
+                    <Card key={draw.id} className="border-green-200 bg-green-50/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <span className="truncate">{String(draw.title ?? '')}</span>
+                          <Badge className="bg-green-100 text-green-800 flex-shrink-0">
+                            100% Completa
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {draw.draw_date && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Próximo Sorteio:</span>
+                              <span className="font-semibold">
+                                {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                              </span>
                             </div>
+                          )}
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Valor Total:</span>
+                            <span className="font-bold text-lg text-primary">
+                              {formatCurrency(Number(draw.goal_amount ?? 0))}
+                            </span>
                           </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm text-muted-foreground mb-1">Valor Total</div>
-                            <div className="font-bold text-xl text-primary">{formatCurrency(Number(result.raffle_goal_amount ?? 0))}</div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Participantes:</span>
+                            <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
                           </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm text-muted-foreground mb-1">Ganhador</div>
-                            <div className="font-semibold text-lg">{String(result.winner_name ?? '')}</div>
+                          <div className="w-full bg-green-200 rounded-full h-3">
+                            <div className="bg-green-500 h-3 rounded-full w-full" />
                           </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm text-muted-foreground mb-1">Status</div>
-                            <div className="font-semibold text-green-600">
-                              {result.verified ? (
-                                <div className="flex items-center justify-center gap-1">
-                                  <CheckCircle className="w-4 h-4" />
-                                  Verificado
-                                </div>
-                              ) : (
-                                <div className="text-yellow-600">Pendente</div>
-                              )}
+                          <div className="text-center text-sm text-green-700 font-medium">
+                            Meta atingida - aguardando sorteio!
+                          </div>
+                          <Link to={`/ganhavel/${draw.id}`}>
+                            <Button variant="outline" className="w-full">
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Ver Detalhes
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            }
+            renderPremiados={
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                      Ganhadores
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Resultados oficiais verificados pela Loteria Federal
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  {recentResults.length === 0 ? (
+                    <Card className="p-8 text-center md:col-span-2">
+                      <div className="text-muted-foreground">
+                        <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Nenhum resultado ainda.</p>
+                      </div>
+                    </Card>
+                  ) : recentResults.map((result) => (
+                    <Card key={result.id} className="border-green-200 bg-green-50/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <span className="truncate">{result.raffle_title}</span>
+                          <Badge className="bg-green-100 text-green-800 flex-shrink-0">
+                            <Trophy className="w-4 h-4 mr-1" />
+                            Ganhador
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Ganhador:</span>
+                            <span className="font-semibold">{result.winner_name}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Números Sorteados:</span>
+                            <span className="font-mono font-bold">
+                              {result.lottery_draw_numbers}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Data do Sorteio:</span>
+                            <span className="font-semibold">
+                              {new Date(result.result_date).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Valor do Prêmio:</span>
+                            <span className="font-bold text-lg text-green-600">
+                              {formatCurrency(result.raffle_goal_amount)}
+                            </span>
+                          </div>
+                          <div className="text-center p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                            <div className="flex items-center justify-center gap-2 text-green-800 dark:text-green-200">
+                              <CheckCircle className="w-4 h-4" />
+                              <span className="text-sm font-medium">Resultado verificado</span>
                             </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
-                ))}
+                  ))}
+                </div>
               </div>
-                </TabsContent>
-              </Tabs>
-            );
-          })()}
+            }
+          />
         </div>
       </section>
 
