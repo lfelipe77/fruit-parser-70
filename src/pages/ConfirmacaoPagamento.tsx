@@ -155,7 +155,7 @@ export default function ConfirmacaoPagamento() {
       // Safely handle raffle updates
     };
     
-    window?.addEventListener?.('raffleUpdated', onUpdate);
+    window.addEventListener('raffleUpdated', onUpdate);
     
     (async () => {
       try {
@@ -175,7 +175,7 @@ export default function ConfirmacaoPagamento() {
     
     return () => {
       mounted = false;
-      window?.removeEventListener?.('raffleUpdated', onUpdate);
+      window.removeEventListener('raffleUpdated', onUpdate);
     };
   }, [id]);
 

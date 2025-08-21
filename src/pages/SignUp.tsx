@@ -98,15 +98,15 @@ export default function SignUp() {
       };
       if (s) {
         console.log("Turnstile script found, adding load listener");
-        s.addEventListener?.("load", onLoad, { once: true });
+        s.addEventListener("load", onLoad, { once: true });
       } else {
         console.log("Loading Turnstile script");
         const script = document.createElement("script");
         script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
         script.async = true;
         script.defer = true;
-        script.addEventListener?.("load", onLoad, { once: true });
-        document.head?.appendChild?.(script);
+        script.addEventListener("load", onLoad, { once: true });
+        document.head.appendChild(script);
       }
     }
   }, []);

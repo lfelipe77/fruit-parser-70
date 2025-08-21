@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 
 interface TurnstileProps {
@@ -63,84 +62,58 @@ export const TurnstileProtection: React.FC<TurnstileProps> = ({
       return () => window.clearInterval(timer);
     }
 
-    try {
-      const script = document.createElement('script');
-      script.id = 'cf-turnstile-script';
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.async = true;
-      script.defer = true;
+    const script = document.createElement('script');
+    script.id = 'cf-turnstile-script';
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.async = true;
+    script.defer = true;
 
-      script.onload = () => setIsLoaded(true);
-      script.onerror = () => {
-        console.error('Failed to load Turnstile script');
-        setIsLoaded(false);
-      };
+    script.onload = () => setIsLoaded(true);
 
-      document.body?.appendChild?.(script);
+    document.body.appendChild(script);
 
-      return () => {
-        // Only remove if we injected it
-        try {
-          const el = document.getElementById('cf-turnstile-script');
-          if (el && el === script && el.parentNode) {
-            el.parentNode.removeChild(el);
-          }
-        } catch (e) {
-          console.warn('Failed to cleanup turnstile script:', e);
-        }
-      };
-    } catch (e) {
-      console.error('Failed to create turnstile script:', e);
-    }
+    return () => {
+      // Only remove if we injected it
+      const el = document.getElementById('cf-turnstile-script');
+      if (el && el === script && el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    };
   }, []);
-
   useEffect(() => {
     if (isLoaded && window.turnstile && turnstileRef.current && !widgetId) {
-      try {
-        const id = window.turnstile.render(turnstileRef.current, {
-          sitekey: siteKey,
-          action,
-          theme,
-          size: invisible ? 'invisible' : size,
-          callback: (token: string) => {
-            console.log('Turnstile verification successful');
-            onVerify(token);
-          },
-          'error-callback': () => {
-            console.error('Turnstile verification failed');
-            onError?.();
-          },
-          'expired-callback': () => {
-            console.log('Turnstile token expired');
-            onExpire?.();
-          },
-        });
-        setWidgetId(id);
-      } catch (e) {
-        console.error('Failed to render turnstile:', e);
-        onError?.();
-      }
+      const id = window.turnstile.render(turnstileRef.current, {
+        sitekey: siteKey,
+        action,
+        theme,
+        size: invisible ? 'invisible' : size,
+        callback: (token: string) => {
+          console.log('Turnstile verification successful');
+          onVerify(token);
+        },
+        'error-callback': () => {
+          console.error('Turnstile verification failed');
+          onError?.();
+        },
+        'expired-callback': () => {
+          console.log('Turnstile token expired');
+          onExpire?.();
+        },
+      });
+      setWidgetId(id);
     }
   }, [isLoaded, action, theme, size, invisible, onVerify, onError, onExpire, widgetId]);
 
   const reset = () => {
-    try {
-      if (window.turnstile && widgetId) {
-        window.turnstile.reset(widgetId);
-      }
-    } catch (e) {
-      console.error('Failed to reset turnstile:', e);
+    if (window.turnstile && widgetId) {
+      window.turnstile.reset(widgetId);
     }
   };
 
   const execute = () => {
-    try {
-      if (invisible && window.turnstile && widgetId) {
-        // For invisible captcha, trigger execution
-        window.turnstile.reset(widgetId);
-      }
-    } catch (e) {
-      console.error('Failed to execute turnstile:', e);
+    if (invisible && window.turnstile && widgetId) {
+      // For invisible captcha, trigger execution
+      window.turnstile.reset(widgetId);
     }
   };
 

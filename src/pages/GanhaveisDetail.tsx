@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
-import SimpleTabs from "@/components/SimpleTabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { ArrowLeft } from "lucide-react";
@@ -147,12 +147,12 @@ export default function GanhaveisDetail() {
       }
     };
 
-    window?.addEventListener?.('raffleUpdated', handleRaffleUpdate);
+    window.addEventListener('raffleUpdated', handleRaffleUpdate);
     const interval = setInterval(fetchData, 30000); // safety refresh
     
     return () => {
       supabase.removeChannel(ch);
-      window?.removeEventListener?.('raffleUpdated', handleRaffleUpdate);
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
       clearInterval(interval);
     };
   }, [fetchData, id]);
@@ -201,34 +201,24 @@ export default function GanhaveisDetail() {
           <h1 className="mt-4 text-2xl font-semibold">{raffle.title}</h1>
 
           {/* Tabs */}
-          <SimpleTabs
-            tabs={[
-              {
-                value: "detalhes",
-                label: "Detalhes", 
-                content: (
-                  <div className="prose mt-4 max-w-none">
-                    <div
-                      dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
-                    />
-                  </div>
-                )
-              },
-              {
-                value: "regulamento",
-                label: "Regulamento",
-                content: (
-                  <div className="prose mt-4 max-w-none">
-                    <div
-                      dangerouslySetInnerHTML={{ __html: raffle.regulamentoHtml || FALLBACK_RULES }}
-                    />
-                  </div>
-                )
-              }
-            ]}
-            defaultValue="detalhes"
-            className="mt-6"
-          />
+          <Tabs defaultValue="detalhes" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
+              <TabsTrigger value="regulamento">Regulamento</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="detalhes" className="prose mt-4 max-w-none">
+              <div
+                dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
+              />
+            </TabsContent>
+
+            <TabsContent value="regulamento" className="prose mt-4 max-w-none">
+              <div
+                dangerouslySetInnerHTML={{ __html: raffle.regulamentoHtml || FALLBACK_RULES }}
+              />
+            </TabsContent>
+          </Tabs>
 
           {/* Organizer Profile Section - Hidden on mobile */}
           <div className="mt-8 hidden md:block">

@@ -98,11 +98,11 @@ export default function CategoriesView() {
       }
     };
 
-    window?.addEventListener?.('raffleUpdated', handleRaffleUpdate);
+    window.addEventListener('raffleUpdated', handleRaffleUpdate);
     
     return () => { 
       cancelled = true; 
-      window?.removeEventListener?.('raffleUpdated', handleRaffleUpdate);
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
     };
   }, [currentSubcategory?.id]);
 

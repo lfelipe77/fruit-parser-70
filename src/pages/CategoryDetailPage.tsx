@@ -49,14 +49,14 @@ export default function CategoryDetailPage() {
       }
     };
 
-    window?.addEventListener?.('raffleUpdated', handleRaffleUpdate);
+    window.addEventListener('raffleUpdated', handleRaffleUpdate);
     const interval = setInterval(() => {
       if (categorySlug) {
         fetchRaffles(categorySlug);
       }
     }, 30000); // safety refresh
     return () => { 
-      window?.removeEventListener?.('raffleUpdated', handleRaffleUpdate); 
+      window.removeEventListener('raffleUpdated', handleRaffleUpdate); 
       clearInterval(interval); 
     };
   }, [categorySlug]);

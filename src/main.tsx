@@ -1,50 +1,79 @@
+import { createRoot } from 'react-dom/client'
+import { HelmetProvider } from 'react-helmet-async'
+import App from './App.tsx'
+import './index.css'
+import './i18n'
+import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 
-import React from "react";
-import { createRoot } from "react-dom/client";
-import { HashRouter } from "react-router-dom";
-import App from "./App";
-import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
-import { unregisterServiceWorkersAndClearCaches, wireGlobalUnhandledHandlers } from "@/lib/safeBoot";
+// --- EARLY OAUTH HANDLER (runs before router/guards) ---
+import { supabase } from '@/integrations/supabase/client';
 
-// Initialize safe boot procedures
-try {
-  wireGlobalUnhandledHandlers();
-  unregisterServiceWorkersAndClearCaches();
-} catch (e) {
-  console.warn("Safe boot procedures failed:", e);
+function parseFragmentParams(href: string) {
+  // HashRouter yields "/#/auth-callback#access_token=..."
+  const parts = href.split('#');
+  const fragment = parts.length >= 3 ? parts[2] : parts[1] || '';
+  return new URLSearchParams(fragment);
 }
 
-// Safe render with fallback
-function safeRender() {
+async function oauthEarly() {
+  const href = window.location.href;
+  const isHashCb    = href.includes('/#/auth-callback');
+  const isNonHashCb = href.includes('/auth/callback');
+  if (!isHashCb && !isNonHashCb) return;
+
+  const params      = parseFragmentParams(href);
+  const hasAT       = params.has('access_token');
+  const hasRT       = params.has('refresh_token');
+  const hasCode     = href.includes('code=');
+
+  console.log('[oauth-early] href:', href, { hasCode, hasAT, cbHash: isHashCb, cbNonHash: isNonHashCb });
+  console.log('[oauth-early] exchanging code/token before app boot…');
+
   try {
-    const rootElement = document.getElementById("root");
-    if (!rootElement) {
-      throw new Error("Root element not found");
+    if (hasAT && hasRT) {
+      const access_token  = params.get('access_token')!;
+      const refresh_token = params.get('refresh_token')!;
+      const r = await supabase.auth.setSession({ access_token, refresh_token });
+      console.log('[oauth-early] setSession result', { error: r.error, user: r.data?.user?.id });
+      if (r.error) throw r.error;
+
+      // Double-check we actually have a session now
+      const s = await supabase.auth.getSession();
+      console.log('[oauth-early] session after set', { hasSession: !!s.data.session });
+    } else if (hasCode) {
+      const r = await supabase.auth.exchangeCodeForSession(href);
+      console.log('[oauth-early] code exchange result', { error: r.error, user: r.data?.user?.id });
+      if (r.error) throw r.error;
     }
 
-    const root = createRoot(rootElement);
-    
-    root.render(
-      <React.StrictMode>
-        <HashRouter>
-          <App />
-        </HashRouter>
-      </React.StrictMode>
-    );
+    // Clean URL without reloading; restore to home instead of forcing dashboard
+    const lastPath = sessionStorage.getItem("lastPath");
+    const restoreTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
+    history.replaceState(null, '', `${window.location.origin}/#${restoreTo}`);
   } catch (e) {
-    console.error("[BOOT] hard crash:", e);
-    
-    // Fallback UI
-    const el = document.getElementById("root");
-    if (el) {
-      el.innerHTML = '<div style="padding:16px;font-family:system-ui"><h1>Ganhavel</h1><p>Algo deu errado ao iniciar. Recarregue a página.</p><button onclick="window.location.reload()" style="margin-top:8px;padding:8px 16px;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer">Recarregar</button></div>';
-    }
+    console.error('[oauth-early] failed', e);
+    history.replaceState(null, '', `${window.location.origin}/#/login`);
   }
 }
 
-// Check if DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', safeRender);
-} else {
-  safeRender();
-}
+// Boot AFTER handling OAuth. Do not hard-redirect.
+(async () => {
+  console.log('[MAIN] Starting app boot...');
+  console.log('[MAIN] Current URL:', window.location.href);
+  try {
+    await oauthEarly();
+    console.log('[MAIN] OAuth early completed, rendering app...');
+    // existing React render here (unchanged):
+    createRoot(document.getElementById("root")!).render(
+      <AppErrorBoundary>
+        <HelmetProvider>
+          <App />
+        </HelmetProvider>
+      </AppErrorBoundary>
+    );
+    console.log('[MAIN] App rendered successfully');
+  } catch (error) {
+    console.error('[MAIN] App boot failed:', error);
+    document.body.innerHTML = `<div style="padding: 20px; color: red;">App failed to start: ${error}</div>`;
+  }
+})();

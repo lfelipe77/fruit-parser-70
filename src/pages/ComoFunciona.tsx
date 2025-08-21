@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ComoFuncionaSEO } from "@/components/SEOPages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import SimpleTabs from "@/components/SimpleTabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, Users, Gift, Shield, Clock, Trophy, Building2, Mail, Eye, Heart, AlertTriangle, Bot, Package, CreditCard, DollarSign, ExternalLink, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -132,15 +132,15 @@ export default function ComoFunciona() {
       {/* Main Content with Tabs */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          {/* <Tabs defaultValue="participate" className="w-full"> */}
-            {/* <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-16">
+          <Tabs defaultValue="participate" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-16">
               <TabsTrigger value="participate">Como Participar</TabsTrigger>
               <TabsTrigger value="launch">Lançar Ganhavel</TabsTrigger>
               <TabsTrigger value="companies">Empresas</TabsTrigger>
-            </TabsList> */}
+            </TabsList>
             
             {/* Participate Tab */}
-            {/* <TabsContent value="participate" className="space-y-16"> */}
+            <TabsContent value="participate" className="space-y-16">
               <div className="text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   🎟️ Como Participar de um Ganhavel
@@ -198,10 +198,10 @@ export default function ComoFunciona() {
                   </div>
                 </div>
               </div>
-            {/* </TabsContent> */}
+            </TabsContent>
 
             {/* Launch Tab */}
-            {/* <TabsContent value="launch" className="space-y-16"> */}
+            <TabsContent value="launch" className="space-y-16">
               <div className="text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   🚀 Como Lançar seu Próprio Ganhavel
@@ -259,10 +259,10 @@ export default function ComoFunciona() {
                   </Card>
                 </div>
               </div>
-            {/* </TabsContent> */}
+            </TabsContent>
 
             {/* Companies Tab */}
-            {/* <TabsContent value="companies" className="space-y-16"> */}
+            <TabsContent value="companies" className="space-y-16">
               <div className="text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   🏢 Empresas com CNPJ
@@ -313,8 +313,8 @@ export default function ComoFunciona() {
                   </CardContent>
                 </Card>
               </div>
-            {/* </TabsContent> */}
-          {/* </Tabs> */}
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 

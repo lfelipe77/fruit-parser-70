@@ -67,14 +67,14 @@ export default function Login() {
     else {
       const s = document.querySelector('script[src*="turnstile/v0/api.js"]') as HTMLScriptElement | null;
       const onLoad = () => tick();
-      if (s) s.addEventListener?.("load", onLoad, { once: true });
+      if (s) s.addEventListener("load", onLoad, { once: true });
       else {
         const script = document.createElement("script");
         script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
         script.async = true;
         script.defer = true;
-        script.addEventListener?.("load", onLoad, { once: true });
-        document.head?.appendChild?.(script);
+        script.addEventListener("load", onLoad, { once: true });
+        document.head.appendChild(script);
       }
     }
   }, []);

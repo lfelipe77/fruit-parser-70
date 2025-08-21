@@ -41,7 +41,7 @@ export default function Dashboard() {
         fetchDashboardData();
       }
     };
-    window?.addEventListener?.("raffleUpdated", onUpdated);
+    window.addEventListener("raffleUpdated", onUpdated);
     const interval = setInterval(() => {
       if (user && !authLoading) {
         fetchDashboardData();
@@ -49,7 +49,7 @@ export default function Dashboard() {
     }, 60000); // Refresh every minute
 
     return () => {
-      window?.removeEventListener?.("raffleUpdated", onUpdated);
+      window.removeEventListener("raffleUpdated", onUpdated);
       clearInterval(interval);
     };
   }, [user, authLoading]);
