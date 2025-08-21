@@ -53,7 +53,7 @@ export const getStatesWithRifas = (rifas: any[]) => {
     if (rifa.location && rifa.location !== "Online") {
       const state = rifa.location.split(", ")[1];
       if (state) {
-        statesWithRifas.add(state);
+        statesWithRifas?.add?.(state);
       }
     }
   });
@@ -68,7 +68,7 @@ export const getCitiesWithRifas = (rifas: any[], selectedState: string) => {
     if (rifa.location && rifa.location !== "Online") {
       const [city, state] = rifa.location.split(", ");
       if (state === selectedState && city) {
-        citiesWithRifas.add(city);
+        citiesWithRifas?.add?.(city);
       }
     }
   });
