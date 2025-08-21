@@ -220,7 +220,7 @@ export default function Resultados() {
           <Tabs defaultValue="quase" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="quase">Quase Completas</TabsTrigger>
-              <TabsTrigger value="completas">Rifas Completas</TabsTrigger>
+              <TabsTrigger value="completas">Ganhaveis Completas</TabsTrigger>
               <TabsTrigger value="premiados">Ganháveis Premiados</TabsTrigger>
             </TabsList>
 
@@ -229,10 +229,10 @@ export default function Resultados() {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                    Rifas Quase Completas
+                    Ganhaveis Quase Completos
                   </h2>
                   <p className="text-muted-foreground">
-                    Rifas com mais de 80% dos números vendidos
+                    Ganhaveis com mais de 80% dos números vendidos
                   </p>
                 </div>
               </div>
@@ -242,7 +242,7 @@ export default function Resultados() {
                   <Card className="p-8 text-center md:col-span-2">
                     <div className="text-muted-foreground">
                       <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma rifa próxima de completar.</p>
+                      <p>Nenhum ganhavel próximo de completar.</p>
                     </div>
                   </Card>
                 ) : almostCompleteRaffles.map((draw) => {
@@ -314,7 +314,7 @@ export default function Resultados() {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                    Rifas Completas
+                    Ganhaveis Completos
                   </h2>
                   <p className="text-muted-foreground">
                     100% dos números vendidos - aguardando próximo sorteio
@@ -327,7 +327,7 @@ export default function Resultados() {
                   <Card className="p-8 text-center md:col-span-2">
                     <div className="text-muted-foreground">
                       <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma rifa completa aguardando sorteio.</p>
+                      <p>Nenhum ganhavel completo aguardando sorteio.</p>
                     </div>
                   </Card>
                 ) : completeRaffles.map((draw) => (
