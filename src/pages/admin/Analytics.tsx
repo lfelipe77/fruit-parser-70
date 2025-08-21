@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SimpleTabs from "@/components/SimpleTabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/TabsPlaceholder";
 import {
   BarChart3,
   TrendingUp,

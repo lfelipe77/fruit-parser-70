@@ -201,24 +201,34 @@ export default function GanhaveisDetail() {
           <h1 className="mt-4 text-2xl font-semibold">{raffle.title}</h1>
 
           {/* Tabs */}
-          <Tabs defaultValue="detalhes" className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
-              <TabsTrigger value="regulamento">Regulamento</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="detalhes" className="prose mt-4 max-w-none">
-              <div
-                dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
-              />
-            </TabsContent>
-
-            <TabsContent value="regulamento" className="prose mt-4 max-w-none">
-              <div
-                dangerouslySetInnerHTML={{ __html: raffle.regulamentoHtml || FALLBACK_RULES }}
-              />
-            </TabsContent>
-          </Tabs>
+          <SimpleTabs
+            tabs={[
+              {
+                value: "detalhes",
+                label: "Detalhes", 
+                content: (
+                  <div className="prose mt-4 max-w-none">
+                    <div
+                      dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
+                    />
+                  </div>
+                )
+              },
+              {
+                value: "regulamento",
+                label: "Regulamento",
+                content: (
+                  <div className="prose mt-4 max-w-none">
+                    <div
+                      dangerouslySetInnerHTML={{ __html: raffle.regulamentoHtml || FALLBACK_RULES }}
+                    />
+                  </div>
+                )
+              }
+            ]}
+            defaultValue="detalhes"
+            className="mt-6"
+          />
 
           {/* Organizer Profile Section - Hidden on mobile */}
           <div className="mt-8 hidden md:block">

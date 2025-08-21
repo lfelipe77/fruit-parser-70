@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import SimpleTabs from "@/components/SimpleTabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/TabsPlaceholder";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import GanhavesCancelButton from "@/components/RifaCancelButton";
 import { 
