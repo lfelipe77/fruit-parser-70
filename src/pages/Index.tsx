@@ -1,6 +1,6 @@
 import SEOHead from "@/components/SEOHead";
 import { getOrganizationSchema, getWebsiteSchema } from "@/utils/structuredData";
-import CrowdfundingHome from "./CrowdfundingHome";
+import CrowdfundingHomeSimple from "./CrowdfundingHomeSimple";
 
 const Index = () => {
   const structuredData = [
@@ -16,7 +16,7 @@ const Index = () => {
         canonical="https://ganhavel.com"
         structuredData={structuredData}
       />
-      <CrowdfundingHome />
+      <CrowdfundingHomeSimple />
     </>
   );
 };
