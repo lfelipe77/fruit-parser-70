@@ -1,3 +1,8 @@
+/**
+ * IMPORTANT: Do not change the data source.
+ * This tab must read ONLY from the view `public.lottery_latest_federal`.
+ * The view already joins/casts everything we need for display.
+ */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,55 +23,48 @@ export default function LotteryFederalTab() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data, error } = await (supabase as any)
-          .from('federal_draws')
-          .select('concurso_number, draw_date, prizes')
-          .order('draw_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-          
-        if (error) {
-          setErr(error.message);
-        } else if (data) {
-          // Extract numbers from the first prize if available
-          const numbers = data.prizes && Array.isArray(data.prizes) && data.prizes.length > 0 
-            ? data.prizes[0].numbers || []
-            : [];
-          setRow({
-            concurso_number: data.concurso_number,
-            draw_date: data.draw_date,
-            numbers: numbers
-          });
-        } else {
-          setRow(null);
-        }
-      } catch (error) {
-        setErr(String(error));
-      }
-      setLoading(false);
-    })();
-  }, []);
+  async function fetchLatest() {
+    const { data, error } = await (supabase as any)
+      .from("lottery_latest_federal")        // ← keep this view
+      .select("concurso_number, draw_date, numbers")
+      .maybeSingle();
+
+    if (error) setErr(error.message);
+    setRow(data ?? null);
+    setLoading(false);
+  }
+
+  useEffect(() => { fetchLatest(); }, []);
 
   if (loading) return <div className="text-sm opacity-70">Carregando último sorteio…</div>;
-  if (err) return <div className="text-sm text-red-600">Erro: {err}</div>;
-  if (!row) return <div className="text-sm opacity-70">Sem dados disponíveis.</div>;
-
-  const dataStr = dateBR(row.draw_date);
-  const nums = Array.isArray(row.numbers) ? row.numbers.join(" ") : "";
 
   return (
     <div className="rounded-2xl border border-gray-200 p-4 shadow-sm bg-white">
       <h3 className="text-lg font-semibold">Último sorteio — Loteria Federal</h3>
-      <div className="mt-1 text-sm">
-        Concurso <span className="font-medium">{row.concurso_number ?? "-"}</span>
-        {dataStr ? ` – ${dataStr}` : ""}
-      </div>
-      <div className="mt-2 text-base font-semibold">
-        Números: <span className="font-mono">{nums || "-"}</span>
-      </div>
+
+      {err && <div className="mt-1 text-sm text-red-600">Erro: {err}</div>}
+
+      {!row ? (
+        <div className="mt-2 text-sm opacity-70">
+          Sem dados disponíveis.
+          <button
+            className="ml-2 text-xs underline"
+            onClick={() => { setLoading(true); setErr(null); fetchLatest(); }}
+          >
+            Recarregar
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="mt-1 text-sm">
+            Concurso <span className="font-medium">{row.concurso_number ?? "-"}</span>
+            {row.draw_date ? ` – ${dateBR(row.draw_date)}` : ""}
+          </div>
+          <div className="mt-2 text-base font-semibold">
+            Números: <span className="font-mono">{Array.isArray(row.numbers) ? row.numbers.join(" ") : "-"}</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
