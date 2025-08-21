@@ -34,6 +34,12 @@ serve(withCORS(async (req: Request) => {
     let json: any;
     try { json = JSON.parse(text); } catch { json = text; }
 
+    function isoDate(d?: string | null) {
+      if (!d) return null;
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(d);
+      return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+    }
+
     // Try to locate the Federal results entry
     let federalItems: any[] = [];
     if (Array.isArray(json)) {
@@ -61,6 +67,11 @@ serve(withCORS(async (req: Request) => {
       const drawDate = dataStr ? new Date(dataStr) : null;
       const prizes = item?.listaResultado ?? item?.premios ?? item?.resultado ?? [];
       const firstPrize = Array.isArray(prizes) && prizes.length > 0 ? String(prizes[0]) : null;
+      
+      // NEW: map to pairs (last 2 digits of each prize)
+      const pairs: string[] = Array.isArray(prizes)
+        ? prizes.map((s: string) => String(s).slice(-2).padStart(2, "0"))
+        : [];
 
       if (!concurso) continue;
 
@@ -82,7 +93,7 @@ serve(withCORS(async (req: Request) => {
           .from("federal_draws")
           .update({
             draw_date: drawDate ? drawDate.toISOString() : null,
-            prizes: Array.isArray(prizes) ? prizes : [prizes],
+            prizes: pairs,
             raw: item,
             first_prize: firstPrize,
             source_url: sourceUrl,
@@ -95,7 +106,7 @@ serve(withCORS(async (req: Request) => {
           .insert({
             concurso_number: concurso,
             draw_date: drawDate ? drawDate.toISOString() : null,
-            prizes: Array.isArray(prizes) ? prizes : [prizes],
+            prizes: pairs,
             raw: item,
             first_prize: firstPrize,
             source_url: sourceUrl,

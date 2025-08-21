@@ -51,7 +51,12 @@ export default function LotteryFederalCard() {
             <div className="mt-2 text-base font-semibold">
               Números:{" "}
               <span className="font-mono">
-                {Array.isArray(row.numbers) ? row.numbers.join(" ") : "-"}
+                {(() => {
+                  const pairs = Array.isArray(row.numbers)
+                    ? row.numbers.map(n => String(n).slice(-2).padStart(2, "0"))
+                    : [];
+                  return pairs.join(" ") || "-";
+                })()}
               </span>
             </div>
           </>
