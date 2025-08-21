@@ -30,7 +30,7 @@ export default function LotteryFederalTab() {
       .maybeSingle();
 
     if (error) setErr(error.message);
-    setRow(data ?? null);
+    setRow((data as Row) ?? null);
     setLoading(false);
   }
 
