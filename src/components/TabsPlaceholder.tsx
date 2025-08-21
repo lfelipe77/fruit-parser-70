@@ -1,5 +1,5 @@
 
-import { useState, ReactNode } from "react";
+import React, { useState, ReactNode } from "react";
 
 interface TabsProps {
   children: ReactNode;
