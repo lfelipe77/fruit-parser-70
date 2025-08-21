@@ -147,12 +147,12 @@ export default function GanhaveisDetail() {
       }
     };
 
-    window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    window?.addEventListener?.('raffleUpdated', handleRaffleUpdate);
     const interval = setInterval(fetchData, 30000); // safety refresh
     
     return () => {
       supabase.removeChannel(ch);
-      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+      window?.removeEventListener?.('raffleUpdated', handleRaffleUpdate);
       clearInterval(interval);
     };
   }, [fetchData, id]);

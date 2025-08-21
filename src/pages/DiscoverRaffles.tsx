@@ -119,7 +119,7 @@ export default function DiscoverRaffles() {
       }
     };
 
-    window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    window?.addEventListener?.('raffleUpdated', handleRaffleUpdate);
     const interval = setInterval(() => {
       if (!cancelled) {
         loadRaffles();
@@ -128,7 +128,7 @@ export default function DiscoverRaffles() {
     
     return () => { 
       cancelled = true; 
-      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+      window?.removeEventListener?.('raffleUpdated', handleRaffleUpdate);
       clearInterval(interval);
     };
   }, [searchTerm, selectedCategory, sortBy, currentPage]);

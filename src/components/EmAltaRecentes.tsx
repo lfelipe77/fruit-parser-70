@@ -77,7 +77,7 @@ export default function EmAltaRecentesSection() {
       }
     };
 
-    window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    window?.addEventListener?.('raffleUpdated', handleRaffleUpdate);
     
     // Also set up an interval to refresh data periodically
     const interval = setInterval(() => {
@@ -89,7 +89,7 @@ export default function EmAltaRecentesSection() {
     
     return () => { 
       cancelled = true; 
-      window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+      window?.removeEventListener?.('raffleUpdated', handleRaffleUpdate);
       clearInterval(interval);
     };
   }, []);

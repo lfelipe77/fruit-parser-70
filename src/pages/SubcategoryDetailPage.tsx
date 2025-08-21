@@ -59,14 +59,14 @@ export default function SubcategoryDetailPage() {
       }
     };
 
-    window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    window?.addEventListener?.('raffleUpdated', handleRaffleUpdate);
     const interval = setInterval(() => {
       if (categorySlug && subSlug) {
         fetchRaffles(categorySlug, subSlug);
       }
     }, 30000); // safety refresh
     return () => { 
-      window.removeEventListener('raffleUpdated', handleRaffleUpdate); 
+      window?.removeEventListener?.('raffleUpdated', handleRaffleUpdate); 
       clearInterval(interval); 
     };
   }, [categorySlug, subSlug]);

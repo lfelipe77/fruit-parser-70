@@ -71,11 +71,11 @@ export default function Resultados() {
     
     // Real-time updates
     const onUpdated = () => fetchResultsData();
-    window.addEventListener("raffleUpdated", onUpdated as any);
+    window?.addEventListener?.("raffleUpdated", onUpdated as any);
     const interval = setInterval(fetchResultsData, 30000);
     
     return () => {
-      window.removeEventListener("raffleUpdated", onUpdated as any);
+      window?.removeEventListener?.("raffleUpdated", onUpdated as any);
       clearInterval(interval);
     };
   }, []);
