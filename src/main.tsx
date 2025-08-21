@@ -1,5 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { HashRouter } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App.tsx'
 import './index.css'
@@ -75,11 +76,13 @@ async function oauthEarly() {
     createRoot(document.getElementById("root")!).render(
       <React.StrictMode>
         <GlobalErrorBoundary>
-          <AppErrorBoundary>
-            <HelmetProvider>
-              <App />
-            </HelmetProvider>
-          </AppErrorBoundary>
+          <HashRouter>
+            <AppErrorBoundary>
+              <HelmetProvider>
+                <App />
+              </HelmetProvider>
+            </AppErrorBoundary>
+          </HashRouter>
         </GlobalErrorBoundary>
       </React.StrictMode>
     );

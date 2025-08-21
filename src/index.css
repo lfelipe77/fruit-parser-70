@@ -114,3 +114,7 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Visibility guard */
+html, body, #root { min-height: 100%; }
+body { opacity: 1 !important; visibility: visible !important; }
