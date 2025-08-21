@@ -8,12 +8,24 @@ import { unregisterServiceWorkersAndClearCaches, wireGlobalUnhandledHandlers } f
 wireGlobalUnhandledHandlers();
 unregisterServiceWorkersAndClearCaches();
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <GlobalErrorBoundary>
-      <HashRouter>
-        <App />
-      </HashRouter>
-    </GlobalErrorBoundary>
-  </React.StrictMode>
-);
+try {
+  createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <GlobalErrorBoundary>
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </GlobalErrorBoundary>
+    </React.StrictMode>
+  );
+} catch (e) {
+  console.error("[BOOT] hard crash:", e);
+  const el = document.getElementById("root");
+  if (el) {
+    el.innerHTML = `
+      <div style="padding:16px;font-family:system-ui">
+        <h1>Ganhavel</h1>
+        <p>Algo deu errado ao iniciar. Recarregue a página.</p>
+      </div>`;
+  }
+}
