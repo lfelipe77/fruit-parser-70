@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import SimpleTabs from "@/components/SimpleTabs";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { ArrowLeft } from "lucide-react";

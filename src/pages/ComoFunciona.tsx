@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ComoFuncionaSEO } from "@/components/SEOPages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SimpleTabs from "@/components/SimpleTabs";
 import { CheckCircle, Users, Gift, Shield, Clock, Trophy, Building2, Mail, Eye, Heart, AlertTriangle, Bot, Package, CreditCard, DollarSign, ExternalLink, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 

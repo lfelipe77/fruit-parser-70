@@ -2,7 +2,7 @@ import Navigation from "@/components/Navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import SimpleTabs from "@/components/SimpleTabs";
+import { SimpleTabsLegacy } from "@/components/SimpleTabs";
 import { Trophy, Calendar, Users, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -228,7 +228,7 @@ export default function Resultados() {
       {/* Tabbed Results */}
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <SimpleTabs
+          <SimpleTabsLegacy
             initial="quase"
             renderQuase={
               <div className="space-y-6">
