@@ -1,18 +1,18 @@
-import { brl, timeAgo, RaffleCardInfo } from "@/types/raffles";
+import { brl, timeAgo, type RaffleCardInfo } from "@/types/raffles";
 import { Link } from "react-router-dom";
 
 export function RaffleCard({ r }: { r: RaffleCardInfo }) {
-  const pct = Math.max(0, Math.min(100, r.progress_pct_money ?? 0));
-  const moneyNow = r.amount_raised ?? 0;
-  const moneyGoal = r.goal_amount ?? 0;
-  const cityState = [r.location_city, r.location_state].filter(Boolean).join(" • ");
+  const pct = Math.max(0, Math.min(100, r?.progress_pct_money ?? 0));
+  const moneyNow = r?.amount_raised ?? 0;
+  const moneyGoal = r?.goal_amount ?? 0;
+  const cityState = [r?.location_city, r?.location_state].filter(Boolean).join(" • ");
 
   return (
     <div className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
       {/* Image */}
       <div className="h-44 w-full overflow-hidden rounded-lg">
-        {r.image_url ? (
-          <img src={r.image_url} alt={r.title} className="h-full w-full object-cover" loading="lazy" />
+        {r?.image_url ? (
+          <img src={r?.image_url} alt={r?.title || 'Ganhavel'} className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="h-full w-full bg-muted" />
         )}
@@ -20,9 +20,9 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
 
       {/* Title + excerpt */}
       <div className="p-4 space-y-3">
-        <h3 className="font-semibold leading-snug line-clamp-1">{String(r.title ?? '')}</h3>
-        {r.description && (
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{String(r.description ?? '')}</p>
+        <h3 className="font-semibold leading-snug line-clamp-1">{String(r?.title ?? '')}</h3>
+        {r?.description && (
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{String(r?.description ?? '')}</p>
         )}
 
         {/* Money line */}
@@ -38,13 +38,13 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
 
         {/* Participants + last sale */}
         <div className="text-xs text-muted-foreground space-y-1">
-          <div>{Number(r.participants_count ?? 0)} participantes</div>
-          <div>{r.last_paid_at ? `Última venda: ${timeAgo(r.last_paid_at)}` : "Sem vendas ainda"}</div>
+          <div>{Number(r?.participants_count ?? 0)} participantes</div>
+          <div>{r?.last_paid_at ? `Última venda: ${timeAgo(r?.last_paid_at)}` : "Sem vendas ainda"}</div>
           {cityState && <div>{cityState}</div>}
         </div>
 
         {/* CTA */}
-        <Link to={`/ganhavel/${r.id}`} className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <Link to={`/ganhavel/${r?.id}`} className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
           Comprar Bilhete
         </Link>
       </div>
