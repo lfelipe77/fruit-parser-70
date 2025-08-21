@@ -9,6 +9,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { timeAgo, formatCurrency } from "@/types/raffles";
 import LotteryFederalTab from "@/components/LotteryFederalTab";
+import React from "react";
+
+const TAB_VALUES = ["quase", "completas", "premiados"] as const;
+type TabValue = (typeof TAB_VALUES)[number];
+const TAB_SET = new Set<string>(TAB_VALUES);
+
+function sanitizeTab(v: string | null | undefined): TabValue {
+  return (v && TAB_SET.has(v)) ? (v as TabValue) : "quase";
+}
 
 interface LotteryResult {
   id: string;
@@ -55,6 +64,21 @@ export default function Resultados() {
   const [almostCompleteRaffles, setAlmostCompleteRaffles] = useState<AlmostCompleteRaffle[]>([]);
   const [federalDraws, setFederalDraws] = useState<FederalDraw[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // If you read tab from query/hash, keep that — just sanitize it.
+  const url = new URL(window.location.href);
+  const fromQuery = url.searchParams.get("tab") ?? new URLSearchParams(window.location.hash.split("?")[1]).get("tab");
+
+  const [tab, setTab] = React.useState<TabValue>(() => sanitizeTab(fromQuery));
+
+  const onTabChange = (next: string) => {
+    const safe = sanitizeTab(next);
+    setTab(safe);
+    // optional: write back to URL (keeps UX but safe)
+    const u = new URL(window.location.href);
+    u.searchParams.set("tab", safe);
+    history.replaceState({}, "", u.toString());
+  };
 
   useEffect(() => {
     fetchResultsData();
@@ -208,19 +232,180 @@ export default function Resultados() {
         </div>
       </section>
 
+      {/* Federal card ABOVE tabs */}
+      <section className="mt-4">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <LotteryFederalTab />
+        </div>
+      </section>
+
       {/* Tabbed Results */}
       <section className="py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Tabs defaultValue="premiadas" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="premiadas">Ganhaveis Premiados</TabsTrigger>
-              <TabsTrigger value="federal">Loteria Federal</TabsTrigger>
-              <TabsTrigger value="completas">Rifas Completas</TabsTrigger>
-              <TabsTrigger value="quase-completas">Quase Completas</TabsTrigger>
-            </TabsList>
+          {(() => {
+            const TABS = [
+              { label: "Quase Completas",    value: "quase" },
+              { label: "Rifas Completas",    value: "completas" },
+              { label: "Ganháveis Premiados", value: "premiados" },
+            ] as const;
 
-            {/* Rifas Premiadas */}
-            <TabsContent value="premiadas" className="space-y-6 mt-8">
+            return (
+              <Tabs value={tab} onValueChange={onTabChange} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  {TABS.map(t => (
+                    <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>
+                  ))}
+                </TabsList>
+
+                <TabsContent value="quase" className="space-y-6 mt-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                        Rifas Quase Completas
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Rifas com mais de 80% dos números vendidos
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {almostCompleteRaffles.length === 0 ? (
+                      <Card className="p-8 text-center md:col-span-2">
+                        <div className="text-muted-foreground">
+                          <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>Nenhuma rifa próxima de completar.</p>
+                        </div>
+                      </Card>
+                    ) : almostCompleteRaffles.map((draw) => {
+                      const percentage = draw.progress_pct_money || 0;
+                      const raised = draw.amount_raised || 0;
+                      const goal = draw.goal_amount || 0;
+                      const missing = goal - raised;
+                      
+                      return (
+                        <Card key={draw.id} className="border-orange-200 bg-orange-50/50">
+                          <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                              <span className="truncate">{String(draw.title ?? '')}</span>
+                              <Badge className="bg-orange-100 text-orange-800 flex-shrink-0">
+                                {Math.round(percentage)}% Completa
+                              </Badge>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {draw.draw_date && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-muted-foreground">Próximo Sorteio:</span>
+                                  <span className="font-semibold">
+                                    {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Faltam:</span>
+                                <span className="font-bold text-lg text-orange-600">
+                                  {formatCurrency(missing)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Participantes:</span>
+                                <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div 
+                                  className="bg-orange-500 h-3 rounded-full transition-all" 
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <div className="text-center text-sm text-orange-700 font-medium">
+                                Apenas {Math.round((100 - percentage) * 100) / 100}% restante!
+                              </div>
+                              <Link to={`/ganhavel/${draw.id}`}>
+                                <Button variant="outline" className="w-full">
+                                  <ExternalLink className="w-4 h-4 mr-2" />
+                                  Participar Agora
+                                </Button>
+                              </Link>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="completas" className="space-y-6 mt-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                        Rifas Completas
+                      </h2>
+                      <p className="text-muted-foreground">
+                        100% dos números vendidos - aguardando próximo sorteio
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {completeRaffles.length === 0 ? (
+                      <Card className="p-8 text-center md:col-span-2">
+                        <div className="text-muted-foreground">
+                          <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>Nenhuma rifa completa aguardando sorteio.</p>
+                        </div>
+                      </Card>
+                    ) : completeRaffles.map((draw) => (
+                      <Card key={draw.id} className="border-green-200 bg-green-50/50">
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                              <span className="truncate">{String(draw.title ?? '')}</span>
+                            <Badge className="bg-green-100 text-green-800 flex-shrink-0">
+                              100% Completa
+                            </Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {draw.draw_date && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Próximo Sorteio:</span>
+                                <span className="font-semibold">
+                                  {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Valor Total:</span>
+                              <span className="font-bold text-lg text-primary">
+                                {formatCurrency(Number(draw.goal_amount ?? 0))}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-muted-foreground">Participantes:</span>
+                              <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
+                            </div>
+                            <div className="w-full bg-green-200 rounded-full h-3">
+                              <div className="bg-green-500 h-3 rounded-full w-full" />
+                            </div>
+                            <div className="text-center text-sm text-green-700 font-medium">
+                              Meta atingida - aguardando sorteio!
+                            </div>
+                            <Link to={`/ganhavel/${draw.id}`}>
+                              <Button variant="outline" className="w-full">
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Ver Detalhes
+                              </Button>
+                            </Link>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="premiados" className="space-y-6 mt-8">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl lg:text-3xl font-bold mb-2">
@@ -299,168 +484,10 @@ export default function Resultados() {
                   </Link>
                 ))}
               </div>
-            </TabsContent>
-
-            {/* Federal Lottery Results */}
-            <TabsContent value="federal" className="space-y-6 mt-8">
-              <LotteryFederalTab />
-            </TabsContent>
-
-            {/* Rifas Completas */}
-            <TabsContent value="completas" className="space-y-6 mt-8">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                    Rifas Completas
-                  </h2>
-                  <p className="text-muted-foreground">
-                    100% dos números vendidos - aguardando próximo sorteio
-                  </p>
-                </div>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-8">
-                {completeRaffles.length === 0 ? (
-                  <Card className="p-8 text-center md:col-span-2">
-                    <div className="text-muted-foreground">
-                      <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma rifa completa aguardando sorteio.</p>
-                    </div>
-                  </Card>
-                ) : completeRaffles.map((draw) => (
-                  <Card key={draw.id} className="border-green-200 bg-green-50/50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                          <span className="truncate">{String(draw.title ?? '')}</span>
-                        <Badge className="bg-green-100 text-green-800 flex-shrink-0">
-                          100% Completa
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {draw.draw_date && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Próximo Sorteio:</span>
-                            <span className="font-semibold">
-                              {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Valor Total:</span>
-                          <span className="font-bold text-lg text-primary">
-                            {formatCurrency(Number(draw.goal_amount ?? 0))}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Participantes:</span>
-                          <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
-                        </div>
-                        <div className="w-full bg-green-200 rounded-full h-3">
-                          <div className="bg-green-500 h-3 rounded-full w-full" />
-                        </div>
-                        <div className="text-center text-sm text-green-700 font-medium">
-                          Meta atingida - aguardando sorteio!
-                        </div>
-                        <Link to={`/ganhavel/${draw.id}`}>
-                          <Button variant="outline" className="w-full">
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Ver Detalhes
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            {/* Rifas Quase Completas */}
-            <TabsContent value="quase-completas" className="space-y-6 mt-8">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                    Rifas Quase Completas
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Rifas com mais de 80% dos números vendidos
-                  </p>
-                </div>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-8">
-                {almostCompleteRaffles.length === 0 ? (
-                  <Card className="p-8 text-center md:col-span-2">
-                    <div className="text-muted-foreground">
-                      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma rifa próxima de completar.</p>
-                    </div>
-                  </Card>
-                ) : almostCompleteRaffles.map((draw) => {
-                  const percentage = draw.progress_pct_money || 0;
-                  const raised = draw.amount_raised || 0;
-                  const goal = draw.goal_amount || 0;
-                  const missing = goal - raised;
-                  
-                  return (
-                    <Card key={draw.id} className="border-orange-200 bg-orange-50/50">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span className="truncate">{String(draw.title ?? '')}</span>
-                          <Badge variant="outline" className="text-orange-600 border-orange-600 flex-shrink-0">
-                            {Number(percentage ?? 0)}% Completa
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {draw.draw_date && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">Data Limite:</span>
-                              <span className="font-semibold">
-                                {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Money Progress */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="font-medium">{formatCurrency(raised)}</span>
-                              <span className="text-muted-foreground">de {formatCurrency(goal)}</span>
-                            </div>
-                            <div className="w-full bg-orange-200 rounded-full h-3">
-                              <div 
-                                className="bg-orange-500 h-3 rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min(percentage, 100)}%` }}
-                              />
-                            </div>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                              <span>{percentage}% arrecadado</span>
-                              <span>{draw.participants_count || 0} participantes</span>
-                            </div>
-                          </div>
-                          
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Faltam:</span>
-                            <span className="font-semibold text-orange-600">{formatCurrency(missing)}</span>
-                          </div>
-                          
-                          <Link to={`/ganhavel/${draw.id}`}>
-                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                              <Clock className="w-4 h-4 mr-2" />
-                              Últimas Chances!
-                            </Button>
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          </Tabs>
+                </TabsContent>
+              </Tabs>
+            );
+          })()}
         </div>
       </section>
 
