@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { timeAgo, formatCurrency } from "@/types/raffles";
+import LotteryFederalTab from "@/components/LotteryFederalTab";
 
 interface LotteryResult {
   id: string;
@@ -324,16 +325,18 @@ export default function Resultados() {
                 </Button>
               </div>
               
-              <div className="grid gap-6">
-                {federalDraws.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <div className="text-muted-foreground">
-                      <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhum resultado da Loteria Federal ainda.</p>
-                      <p className="text-sm mt-2">Os resultados aparecerão aqui após os sorteios serem sincronizados.</p>
-                    </div>
-                  </Card>
-                ) : federalDraws.map((draw) => (
+               <LotteryFederalTab />
+               
+               <div className="grid gap-6">
+                 {federalDraws.length === 0 ? (
+                   <Card className="p-8 text-center">
+                     <div className="text-muted-foreground">
+                       <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                       <p>Nenhum resultado da Loteria Federal ainda.</p>
+                       <p className="text-sm mt-2">Os resultados aparecerão aqui após os sorteios serem sincronizados.</p>
+                     </div>
+                   </Card>
+                 ) : federalDraws.map((draw) => (
                   <Card key={draw.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <div className="grid md:grid-cols-4 gap-6 items-center">
