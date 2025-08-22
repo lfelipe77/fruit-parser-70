@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home, Ticket, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 type Row = {
   transaction_id: string;
@@ -57,6 +58,8 @@ function consolidateByRaffle(rows: Row[]): Row[] {
 
 export default function MyTicketsPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const filter = searchParams.get('filter');
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,59 +99,75 @@ export default function MyTicketsPage() {
     );
   }
 
+  // Filter rows based on URL parameter
+  const filteredRows = filter === 'won' 
+    ? rows.filter(row => row.winner_ticket_id) 
+    : rows;
+
+  const pageTitle = filter === 'won' ? 'Ganhaveis que Ganhei' : 'Meus Bilhetes';
+
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
+          <Button asChild variant="ghost" size="sm">
             <Link to="/dashboard" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="w-4 h-4" />
               Voltar
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">Meus Tickets</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <Ticket className="w-6 h-6 text-primary" />
+              {pageTitle}
+            </h1>
+            {filter === 'won' && (
+              <Badge variant="secondary" className="mt-1">
+                🏆 Apenas ganhaveis que você ganhou
+              </Badge>
+            )}
+          </div>
         </div>
+
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/" className="flex items-center gap-2">
-              <Home className="h-4 w-4" />
-              Início
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/descobrir" className="flex items-center gap-2">
-              <Ticket className="h-4 w-4" />
-              Descobrir
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button asChild variant="outline" size="sm">
             <Link to="/dashboard" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
+              <Home className="w-4 h-4" />
               Dashboard
             </Link>
           </Button>
         </div>
       </div>
 
-      {loading && (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-36 rounded-2xl bg-gray-100 animate-pulse" />
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-2">Carregando seus bilhetes...</p>
+        </div>
+      ) : filteredRows.length === 0 ? (
+        <div className="text-center py-16">
+          <Ticket className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            {filter === 'won' ? 'Nenhum ganhavel ganho ainda' : 'Nenhum bilhete encontrado'}
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            {filter === 'won' 
+              ? 'Quando você ganhar algum ganhavel, ele aparecerá aqui.'
+              : 'Comece participando dos ganhaveis para ver seus bilhetes aqui.'
+            }
+          </p>
+          <Button asChild>
+            <Link to="/raffles">Explorar Ganhaveis</Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredRows.map((row) => (
+            <MyTicketCard key={`${row.raffle_id}-${row.transaction_id}`} row={row} />
           ))}
         </div>
       )}
-
-      {!loading && rows.length === 0 && (
-        <div className="text-center text-gray-600 py-16">
-          Você ainda não possui tickets.
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {rows.map((r) => (
-          <MyTicketCard key={r.raffle_id} row={r} />
-        ))}
-      </div>
     </div>
   );
 }
