@@ -32,7 +32,7 @@ function timeBR(iso: string | null) {
   }
 }
 
-export default function WinnersList({ latestConcurso }: { latestConcurso?: string | null }) {
+export default function WinnersList({ latestConcurso, latestDate }: { latestConcurso?: string | null; latestDate?: string | null }) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -67,6 +67,20 @@ export default function WinnersList({ latestConcurso }: { latestConcurso?: strin
   if (loading) return <div className="text-sm opacity-70">Carregando ganhadores…</div>;
   if (err) return <div className="text-sm text-red-600">Erro: {err}</div>;
   if (!rows?.length) {
+    // Show specific message if we're looking for latest concurso but no winners yet
+    if (latestConcurso && latestDate) {
+      return (
+        <div className="mt-3 rounded-2xl border border-yellow-200 bg-yellow-50 p-6 text-center">
+          <div className="text-lg font-semibold text-yellow-800">
+            Aguardando validação do sorteio mais recente
+          </div>
+          <div className="mt-1 text-sm text-yellow-700">
+            Concurso {latestConcurso} — {dateBR(latestDate)}. Assim que o resultado for confirmado, o ganhador aparecerá aqui.
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className="mt-3 rounded-2xl border border-gray-200 bg-white p-6 text-center">
         <div className="text-lg font-semibold">Nenhum resultado disponível ainda.</div>

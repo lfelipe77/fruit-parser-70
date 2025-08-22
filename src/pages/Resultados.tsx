@@ -57,6 +57,7 @@ export default function Resultados() {
   const [almostCompleteRaffles, setAlmostCompleteRaffles] = useState<AlmostCompleteRaffle[]>([]);
   const [federalDraws, setFederalDraws] = useState<FederalDraw[]>([]);
   const [latestConcurso, setLatestConcurso] = useState<string | null>(null);
+  const [latestDate, setLatestDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,11 +67,12 @@ export default function Resultados() {
     (async () => {
       const { data } = await (supabase as any)
         .from("lottery_latest_federal")
-        .select("concurso_number")
+        .select("concurso_number, draw_date")
         .order("draw_date", { ascending: false })
         .limit(1)
         .maybeSingle();
       setLatestConcurso(data?.concurso_number ?? null);
+      setLatestDate(data?.draw_date ?? null);
     })();
     
     // Real-time updates
@@ -398,7 +400,7 @@ export default function Resultados() {
                 <h3 className="text-xl font-semibold">Ganhadores</h3>
                 <p className="text-sm opacity-70">Sorteios já realizados com ganhadores confirmados</p>
                 <div className="mt-4">
-                  <WinnersList latestConcurso={latestConcurso} />
+                  <WinnersList latestConcurso={latestConcurso} latestDate={latestDate} />
                 </div>
               </section>
             </TabsContent>
