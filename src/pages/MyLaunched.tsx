@@ -19,6 +19,7 @@ interface MyRaffle {
   status: string;
   created_at: string;
   goal_amount: number;
+  user_id: string;
 }
 
 export default function MyLaunchedPage() {
@@ -37,16 +38,21 @@ export default function MyLaunchedPage() {
       // Query user's own raffles
       const { data, error } = await supabase
         .from("raffles")
-        .select("*")
-        .eq('user_id', user.id)
-        .order("created_at", { ascending: false });
+        .select("id, title, description, product_name, product_value, total_tickets, ticket_price, image_url, status, created_at, goal_amount, user_id")
+        .eq('user_id', user.id) // REQUIRED FILTER
+        .order("created_at", { ascending: false })
+        .limit(50);
 
       if (error) {
         console.error("[MyLaunched] fetch error", error);
       }
       
       if (mounted) {
-        setRaffles(data || []);
+        const rows = (data || []) as MyRaffle[];
+        if (import.meta.env.DEV && rows.some(r => r.user_id !== user.id)) {
+          console.error("⚠️ ESCOP0 QUEBRADO: row de outro usuário em /my-launched", rows);
+        }
+        setRaffles(rows);
         setLoading(false);
       }
     })();
