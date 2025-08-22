@@ -30,11 +30,13 @@ export default function MyLaunchedPage() {
     (async () => {
       setLoading(true);
       
-      // Query user's own raffles
-      const { data, error } = await supabase
+      // Query user's own raffles - NON-NEGOTIABLE SCOPING
+      const {
+        data, error
+      } = await supabase
         .from('raffles')
         .select('id,title,status,goal_amount,created_at,image_url,user_id')
-        .eq('user_id', user.id)                      // required
+        .eq('user_id', user.id)                  // REQUIRED
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -42,11 +44,13 @@ export default function MyLaunchedPage() {
         console.error("[MyLaunched] fetch error", error);
       }
       
+      // Dev guard: scream if scope ever breaks
+      if (import.meta.env.DEV && data?.some(r => r.user_id !== user.id)) {
+        console.error('⚠️ RLS/escopo quebrado: recebido row de outro usuário', data);
+      }
+      
       if (mounted) {
         const rows = (data || []) as MyRaffle[];
-        if (import.meta.env.DEV && data?.some(r => r.user_id !== user.id)) {
-          console.error('⚠️ RLS/escopo quebrado: recebido row de outro usuário', data);
-        }
         setRaffles(rows);
         setLoading(false);
       }
@@ -134,7 +138,7 @@ export default function MyLaunchedPage() {
         </div>
       )}
 
-      {!loading && raffles.length === 0 && (
+      {!loading && (raffles.length === 0 || !raffles) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Gift className="w-16 h-16 text-muted-foreground mb-4" />
