@@ -231,12 +231,18 @@ export default function Resultados() {
 
       {/* Tabbed Results */}
       <section className="py-8 sm:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <Tabs defaultValue="quase" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-auto">
-              <TabsTrigger value="quase" className="text-xs sm:text-sm px-2 sm:px-4 py-2">Quase Completas</TabsTrigger>
-              <TabsTrigger value="completas" className="text-xs sm:text-sm px-2 sm:px-4 py-2">Ganhaveis Completas</TabsTrigger>
-              <TabsTrigger value="premiados" className="text-xs sm:text-sm px-2 sm:px-4 py-2">Ganháveis Premiados</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1 sm:gap-0 bg-muted p-1">
+              <TabsTrigger value="quase" className="text-sm px-3 py-3 sm:py-2 whitespace-nowrap">
+                🔄 Quase Completas
+              </TabsTrigger>
+              <TabsTrigger value="completas" className="text-sm px-3 py-3 sm:py-2 whitespace-nowrap">
+                ✅ Completas
+              </TabsTrigger>
+              <TabsTrigger value="premiados" className="text-sm px-3 py-3 sm:py-2 whitespace-nowrap">
+                🏆 Premiados
+              </TabsTrigger>
             </TabsList>
 
             {/* Quase Completas - First Tab */}
@@ -252,9 +258,9 @@ export default function Resultados() {
                 </div>
               </div>
               
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2 md:gap-8">
+              <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {almostCompleteRaffles.length === 0 ? (
-                  <Card className="p-8 text-center md:col-span-2">
+                  <Card className="p-8 text-center lg:col-span-2 xl:col-span-3">
                     <div className="text-muted-foreground">
                       <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum ganhavel próximo de completar.</p>
@@ -267,56 +273,54 @@ export default function Resultados() {
                   const missing = goal - raised;
                   
                   return (
-                    <Card key={draw.id} className="border-orange-200 bg-orange-50/50">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span className="truncate">{String(draw.title ?? '')}</span>
-                          <Badge variant="outline" className="text-orange-600 border-orange-600 flex-shrink-0">
-                            {Number(percentage ?? 0)}% Completa
+                    <Card key={draw.id} className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 h-fit">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <span className="truncate text-base font-semibold">{String(draw.title ?? '')}</span>
+                          <Badge variant="outline" className="text-orange-600 border-orange-600 self-start sm:self-center">
+                            {Number(percentage ?? 0)}%
                           </Badge>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {draw.draw_date && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-muted-foreground">Data Limite:</span>
-                              <span className="font-semibold">
-                                {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Money Progress */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="font-medium">{formatCurrency(raised)}</span>
-                              <span className="text-muted-foreground">de {formatCurrency(goal)}</span>
-                            </div>
-                            <div className="w-full bg-orange-200 rounded-full h-3">
-                              <div 
-                                className="bg-orange-500 h-3 rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min(percentage, 100)}%` }}
-                              />
-                            </div>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                              <span>{percentage}% arrecadado</span>
-                              <span>{draw.participants_count || 0} participantes</span>
-                            </div>
+                      <CardContent className="space-y-3">
+                        {draw.draw_date && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Data Limite:</span>
+                            <span className="font-medium">
+                              {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                            </span>
                           </div>
-                          
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Faltam:</span>
-                            <span className="font-semibold text-orange-600">{formatCurrency(missing)}</span>
+                        )}
+                        
+                        {/* Progress Bar */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium">{formatCurrency(raised)}</span>
+                            <span className="text-muted-foreground">de {formatCurrency(goal)}</span>
                           </div>
-                          
-                          <Link to={`/ganhavel/${draw.id}`}>
-                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                              <Clock className="w-4 h-4 mr-2" />
-                              Últimas Chances!
-                            </Button>
-                          </Link>
+                          <div className="w-full bg-orange-200 dark:bg-orange-900/30 rounded-full h-2">
+                            <div 
+                              className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(percentage, 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>{percentage}% arrecadado</span>
+                            <span>{draw.participants_count || 0} participantes</span>
+                          </div>
                         </div>
+                        
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Faltam:</span>
+                          <span className="font-semibold text-orange-600">{formatCurrency(missing)}</span>
+                        </div>
+                        
+                        <Link to={`/ganhavel/${draw.id}`} className="block">
+                          <Button className="w-full bg-orange-500 hover:bg-orange-600 text-sm">
+                            <Clock className="w-4 h-4 mr-2" />
+                            Últimas Chances!
+                          </Button>
+                        </Link>
                       </CardContent>
                     </Card>
                   );
@@ -337,57 +341,55 @@ export default function Resultados() {
                 </div>
               </div>
               
-              <div className="grid gap-4 sm:gap-6 md:grid-cols-2 md:gap-8">
+              <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
                 {completeRaffles.length === 0 ? (
-                  <Card className="p-8 text-center md:col-span-2">
+                  <Card className="p-8 text-center lg:col-span-2 xl:col-span-3">
                     <div className="text-muted-foreground">
                       <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum ganhavel completo aguardando sorteio.</p>
                     </div>
                   </Card>
                 ) : completeRaffles.map((draw) => (
-                  <Card key={draw.id} className="border-green-200 bg-green-50/50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                          <span className="truncate">{String(draw.title ?? '')}</span>
-                        <Badge className="bg-green-100 text-green-800 flex-shrink-0">
+                  <Card key={draw.id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <span className="truncate text-base font-semibold">{String(draw.title ?? '')}</span>
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 self-start sm:self-center">
                           100% Completa
                         </Badge>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {draw.draw_date && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Próximo Sorteio:</span>
-                            <span className="font-semibold">
-                              {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Valor Total:</span>
-                          <span className="font-bold text-lg text-primary">
-                            {formatCurrency(Number(draw.goal_amount ?? 0))}
+                    <CardContent className="space-y-3">
+                      {draw.draw_date && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">Próximo Sorteio:</span>
+                          <span className="font-medium">
+                            {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Participantes:</span>
-                          <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
-                        </div>
-                        <div className="w-full bg-green-200 rounded-full h-3">
-                          <div className="bg-green-500 h-3 rounded-full w-full" />
-                        </div>
-                        <div className="text-center text-sm text-green-700 font-medium">
-                          Meta atingida - aguardando sorteio!
-                        </div>
-                        <Link to={`/ganhavel/${draw.id}`}>
-                          <Button variant="outline" className="w-full">
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Ver Detalhes
-                          </Button>
-                        </Link>
+                      )}
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Valor Total:</span>
+                        <span className="font-bold text-lg text-primary">
+                          {formatCurrency(Number(draw.goal_amount ?? 0))}
+                        </span>
                       </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Participantes:</span>
+                        <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
+                      </div>
+                      <div className="w-full bg-green-200 dark:bg-green-900/30 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full w-full" />
+                      </div>
+                      <div className="text-center text-sm text-green-700 dark:text-green-400 font-medium">
+                        Meta atingida - aguardando sorteio!
+                      </div>
+                      <Link to={`/ganhavel/${draw.id}`} className="block">
+                        <Button variant="outline" className="w-full text-sm">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
+                      </Link>
                     </CardContent>
                   </Card>
                 ))}
