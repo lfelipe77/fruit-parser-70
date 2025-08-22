@@ -80,12 +80,13 @@ export default function Login() {
   }, []);
 
   // Redirect if already logged in
-  // Auto-redirect is now handled by LastPathKeeper, remove forced dashboard redirect
-  // useEffect(() => {
-  //   if (!loading && user) {
-  //     navigate('/dashboard');
-  //   }
-  // }, [user, loading, navigate]);
+  useEffect(() => {
+    if (!loading && user) {
+      const lastPath = sessionStorage.getItem("lastPath");
+      const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
+      navigate(redirectTo, { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const validateForm = () => {
     try {
