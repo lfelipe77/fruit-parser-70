@@ -10,15 +10,10 @@ import { Link, useNavigate } from "react-router-dom";
 interface MyRaffle {
   id: string;
   title: string;
-  description: string;
-  product_name: string;
-  product_value: number;
-  total_tickets: number;
-  ticket_price: number;
-  image_url: string;
   status: string;
-  created_at: string;
   goal_amount: number;
+  created_at: string;
+  image_url: string;
   user_id: string;
 }
 
@@ -37,10 +32,10 @@ export default function MyLaunchedPage() {
       
       // Query user's own raffles
       const { data, error } = await supabase
-        .from("raffles")
-        .select("id, title, description, product_name, product_value, total_tickets, ticket_price, image_url, status, created_at, goal_amount, user_id")
-        .eq('user_id', user.id) // REQUIRED FILTER
-        .order("created_at", { ascending: false })
+        .from('raffles')
+        .select('id,title,status,goal_amount,created_at,image_url,user_id')
+        .eq('user_id', user.id)                      // required
+        .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) {
@@ -49,8 +44,8 @@ export default function MyLaunchedPage() {
       
       if (mounted) {
         const rows = (data || []) as MyRaffle[];
-        if (import.meta.env.DEV && rows.some(r => r.user_id !== user.id)) {
-          console.error("⚠️ ESCOP0 QUEBRADO: row de outro usuário em /my-launched", rows);
+        if (import.meta.env.DEV && data?.some(r => r.user_id !== user.id)) {
+          console.error('⚠️ RLS/escopo quebrado: recebido row de outro usuário', data);
         }
         setRaffles(rows);
         setLoading(false);
@@ -176,7 +171,7 @@ export default function MyLaunchedPage() {
                   <div className="flex-1">
                     <CardTitle className="line-clamp-2">{raffle.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {raffle.product_name}
+                      Status: {raffle.status}
                     </CardDescription>
                   </div>
                   {getStatusBadge(raffle.status)}
@@ -185,21 +180,10 @@ export default function MyLaunchedPage() {
               
               <CardContent>
                 <div className="space-y-4">
-                  {raffle.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {raffle.description}
-                    </p>
-                  )}
-                  
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <Gift className="w-4 h-4 text-muted-foreground" />
-                      <span>Prêmio: {formatCurrency(raffle.product_value || 0)}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-muted-foreground" />
-                      <span>{raffle.total_tickets} tickets</span>
+                      <span>Meta: {formatCurrency(raffle.goal_amount || 0)}</span>
                     </div>
                     
                     <div className="flex items-center gap-2">
@@ -209,13 +193,6 @@ export default function MyLaunchedPage() {
                   </div>
                   
                   <div className="pt-2 border-t">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-medium">Ticket:</span>
-                      <span className="text-lg font-bold text-primary">
-                        {formatCurrency(raffle.ticket_price || 0)}
-                      </span>
-                    </div>
-                    
                     <div className="flex gap-2">
                       <Button className="flex-1" asChild>
                         <Link to={`/ganhavel/${raffle.id}`}>
