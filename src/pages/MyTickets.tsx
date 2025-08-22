@@ -72,6 +72,7 @@ export default function MyTicketsPage() {
       const { data, error } = await supabase
         .from("my_tickets_ext_v6" as any)
         .select("*")
+        .eq('buyer_user_id', user.id)
         .order("purchase_date", { ascending: false });
 
       if (error) {
