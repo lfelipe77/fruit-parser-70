@@ -332,19 +332,24 @@ export default function GanhaveisDetail() {
               </div>
             )}
 
-            {/* Direct Purchase Link */}
+            {/* Direct Purchase Link - HIGHLIGHTED */}
             {directLink && (
               <div className="mt-6 pt-6 border-t border-emerald-200">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
-                  <h4 className="text-md font-semibold text-blue-800 mb-3">🛒 Compra Direta</h4>
-                  <p className="text-sm text-blue-700 mb-3">Prefere comprar direto com o vendedor?</p>
+                <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-2 border-orange-200 rounded-lg p-5 shadow-md">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl">🛒</span>
+                    <h4 className="text-lg font-bold text-orange-800">Compra Direta com o Vendedor</h4>
+                  </div>
+                  <p className="text-sm text-orange-700 mb-4 font-medium">
+                    ⚡ Prefere comprar direto? Clique aqui para negociar diretamente com o vendedor!
+                  </p>
                   <a
                     href={directLink}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    🔗 Comprar diretamente
+                    🔗 Comprar Diretamente
                   </a>
                 </div>
               </div>
