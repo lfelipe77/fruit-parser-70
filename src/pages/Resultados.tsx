@@ -423,9 +423,20 @@ export default function Resultados() {
               garantindo total transparência e confiabilidade no processo.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Button variant="hero" size="lg" className="w-full sm:w-auto">
-                <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Ver no Site da Caixa
+              <Button 
+                asChild 
+                variant="hero" 
+                size="lg" 
+                className="w-full sm:w-auto"
+              >
+                <a 
+                  href="https://loterias.caixa.gov.br/Paginas/default.aspx" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  Ver no Site da Caixa
+                </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                 <Link to="/como-funciona">Como Funciona</Link>
