@@ -71,6 +71,7 @@ import MinimalDashboard from '@/pages/MinimalDashboard';
 import Profile from '@/pages/Profile';
 import MyTickets from '@/pages/MyTickets';
 import Raffles from '@/pages/Raffles';
+import MyLaunched from '@/pages/MyLaunched';
 import AdminRaffles from '@/pages/admin/AdminRaffles';
 import AdminPayouts from '@/pages/AdminPayouts';
 import LastPathKeeper from '@/components/LastPathKeeper';
@@ -205,6 +206,11 @@ const AppContent = () => {
         <Route path="/raffles" element={
           <RequireAuth>
             <Raffles />
+          </RequireAuth>
+        } />
+        <Route path="/my-launched" element={
+          <RequireAuth>
+            <MyLaunched />
           </RequireAuth>
         } />
 

@@ -260,21 +260,43 @@ export default function Dashboard() {
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
-              onClick={() => navigate('/raffles')}
+              onClick={() => navigate('/my-launched')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="w-5 h-5" />
-                  Ganhaveis que você lançou
+                  Ganháveis que você lançou
                 </CardTitle>
                 <CardDescription>
-                  Ganhaveis aprovados (ativos) que você lançou
+                  Ganháveis aprovados (ativos) que você lançou
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{loading ? "..." : stats.activeGanhaveis}</p>
                 <p className="text-sm text-muted-foreground">
                   {stats.activeGanhaveis === 0 ? "Nenhum ganhavel lançado" : `${stats.activeGanhaveis} ganhavel${stats.activeGanhaveis > 1 ? 'eis' : ''} ativo${stats.activeGanhaveis > 1 ? 's' : ''}`}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              role="button"
+              onClick={() => navigate('/my-tickets?filter=won')}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5" />
+                  Ganháveis que Ganhei
+                </CardTitle>
+                <CardDescription>
+                  Ganháveis em que você foi sorteado
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma vitória ainda
                 </p>
               </CardContent>
             </Card>

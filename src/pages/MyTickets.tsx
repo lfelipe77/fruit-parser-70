@@ -3,8 +3,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home, Ticket, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowLeft, Home, Ticket, User, AlertTriangle } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 
 type Row = {
   transaction_id: string;
@@ -21,6 +21,7 @@ type Row = {
   progress_pct_money: number;
   draw_date?: string | null;
   winner_ticket_id?: string | null;
+  buyer_user_id: string;
 };
 
 // Aggregate multiple transactions for the same raffle into one display card
@@ -57,8 +58,12 @@ function consolidateByRaffle(rows: Row[]): Row[] {
 
 export default function MyTicketsPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSecurityBanner, setShowSecurityBanner] = useState(false);
+  
+  const filter = searchParams.get('filter');
 
   useEffect(() => {
     if (!user) return;
@@ -66,10 +71,21 @@ export default function MyTicketsPage() {
     let mounted = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Build query with proper user scoping
+      let query = supabase
         .from("my_tickets_ext_v6" as any)
         .select("*")
-        .order("purchase_date", { ascending: false });
+        .eq('buyer_user_id', user.id); // Ensure we only get current user's tickets
+      
+      // Apply filter if present
+      if (filter === 'won') {
+        query = query.not('winner_ticket_id', 'is', null);
+      }
+      
+      query = query.order("purchase_date", { ascending: false });
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("[MyTickets] fetch error", error);
@@ -77,6 +93,16 @@ export default function MyTicketsPage() {
       
       if (mounted) {
         const rawRows = (data as unknown as Row[]) ?? [];
+        
+        // Dev security check - warn if data scope is incorrect
+        if (import.meta.env.DEV && rawRows.length > 0) {
+          const firstRow = rawRows[0];
+          if (firstRow.buyer_user_id !== user.id) {
+            console.warn('⚠️ Security: MyTickets showing data not scoped to current user');
+            setShowSecurityBanner(true);
+          }
+        }
+        
         // Consolidate multiple transactions per raffle into single cards
         const consolidatedRows = consolidateByRaffle(rawRows);
         setRows(consolidatedRows);
@@ -84,7 +110,7 @@ export default function MyTicketsPage() {
       }
     })();
     return () => { mounted = false; };
-  }, [user]);
+  }, [user, filter]);
 
   if (!user) {
     return (
@@ -98,6 +124,16 @@ export default function MyTicketsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
+      {/* Dev Security Banner */}
+      {showSecurityBanner && import.meta.env.DEV && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-600" />
+          <div className="text-red-800">
+            <strong>⚠️ Escopo incorreto:</strong> esta lista não está filtrada pelo usuário.
+          </div>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
@@ -106,7 +142,9 @@ export default function MyTicketsPage() {
               Voltar
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">Meus Tickets</h1>
+          <h1 className="text-2xl font-bold">
+            {filter === 'won' ? 'Ganháveis que Ganhei' : 'Meus Tickets'}
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
@@ -140,7 +178,10 @@ export default function MyTicketsPage() {
 
       {!loading && rows.length === 0 && (
         <div className="text-center text-gray-600 py-16">
-          Você ainda não possui tickets.
+          {filter === 'won' 
+            ? 'Você ainda não ganhou nenhum ganhável.'
+            : 'Você ainda não possui tickets.'
+          }
         </div>
       )}
 
