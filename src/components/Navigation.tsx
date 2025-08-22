@@ -30,31 +30,45 @@ import NotificationCenter from "@/components/NotificationCenter";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function useIsAdmin() {
+  const { user, initializing } = useAuthContext();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  
   useEffect(() => {
-    (async () => {
-      console.log('[useIsAdmin] Checking admin status...');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('[useIsAdmin] No user found');
-        return setIsAdmin(false);
+    if (initializing) return; // Wait for auth to initialize
+    
+    if (!user) {
+      console.log('[useIsAdmin] No user found');
+      setIsAdmin(false);
+      return;
+    }
+    
+    const checkAdmin = async () => {
+      console.log('[useIsAdmin] Checking admin status for user:', user.id);
+      try {
+        const { data } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        
+        console.log('[useIsAdmin] Profile data:', data);
+        const adminStatus = ((data?.role ?? "") as string).toLowerCase() === "admin";
+        console.log('[useIsAdmin] Admin status:', adminStatus);
+        setIsAdmin(adminStatus);
+      } catch (error) {
+        console.error('[useIsAdmin] Error:', error);
+        setIsAdmin(false);
       }
-      console.log('[useIsAdmin] User found:', user.id);
-      const { data } = await supabase
-        .from("user_profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-      console.log('[useIsAdmin] Profile data:', data);
-      const adminStatus = ((data?.role ?? "") as string).toLowerCase() === "admin";
-      console.log('[useIsAdmin] Admin status:', adminStatus);
-      setIsAdmin(adminStatus);
-    })();
-  }, []);
+    };
+    
+    checkAdmin();
+  }, [user, initializing]);
+  
   return isAdmin;
 }
 
@@ -63,6 +77,7 @@ export default function Navigation() {
   const [selectedLottery, setSelectedLottery] = useState('br');
   const { isAdmin: legacyIsAdmin } = useAdminCheck();
   const { user } = useAuth();
+  const { user: authUser, initializing } = useAuthContext();
   const [userRole, setUserRole] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -71,9 +86,14 @@ export default function Navigation() {
   // Verificar role do usuário e avatar
   useEffect(() => {
     const checkUserRole = async () => {
-      console.log('[Navigation] Checking user role for user:', user?.id);
+      console.log('[Navigation] Current user:', initializing ? 'loading…' : authUser?.id || 'no-user');
       
-      if (!user) {
+      if (initializing) {
+        // Don't clear role/avatar while initializing
+        return;
+      }
+      
+      if (!authUser) {
         console.log('[Navigation] No user found, clearing role and avatar');
         setUserRole("");
         setAvatarUrl(null);
@@ -85,10 +105,10 @@ export default function Navigation() {
         const { data, error } = await supabase
           .from("user_profiles")
           .select("role, avatar_url")
-          .eq("id", user.id)
+          .eq("id", authUser.id)
           .maybeSingle();
           
-        console.log('[Navigation] User profile query result:', { data, error, userId: user.id });
+        console.log('[Navigation] User profile query result:', { data, error, userId: authUser.id });
           
         if (error) {
           console.error("[Navigation] Error checking user role:", error);
@@ -118,7 +138,7 @@ export default function Navigation() {
     };
 
     checkUserRole();
-  }, [user]);
+  }, [authUser, initializing]);
 
   const lotteryDraws = [
     { id: 'br', flag: '🇧🇷', name: 'Mega-Sena', date: '10/08', time: '20:00' },

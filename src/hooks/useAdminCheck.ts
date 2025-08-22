@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { useAuthContext } from '@/providers/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useAdminCheck = () => {
   const { user, loading: authLoading } = useAuth();
+  const { user: authUser, initializing } = useAuthContext();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAdminRole = async () => {
-      if (!user) {
+      if (initializing) {
+        // Don't resolve as false while auth is still initializing
+        return;
+      }
+      
+      if (!authUser) {
         setIsAdmin(false);
         setLoading(false);
         return;
@@ -19,7 +26,7 @@ export const useAdminCheck = () => {
         const { data, error } = await supabase
           .from('user_profiles')
           .select('role')
-          .eq('id', user.id)
+          .eq('id', authUser.id)
           .maybeSingle();
 
         if (error) {
@@ -39,10 +46,10 @@ export const useAdminCheck = () => {
       }
     };
 
-    if (!authLoading) {
+    if (!authLoading && !initializing) {
       checkAdminRole();
     }
-  }, [user, authLoading]);
+  }, [authUser, authLoading, initializing]);
 
-  return { isAdmin, loading: loading || authLoading };
+  return { isAdmin, loading: loading || authLoading || initializing };
 };

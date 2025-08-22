@@ -76,6 +76,7 @@ import AdminRaffles from '@/pages/admin/AdminRaffles';
 import AdminPayouts from '@/pages/AdminPayouts';
 import LastPathKeeper from '@/components/LastPathKeeper';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthProvider } from '@/providers/AuthProvider';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -152,7 +153,11 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/lance-seu-ganhavel" element={<LanceSeuGanhavel />} />
+        <Route path="/lance-seu-ganhavel" element={
+          <RequireAuth>
+            <LanceSeuGanhavel />
+          </RequireAuth>
+        } />
         <Route path="/descobrir" element={<DiscoverRaffles />} />
         <Route path="/resultados" element={<Resultados />} />
         <Route path="/categorias" element={<CategoriesPage />} />
@@ -276,14 +281,16 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <I18nextProvider i18n={i18n}>
       <TooltipProvider>
-        <Toaster />
-        <DevErrorBoundary>
-          <Router>
-            <GlobalAuthDebugOverlay />
-            <RouteBadge />
-            <AppContent />
-          </Router>
-        </DevErrorBoundary>
+        <AuthProvider>
+          <Toaster />
+          <DevErrorBoundary>
+            <Router>
+              <GlobalAuthDebugOverlay />
+              <RouteBadge />
+              <AppContent />
+            </Router>
+          </DevErrorBoundary>
+        </AuthProvider>
       </TooltipProvider>
     </I18nextProvider>
   </QueryClientProvider>
