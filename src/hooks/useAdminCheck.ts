@@ -13,6 +13,7 @@ export const useAdminCheck = () => {
     const checkAdminRole = async () => {
       if (initializing) {
         // Don't resolve as false while auth is still initializing
+        setLoading(true);
         return;
       }
       

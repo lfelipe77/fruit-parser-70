@@ -24,12 +24,13 @@ export default function AuthCallback() {
             return;
           }
           // success
-          console.log('[AuthCallback] Session exchange successful, navigating to last path');
+          console.log('[AuthCallback] Session exchange successful, navigating to intended destination');
           setMsg('Login concluído! Redirecionando...');
           setTimeout(() => {
-            const lastPath = sessionStorage.getItem("lastPath");
-            const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
-            navigate(redirectTo, { replace: true });
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectTo = urlParams.get('redirectTo');
+            const destination = redirectTo ? decodeURIComponent(redirectTo) : '/';
+            navigate(destination, { replace: true });
           }, 500);
           return;
         }

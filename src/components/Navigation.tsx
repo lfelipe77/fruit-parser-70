@@ -86,8 +86,6 @@ export default function Navigation() {
   // Verificar role do usuário e avatar
   useEffect(() => {
     const checkUserRole = async () => {
-      console.log('[Navigation] Current user:', initializing ? 'loading…' : authUser?.id || 'no-user');
-      
       if (initializing) {
         // Don't clear role/avatar while initializing
         return;

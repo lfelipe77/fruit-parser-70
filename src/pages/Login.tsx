@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,7 @@ export default function Login() {
   const { checkRateLimit, isChecking } = useRateLimit();
   const { signInWithEmail, user, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   
 
@@ -79,14 +80,18 @@ export default function Login() {
     }
   }, []);
 
+  // Handle successful sign-in redirect
+  const onSignInSuccess = () => {
+    const back = searchParams.get('redirectTo');
+    navigate(back ? decodeURIComponent(back) : '/', { replace: true });
+  };
+
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
-      const lastPath = sessionStorage.getItem("lastPath");
-      const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
-      navigate(redirectTo, { replace: true });
+      onSignInSuccess();
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, searchParams]);
 
   const validateForm = () => {
     try {
@@ -175,8 +180,10 @@ export default function Login() {
       const { error } = await signInWithEmail(email, password);
       if (error) {
         console.error('Login error:', error);
+      } else {
+        // Successful login, redirect to intended destination
+        onSignInSuccess();
       }
-      // Success handling is done in useAuth hook with redirect
     } catch (error) {
       console.error('Login error:', error);
     } finally {
@@ -224,10 +231,15 @@ export default function Login() {
       }
     }
     
+    const back = searchParams.get('redirectTo');
+    const redirectUrl = back 
+      ? `${window.location.origin}/#/auth-callback?redirectTo=${encodeURIComponent(back)}`
+      : `${window.location.origin}/#/auth-callback`;
+    
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { 
-        redirectTo: `${window.location.origin}/#/auth-callback`,
+        redirectTo: redirectUrl,
         queryParams: { prompt: 'select_account' },
         scopes: 'email profile'
       }
