@@ -13,9 +13,16 @@ interface LotteryDraw {
   time: string;
 }
 
+type LotteryResult = {
+  concurso_number: string | null;
+  draw_date: string | null;
+  numbers: string[] | null;
+};
+
 export default function CaixaLotterySection() {
   const { t } = useTranslation();
   const [lotteryData, setLotteryData] = useState<LotteryDraw[]>([]);
+  const [federalResult, setFederalResult] = useState<LotteryResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Placeholder data for empty state
@@ -44,6 +51,8 @@ useEffect(() => {
     const fetchLotteryData = async () => {
       try {
         setLoading(true);
+        
+        // Fetch next draws
         const { data, error } = await (supabase as any)
           .from('lottery_next_draws')
           .select('game_slug, game_name, next_date, next_time')
@@ -64,6 +73,19 @@ useEffect(() => {
         });
 
         setLotteryData(mapped.length > 0 ? mapped : placeholderData);
+
+        // Fetch latest federal lottery result
+        const { data: federalData, error: federalError } = await (supabase as any)
+          .from("lottery_latest_federal")
+          .select("concurso_number, draw_date, numbers")
+          .order("draw_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (!federalError && federalData) {
+          setFederalResult(federalData);
+        }
+        
       } catch (error) {
         console.error('Error fetching lottery data:', error);
         setLotteryData(placeholderData);
@@ -118,12 +140,39 @@ useEffect(() => {
                 e.currentTarget.style.display = 'none';
               }}
             />
-            <h2 className="text-3xl font-bold">Próximos Sorteios da Caixa</h2>
+            <h2 className="text-3xl font-bold">Sorteios, quartas e sábados</h2>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Compartilhe, finalize os recebimentos dos seus ganhaveis e realize sonhos
           </p>
         </div>
+
+        {/* Federal Lottery Results Card */}
+        {federalResult && (
+          <div className="flex justify-center mb-8">
+            <div className="w-full max-w-3xl rounded-2xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+              <h3 className="text-lg font-semibold">Último sorteio — Loteria Federal</h3>
+              <div className="mt-1 text-sm">
+                Concurso <span className="font-medium">{federalResult.concurso_number ?? "-"}</span>
+                {federalResult.draw_date ? ` – ${new Date(federalResult.draw_date).toLocaleDateString("pt-BR")}` : ""}
+              </div>
+              <div className="mt-2 text-base font-semibold">
+                Números:{" "}
+                <span className="font-mono">
+                  {(() => {
+                    const pares = Array.isArray(federalResult.numbers)
+                      ? federalResult.numbers.map(s => String(s).padStart(2, "0"))
+                      : [];
+                    return pares.join(" ") || "-";
+                  })()}
+                </span>
+              </div>
+              <div className="mt-2 text-xs opacity-60">
+                Atualizado agora
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {lotteryData.map((lottery) => (

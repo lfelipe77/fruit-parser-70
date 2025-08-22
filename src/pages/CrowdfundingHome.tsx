@@ -4,7 +4,6 @@ import HeroSection from "@/components/HeroSection";
 import AsaasPartnershipSection from "@/components/AsaasPartnershipSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import EmAltaRecentesSection from "@/components/EmAltaRecentes";
-import HomeLotteryResults from "@/components/HomeLotteryResults";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -14,9 +13,6 @@ export default function CrowdfundingHome() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <HeroSection />
-      
-      {/* Lottery Results */}
-      <HomeLotteryResults />
       
       {/* Ganhaveis em Alta - moved up right after hero */}
       <EmAltaRecentesSection />
