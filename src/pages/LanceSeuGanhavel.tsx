@@ -290,13 +290,15 @@ export default function LanceSeuGanhavel() {
     }
   }
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (session === null) {
+      navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`);
+    }
+  }, [session, navigate]);
+
   if (!session) {
-    return (
-      <div className="max-w-5xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-3">Lance seu Ganhavel</h1>
-        <p>Faça login para criar um Ganhavel.</p>
-      </div>
-    );
+    return null; // Will redirect to login
   }
 
   return (
