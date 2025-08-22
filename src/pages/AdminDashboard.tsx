@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSecurityAlerts } from "@/hooks/useSecurityAlerts";
+import DrawControls from "@/components/admin/DrawControls";
 
 interface DashboardStats {
   rafflesCreatedToday: number;
@@ -325,6 +326,9 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+        <section className="mt-6">
+          <DrawControls />
+        </section>
 
         {/* Seção de Alertas de Segurança Recentes - DESTACADA */}
         <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50">
