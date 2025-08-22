@@ -291,16 +291,7 @@ export default function LanceSeuGanhavel() {
     }
   }
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (session === null) {
-      navigate(`/login?redirectTo=${encodeURIComponent(window.location.pathname)}`);
-    }
-  }, [session, navigate]);
-
-  if (!session) {
-    return null; // Will redirect to login
-  }
+  // Page is now protected by RequireAuth wrapper, no need for manual auth checks here
 
   return (
     <div className="max-w-6xl mx-auto p-6">
