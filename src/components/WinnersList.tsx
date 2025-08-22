@@ -13,8 +13,23 @@ type Row = {
 
 function dateBR(iso: string | null) {
   if (!iso) return "";
-  const d = new Date(iso);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  const d = new Date(iso!);
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR");
+}
+
+function timeBR(iso: string | null) {
+  if (!iso) return "";
+  try {
+    return new Intl.DateTimeFormat("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
+    }).format(new Date(iso!));
+  } catch {
+    return "";
+  }
 }
 
 export default function WinnersList() {
@@ -23,7 +38,7 @@ export default function WinnersList() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
+    const fetchData = async () => {
       const { data, error } = await (supabase as any)
         .from("v_federal_winners")
         .select("*")
@@ -32,7 +47,19 @@ export default function WinnersList() {
       if (error) setErr(error.message);
       setRows((data as Row[]) ?? []);
       setLoading(false);
-    })();
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    function onRefetch() { 
+      setRows(null); 
+      setLoading(true);
+      setErr(null);
+    }
+    window.addEventListener("federal:refetch", onRefetch);
+    return () => window.removeEventListener("federal:refetch", onRefetch);
   }, []);
 
   if (loading) return <div className="text-sm opacity-70">Carregando ganhadores…</div>;
@@ -51,11 +78,21 @@ export default function WinnersList() {
       {rows.map((r, i) => {
         const pares = Array.isArray(r.draw_pairs) ? r.draw_pairs.join(" ") : "-";
         const dataStr = dateBR(r.draw_date);
+        const horaSync = timeBR(r.log_created_at);
         return (
           <div key={i} className="rounded-2xl border border-green-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h4 className="text-base font-semibold">{r.raffle_title ?? "Ganhável"}</h4>
-              <span className="text-xs rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">Verificado</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
+                  Verificado
+                </span>
+                {horaSync && (
+                  <span className="text-xs opacity-60">
+                    Última sync: {horaSync}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="mt-1 text-sm opacity-80">{r.winner_public_handle ?? "Ganhador ****"}</div>
             <div className="mt-3 text-sm">
