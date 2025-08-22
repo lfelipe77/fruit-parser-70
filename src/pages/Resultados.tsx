@@ -225,34 +225,34 @@ export default function Resultados() {
       </section>
 
       {/* Federal Results Card */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8">
         <LotteryFederalCard />
       </section>
 
       {/* Tabbed Results */}
-      <section className="py-16">
+      <section className="py-8 sm:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Tabs defaultValue="quase" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="quase">Quase Completas</TabsTrigger>
-              <TabsTrigger value="completas">Ganhaveis Completas</TabsTrigger>
-              <TabsTrigger value="premiados">Ganháveis Premiados</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 h-auto">
+              <TabsTrigger value="quase" className="text-xs sm:text-sm px-2 sm:px-4 py-2">Quase Completas</TabsTrigger>
+              <TabsTrigger value="completas" className="text-xs sm:text-sm px-2 sm:px-4 py-2">Ganhaveis Completas</TabsTrigger>
+              <TabsTrigger value="premiados" className="text-xs sm:text-sm px-2 sm:px-4 py-2">Ganháveis Premiados</TabsTrigger>
             </TabsList>
 
             {/* Quase Completas - First Tab */}
-            <TabsContent value="quase" className="space-y-6 mt-8">
-              <div className="flex justify-between items-center mb-6">
+            <TabsContent value="quase" className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
                     Ganhaveis Quase Completos
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     Ganhaveis com mais de 80% dos números vendidos
                   </p>
                 </div>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2 md:gap-8">
                 {almostCompleteRaffles.length === 0 ? (
                   <Card className="p-8 text-center md:col-span-2">
                     <div className="text-muted-foreground">
@@ -325,19 +325,19 @@ export default function Resultados() {
             </TabsContent>
 
             {/* Rifas Completas - Second Tab */}
-            <TabsContent value="completas" className="space-y-6 mt-8">
-              <div className="flex justify-between items-center mb-6">
+            <TabsContent value="completas" className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">
+                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
                     Ganhaveis Completos
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     100% dos números vendidos - aguardando próximo sorteio
                   </p>
                 </div>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2 md:gap-8">
                 {completeRaffles.length === 0 ? (
                   <Card className="p-8 text-center md:col-span-2">
                     <div className="text-muted-foreground">
@@ -395,9 +395,9 @@ export default function Resultados() {
             </TabsContent>
 
             {/* Ganháveis Premiados - Third Tab */}
-            <TabsContent value="premiados" className="space-y-6 mt-8">
-              <section className="mt-6">
-                <h3 className="text-xl font-semibold">Ganhadores</h3>
+            <TabsContent value="premiados" className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
+              <section className="mt-4 sm:mt-6">
+                <h3 className="text-lg sm:text-xl font-semibold">Ganhadores</h3>
                 <p className="text-sm opacity-70">Sorteios já realizados com ganhadores confirmados</p>
                 <div className="mt-4">
                   <WinnersList latestConcurso={latestConcurso} latestDate={latestDate} />
@@ -410,22 +410,22 @@ export default function Resultados() {
       </section>
 
       {/* Transparency Info */}
-      <section className="py-16 bg-gradient-hero">
+      <section className="py-8 sm:py-16 bg-gradient-hero">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-2xl lg:text-3xl font-bold mb-4">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4">
               Transparência Total
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">
+            <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8">
               Todos os nossos sorteios seguem os números oficiais da Loteria Federal do País de Origem do Produto, 
               garantindo total transparência e confiabilidade no processo.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="hero" size="lg">
-                <ExternalLink className="w-5 h-5 mr-2" />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Button variant="hero" size="lg" className="w-full sm:w-auto">
+                <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Ver no Site da Caixa
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                 <Link to="/como-funciona">Como Funciona</Link>
               </Button>
             </div>
