@@ -16,6 +16,8 @@ interface ProjectCardProps {
   backers: number;
   organizer?: string;
   location?: string;
+  raffleId?: string; // Add this to use proper IDs
+  status?: string; // Add status to determine button text
 }
 
 export default function ProjectCard({
@@ -29,28 +31,28 @@ export default function ProjectCard({
   backers,
   organizer,
   location,
+  raffleId,
+  status,
 }: ProjectCardProps) {
   const percentage = Math.round((raised / goal) * 100);
-  const isCompleted = percentage >= 100;
   const navigate = useNavigate();
 
   // Generate a recent purchase time (randomized between 1-30 minutes ago)
   const minutesAgo = Math.floor(Math.random() * 30) + 1;
   const lastPurchaseText = `${minutesAgo}min`;
 
-  // Map titles to actual ganhavel IDs
-  const titleToIdMap: Record<string, string> = {
-    "Honda Civic 0KM 2024": "honda-civic-0km-2024",
-    "iPhone 15 Pro Max 256GB": "iphone-15-pro-max-256gb", 
-    "Casa em Condomínio - Alphaville": "casa-em-condominio-alphaville",
-    "Yamaha MT-03 0KM 2024": "yamaha-mt-03-0km-2024",
-    "R$ 50.000 em Dinheiro": "r-50-000-em-dinheiro",
-    "PlayStation 5 + Setup Gamer": "playstation-5-setup-gamer"
-  };
-
-  const ganhaveisId = titleToIdMap[title] || title.toLowerCase()
+  // Use provided raffleId or fallback to legacy slug generation
+  const ganhaveisId = raffleId || title.toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
     .replace(/\s+/g, '-');
+
+  // Dev safety checks
+  if (import.meta.env.DEV) {
+    if (!raffleId) console.error('[ProjectCard] Missing raffleId for:', title);
+  }
+
+  const canBuy = status === 'active';
+  const isCompleted = status === 'completed' || percentage >= 100;
 
   return (
     <Link to={`/ganhavel/${ganhaveisId}`} className="block">
@@ -110,7 +112,7 @@ export default function ProjectCard({
           )}
         </div>
         <Button variant={isCompleted ? "success" : "default"} size="sm">
-          {isCompleted ? "Ver Resultado" : "Comprar Bilhete"}
+          {isCompleted ? "Ver Resultado" : canBuy ? "Comprar Bilhete" : "Ver Detalhes"}
         </Button>
       </CardFooter>
     </Card>

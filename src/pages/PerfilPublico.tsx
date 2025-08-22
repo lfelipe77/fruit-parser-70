@@ -249,7 +249,8 @@ export default function PerfilPublico() {
     backers: 0, // Would need to calculate from transactions
     status: g.status === 'active' ? 'Em andamento' : g.status === 'completed' ? 'Finalizada' : 'Pendente',
     location: 'Online',
-    link: `/ganhaveis/${g.id}`
+    raffleId: g.id, // Use proper raffle ID
+    raffleStatus: g.status // Raw status for ProjectCard
   })).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left
     if (a.status === "Em andamento" && b.status === "Finalizada") return -1;
@@ -263,20 +264,28 @@ export default function PerfilPublico() {
   const displayedGanhaveis = showAllGanhaveis ? displayGanhaveisLancados : displayGanhaveisLancados.slice(0, 6);
 
   // Convert ganhaveis participados for display
-  const displayGanhaveisParticipados = ganhaveisParticipados.map(g => ({
-    title: g.title,
-    description: g.title, // Use title as description if no description available
-    image: g.image || '/placeholder.svg',
-    goal: Math.ceil((g.goal || 0) / 100), // Assuming ticket price of 100 for display
-    raised: Math.floor((g.raised || 0) / 100),
-    daysLeft: g.daysLeft || 0,
-    category: 'Diversos', // Category not available in tickets view
-    backers: Math.floor((g.raised || 0) / 100),
-    status: g.status,
-    numerosComprados: g.purchased_numbers || [],
-    location: 'Online',
-    link: `/ganhaveis/${g.id}`
-  })).sort((a, b) => {
+  const displayGanhaveisParticipados = ganhaveisParticipados.map(g => {
+    // Dev safety check
+    if (import.meta.env.DEV && !g.raffle_id) {
+      console.error('[PerfilPublico] Participou card sem raffle_id', g);
+    }
+    
+    return {
+      title: g.raffle_title || g.title,
+      description: g.raffle_title || g.title,
+      image: g.raffle_image_url || g.image || '/placeholder.svg',
+      goal: Math.ceil((g.goal_amount || g.goal || 0) / 100),
+      raised: Math.floor((g.amount_raised || g.raised || 0) / 100),
+      daysLeft: g.daysLeft || 0,
+      category: 'Diversos',
+      backers: Math.floor((g.amount_raised || g.raised || 0) / 100),
+      status: g.tx_status === 'paid' ? 'Em andamento' : 'Finalizada',
+      numerosComprados: g.purchased_numbers || [],
+      location: 'Online',
+      raffleId: g.raffle_id || g.id, // Use raffle_id from my_tickets_ext_v6
+      raffleStatus: 'active' // Assume active for participation cards
+    };
+  }).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left
     if (a.status === "Em andamento" && b.status === "Finalizada") return -1;
     if (a.status === "Finalizada" && b.status === "Em andamento") return 1;
@@ -480,18 +489,20 @@ export default function PerfilPublico() {
                      <>
                        <div className="grid md:grid-cols-2 gap-6">
                          {displayedGanhaveis.map((ganhavel, index) => (
-                          <ProjectCard
-                            key={index}
-                            title={ganhavel.title}
-                            description={ganhavel.description}
-                            image={ganhavel.image}
-                            goal={ganhavel.goal}
-                            raised={ganhavel.raised}
-                            daysLeft={ganhavel.daysLeft}
-                            category={ganhavel.category}
-                            backers={ganhavel.backers}
-                            location={ganhavel.location}
-                          />
+                           <ProjectCard
+                             key={index}
+                             title={ganhavel.title}
+                             description={ganhavel.description}
+                             image={ganhavel.image}
+                             goal={ganhavel.goal}
+                             raised={ganhavel.raised}
+                             daysLeft={ganhavel.daysLeft}
+                             category={ganhavel.category}
+                             backers={ganhavel.backers}
+                             location={ganhavel.location}
+                             raffleId={ganhavel.raffleId}
+                             status={ganhavel.raffleStatus}
+                           />
                         ))}
                       </div>
                        
@@ -542,17 +553,19 @@ export default function PerfilPublico() {
                            <div className="grid md:grid-cols-2 gap-6">
                              {displayedGanhaveisParticipados.map((ganhavel, index) => (
                               <div key={index} className="relative">
-                                <ProjectCard
-                                  title={ganhavel.title}
-                                  description={ganhavel.description}
-                                  image={ganhavel.image}
-                                  goal={ganhavel.goal}
-                                  raised={ganhavel.raised}
-                                  daysLeft={ganhavel.daysLeft}
-                                  category={ganhavel.category}
-                                  backers={ganhavel.backers}
-                                  location={ganhavel.location}
-                                />
+                                 <ProjectCard
+                                   title={ganhavel.title}
+                                   description={ganhavel.description}
+                                   image={ganhavel.image}
+                                   goal={ganhavel.goal}
+                                   raised={ganhavel.raised}
+                                   daysLeft={ganhavel.daysLeft}
+                                   category={ganhavel.category}
+                                   backers={ganhavel.backers}
+                                   location={ganhavel.location}
+                                   raffleId={ganhavel.raffleId}
+                                   status={ganhavel.raffleStatus}
+                                 />
                                 <Badge className="absolute top-2 right-2 bg-background/90">
                                   {ganhavel.numerosComprados.length} bilhetes
                                 </Badge>
