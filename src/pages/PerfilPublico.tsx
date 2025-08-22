@@ -39,6 +39,9 @@ export default function PerfilPublico() {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [ganhaveisLancados, setGanhaveisLancados] = useState<any[]>([]);
+  const [ganhaveisParticipados, setGanhaveisParticipados] = useState<any[]>([]);
+  const [loadingGanhaveis, setLoadingGanhaveis] = useState(true);
   
   useEffect(() => {
     const fetchProfile = async () => {
@@ -79,6 +82,73 @@ export default function PerfilPublico() {
     fetchProfile();
   }, [username]);
 
+  // Fetch user's ganhaveis data
+  useEffect(() => {
+    const fetchGanhaveisData = async () => {
+      if (!profile?.id) return;
+      
+      try {
+        setLoadingGanhaveis(true);
+        
+        // Fetch ganhaveis lancados (from ganhaveis_legacy table)
+        const { data: lancados, error: lancadosError } = await supabase
+          .from('ganhaveis_legacy')
+          .select('id,title,description,image_url,status,goal_amount,raised_amount,created_at,location,category,ticket_price')
+          .eq('creator_id', profile.id)
+          .order('created_at', { ascending: false });
+          
+        if (lancadosError) {
+          console.error('Error fetching launched ganhaveis:', lancadosError);
+        } else {
+          setGanhaveisLancados(lancados || []);
+        }
+
+        // Fetch ganhaveis participados (from my_tickets_ext_v6 view)
+        const { data: participados, error: participadosError } = await supabase
+          .from('my_tickets_ext_v6')
+          .select('raffle_id,raffle_title,raffle_image_url,goal_amount,amount_raised,progress_pct_money,draw_date,ticket_count,purchased_numbers,tx_status')
+          .eq('buyer_user_id', profile.id)
+          .order('purchase_date', { ascending: false });
+          
+        if (participadosError) {
+          console.error('Error fetching participated ganhaveis:', participadosError);
+        } else {
+          // Group by raffle_id and aggregate ticket counts
+          const grouped = participados?.reduce((acc: any, ticket: any) => {
+            const existing = acc.find((item: any) => item.raffle_id === ticket.raffle_id);
+            if (existing) {
+              existing.ticket_count += ticket.ticket_count;
+              existing.purchased_numbers = [...existing.purchased_numbers, ...ticket.purchased_numbers];
+            } else {
+              acc.push({
+                id: ticket.raffle_id,
+                title: ticket.raffle_title,
+                image: ticket.raffle_image_url,
+                goal: ticket.goal_amount,
+                raised: ticket.amount_raised,
+                progress: ticket.progress_pct_money,
+                daysLeft: ticket.draw_date ? Math.max(0, Math.ceil((new Date(ticket.draw_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0,
+                status: ticket.tx_status === 'paid' ? 'Em andamento' : 'Pendente',
+                ticket_count: ticket.ticket_count,
+                purchased_numbers: ticket.purchased_numbers || []
+              });
+            }
+            return acc;
+          }, []) || [];
+          
+          setGanhaveisParticipados(grouped);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching ganhaveis data:', error);
+      } finally {
+        setLoadingGanhaveis(false);
+      }
+    };
+    
+    fetchGanhaveisData();
+  }, [profile?.id]);
+
   // Fallback user data for display if profile not found
   const user = profile ? {
     name: profile.full_name || profile.display_name || 'Usuário',
@@ -86,21 +156,21 @@ export default function PerfilPublico() {
     bio: profile.bio || 'Usuário da plataforma',
     location: profile.location || 'Localização não informada',
     memberSince: new Date(profile.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
-    totalGanhaveisLancados: profile.total_ganhaveis || 0,
-    totalGanhaveisParticipados: 0,
-    ganhaveisCompletos: 0,
+    totalGanhaveisLancados: ganhaveisLancados.length,
+    totalGanhaveisParticipados: ganhaveisParticipados.length,
+    ganhaveisCompletos: ganhaveisLancados.filter(g => g.status === 'completed' || g.status === 'finalizada').length,
     avaliacaoMedia: profile.rating || 0,
     totalAvaliacoes: 0,
     seguidores: 0,
     seguindo: 0,
     avatar: profile.avatar_url || '',
-    website: profile.social_links?.website || '',
+    website: profile.website_url || '',
     videoApresentacao: '',
     socialLinks: {
-      instagram: profile.social_links?.instagram || '',
-      facebook: profile.social_links?.facebook || '',
-      twitter: profile.social_links?.twitter || '',
-      linkedin: profile.social_links?.linkedin || ''
+      instagram: profile.instagram || '',
+      facebook: profile.facebook || '',
+      twitter: profile.twitter || '',
+      linkedin: profile.linkedin || ''
     }
   } : {
     name: "Usuário não encontrado",
@@ -142,104 +212,20 @@ export default function PerfilPublico() {
     );
   }
 
-  const ganhaveisLancados = [
-    { 
-      title: "iPhone 15 Pro Max", 
-      description: "iPhone 15 Pro Max 256GB Titânio Natural",
-      image: "/placeholder.svg",
-      goal: 120,
-      raised: 95,
-      daysLeft: 5,
-      category: "Eletrônicos",
-      backers: 89,
-      status: "Em andamento",
-      location: "Online"
-    },
-    { 
-      title: "R$ 50.000", 
-      description: "Cinquenta mil reais em dinheiro",
-      image: "/placeholder.svg",
-      goal: 100,
-      raised: 100,
-      daysLeft: 0,
-      category: "Dinheiro",
-      backers: 100,
-      status: "Finalizada",
-      location: "Online"
-    },
-    { 
-      title: "Yamaha MT-03 2024", 
-      description: "Yamaha MT-03 2024 zero quilômetro",
-      image: "/placeholder.svg",
-      goal: 150,
-      raised: 120,
-      daysLeft: 8,
-      category: "Motos",
-      backers: 120,
-      status: "Em andamento",
-      location: "São Paulo, SP"
-    },
-    { 
-      title: "PlayStation 5 + Setup", 
-      description: "PS5 completo com jogos e acessórios",
-      image: "/placeholder.svg",
-      goal: 80,
-      raised: 65,
-      daysLeft: 12,
-      category: "Eletrônicos",
-      backers: 65,
-      status: "Em andamento",
-      location: "Online"
-    },
-    { 
-      title: "R$ 25.000", 
-      description: "Vinte e cinco mil reais em dinheiro",
-      image: "/placeholder.svg",
-      goal: 50,
-      raised: 50,
-      daysLeft: 0,
-      category: "Dinheiro",
-      backers: 50,
-      status: "Finalizada",
-      location: "Online"
-    },
-    { 
-      title: "Honda Civic 2024", 
-      description: "Honda Civic Touring 2024 completo",
-      image: "/placeholder.svg",
-      goal: 200,
-      raised: 45,
-      daysLeft: 20,
-      category: "Carros",
-      backers: 45,
-      status: "Em andamento",
-      location: "São Paulo, SP"
-    },
-    { 
-      title: "R$ 10.000", 
-      description: "Dez mil reais em dinheiro",
-      image: "/placeholder.svg",
-      goal: 20,
-      raised: 20,
-      daysLeft: 0,
-      category: "Dinheiro",
-      backers: 20,
-      status: "Finalizada",
-      location: "Online"
-    },
-    { 
-      title: "Casa em Alphaville", 
-      description: "Casa de 300m² em condomínio fechado",
-      image: "/placeholder.svg",
-      goal: 800,
-      raised: 200,
-      daysLeft: 25,
-      category: "Imóveis",
-      backers: 200,
-      status: "Em andamento",
-      location: "Barueri, SP"
-    },
-  ].sort((a, b) => {
+  // Convert ganhaveis lancados for display
+  const displayGanhaveisLancados = ganhaveisLancados.map(g => ({
+    title: g.title,
+    description: g.description,
+    image: g.image_url || '/placeholder.svg',
+    goal: Math.ceil((g.goal_amount || 0) / (g.ticket_price || 1)),
+    raised: Math.floor((g.raised_amount || 0) / (g.ticket_price || 1)),
+    daysLeft: 0, // Calculate based on end_date if available
+    category: g.category || 'Diversos',
+    backers: Math.floor((g.raised_amount || 0) / (g.ticket_price || 1)),
+    status: g.status === 'active' ? 'Em andamento' : g.status === 'completed' ? 'Finalizada' : 'Pendente',
+    location: g.location || 'Online',
+    link: `/ganhaveis/${g.id}`
+  })).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left
     if (a.status === "Em andamento" && b.status === "Finalizada") return -1;
     if (a.status === "Finalizada" && b.status === "Em andamento") return 1;
@@ -249,114 +235,23 @@ export default function PerfilPublico() {
     return 0;
   });
 
-  const displayedGanhaveis = showAllGanhaveis ? ganhaveisLancados : ganhaveisLancados.slice(0, 6);
+  const displayedGanhaveis = showAllGanhaveis ? displayGanhaveisLancados : displayGanhaveisLancados.slice(0, 6);
 
-  const ganhaveisParticipados = [
-    { 
-      title: "Honda Civic 2024", 
-      description: "Honda Civic Touring 2024 completo",
-      image: "/placeholder.svg",
-      goal: 200,
-      raised: 150,
-      daysLeft: 12,
-      category: "Carros",
-      backers: 150,
-      status: "Em andamento",
-      numerosComprados: [123, 456],
-      location: "São Paulo, SP"
-    },
-    { 
-      title: "Casa em Alphaville", 
-      description: "Casa de 300m² em condomínio fechado",
-      image: "/placeholder.svg",
-      goal: 800,
-      raised: 650,
-      daysLeft: 8,
-      category: "Imóveis",
-      backers: 650,
-      status: "Em andamento",
-      numerosComprados: [789, 12, 345],
-      location: "Barueri, SP"
-    },
-    { 
-      title: "iPhone 15 Pro Max", 
-      description: "iPhone 15 Pro Max 256GB Titânio Natural",
-      image: "/placeholder.svg",
-      goal: 120,
-      raised: 95,
-      daysLeft: 5,
-      category: "Eletrônicos",
-      backers: 89,
-      status: "Em andamento",
-      numerosComprados: [45, 78],
-      location: "Online"
-    },
-    { 
-      title: "Yamaha MT-03 2024", 
-      description: "Yamaha MT-03 2024 zero quilômetro",
-      image: "/placeholder.svg",
-      goal: 150,
-      raised: 120,
-      daysLeft: 15,
-      category: "Motos",
-      backers: 120,
-      status: "Em andamento",
-      numerosComprados: [234],
-      location: "Rio de Janeiro, RJ"
-    },
-    { 
-      title: "PlayStation 5 + Setup", 
-      description: "PS5 completo com jogos e acessórios",
-      image: "/placeholder.svg",
-      goal: 80,
-      raised: 80,
-      daysLeft: 0,
-      category: "Eletrônicos",
-      backers: 80,
-      status: "Finalizada",
-      numerosComprados: [67, 89, 123],
-      location: "Online"
-    },
-    { 
-      title: "R$ 25.000", 
-      description: "Vinte e cinco mil reais em dinheiro",
-      image: "/placeholder.svg",
-      goal: 50,
-      raised: 50,
-      daysLeft: 0,
-      category: "Dinheiro",
-      backers: 50,
-      status: "Finalizada",
-      numerosComprados: [23, 44],
-      location: "Online"
-    },
-    { 
-      title: "R$ 10.000", 
-      description: "Dez mil reais em dinheiro",
-      image: "/placeholder.svg",
-      goal: 20,
-      raised: 20,
-      daysLeft: 0,
-      category: "Dinheiro",
-      backers: 20,
-      status: "Finalizada",
-      numerosComprados: [156],
-      location: "Online"
-    },
-    { 
-      title: "Honda Civic 2023", 
-      description: "Honda Civic Touring 2023 usado",
-      image: "/placeholder.svg",
-      goal: 180,
-      raised: 180,
-      daysLeft: 0,
-      category: "Carros",
-      backers: 180,
-      status: "Finalizada",
-      numerosComprados: [12, 34, 56, 78],
-      location: "Belo Horizonte, MG"
-    },
-  ].sort((a, b) => {
+  // Convert ganhaveis participados for display
+  const displayGanhaveisParticipados = ganhaveisParticipados.map(g => ({
+    title: g.title,
+    description: g.title, // Use title as description if no description available
+    image: g.image || '/placeholder.svg',
+    goal: Math.ceil((g.goal || 0) / 100), // Assuming ticket price of 100 for display
+    raised: Math.floor((g.raised || 0) / 100),
+    daysLeft: g.daysLeft || 0,
+    category: 'Diversos', // Category not available in tickets view
+    backers: Math.floor((g.raised || 0) / 100),
+    status: g.status,
+    numerosComprados: g.purchased_numbers || [],
+    location: 'Online',
+    link: `/ganhaveis/${g.id}`
+  })).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left
     if (a.status === "Em andamento" && b.status === "Finalizada") return -1;
     if (a.status === "Finalizada" && b.status === "Em andamento") return 1;
@@ -366,7 +261,7 @@ export default function PerfilPublico() {
     return 0;
   });
 
-  const displayedGanhaveisParticipados = showAllGanhaveisParticipados ? ganhaveisParticipados : ganhaveisParticipados.slice(0, 6);
+  const displayedGanhaveisParticipados = showAllGanhaveisParticipados ? displayGanhaveisParticipados : displayGanhaveisParticipados.slice(0, 6);
 
   return (
     <div className="min-h-screen bg-background">
@@ -505,7 +400,7 @@ export default function PerfilPublico() {
                    {/* Stats */}
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">{ganhaveisLancados.length}</div>
+                        <div className="text-2xl font-bold text-primary">{displayGanhaveisLancados.length}</div>
                         <div className="text-sm text-muted-foreground">Ganhaveis Lançados</div>
                       </div>
                       <div className="text-center">
@@ -546,31 +441,49 @@ export default function PerfilPublico() {
                   </CardDescription>
                 </CardHeader>
                  <CardContent>
-                   <div className="grid md:grid-cols-2 gap-6">
-                     {displayedGanhaveis.map((ganhavel, index) => (
-                      <ProjectCard
-                        key={index}
-                        title={ganhavel.title}
-                        description={ganhavel.description}
-                        image={ganhavel.image}
-                        goal={ganhavel.goal}
-                        raised={ganhavel.raised}
-                        daysLeft={ganhavel.daysLeft}
-                        category={ganhavel.category}
-                        backers={ganhavel.backers}
-                        location={ganhavel.location}
-                      />
-                    ))}
-                  </div>
-                   
-                   {ganhaveisLancados.length > 6 && (
-                     <div className="text-center mt-6">
-                       <Button 
-                         variant="outline" 
-                         onClick={() => setShowAllGanhaveis(!showAllGanhaveis)}
-                       >
-                         {showAllGanhaveis ? 'Ver menos' : 'Ver mais'}
-                       </Button>
+                   {loadingGanhaveis ? (
+                     <div className="grid md:grid-cols-2 gap-6">
+                       {[...Array(4)].map((_, i) => (
+                         <div key={i} className="animate-pulse">
+                           <div className="h-48 bg-muted rounded mb-4"></div>
+                           <div className="h-4 bg-muted rounded mb-2"></div>
+                           <div className="h-4 bg-muted rounded w-3/4"></div>
+                         </div>
+                       ))}
+                     </div>
+                   ) : displayedGanhaveis.length > 0 ? (
+                     <>
+                       <div className="grid md:grid-cols-2 gap-6">
+                         {displayedGanhaveis.map((ganhavel, index) => (
+                          <ProjectCard
+                            key={index}
+                            title={ganhavel.title}
+                            description={ganhavel.description}
+                            image={ganhavel.image}
+                            goal={ganhavel.goal}
+                            raised={ganhavel.raised}
+                            daysLeft={ganhavel.daysLeft}
+                            category={ganhavel.category}
+                            backers={ganhavel.backers}
+                            location={ganhavel.location}
+                          />
+                        ))}
+                      </div>
+                       
+                       {displayGanhaveisLancados.length > 6 && (
+                         <div className="text-center mt-6">
+                           <Button 
+                             variant="outline" 
+                             onClick={() => setShowAllGanhaveis(!showAllGanhaveis)}
+                           >
+                             {showAllGanhaveis ? 'Ver menos' : 'Ver mais'}
+                           </Button>
+                         </div>
+                       )}
+                     </>
+                   ) : (
+                     <div className="text-center py-8">
+                       <p className="text-muted-foreground">Nenhum ganhável lançado ainda.</p>
                      </div>
                    )}
                 </CardContent>
@@ -587,35 +500,53 @@ export default function PerfilPublico() {
                   </CardDescription>
                 </CardHeader>
                  <CardContent>
-                   <div className="grid md:grid-cols-2 gap-6">
-                     {displayedGanhaveisParticipados.map((ganhavel, index) => (
-                      <div key={index} className="relative">
-                        <ProjectCard
-                          title={ganhavel.title}
-                          description={ganhavel.description}
-                          image={ganhavel.image}
-                          goal={ganhavel.goal}
-                          raised={ganhavel.raised}
-                          daysLeft={ganhavel.daysLeft}
-                          category={ganhavel.category}
-                          backers={ganhavel.backers}
-                          location={ganhavel.location}
-                        />
-                        <Badge className="absolute top-2 right-2 bg-background/90">
-                          {ganhavel.numerosComprados.length} bilhetes
-                        </Badge>
+                   {loadingGanhaveis ? (
+                     <div className="grid md:grid-cols-2 gap-6">
+                       {[...Array(4)].map((_, i) => (
+                         <div key={i} className="animate-pulse">
+                           <div className="h-48 bg-muted rounded mb-4"></div>
+                           <div className="h-4 bg-muted rounded mb-2"></div>
+                           <div className="h-4 bg-muted rounded w-3/4"></div>
+                         </div>
+                       ))}
+                     </div>
+                   ) : displayedGanhaveisParticipados.length > 0 ? (
+                     <>
+                       <div className="grid md:grid-cols-2 gap-6">
+                         {displayedGanhaveisParticipados.map((ganhavel, index) => (
+                          <div key={index} className="relative">
+                            <ProjectCard
+                              title={ganhavel.title}
+                              description={ganhavel.description}
+                              image={ganhavel.image}
+                              goal={ganhavel.goal}
+                              raised={ganhavel.raised}
+                              daysLeft={ganhavel.daysLeft}
+                              category={ganhavel.category}
+                              backers={ganhavel.backers}
+                              location={ganhavel.location}
+                            />
+                            <Badge className="absolute top-2 right-2 bg-background/90">
+                              {ganhavel.numerosComprados.length} bilhetes
+                            </Badge>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                   
-                   {ganhaveisParticipados.length > 6 && (
-                     <div className="text-center mt-6">
-                       <Button 
-                         variant="outline" 
-                         onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
-                       >
-                         {showAllGanhaveisParticipados ? 'Ver menos' : 'Ver mais'}
-                       </Button>
+                       
+                       {displayGanhaveisParticipados.length > 6 && (
+                         <div className="text-center mt-6">
+                           <Button 
+                             variant="outline" 
+                             onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
+                           >
+                             {showAllGanhaveisParticipados ? 'Ver menos' : 'Ver mais'}
+                           </Button>
+                         </div>
+                       )}
+                     </>
+                   ) : (
+                     <div className="text-center py-8">
+                       <p className="text-muted-foreground">Nenhum ganhável participado ainda.</p>
                      </div>
                    )}
                 </CardContent>
