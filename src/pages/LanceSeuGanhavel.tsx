@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { RAFFLE_IMAGE_BUCKET, pathForRaffleImage } from "@/lib/storage";
+import { Button } from "@/components/ui/button";
 
 // inline toast to avoid new imports/files
 function ToastInline({
@@ -197,7 +198,7 @@ export default function LanceSeuGanhavel() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
       setErrorMsg("Você precisa estar logado.");
-      navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`);
+      navigate(`/login?redirectTo=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 
@@ -293,7 +294,7 @@ export default function LanceSeuGanhavel() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (session === null) {
-      navigate(`/login?redirectTo=${encodeURIComponent(location.pathname)}`);
+      navigate(`/login?redirectTo=${encodeURIComponent(window.location.pathname)}`);
     }
   }, [session, navigate]);
 
@@ -602,12 +603,11 @@ export default function LanceSeuGanhavel() {
               <p className="text-sm text-gray-700 mb-2">
                 Nossa equipe está pronta para te ajudar a criar a rifa perfeita.
               </p>
-              <a
-                href="mailto:suporte@ganhavel.com"
-                className="inline-flex items-center justify-center rounded-lg bg-black text-white px-4 py-2"
-              >
-                Falar com Suporte
-              </a>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/central-de-ajuda">
+                  Falar com Suporte
+                </Link>
+              </Button>
             </div>
           </section>
         </aside>
