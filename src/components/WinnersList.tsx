@@ -32,18 +32,20 @@ function timeBR(iso: string | null) {
   }
 }
 
-export default function WinnersList() {
+export default function WinnersList({ latestConcurso }: { latestConcurso?: string | null }) {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data, error } = await (supabase as any)
+      const q = (supabase as any)
         .from("v_federal_winners")
         .select("*")
         .order("log_created_at", { ascending: false })
         .limit(20);
+      if (latestConcurso) q.eq("concurso_number", latestConcurso);
+      const { data, error } = await q;
       if (error) setErr(error.message);
       setRows((data as Row[]) ?? []);
       setLoading(false);
