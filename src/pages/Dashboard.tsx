@@ -13,7 +13,6 @@ interface DashboardStats {
   totalTickets: number;
   totalSpent: number;
   activeGanhaveis: number;
-  wonGanhaveis: number;
   recentTransactions: any[];
 }
 
@@ -26,7 +25,6 @@ export default function Dashboard() {
     totalTickets: 0,
     totalSpent: 0,
     activeGanhaveis: 0,
-    wonGanhaveis: 0,
     recentTransactions: []
   });
   const [loading, setLoading] = useState(true);
@@ -66,14 +64,13 @@ export default function Dashboard() {
           totalTickets: 0,
           totalSpent: 0,
           activeGanhaveis: 0,
-          wonGanhaveis: 0,
           recentTransactions: []
         });
         return;
       }
 
       // Parallel queries for better performance
-      const [ticketsResult, rafflesResult, transactionsResult, wonRafflesResult] = await Promise.all([
+      const [ticketsResult, rafflesResult, transactionsResult] = await Promise.all([
         // Get all paid transactions with their ticket counts to calculate total tickets
         supabase
           .from('transactions')
@@ -101,13 +98,7 @@ export default function Dashboard() {
           `)
           .eq('user_id', uid)
           .order('created_at', { ascending: false })
-          .limit(10),
-
-        // Get raffles won by this user
-        supabase
-          .from('raffle_winners')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', uid)
+          .limit(10)
       ]);
 
       // Handle results and errors
@@ -121,10 +112,6 @@ export default function Dashboard() {
 
       if (transactionsResult.error) {
         console.error('Error fetching transactions:', transactionsResult.error);
-      }
-
-      if (wonRafflesResult.error) {
-        console.error('Error fetching won raffles:', wonRafflesResult.error);
       }
 
       // Calculate total tickets from transaction numbers (each array element represents one ticket)
@@ -147,7 +134,6 @@ export default function Dashboard() {
         totalTickets: totalTickets,
         totalSpent: totalSpent,
         activeGanhaveis: rafflesResult.count ?? 0,
-        wonGanhaveis: wonRafflesResult.count ?? 0,
         recentTransactions: transactions.slice(0, 5).map(t => ({
           ...t,
           raffle_title: t.raffles?.title || 'Rifa removida'
@@ -211,7 +197,7 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
@@ -274,7 +260,7 @@ export default function Dashboard() {
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
-              onClick={() => navigate('/minha-conta?tab=rifas-lancadas')}
+              onClick={() => navigate('/raffles')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -289,28 +275,6 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold">{loading ? "..." : stats.activeGanhaveis}</p>
                 <p className="text-sm text-muted-foreground">
                   {stats.activeGanhaveis === 0 ? "Nenhum ganhavel lançado" : `${stats.activeGanhaveis} ganhavel${stats.activeGanhaveis > 1 ? 'eis' : ''} ativo${stats.activeGanhaveis > 1 ? 's' : ''}`}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              role="button"
-              onClick={() => navigate('/my-tickets?filter=won')}
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-yellow-600" />
-                  Ganhaveis que Ganhei
-                </CardTitle>
-                <CardDescription>
-                  Ganhaveis que você ganhou
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-yellow-600">{loading ? "..." : stats.wonGanhaveis}</p>
-                <p className="text-sm text-muted-foreground">
-                  {stats.wonGanhaveis === 0 ? "Nenhum ganhavel ganho ainda" : `${stats.wonGanhaveis} ganhavel${stats.wonGanhaveis > 1 ? 'eis' : ''} ganho${stats.wonGanhaveis > 1 ? 's' : ''}`}
                 </p>
               </CardContent>
             </Card>

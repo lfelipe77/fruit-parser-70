@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import ShareButton from "@/components/ShareButton";
 import { 
   User, 
@@ -42,10 +42,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function MinhaConta() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
   const [expandedRifas, setExpandedRifas] = useState<number[]>([]);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState("minhas-rifas");
   const [profileFormData, setProfileFormData] = useState({
     name: "João Silva",
     email: "joao@email.com",
@@ -58,14 +56,6 @@ export default function MinhaConta() {
     twitter: "@joaosilva",
     linkedin: "joao-silva-empresario"
   });
-
-  // Handle URL tab parameter
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab) {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
 
   // Mock user data
   const user = {
@@ -323,7 +313,7 @@ export default function MinhaConta() {
           </Card>
 
           {/* Main Content */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs defaultValue="minhas-rifas" className="space-y-6">
             <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="minhas-rifas">Meus Ganhaveis</TabsTrigger>
               <TabsTrigger value="rifas-lancadas">Ganhaveis Lançados</TabsTrigger>
@@ -386,17 +376,37 @@ export default function MinhaConta() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-16">
-                    <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      Nenhum ganhavel lançado ainda
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Comece criando seu primeiro ganhavel para começar a arrecadar fundos.
-                    </p>
-                    <Button asChild>
-                      <Link to="/lance-seu-ganhavel">Lançar Ganhavel</Link>
-                    </Button>
+                  <div className="space-y-4">
+                    {rifasLancadas.map((rifa) => (
+                      <div key={rifa.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                        <img 
+                          src={rifa.image} 
+                          alt={rifa.title} 
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                         <div className="flex-1">
+                           <h3 className="font-semibold">{rifa.title}</h3>
+                           <p className="text-sm text-muted-foreground">
+                             {rifa.vendidos}/{rifa.numbers} bilhetes vendidos
+                           </p>
+                           <p className="text-sm font-medium text-green-600">
+                             R$ {rifa.vendidos * rifa.precoUnitario} de R$ {rifa.totalPossivel} total
+                           </p>
+                         </div>
+                        <Badge 
+                          variant={
+                            rifa.status === "Em andamento" ? "secondary" : "outline"
+                          }
+                        >
+                          {rifa.status}
+                        </Badge>
+                        <Link to={`/ganhavel/${rifa.id}`}>
+                          <Button variant="outline" size="sm">
+                            Gerenciar
+                          </Button>
+                        </Link>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

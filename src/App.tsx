@@ -70,7 +70,6 @@ import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
 import MinimalDashboard from '@/pages/MinimalDashboard';
 import Profile from '@/pages/Profile';
 import MyTickets from '@/pages/MyTickets';
-import MinhaConta from '@/pages/MinhaConta';
 import Raffles from '@/pages/Raffles';
 import AdminRaffles from '@/pages/admin/AdminRaffles';
 import AdminPayouts from '@/pages/AdminPayouts';
@@ -201,11 +200,6 @@ const AppContent = () => {
         <Route path="/my-tickets" element={
           <RequireAuth>
             <MyTickets />
-          </RequireAuth>
-        } />
-        <Route path="/minha-conta" element={
-          <RequireAuth>
-            <MinhaConta />
           </RequireAuth>
         } />
         <Route path="/raffles" element={
