@@ -338,10 +338,10 @@ export default function GanhaveisDetail() {
                 <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-2 border-orange-200 rounded-lg p-5 shadow-md">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-2xl">🛒</span>
-                    <h4 className="text-lg font-bold text-orange-800">Compra Direta com o Vendedor</h4>
+                    <h4 className="text-lg font-bold text-orange-800">Compra Direta ou Negociação</h4>
                   </div>
                   <p className="text-sm text-orange-700 mb-4 font-medium">
-                    ⚡ Prefere comprar direto? Clique aqui para negociar diretamente com o vendedor!
+                    ⚡ Prefere tratar direto? Clique aqui para negociar com o vendedor <strong>ou comprar pelo link de afiliado oficial</strong>.
                   </p>
                   <a
                     href={directLink}
@@ -349,7 +349,7 @@ export default function GanhaveisDetail() {
                     rel="noopener noreferrer nofollow"
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    🔗 Comprar Diretamente
+                    🔗 Negociar / Comprar Direto
                   </a>
                 </div>
               </div>
