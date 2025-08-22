@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { timeAgo, formatCurrency } from "@/types/raffles";
 import LotteryFederalTab from "@/components/LotteryFederalTab";
 import LotteryFederalCard from "@/components/LotteryFederalCard";
+import WinnersList from "@/components/WinnersList";
 
 interface LotteryResult {
   id: string;
@@ -381,84 +382,13 @@ export default function Resultados() {
 
             {/* Ganháveis Premiados - Third Tab */}
             <TabsContent value="premiados" className="space-y-6 mt-8">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold mb-2">
-                    Ganhadores
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Sorteios já realizados com ganhadores confirmados
-                  </p>
+              <section className="mt-6">
+                <h3 className="text-xl font-semibold">Ganhadores</h3>
+                <p className="text-sm opacity-70">Sorteios já realizados com ganhadores confirmados</p>
+                <div className="mt-4">
+                  <WinnersList />
                 </div>
-                <Badge variant="outline" className="flex items-center space-x-1">
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span>Verificados</span>
-                </Badge>
-              </div>
-              
-              <div className="grid gap-6">
-                {recentResults.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <div className="text-muted-foreground">
-                      <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhum resultado disponível ainda.</p>
-                      <p className="text-sm mt-2">Os resultados aparecerão aqui após os sorteios.</p>
-                    </div>
-                  </Card>
-                ) : recentResults.map((result) => (
-                  <Link key={result.id} to={`/ganhavel/${result.ganhavel_id}`}>
-                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                      <CardContent className="p-6">
-                        <div className="grid md:grid-cols-4 gap-6 items-center">
-                          <div className="md:col-span-1">
-                            <div className="flex items-start space-x-4">
-                              <div className="w-16 h-16 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                                <Trophy className="w-8 h-8 text-white" />
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-semibold mb-1">{String(result.raffle_title ?? '')}</h3>
-                                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                  <span className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-1" />
-                                    {new Date(result.result_date).toLocaleDateString('pt-BR')}
-                                  </span>
-                                  {result.lottery_draw_numbers && (
-                                    <span>Números: {String(result.lottery_draw_numbers ?? '')}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm text-muted-foreground mb-1">Valor Total</div>
-                            <div className="font-bold text-xl text-primary">{formatCurrency(Number(result.raffle_goal_amount ?? 0))}</div>
-                          </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm text-muted-foreground mb-1">Ganhador</div>
-                            <div className="font-semibold text-lg">{String(result.winner_name ?? '')}</div>
-                          </div>
-                          
-                          <div className="text-center">
-                            <div className="text-sm text-muted-foreground mb-1">Status</div>
-                            <div className="font-semibold text-green-600">
-                              {result.verified ? (
-                                <div className="flex items-center justify-center gap-1">
-                                  <CheckCircle className="w-4 h-4" />
-                                  Verificado
-                                </div>
-                              ) : (
-                                <div className="text-yellow-600">Pendente</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
+              </section>
             </TabsContent>
 
           </Tabs>

@@ -17,17 +17,49 @@ export default function LotteryFederalCard() {
   const [row, setRow] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchData = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from("lottery_latest_federal")
+        .select("concurso_number, draw_date, numbers")
+        .order("draw_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) {
+        setErr(error.message);
+      } else {
+        setRow((data as Row) ?? null);
+        setLastUpdated(new Date());
+        setErr(null);
+      }
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Erro ao carregar dados");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      const { data, error } = await (supabase as any)
-        .from("lottery_latest_federal") // view in DB
-        .select("concurso_number, draw_date, numbers")
-        .maybeSingle(); // safe when 0 rows
-      if (error) setErr(error.message);
-      setRow((data as Row) ?? null);
-      setLoading(false);
-    })();
+    fetchData();
+
+    // Auto-refresh on visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(fetchData, 60000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -52,13 +84,18 @@ export default function LotteryFederalCard() {
               Números:{" "}
               <span className="font-mono">
                 {(() => {
-                  const pairs = Array.isArray(row.numbers)
-                    ? row.numbers.map(n => String(n).slice(-2).padStart(2, "0"))
+                  const pares = Array.isArray(row.numbers)
+                    ? row.numbers.map(s => String(s).padStart(2, "0"))
                     : [];
-                  return pairs.join(" ") || "-";
+                  return pares.join(" ") || "-";
                 })()}
               </span>
             </div>
+            {lastUpdated && (
+              <div className="mt-2 text-xs opacity-60">
+                Atualizado agora
+              </div>
+            )}
           </>
         )}
       </div>
