@@ -304,7 +304,7 @@ export default function Dashboard() {
                   Ganhaveis que Ganhei
                 </CardTitle>
                 <CardDescription>
-                  Rifas/Ganhaveis que você ganhou
+                  Ganhaveis que você ganhou
                 </CardDescription>
               </CardHeader>
               <CardContent>
