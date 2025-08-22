@@ -90,12 +90,23 @@ export default function PerfilPublico() {
       try {
         setLoadingGanhaveis(true);
         
-        // Fetch ganhaveis lancados (from ganhaveis_legacy table)
+        // Check if viewer is the profile owner
+        const { data: authRes } = await supabase.auth.getUser();
+        const viewerId = authRes?.user?.id || null;
+        const isOwner = viewerId && profile?.id && viewerId === profile.id;
+        
+        // Fetch ganhaveis lancados (from raffles table)
         const { data: lancados, error: lancadosError } = await supabase
-          .from('ganhaveis_legacy')
-          .select('id,title,description,image_url,status,goal_amount,raised_amount,created_at,location,category,ticket_price')
-          .eq('creator_id', profile.id)
-          .order('created_at', { ascending: false });
+          .from('raffles')
+          .select('id, title, status, image_url, goal_amount, created_at, user_id')
+          .eq('user_id', profile.id)
+          .in('status', ['active', 'completed'])
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (import.meta.env.DEV && lancados?.some(r => r.user_id !== profile.id)) {
+          console.error('⚠️ Escopo quebrado: row de outro usuário em Lançados', lancados);
+        }
           
         if (lancadosError) {
           console.error('Error fetching launched ganhaveis:', lancadosError);
@@ -103,12 +114,25 @@ export default function PerfilPublico() {
           setGanhaveisLancados(lancados || []);
         }
 
-        // Fetch ganhaveis participados (from my_tickets_ext_v6 view)
-        const { data: participados, error: participadosError } = await supabase
-          .from('my_tickets_ext_v6')
-          .select('raffle_id,raffle_title,raffle_image_url,goal_amount,amount_raised,progress_pct_money,draw_date,ticket_count,purchased_numbers,tx_status')
-          .eq('buyer_user_id', profile.id)
-          .order('purchase_date', { ascending: false });
+        // Fetch ganhaveis participados (only if viewer is owner)
+        let participados: any[] = [];
+        let participadosError: any = null;
+
+        if (isOwner) {
+          const { data, error } = await supabase
+            .from('my_tickets_ext_v6')
+            .select('raffle_id,raffle_title,raffle_image_url,goal_amount,amount_raised,progress_pct_money,draw_date,ticket_count,purchased_numbers,tx_status,buyer_user_id')
+            .eq('buyer_user_id', profile.id)
+            .order('purchase_date', { ascending: false })
+            .limit(100);
+
+          participados = data || [];
+          participadosError = error;
+
+          if (import.meta.env.DEV && participados?.some(r => r.buyer_user_id !== profile.id)) {
+            console.error('⚠️ Escopo quebrado: row de outro usuário em Participados', participados);
+          }
+        }
           
         if (participadosError) {
           console.error('Error fetching participated ganhaveis:', participadosError);
@@ -130,7 +154,8 @@ export default function PerfilPublico() {
                 daysLeft: ticket.draw_date ? Math.max(0, Math.ceil((new Date(ticket.draw_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0,
                 status: ticket.tx_status === 'paid' ? 'Em andamento' : 'Pendente',
                 ticket_count: ticket.ticket_count,
-                purchased_numbers: ticket.purchased_numbers || []
+                purchased_numbers: ticket.purchased_numbers || [],
+                isOwner
               });
             }
             return acc;
@@ -215,15 +240,15 @@ export default function PerfilPublico() {
   // Convert ganhaveis lancados for display
   const displayGanhaveisLancados = ganhaveisLancados.map(g => ({
     title: g.title,
-    description: g.description,
+    description: g.title, // Use title as description since raffles doesn't have description
     image: g.image_url || '/placeholder.svg',
-    goal: Math.ceil((g.goal_amount || 0) / (g.ticket_price || 1)),
-    raised: Math.floor((g.raised_amount || 0) / (g.ticket_price || 1)),
-    daysLeft: 0, // Calculate based on end_date if available
-    category: g.category || 'Diversos',
-    backers: Math.floor((g.raised_amount || 0) / (g.ticket_price || 1)),
+    goal: g.goal_amount || 0,
+    raised: 0, // Would need to calculate from transactions
+    daysLeft: 0, // Calculate based on draw_date if available
+    category: 'Diversos',
+    backers: 0, // Would need to calculate from transactions
     status: g.status === 'active' ? 'Em andamento' : g.status === 'completed' ? 'Finalizada' : 'Pendente',
-    location: g.location || 'Online',
+    location: 'Online',
     link: `/ganhaveis/${g.id}`
   })).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left
@@ -510,43 +535,51 @@ export default function PerfilPublico() {
                          </div>
                        ))}
                      </div>
-                   ) : displayedGanhaveisParticipados.length > 0 ? (
+                   ) : ganhaveisParticipados.some(g => g.isOwner) ? (
                      <>
-                       <div className="grid md:grid-cols-2 gap-6">
-                         {displayedGanhaveisParticipados.map((ganhavel, index) => (
-                          <div key={index} className="relative">
-                            <ProjectCard
-                              title={ganhavel.title}
-                              description={ganhavel.description}
-                              image={ganhavel.image}
-                              goal={ganhavel.goal}
-                              raised={ganhavel.raised}
-                              daysLeft={ganhavel.daysLeft}
-                              category={ganhavel.category}
-                              backers={ganhavel.backers}
-                              location={ganhavel.location}
-                            />
-                            <Badge className="absolute top-2 right-2 bg-background/90">
-                              {ganhavel.numerosComprados.length} bilhetes
-                            </Badge>
+                       {displayedGanhaveisParticipados.length > 0 ? (
+                         <>
+                           <div className="grid md:grid-cols-2 gap-6">
+                             {displayedGanhaveisParticipados.map((ganhavel, index) => (
+                              <div key={index} className="relative">
+                                <ProjectCard
+                                  title={ganhavel.title}
+                                  description={ganhavel.description}
+                                  image={ganhavel.image}
+                                  goal={ganhavel.goal}
+                                  raised={ganhavel.raised}
+                                  daysLeft={ganhavel.daysLeft}
+                                  category={ganhavel.category}
+                                  backers={ganhavel.backers}
+                                  location={ganhavel.location}
+                                />
+                                <Badge className="absolute top-2 right-2 bg-background/90">
+                                  {ganhavel.numerosComprados.length} bilhetes
+                                </Badge>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                       
-                       {displayGanhaveisParticipados.length > 6 && (
-                         <div className="text-center mt-6">
-                           <Button 
-                             variant="outline" 
-                             onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
-                           >
-                             {showAllGanhaveisParticipados ? 'Ver menos' : 'Ver mais'}
-                           </Button>
+                           
+                           {displayGanhaveisParticipados.length > 6 && (
+                             <div className="text-center mt-6">
+                               <Button 
+                                 variant="outline" 
+                                 onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
+                               >
+                                 {showAllGanhaveisParticipados ? 'Ver menos' : 'Ver mais'}
+                               </Button>
+                             </div>
+                           )}
+                         </>
+                       ) : (
+                         <div className="text-center py-8">
+                           <p className="text-muted-foreground">Nenhuma participação ainda.</p>
                          </div>
                        )}
                      </>
                    ) : (
                      <div className="text-center py-8">
-                       <p className="text-muted-foreground">Nenhum ganhável participado ainda.</p>
+                       <p className="text-muted-foreground">Participações são privadas.</p>
                      </div>
                    )}
                 </CardContent>
