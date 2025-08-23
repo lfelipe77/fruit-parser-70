@@ -6,7 +6,8 @@ export const onRequest: PagesFunction = async (ctx) => {
   const cors = {
     "Access-Control-Allow-Origin": "https://ganhavel.com",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-webhook-secret",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, x-webhook-secret, x-asaas-token",
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Max-Age": "86400",
     "Cache-Control": "no-store",
   };
