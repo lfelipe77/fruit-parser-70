@@ -92,8 +92,21 @@ export default function PerfilPublico() {
         
         // Check if viewer is the profile owner
         const { data: authRes } = await supabase.auth.getUser();
-        const viewerId = authRes?.user?.id || null;
-        const isOwner = viewerId && profile?.id && viewerId === profile.id;
+        const authUserId = authRes?.user?.id ?? null;
+        
+        // Support multiple possible shapes in the profile row
+        const profileUserId = 
+          profile?.user_id ??
+          profile?.auth_user_id ??
+          profile?.id ?? // if your public profile table actually uses the auth UUID as id
+          null;
+        
+        const isOwner = Boolean(authUserId && profileUserId && authUserId === profileUserId);
+        
+        // DEV guard so we can see what's happening
+        if (import.meta.env.DEV) {
+          console.debug('[PerfilPublico] authUserId=', authUserId, 'profileUserId=', profileUserId, 'isOwner=', isOwner, 'slug=', profile?.username);
+        }
         
         // Fetch ganhaveis lancados (from raffles table)
         const { data: lancados, error: lancadosError } = await supabase
@@ -104,8 +117,8 @@ export default function PerfilPublico() {
           .order('created_at', { ascending: false })
           .limit(30);
 
-        if (import.meta.env.DEV && lancados?.some(r => r.user_id !== profile.id)) {
-          console.error('⚠️ Escopo quebrado: row de outro usuário em Lançados', lancados);
+        if (import.meta.env.DEV && lancados?.some(r => r.user_id !== profileUserId)) {
+          console.error('⚠️ Escopo quebrado em Lançados (profile)', lancados);
         }
           
         if (lancadosError) {
@@ -122,15 +135,16 @@ export default function PerfilPublico() {
           const { data, error } = await supabase
             .from('my_tickets_ext_v6')
             .select('raffle_id,raffle_title,raffle_image_url,goal_amount,amount_raised,progress_pct_money,draw_date,ticket_count,purchased_numbers,tx_status,buyer_user_id')
-            .eq('buyer_user_id', profile.id)
+            .eq('buyer_user_id', authUserId)
             .order('purchase_date', { ascending: false })
-            .limit(100);
+            .limit(200);
 
-          participados = data || [];
+          participados = data ?? [];
           participadosError = error;
 
-          if (import.meta.env.DEV && participados?.some(r => r.buyer_user_id !== profile.id)) {
-            console.error('⚠️ Escopo quebrado: row de outro usuário em Participados', participados);
+          if (import.meta.env.DEV) {
+            if (!data) console.warn('[PerfilPublico] participados empty or null', error);
+            if (participados.some(r => !r.raffle_id)) console.error('Participou row missing raffle_id', participados);
           }
         }
           
@@ -174,13 +188,25 @@ export default function PerfilPublico() {
     fetchGanhaveisData();
   }, [profile?.id]);
 
+  // Safe date formatter
+  function dateBR(d: string | Date | null) {
+    if (!d) return '—';
+    const dt = typeof d === 'string' ? new Date(d) : d;
+    if (Number.isNaN(dt.getTime())) return '—';
+    return new Intl.DateTimeFormat('pt-BR', { 
+      timeZone: 'America/Sao_Paulo', 
+      month: 'long', 
+      year: 'numeric' 
+    }).format(dt);
+  }
+
   // Fallback user data for display if profile not found
   const user = profile ? {
     name: profile.full_name || profile.display_name || 'Usuário',
     username: profile.username || 'usuario',
     bio: profile.bio || 'Usuário da plataforma',
     location: profile.location || 'Localização não informada',
-    memberSince: new Date(profile.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
+    memberSince: dateBR(profile.created_at ?? profile.joined_at ?? null),
     totalGanhaveisLancados: ganhaveisLancados.length,
     totalGanhaveisParticipados: ganhaveisParticipados.length,
     ganhaveisCompletos: ganhaveisLancados.filter(g => g.status === 'completed' || g.status === 'finalizada').length,
