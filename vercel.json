@@ -76,7 +76,11 @@
     {
       "source": "/api/asaas/webhook",
       "has": [{ "type": "method", "value": "POST" }],
-      "destination": "/api/asaas-webhook"
+      "destination": "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/asaas-webhook"
+    },
+    {
+      "source": "/api/asaas-webhook",
+      "destination": "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/asaas-webhook"
     }
   ]
 }
