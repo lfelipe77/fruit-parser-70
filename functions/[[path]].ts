@@ -1,10 +1,10 @@
 export const onRequest: PagesFunction = async (ctx) => {
-  const { request, env } = ctx;
+  const { request } = ctx;
   const url = new URL(request.url);
-  const path = url.pathname;
+  const origin = "https://ganhavel.com";
 
   const cors = {
-    "Access-Control-Allow-Origin": "https://ganhavel.com",
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, x-webhook-secret, x-asaas-token",
     "Access-Control-Allow-Credentials": "true",
@@ -12,59 +12,51 @@ export const onRequest: PagesFunction = async (ctx) => {
     "Cache-Control": "no-store",
   };
 
-  // 1) CORS preflight for /api/*
-  if (request.method === "OPTIONS" && path.startsWith("/api/")) {
+  const json = (obj: any, status = 200, extra: Record<string, string> = {}) =>
+    new Response(JSON.stringify(obj), {
+      status,
+      headers: { "content-type": "application/json; charset=utf-8", ...cors, ...extra },
+    });
+
+  // CORS preflight
+  if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
     return new Response(null, { status: 200, headers: cors as any });
   }
 
-  // 2) Ping: return JSON (NOT HTML)
-  if (request.method === "GET" && path === "/api/ping") {
-    const body = JSON.stringify({
-      ok: true,
-      from: "ganhavel.com",
-      ts: Math.floor(Date.now() / 1000),
-    });
-    return new Response(body, {
-      status: 200,
-      headers: { "content-type": "application/json; charset=utf-8", ...cors },
-    });
+  // Health
+  if (request.method === "GET" && url.pathname === "/api/ping") {
+    return json({ ok: true, from: "ganhavel.com", ts: Math.floor(Date.now() / 1000) });
   }
 
-  // 3) Webhook proxy (POST only)
+  // Webhook proxy
   const isWebhook =
-    path === "/api/asaas/webhook" || path === "/api/asaas-webhook";
+    url.pathname === "/api/asaas/webhook" ||
+    url.pathname === "/api/asaas-webhook";
 
   if (isWebhook) {
     if (request.method !== "POST") {
-      return new Response(JSON.stringify({ ok: false, error: "Method Not Allowed" }), {
-        status: 405,
-        headers: { "content-type": "application/json; charset=utf-8", ...cors },
-      });
+      return json({ ok: false, error: "Method Not Allowed" }, 405);
     }
 
     const upstream = "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/asaas-webhook";
+    const headers = new Headers(request.headers);
+    if (!headers.get("content-type")) headers.set("content-type", "application/json");
 
-    // Forward headers and body as-is; DO NOT strip x-webhook-secret / Authorization
-    const fwdHeaders = new Headers(request.headers);
-    // Ensure JSON content-type if missing (Asaas always sends JSON)
-    if (!fwdHeaders.get("content-type")) {
-      fwdHeaders.set("content-type", "application/json");
-    }
-
-    const resp = await fetch(upstream + url.search, {
+    const upstreamRes = await fetch(upstream + url.search, {
       method: "POST",
-      headers: fwdHeaders,
-      body: request.body,
+      headers,
+      body: request.body,        // stream as-is
       redirect: "manual",
     });
 
-    const respHeaders = new Headers(resp.headers);
-    respHeaders.set("content-type", resp.headers.get("content-type") || "application/json; charset=utf-8");
-    for (const [k, v] of Object.entries(cors)) respHeaders.set(k, v);
-
-    return new Response(resp.body, { status: resp.status, headers: respHeaders });
+    // pass-through body + status; add CORS + no-store
+    const proxied = new Response(upstreamRes.body, { status: upstreamRes.status });
+    const ct = upstreamRes.headers.get("content-type") || "application/json; charset=utf-8";
+    proxied.headers.set("content-type", ct);
+    for (const [k, v] of Object.entries(cors)) proxied.headers.set(k, v as string);
+    return proxied;
   }
 
-  // 4) Fall back to SPA for anything else
+  // SPA fallback
   return ctx.next();
 };
