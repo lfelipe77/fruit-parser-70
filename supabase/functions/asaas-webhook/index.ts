@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { withCORS } from "../_shared/cors.ts";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
 const MAIN_PAYMENT_EVENTS = [
   'PAYMENT_CREATED',
@@ -20,11 +25,14 @@ interface AsaasWebhookPayload {
 /**
  * Asaas Webhook Handler (Sandbox)
  * 
- * Handles main payment events from Asaas:
- * - PAYMENT_CREATED, PAYMENT_RECEIVED, PAYMENT_CONFIRMED, PAYMENT_OVERDUE, PAYMENT_REFUNDED
+ * Handles main payment events from Asaas and updates database status:
+ * - PAYMENT_CREATED → created
+ * - PAYMENT_RECEIVED → received  
+ * - PAYMENT_CONFIRMED → confirmed
+ * - PAYMENT_OVERDUE → overdue
+ * - PAYMENT_REFUNDED → refunded
  * 
- * Validates webhook secret and logs relevant events.
- * No database writes in this implementation.
+ * Updates payments table idempotently by provider_payment_id.
  */
 async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
@@ -79,6 +87,33 @@ async function handler(req: Request): Promise<Response> {
     if (MAIN_PAYMENT_EVENTS.includes(event as any)) {
       if (payment?.id && payment?.status) {
         console.log(`[AsaasWebhook] ${event} id=${payment.id} status=${payment.status}`);
+        
+        // Map event to internal status
+        const statusMapping: { [key: string]: string } = {
+          'PAYMENT_CREATED': 'created',
+          'PAYMENT_RECEIVED': 'received',
+          'PAYMENT_CONFIRMED': 'confirmed',
+          'PAYMENT_OVERDUE': 'overdue',
+          'PAYMENT_REFUNDED': 'refunded'
+        };
+
+        const internalStatus = statusMapping[event] || 'unknown';
+
+        // Update database idempotently
+        const { error: updateError } = await supabase
+          .from('payments')
+          .update({
+            status: internalStatus,
+            updated_at: new Date().toISOString(),
+            payload: payload
+          })
+          .eq('provider_payment_id', payment.id);
+
+        if (updateError) {
+          console.error('[AsaasWebhook] Failed to update payment status:', updateError);
+        } else {
+          console.log(`[AsaasWebhook] Updated payment ${payment.id} to status: ${internalStatus}`);
+        }
       } else {
         console.log(`[AsaasWebhook] ${event} (payment data incomplete)`);
       }
