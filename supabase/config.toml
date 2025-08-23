@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.federal-sync]
 verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.debug-secrets]
+verify_jwt = false
