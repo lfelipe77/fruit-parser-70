@@ -73,6 +73,9 @@
       "source": "/api/payments/(.*)/status",
       "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/payment-status?localId=$1"
     }
+  ],
+  "routes": [
+    { "src": "^/api/asaas/webhook$", "methods": ["POST"], "dest": "/api/asaas-webhook" }
   ]
 }
 
