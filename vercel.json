@@ -52,6 +52,26 @@
     {
       "source": "/api/asaas/webhook",
       "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/asaas-webhook"
+    },
+    {
+      "source": "/api/asaas/customers",
+      "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/asaas-customers"
+    },
+    {
+      "source": "/api/asaas/payments",
+      "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/asaas-payments"
+    },
+    {
+      "source": "/api/asaas/payments/(.*)/pix",
+      "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/asaas-pix-qr?id=$1"
+    },
+    {
+      "source": "/api/asaas/reconcile",
+      "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/asaas-reconcile"
+    },
+    {
+      "source": "/api/payments/(.*)/status",
+      "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/payment-status?localId=$1"
     }
   ]
 }
