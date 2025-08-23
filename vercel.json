@@ -7,8 +7,27 @@
     {
       "source": "/api/asaas-webhook",
       "destination": "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/asaas-webhook"
+    },
+    {
+      "source": "/api/ping",
+      "destination": "https://httpbin.org/anything"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/asaas/webhook",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
+      "source": "/api/asaas-webhook",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
+      "source": "/api/ping",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
     }
   ],
   "cleanUrls": true,
   "trailingSlash": false
 }
+
