@@ -22,6 +22,55 @@ interface AsaasWebhookPayload {
   };
 }
 
+function normToken(raw: string) {
+  if (!raw) return "";
+  const v = raw.trim().replace(/\r?\n/g, "");
+  if (/^bearer\s+/i.test(v)) return v.replace(/^bearer\s+/i, "");
+  if (/^token\s+/i.test(v))  return v.replace(/^token\s+/i, "");
+  if (/^basic\s+/i.test(v)) {
+    try {
+      const dec = atob(v.replace(/^basic\s+/i, ""));
+      const parts = dec.split(":", 2);
+      if (parts.length === 2) return parts[1].trim();
+    } catch {}
+  }
+  return v;
+}
+
+function extractToken(req: Request) {
+  const h = req.headers;
+  const candidates = [
+    "x-asaas-token",
+    "x-webhook-secret",
+    "x-hook-token",
+    "x-hook-secret",
+    "access-token",
+    "access_token",
+    "asaas-token",
+    "asaas_access_token",
+    "authorization",
+  ];
+  for (const name of candidates) {
+    const v = h.get(name);
+    if (v) return { token: normToken(v), source: `header:${name}` };
+  }
+
+  for (const [name, value] of h.entries()) {
+    if (name.includes("token") && value) {
+      return { token: normToken(value), source: `header:${name}` };
+    }
+  }
+
+  const u = new URL(req.url);
+  const qpNames = ["token", "access_token", "access-token", "asaas_token"];
+  for (const qn of qpNames) {
+    const v = u.searchParams.get(qn);
+    if (v) return { token: normToken(v), source: `query:${qn}` };
+  }
+
+  return { token: "", source: "none" };
+}
+
 /**
  * Asaas Webhook Handler (Sandbox)
  * 
@@ -47,14 +96,12 @@ async function handler(req: Request): Promise<Response> {
       return new Response('Server configuration error', { status: 500 });
     }
 
-    // Validate secret token from headers
-    const providedSecret = 
-      req.headers.get('x-webhook-secret') ||
-      req.headers.get('x-asaas-token') ||
-      (req.headers.get('authorization')?.replace(/^Bearer\s+/i, ''));
+    // Validate secret token from headers and query
+    const { token, source } = extractToken(req);
 
-    if (!providedSecret || providedSecret !== webhookSecret) {
-      console.warn('[AsaasWebhook] Invalid or missing webhook secret');
+    if (!token || token !== webhookSecret) {
+      const names = Array.from(req.headers.keys());
+      console.warn(`[AsaasWebhook] 401: src=${source}, headers=${JSON.stringify(names)}`);
       return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
