@@ -11,6 +11,7 @@ import { timeAgo, formatCurrency } from "@/types/raffles";
 import LotteryFederalTab from "@/components/LotteryFederalTab";
 import LotteryFederalCard from "@/components/LotteryFederalCard";
 import WinnersList from "@/components/WinnersList";
+import { nextFederalDrawDate, dateBR } from "@/utils/nextFederalDraw";
 
 interface LotteryResult {
   id: string;
@@ -349,8 +350,14 @@ export default function Resultados() {
                       <p>Nenhum ganhavel completo aguardando sorteio.</p>
                     </div>
                   </Card>
-                ) : completeRaffles.map((draw) => (
-                  <Card key={draw.id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
+                 ) : completeRaffles.map((draw) => {
+                   // Dev-only safety logs
+                   if (import.meta.env.DEV) {
+                     console.debug('[Resultados/Completas] nextDraw=', nextFederalDrawDate().toISOString());
+                   }
+                   
+                   return (
+                   <Card key={draw.id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <span className="truncate text-base font-semibold">{String(draw.title ?? '')}</span>
@@ -359,15 +366,17 @@ export default function Resultados() {
                         </Badge>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      {draw.draw_date && (
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">Próximo Sorteio:</span>
-                          <span className="font-medium">
-                            {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      )}
+                     <CardContent className="space-y-3">
+                       <div className="flex justify-between items-center text-sm">
+                         <span className="text-muted-foreground">Próximo Sorteio:</span>
+                         <span className="font-medium">
+                           {dateBR(nextFederalDrawDate())}
+                         </span>
+                       </div>
+                       <div className="flex justify-between items-center text-sm">
+                         <span className="text-muted-foreground">Horário:</span>
+                         <span className="font-medium">20:00</span>
+                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Valor Total:</span>
                         <span className="font-bold text-lg text-primary">
@@ -390,9 +399,10 @@ export default function Resultados() {
                           Ver Detalhes
                         </Button>
                       </Link>
-                    </CardContent>
-                  </Card>
-                ))}
+                     </CardContent>
+                   </Card>
+                   );
+                 })}
               </div>
             </TabsContent>
 
