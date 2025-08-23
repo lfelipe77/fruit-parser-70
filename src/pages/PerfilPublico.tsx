@@ -151,29 +151,62 @@ export default function PerfilPublico() {
         if (participadosError) {
           console.error('Error fetching participated ganhaveis:', participadosError);
         } else {
-          // Group by raffle_id and aggregate ticket counts
-          const grouped = participados?.reduce((acc: any, ticket: any) => {
-            const existing = acc.find((item: any) => item.raffle_id === ticket.raffle_id);
+          // Group by raffle_id and aggregate ticket counts (one row per raffle)
+          const groupedMap = new Map<string, any>();
+          for (const row of participados) {
+            const key = row.raffle_id;
+            if (!key) continue;
+            const existing = groupedMap.get(key);
             if (existing) {
-              existing.ticket_count += ticket.ticket_count;
-              existing.purchased_numbers = [...existing.purchased_numbers, ...ticket.purchased_numbers];
+              existing.ticket_count += row.ticket_count || 0;
+              if (Array.isArray(row.purchased_numbers)) {
+                existing.purchased_numbers.push(...row.purchased_numbers);
+              }
             } else {
-              acc.push({
-                id: ticket.raffle_id,
-                title: ticket.raffle_title,
-                image: ticket.raffle_image_url,
-                goal: ticket.goal_amount,
-                raised: ticket.amount_raised,
-                progress: ticket.progress_pct_money,
-                daysLeft: ticket.draw_date ? Math.max(0, Math.ceil((new Date(ticket.draw_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0,
-                status: ticket.tx_status === 'paid' ? 'Em andamento' : 'Pendente',
-                ticket_count: ticket.ticket_count,
-                purchased_numbers: ticket.purchased_numbers || [],
-                isOwner
+              groupedMap.set(key, {
+                raffle_id: row.raffle_id,
+                raffle_title: row.raffle_title,
+                raffle_image_url: row.raffle_image_url,
+                goal_amount: row.goal_amount,
+                amount_raised: row.amount_raised,
+                progress_pct_money: row.progress_pct_money,
+                draw_date: row.draw_date,
+                ticket_count: row.ticket_count || 0,
+                purchased_numbers: Array.isArray(row.purchased_numbers) ? [...row.purchased_numbers] : [],
+                isOwner,
               });
             }
-            return acc;
-          }, []) || [];
+          }
+
+          // Fetch raffle statuses to drive button labels
+          const raffleIds = Array.from(groupedMap.keys());
+          let statusesById: Record<string, string> = {};
+          if (raffleIds.length) {
+            const { data: rStatus, error: rErr } = await supabase
+              .from('raffles')
+              .select('id,status')
+              .in('id', raffleIds);
+            if (rErr) {
+              console.error('[PerfilPublico] Failed to fetch raffle statuses', rErr);
+            } else {
+              statusesById = Object.fromEntries((rStatus || []).map((r: any) => [r.id, r.status]));
+            }
+          }
+
+          const grouped = raffleIds.map((id) => ({
+            ...groupedMap.get(id),
+            raffle_status: statusesById[id] || null,
+          }));
+
+          // DEV: check duplicate leaks
+          if (import.meta.env.DEV) {
+            const uniqueCount = new Set(participados.map(p => p.raffle_id).filter(Boolean)).size;
+            if (grouped.length !== uniqueCount) {
+              console.error('[PerfilPublico] Duplicate leak after grouping', { original: participados.length, unique: uniqueCount, grouped: grouped.length });
+            } else {
+              console.debug('[PerfilPublico] Participou grouped', { original: participados.length, grouped: grouped.length });
+            }
+          }
           
           setGanhaveisParticipados(grouped);
         }
@@ -296,21 +329,22 @@ export default function PerfilPublico() {
       console.error('[PerfilPublico] Participou card sem raffle_id', g);
     }
     
-    return {
-      title: g.raffle_title || g.title,
-      description: g.raffle_title || g.title,
-      image: g.raffle_image_url || g.image || '/placeholder.svg',
-      goal: Math.ceil((g.goal_amount || g.goal || 0) / 100),
-      raised: Math.floor((g.amount_raised || g.raised || 0) / 100),
-      daysLeft: g.daysLeft || 0,
-      category: 'Diversos',
-      backers: Math.floor((g.amount_raised || g.raised || 0) / 100),
-      status: g.tx_status === 'paid' ? 'Em andamento' : 'Finalizada',
-      numerosComprados: g.purchased_numbers || [],
-      location: 'Online',
-      raffleId: g.raffle_id || g.id, // Use raffle_id from my_tickets_ext_v6
-      raffleStatus: 'active' // Assume active for participation cards
-    };
+      return {
+        title: g.raffle_title || g.title,
+        description: g.raffle_title || g.title,
+        image: g.raffle_image_url || g.image || '/placeholder.svg',
+        goal: Math.ceil((g.goal_amount || g.goal || 0) / 100),
+        raised: Math.floor((g.amount_raised || g.raised || 0) / 100),
+        daysLeft: g.daysLeft || 0,
+        category: 'Diversos',
+        backers: Math.floor((g.amount_raised || g.raised || 0) / 100),
+        status: g.tx_status === 'paid' ? 'Em andamento' : 'Finalizada',
+        numerosComprados: g.purchased_numbers || [],
+        ticketCount: g.ticket_count || 0,
+        location: 'Online',
+        raffleId: g.raffle_id || g.id, // Use raffle_id from my_tickets_ext_v6
+        raffleStatus: g.raffle_status // actual raffle status to drive CTA
+      };
   }).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left
     if (a.status === "Em andamento" && b.status === "Finalizada") return -1;
@@ -593,7 +627,7 @@ export default function PerfilPublico() {
                                    status={ganhavel.raffleStatus}
                                  />
                                 <Badge className="absolute top-2 right-2 bg-background/90">
-                                  {ganhavel.numerosComprados.length} bilhetes
+                                  {ganhavel.ticketCount} bilhetes
                                 </Badge>
                               </div>
                             ))}
