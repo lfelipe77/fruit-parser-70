@@ -36,7 +36,7 @@ interface AsaasWebhookPayload {
  */
 async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
   }
 
   try {
@@ -55,7 +55,7 @@ async function handler(req: Request): Promise<Response> {
 
     if (!providedSecret || providedSecret !== webhookSecret) {
       console.warn('[AsaasWebhook] Invalid or missing webhook secret');
-      return new Response('Unauthorized', { status: 401 });
+      return new Response(JSON.stringify({ ok: false }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Parse request body (limit size to ~200KB)
