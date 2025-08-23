@@ -55,7 +55,7 @@ async function handler(req: Request): Promise<Response> {
 
     if (!providedSecret || providedSecret !== webhookSecret) {
       console.warn('[AsaasWebhook] Invalid or missing webhook secret');
-      return new Response(JSON.stringify({ ok: false }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ ok: false, error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Parse request body (limit size to ~200KB)
