@@ -1,77 +1,69 @@
-// Cloudflare Pages Function to ensure API proxying happens before SPA fallback
-// Handles CORS preflight, diagnostic ping, and reverse-proxy to Supabase Edge Function
-
-export async function onRequest(context: any): Promise<Response> {
-  const { request } = context;
+export const onRequest: PagesFunction = async (ctx) => {
+  const { request, env } = ctx;
   const url = new URL(request.url);
-  const method = request.method.toUpperCase();
+  const path = url.pathname;
 
-  const allowOrigin = "https://ganhavel.com";
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  const cors = {
+    "Access-Control-Allow-Origin": "https://ganhavel.com",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, x-webhook-secret",
     "Access-Control-Max-Age": "86400",
     "Cache-Control": "no-store",
-  } as const;
+  };
 
-  const isAsaasWebhookPath =
-    url.pathname === "/api/asaas/webhook" || url.pathname === "/api/asaas-webhook";
-
-  // 1) CORS preflight for API paths
-  if (method === "OPTIONS" && url.pathname.startsWith("/api/")) {
-    return new Response(null, { status: 200, headers: corsHeaders });
+  // 1) CORS preflight for /api/*
+  if (request.method === "OPTIONS" && path.startsWith("/api/")) {
+    return new Response(null, { status: 200, headers: cors as any });
   }
 
-  // 2) Diagnostic ping (prove non-SPA handling)
-  if (method === "GET" && url.pathname === "/api/ping") {
-    const body = JSON.stringify({ ok: true, from: "ganhavel.com", ts: Math.floor(Date.now() / 1000) });
+  // 2) Ping: return JSON (NOT HTML)
+  if (request.method === "GET" && path === "/api/ping") {
+    const body = JSON.stringify({
+      ok: true,
+      from: "ganhavel.com",
+      ts: Math.floor(Date.now() / 1000),
+    });
     return new Response(body, {
       status: 200,
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store",
-      },
+      headers: { "content-type": "application/json; charset=utf-8", ...cors },
     });
   }
 
-  // 3) Asaas webhook proxying
-  if (isAsaasWebhookPath) {
-    // Method guard: only POST is allowed
-    if (method !== "POST") {
-      const body = JSON.stringify({ error: "Method Not Allowed" });
-      return new Response(body, {
+  // 3) Webhook proxy (POST only)
+  const isWebhook =
+    path === "/api/asaas/webhook" || path === "/api/asaas-webhook";
+
+  if (isWebhook) {
+    if (request.method !== "POST") {
+      return new Response(JSON.stringify({ ok: false, error: "Method Not Allowed" }), {
         status: 405,
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Access-Control-Allow-Origin": allowOrigin,
-          "Cache-Control": "no-store",
-        },
+        headers: { "content-type": "application/json; charset=utf-8", ...cors },
       });
     }
 
     const upstream = "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/asaas-webhook";
 
-    // Stream request body and forward all headers as-is
-    const proxied = await fetch(upstream, {
+    // Forward headers and body as-is; DO NOT strip x-webhook-secret / Authorization
+    const fwdHeaders = new Headers(request.headers);
+    // Ensure JSON content-type if missing (Asaas always sends JSON)
+    if (!fwdHeaders.get("content-type")) {
+      fwdHeaders.set("content-type", "application/json");
+    }
+
+    const resp = await fetch(upstream + url.search, {
       method: "POST",
+      headers: fwdHeaders,
       body: request.body,
-      headers: request.headers,
       redirect: "manual",
     });
 
-    // Pass-through response while enforcing CORS + no-store
-    const headers = new Headers(proxied.headers);
-    headers.set("Access-Control-Allow-Origin", allowOrigin);
-    headers.set("Cache-Control", "no-store");
+    const respHeaders = new Headers(resp.headers);
+    respHeaders.set("content-type", resp.headers.get("content-type") || "application/json; charset=utf-8");
+    for (const [k, v] of Object.entries(cors)) respHeaders.set(k, v);
 
-    return new Response(proxied.body, {
-      status: proxied.status,
-      statusText: proxied.statusText,
-      headers,
-    });
+    return new Response(resp.body, { status: resp.status, headers: respHeaders });
   }
 
-  // 4) Fallthrough to SPA/static for everything else
-  return context.next();
-}
+  // 4) Fall back to SPA for anything else
+  return ctx.next();
+};
