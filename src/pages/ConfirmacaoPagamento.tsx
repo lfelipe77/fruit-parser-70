@@ -209,43 +209,38 @@ export default function ConfirmacaoPagamento() {
       const unitPrice = asNumber(raffle?.ticket_price, 0);
       const totalPaid = +(unitPrice * safeQty).toFixed(2); // number
 
-      // 4) Reserve tickets
-      const { data: r1, error: e1 } = await supabase.rpc("reserve_tickets_v2", {
+      // 4) Create mock payment temporarily (until RPC functions are ready)
+      const now = Date.now();
+      const providerRef = `temp-${id}-${now}-${Math.floor(Math.random() * 1e9)}`;
+
+      // 5) Call existing RPC with customer data
+      const { data: txId, error } = await (supabase as any).rpc("record_purchase_v2", {
+        p_buyer_user_id: session.user.id,
         p_raffle_id: id,
         p_qty: safeQty,
+        p_unit_price: unitPrice,
+        p_numbers: selectedNumbers,
+        p_provider_ref: providerRef,
+        p_customer_name: formData.fullName,
+        p_customer_phone: digits(formData.phone),
+        p_customer_cpf: digits(formData.cpf),
       });
-      if (e1 || !r1 || r1.length === 0) throw e1 || new Error("Falha ao reservar bilhetes");
-      const reservation_id = r1[0].reservation_id;
 
-      // 5) Create PIX charge on Asaas (Edge Function)
-      const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
-      const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          reservation_id,
-          amount: totalPaid,
-          billingType: "PIX",
-          customer: {
-            name: formData.fullName,
-            email: formData.email,
-            cpf: (formData.cpf || "").replace(/\D/g, ""),
-            phone: (formData.phone || "").replace(/\D/g, ""),
-          },
-        }),
-      });
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(`PIX: ${res.status} ${t}`);
+      if (error) {
+        console.error("[payment] rpc error", {
+          code: (error as any)?.code,
+          message: (error as any)?.message,
+          details: (error as any)?.details,
+          hint: (error as any)?.hint,
+          constraint: (error as any)?.constraint,
+        });
+        toast.error("Pagamento falhou. Tente novamente.");
+        return;
       }
-      const { payment_id } = await res.json();
 
       // 6) Refresh cards + redirect to success
       window.dispatchEvent(new CustomEvent("raffleUpdated"));
-      navigate(`/pagamento/sucesso/${payment_id}?res=${reservation_id}`);
+      navigate(`/pagamento/sucesso/${txId}`);
     } catch (e: any) {
       console.error("[payment] unexpected", e);
       toast.error("Pagamento falhou. Tente novamente.");

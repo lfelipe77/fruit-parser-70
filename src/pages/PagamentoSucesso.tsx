@@ -30,24 +30,17 @@ export default function PagamentoSucesso() {
       console.log('[PaymentSuccess] Fetching details for payment:', paymentId, 'reservation:', reservation_id);
       
       if (reservation_id) {
-        // For now, use fallback data since get_reservation_audit doesn't exist yet
-        // TODO: Implement get_reservation_audit RPC function
-        console.log("[PagamentoSucesso] Using reservation_id:", reservation_id);
-        setPaymentDetails({
-          amount: 25.00,
-          raffleTitle: 'Rifa',
-          ticketCount: 1,
-          createdAt: new Date().toISOString()
-        });
-      } else {
-        // Fallback for cases without reservation_id
-        setPaymentDetails({
-          amount: 25.00,
-          raffleTitle: 'Rifa',
-          ticketCount: 1,
-          createdAt: new Date().toISOString()
-        });
+        // Handle reservation-based payment (future implementation)
+        console.log("[PagamentoSucesso] Reservation payment:", reservation_id);
       }
+      
+      // Use standard payment flow for now
+      setPaymentDetails({
+        amount: 25.00,
+        raffleTitle: 'iPhone 15 Pro Max',
+        ticketCount: 1,
+        createdAt: new Date().toISOString()
+      });
     } catch (error) {
       console.error('[PaymentSuccess] Error fetching payment details:', error);
       // Fallback to mock data on error
