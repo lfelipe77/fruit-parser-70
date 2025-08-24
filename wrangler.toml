@@ -1,0 +1,10 @@
+name = "ganhavel-api-proxy"
+main = "index.js"
+compatibility_date = "2024-10-01"
+
+account_id = "2e198a85164a23e6a295003809233a47"
+zone_name  = "ganhavel.com"
+
+routes = [
+  { pattern = "ganhavel.com/api/*", zone_name = "ganhavel.com" }
+]
