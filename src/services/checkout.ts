@@ -50,20 +50,31 @@ export async function createPixPayment(
 }
 
 export async function getPaymentStatus(edgeUrl: string, paymentId: string) {
-  const res = await fetch(`${edgeUrl}/functions/v1/payment-status?paymentId=${encodeURIComponent(paymentId)}`);
-  
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`payment-status ${res.status}: ${errorText}`);
+  try {
+    const res = await fetch(`${edgeUrl}/functions/v1/payment-status?paymentId=${encodeURIComponent(paymentId)}`);
+    
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => '');
+      console.warn(`[getPaymentStatus] ${res.status}: ${errorText}`);
+      // Return a safe default status for non-critical errors
+      if (res.status === 404 || res.status >= 500) {
+        return { status: 'PENDING', providerPaymentId: paymentId };
+      }
+      throw new Error(`payment-status ${res.status}: ${errorText}`);
+    }
+    
+    // Expected payload: 
+    // { 
+    //   status: 'PENDING'|'RECEIVED'|'CONFIRMED'|'OVERDUE'|'REFUNDED', 
+    //   updatedAt?: string, 
+    //   providerPaymentId: string 
+    // }
+    return res.json();
+  } catch (error) {
+    console.warn('[getPaymentStatus] Network error:', error);
+    // Return pending status for network errors to allow retry
+    return { status: 'PENDING', providerPaymentId: paymentId };
   }
-  
-  // Expected payload: 
-  // { 
-  //   status: 'PENDING'|'RECEIVED'|'CONFIRMED'|'OVERDUE'|'REFUNDED', 
-  //   updatedAt?: string, 
-  //   providerPaymentId: string 
-  // }
-  return res.json();
 }
 
 export async function getReservationAudit(supabase: any, reservationId: string) {

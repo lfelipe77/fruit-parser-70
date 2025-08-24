@@ -34,7 +34,8 @@ export function PixCheckoutModal({
     phone: ''
   });
 
-  const edgeUrl = 'https://whqxpuyjxoiufzhvqneg.supabase.co';
+  // Use environment variable with fallback
+  const edgeUrl = import.meta.env.VITE_SUPABASE_URL || 'https://whqxpuyjxoiufzhvqneg.supabase.co';
   const { state, start, retry, isLoading, isWaiting, isError, isConfirmed } = usePixCheckout({
     supabase,
     edgeUrl
@@ -65,8 +66,11 @@ export function PixCheckoutModal({
         }
       });
 
-      if (result) {
+      if (result && result.payment_id && result.reservation_id) {
+        console.log('[PixCheckout] Success! Navigating to success page...');
         onSuccess(result.payment_id, result.reservation_id);
+      } else {
+        throw new Error('Resultado incompleto do pagamento');
       }
     } catch (error) {
       console.error('[PixCheckout] Start failed:', error);

@@ -57,7 +57,12 @@ export function usePixCheckout({ supabase, edgeUrl }: { supabase: any; edgeUrl: 
       const { payment_id, qr } = paymentResult;
 
       if (!payment_id || !qr) {
-        throw new Error('Falha ao criar pagamento PIX - dados incompletos');
+        throw new Error('Falha ao criar pagamento PIX - dados incompletos do servidor');
+      }
+
+      // Validate QR data structure
+      if (!qr.encodedImage || !qr.payload || !qr.expiresAt) {
+        throw new Error('Dados do QR Code PIX incompletos');
       }
 
       console.log('[PixCheckout] PIX payment created:', payment_id);
@@ -93,8 +98,11 @@ export function usePixCheckout({ supabase, edgeUrl }: { supabase: any; edgeUrl: 
           await new Promise(resolve => setTimeout(resolve, 3000));
           pollAttempts++;
         } catch (pollError) {
-          console.warn('[PixCheckout] Poll error:', pollError);
-          // Continue polling despite individual poll errors
+          console.warn('[PixCheckout] Poll error (continuing):', pollError);
+          // Show user-friendly message for network issues but continue polling
+          if (pollAttempts % 10 === 0) { // Every 30 seconds
+            console.info('[PixCheckout] Aguardando confirmação. Verificando novamente...');
+          }
           await new Promise(resolve => setTimeout(resolve, 3000));
           pollAttempts++;
         }
