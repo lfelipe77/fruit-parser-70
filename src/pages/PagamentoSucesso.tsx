@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, Eye } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,29 +16,47 @@ interface PaymentDetails {
 export default function PagamentoSucesso() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
+  const [sp] = useSearchParams();
+  const reservation_id = sp.get("res");
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (paymentId) {
-      fetchPaymentDetails();
-    }
-  }, [paymentId]);
+    fetchPaymentDetails();
+  }, [paymentId, reservation_id]);
 
   const fetchPaymentDetails = async () => {
     try {
-      // This would query our payments table joined with raffles
-      // For now, showing mock data since we haven't implemented the full DB schema
-      console.log('[PaymentSuccess] Fetching details for payment:', paymentId);
+      console.log('[PaymentSuccess] Fetching details for payment:', paymentId, 'reservation:', reservation_id);
       
+      if (reservation_id) {
+        // For now, use fallback data since get_reservation_audit doesn't exist yet
+        // TODO: Implement get_reservation_audit RPC function
+        console.log("[PagamentoSucesso] Using reservation_id:", reservation_id);
+        setPaymentDetails({
+          amount: 25.00,
+          raffleTitle: 'Rifa',
+          ticketCount: 1,
+          createdAt: new Date().toISOString()
+        });
+      } else {
+        // Fallback for cases without reservation_id
+        setPaymentDetails({
+          amount: 25.00,
+          raffleTitle: 'Rifa',
+          ticketCount: 1,
+          createdAt: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('[PaymentSuccess] Error fetching payment details:', error);
+      // Fallback to mock data on error
       setPaymentDetails({
         amount: 25.00,
-        raffleTitle: 'iPhone 15 Pro Max',
+        raffleTitle: 'Rifa',
         ticketCount: 1,
         createdAt: new Date().toISOString()
       });
-    } catch (error) {
-      console.error('[PaymentSuccess] Error fetching payment details:', error);
     } finally {
       setLoading(false);
     }
