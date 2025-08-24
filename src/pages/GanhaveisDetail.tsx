@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import DetalhesOrganizador from "@/components/DetalhesOrganizador";
 import CompartilheRifa from "@/components/CompartilheRifa";
+import { PixCheckoutModal } from "@/components/PixCheckoutModal";
 import { toRaffleView, type MoneyRow, type RaffleExtras } from "@/adapters/raffleAdapters";
-import { toConfirm } from "@/lib/nav";
+import { useAuth } from "@/hooks/useAuth";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -54,6 +55,7 @@ const FALLBACK_RULES = `
 export default function GanhaveisDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // ---- Hooks (always first)
   const [moneyRow, setMoneyRow] = React.useState<MoneyRow | null>(null);
@@ -62,6 +64,7 @@ export default function GanhaveisDetail() {
   const [loading, setLoading] = React.useState(true);
   const [qty, setQty] = React.useState(1);
   const [directLink, setDirectLink] = React.useState<string | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // ---- Data normalization
   const raffle = React.useMemo(() => 
@@ -318,11 +321,17 @@ export default function GanhaveisDetail() {
             </div>
 
             <button
-              onClick={() => navigate(toConfirm(raffle.id, qty))}
+              onClick={() => {
+                if (!user) {
+                  navigate('/login');
+                  return;
+                }
+                setIsCheckoutOpen(true);
+              }}
               disabled={!isActive}
               className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Comprar {qty} bilhetes
+              {!user ? 'Fazer Login para Comprar' : `Comprar ${qty} bilhetes`}
             </button>
 
             {/* Share section */}
@@ -401,6 +410,21 @@ export default function GanhaveisDetail() {
           }}
         />
       </div>
+
+      {/* PIX Checkout Modal */}
+      {raffle && (
+        <PixCheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          raffleId={raffle.id}
+          ticketPrice={raffle.ticketPrice}
+          quantity={qty}
+          onSuccess={(paymentId, reservationId) => {
+            setIsCheckoutOpen(false);
+            navigate(`/pagamento/sucesso/${paymentId}?res=${reservationId}`);
+          }}
+        />
+      )}
       </div>
     </>
   );

@@ -35,6 +35,7 @@ import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
 import ConfirmacaoPagamento from "./pages/ConfirmacaoPagamento";
 import PagamentoSucesso from "./pages/PagamentoSucesso";
+import PagamentoSucessoNew from "./pages/PagamentoSucessoNew";
 import PagamentoErro from "./pages/PagamentoErro";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PerfilPublico from "./pages/PerfilPublico";
@@ -273,7 +274,7 @@ const AppContent = () => {
           <Route path="/debug-token" element={<DebugToken />} />
         )}
         {/* Payment success/declined routes */}
-        <Route path="/pagamento/sucesso/:paymentId" element={<PagamentoSucesso />} />
+        <Route path="/pagamento/sucesso/:paymentId" element={<PagamentoSucessoNew />} />
         <Route path="/pagamento/recusado/:paymentId" element={<PagamentoRecusado />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
