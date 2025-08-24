@@ -97,7 +97,21 @@ export function AsaasCheckoutDrawer({
       console.log('[Checkout] Initializing payment...');
       setStep('loading');
 
-      // Step 1: Create customer
+      // Step 1: Reservar bilhetes (v2) para obter reservation_id
+      const { data: resv, error: resvErr } = await supabase.rpc('reserve_tickets_v2', {
+        p_raffle_id: raffleId,
+        p_qty: quantity,
+      });
+      if (resvErr) {
+        throw new Error('Erro ao reservar bilhetes: ' + resvErr.message);
+      }
+      const resEntry = Array.isArray(resv) ? resv[0] : null;
+      const reservationId = resEntry?.reservation_id as string;
+      if (!reservationId) {
+        throw new Error('Falha ao criar reserva.');
+      }
+
+      // Step 2: Criar cliente
       const customerResponse = await supabase.functions.invoke('asaas-customers', {
         body: {
           name: 'Cliente Sandbox',
@@ -112,13 +126,14 @@ export function AsaasCheckoutDrawer({
       const customer = customerResponse.data;
       console.log('[Checkout] Customer created:', customer.id);
 
-      // Step 2: Create payment
+      // Step 3: Create payment (com reservation_id -> externalReference)
       const total = ticketPrice * quantity;
       const paymentResponse = await supabase.functions.invoke('asaas-payments', {
         body: {
           customerId: customer.id,
           value: total,
-          description: `Compra de ${quantity} bilhete(s) - Rifa ${raffleId}`
+          description: `Raffle ${raffleId} — ${quantity} tickets`,
+          reservation_id: reservationId,
         }
       });
 

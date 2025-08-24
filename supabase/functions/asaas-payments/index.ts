@@ -6,6 +6,7 @@ interface AsaasPaymentRequest {
   value: number;
   description?: string;
   dueDate?: string;
+  reservation_id: string; // UUID da reserva para externalReference
 }
 
 interface AsaasPaymentResponse {
@@ -51,9 +52,9 @@ async function handler(req: Request): Promise<Response> {
     // Parse and validate request body
     const body: AsaasPaymentRequest = await req.json();
     
-    if (!body.customerId || !body.value || body.value <= 0) {
+    if (!body.customerId || !body.value || body.value <= 0 || !body.reservation_id) {
       return new Response(JSON.stringify({
-        error: 'customerId e value são obrigatórios'
+        error: 'customerId, value e reservation_id são obrigatórios'
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -77,6 +78,7 @@ async function handler(req: Request): Promise<Response> {
         billingType: 'PIX',
         value: body.value,
         description: body.description || 'Compra de bilhetes',
+        externalReference: body.reservation_id,
         dueDate: dueDate
       })
     });
