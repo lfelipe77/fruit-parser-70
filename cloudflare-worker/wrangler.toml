@@ -1,0 +1,8 @@
+name = "ganhavel-api-proxy"
+main = "index.js"
+compatibility_date = "2025-08-24"
+
+# Bind this worker in front of the SPA for API routes
+routes = [
+  { pattern = "ganhavel.com/api/*", zone_name = "ganhavel.com" }
+]
