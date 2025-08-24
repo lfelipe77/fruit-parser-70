@@ -30,11 +30,12 @@ export default function PagamentoSucesso() {
       console.log('[PaymentSuccess] Fetching details for payment:', paymentId, 'reservation:', reservation_id);
       
       if (reservation_id) {
-        // Handle reservation-based payment (future implementation)
+        // For now, use a simple approach until RPC is set up
         console.log("[PagamentoSucesso] Reservation payment:", reservation_id);
+        // TODO: Call get_reservation_audit when RPC is available
       }
       
-      // Use standard payment flow for now
+      // Fallback to mock data
       setPaymentDetails({
         amount: 25.00,
         raffleTitle: 'iPhone 15 Pro Max',
