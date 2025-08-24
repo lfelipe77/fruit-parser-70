@@ -124,6 +124,15 @@ export default function ConfirmacaoPagamento() {
     cpf: ''
   });
 
+  // PIX modal state
+  const [pix, setPix] = React.useState<{
+    open: boolean; 
+    qr?: any; 
+    paymentId?: string; 
+    reservationId?: string; 
+    err?: string
+  }>({ open: false });
+
   // Generate lottery combinations (6 two-digit numbers, like: (12-43-24-56-78-90))
   const generateLotteryCombination = () => {
     const numbers = [];
@@ -184,16 +193,16 @@ export default function ConfirmacaoPagamento() {
   const fee = 2.00;
   const total = subtotal + fee;
 
-  // Handle form submission
-  async function handlePayment() {
+  // Handle PIX payment with modal
+  async function onPayPix() {
     try {
-      // 1) Validate form first
+      // 0) validate form
       if (!validateForm()) {
         toast.error("Por favor, corrija os erros no formulário");
         return;
       }
 
-      // 2) Require auth
+      // 1) require auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         const url = new URL("/login", window.location.origin);
@@ -204,12 +213,11 @@ export default function ConfirmacaoPagamento() {
 
       setIsProcessing(true);
 
-      // 3) Inputs
+      // 2) inputs
       const safeQty = Math.max(1, asNumber(qty, 1));
       const unitPrice = asNumber(raffle?.ticket_price, 0);
-      const totalPaid = +(unitPrice * safeQty).toFixed(2); // number
 
-      // 4) Reserve tickets
+      // 3) reserve tickets
       const { data: r1, error: e1 } = await (supabase as any).rpc('reserve_tickets_v2', {
         p_raffle_id: id,
         p_qty: safeQty,
@@ -217,10 +225,10 @@ export default function ConfirmacaoPagamento() {
       if (e1 || !r1?.reservation_id) throw e1 || new Error('Falha ao reservar bilhetes');
       const reservation_id = r1.reservation_id;
 
-      // 5) Create PIX charge (Edge Function)
+      // 4) create PIX on Asaas
       const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
 
-      const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
+      const res = await fetch(`${EDGE}/functions/v1/asaas-payments`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -228,7 +236,7 @@ export default function ConfirmacaoPagamento() {
         },
         body: JSON.stringify({
           reservation_id,
-          amount: totalPaid,
+          amount: unitPrice * safeQty,
           billingType: 'PIX',
           customer: {
             name: formData.fullName,
@@ -238,18 +246,38 @@ export default function ConfirmacaoPagamento() {
           },
         }),
       });
-      if (!res.ok) {
-        const t = await res.text().catch(() => '');
-        throw new Error(`PIX: ${res.status} ${t}`);
-      }
-      const { payment_id } = await res.json();
+      if (!res.ok) throw new Error(`PIX: ${res.status} ${await res.text().catch(() => '')}`);
+      const { payment_id, qr } = await res.json();
 
-      // 6) Redirect to the SAME legacy receipt page
-      navigate(`/pagamento/sucesso/${payment_id}?res=${reservation_id}`);
+      // 5) show PIX modal
+      setPix({ open: true, qr, paymentId: payment_id, reservationId: reservation_id });
+      setIsProcessing(false);
+
+      // 6) poll status (lightweight)
+      const deadline = Date.now() + 15 * 60_000; // 15 min
+      while (Date.now() < deadline) {
+        const s = await fetch(`${EDGE}/functions/v1/payment-status?paymentId=${encodeURIComponent(payment_id)}`);
+        if (!s.ok) {
+          // keep waiting quietly; backend may rely only on webhook
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+        const { status } = await s.json();
+        if (status === 'RECEIVED' || status === 'CONFIRMED') {
+          // redirect to legacy receipt you like
+          navigate(`/pagamento/sucesso/${payment_id}?res=${reservation_id}`);
+          return;
+        }
+        if (status === 'OVERDUE' || status === 'REFUNDED') {
+          throw new Error('Pagamento expirou ou foi estornado.');
+        }
+        await new Promise(r => setTimeout(r, 3000));
+      }
+      throw new Error('Tempo expirado aguardando confirmação.');
     } catch (e: any) {
-      console.error("[payment] unexpected", e);
-      toast.error("Pagamento falhou. Tente novamente.");
-    } finally {
+      console.error('[PIX]', e);
+      setPix({ open: false, err: e?.message || 'Falha no pagamento' });
+      toast.error('Pagamento falhou. Tente novamente.');
       setIsProcessing(false);
     }
   }
@@ -591,7 +619,7 @@ export default function ConfirmacaoPagamento() {
               </div>
               
               <Button 
-                onClick={handlePayment}
+                onClick={onPayPix}
                 disabled={!user || isProcessing || formData.fullName.trim().length < 2 || digits(formData.phone).length < 10 || digits(formData.cpf).length !== 11}
                 className="w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 size="lg"
@@ -624,6 +652,38 @@ export default function ConfirmacaoPagamento() {
         </div>
       </div>
       </div>
+
+      {/* PIX Modal */}
+      {pix.open && pix.qr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-3">Pague com PIX</h3>
+            <img
+              src={pix.qr.encodedImage}
+              alt="QR PIX"
+              className="w-64 h-64 mx-auto border rounded-md mb-4"
+            />
+            <div className="flex items-center gap-2">
+              <Input
+                readOnly
+                value={pix.qr.payload}
+                className="flex-1"
+              />
+              <Button
+                onClick={() => navigator.clipboard.writeText(pix.qr.payload)}
+              >
+                Copiar
+              </Button>
+            </div>
+            <p className="text-sm opacity-70 mt-2">
+              Expira em: {new Date(pix.qr.expiresAt || pix.qr.expirationDate).toLocaleString()}
+            </p>
+            <div className="mt-4 flex justify-end">
+              <Button onClick={() => setPix({open:false})}>Fechar</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
