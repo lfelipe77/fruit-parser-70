@@ -4,7 +4,7 @@ import { withCORS } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
 
 const MAIN_PAYMENT_EVENTS = [
   'PAYMENT_CREATED',
@@ -19,6 +19,7 @@ interface AsaasWebhookPayload {
   payment?: {
     id: string;
     status: string;
+    externalReference?: string;
   };
 }
 
@@ -74,14 +75,9 @@ function extractToken(req: Request) {
 /**
  * Asaas Webhook Handler (Sandbox)
  * 
- * Handles main payment events from Asaas and updates database status:
- * - PAYMENT_CREATED → created
- * - PAYMENT_RECEIVED → received  
- * - PAYMENT_CONFIRMED → confirmed
- * - PAYMENT_OVERDUE → overdue
- * - PAYMENT_REFUNDED → refunded
- * 
- * Updates payments table idempotently by provider_payment_id.
+ * Handles main payment events from Asaas and updates database status.
+ * Uses mark_tickets_paid RPC when externalReference (reservation_id) is available,
+ * otherwise falls back to confirm_payment RPC.
  */
 async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
@@ -130,36 +126,34 @@ async function handler(req: Request): Promise<Response> {
       return new Response('Missing event field', { status: 400 });
     }
 
-    // Handle main payment events
+    // Handle main payment events - specifically PAYMENT_CONFIRMED
     if (MAIN_PAYMENT_EVENTS.includes(event as any)) {
-      if (payment?.id && payment?.status) {
+      if (payment?.id) {
         console.log(`[AsaasWebhook] ${event} id=${payment.id} status=${payment.status}`);
         
-        // Map event to internal status
-        const statusMapping: { [key: string]: string } = {
-          'PAYMENT_CREATED': 'created',
-          'PAYMENT_RECEIVED': 'received',
-          'PAYMENT_CONFIRMED': 'confirmed',
-          'PAYMENT_OVERDUE': 'overdue',
-          'PAYMENT_REFUNDED': 'refunded'
-        };
+        // Only process confirmed payments
+        if (event === 'PAYMENT_CONFIRMED') {
+          const providerPaymentId = payment.id;
+          const reservationId = payment.externalReference;
 
-        const internalStatus = statusMapping[event] || 'unknown';
-
-        // Update database idempotently
-        const { error: updateError } = await supabase
-          .from('payments')
-          .update({
-            status: internalStatus,
-            updated_at: new Date().toISOString(),
-            payload: payload
-          })
-          .eq('provider_payment_id', payment.id);
-
-        if (updateError) {
-          console.error('[AsaasWebhook] Failed to update payment status:', updateError);
-        } else {
-          console.log(`[AsaasWebhook] Updated payment ${payment.id} to status: ${internalStatus}`);
+          try {
+            if (reservationId) {
+              const { error } = await sb.rpc("mark_tickets_paid", {
+                p_reservation_id: reservationId,
+                p_provider: "asaas",
+                p_provider_payment_id: providerPaymentId,
+              });
+              if (error) console.error("[asaas-webhook] mark_tickets_paid error:", error);
+            } else {
+              const { error } = await sb.rpc("confirm_payment", {
+                p_provider: "asaas",
+                p_provider_payment_id: providerPaymentId,
+              });
+              if (error) console.error("[asaas-webhook] confirm_payment error:", error);
+            }
+          } catch (e) {
+            console.error("[asaas-webhook] rpc exception:", e);
+          }
         }
       } else {
         console.log(`[AsaasWebhook] ${event} (payment data incomplete)`);

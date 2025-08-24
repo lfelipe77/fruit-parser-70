@@ -60,6 +60,27 @@ export type Database = {
           },
         ]
       }
+      asaas_webhook_logs: {
+        Row: {
+          event: string | null
+          id: number
+          raw: Json
+          received_at: string | null
+        }
+        Insert: {
+          event?: string | null
+          id?: number
+          raw: Json
+          received_at?: string | null
+        }
+        Update: {
+          event?: string | null
+          id?: number
+          raw?: Json
+          received_at?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string | null
@@ -898,8 +919,12 @@ export type Database = {
           concurso_number: string
           created_at: string | null
           draw_date: string
+          error: string | null
           fetched_url: string | null
           game_slug: string
+          header_authorized: boolean | null
+          header_present: boolean | null
+          http_status: number | null
           id: string
           meta: Json | null
           numbers: string[]
@@ -908,7 +933,9 @@ export type Database = {
           provider: string
           raffle_id: string | null
           request_id: string | null
+          status: string | null
           ticket_id: string | null
+          updated_at: string | null
           user_id: string | null
           winners: Json | null
           winning_key: string
@@ -918,8 +945,12 @@ export type Database = {
           concurso_number: string
           created_at?: string | null
           draw_date: string
+          error?: string | null
           fetched_url?: string | null
           game_slug: string
+          header_authorized?: boolean | null
+          header_present?: boolean | null
+          http_status?: number | null
           id?: string
           meta?: Json | null
           numbers?: string[]
@@ -928,7 +959,9 @@ export type Database = {
           provider: string
           raffle_id?: string | null
           request_id?: string | null
+          status?: string | null
           ticket_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
           winners?: Json | null
           winning_key: string
@@ -938,8 +971,12 @@ export type Database = {
           concurso_number?: string
           created_at?: string | null
           draw_date?: string
+          error?: string | null
           fetched_url?: string | null
           game_slug?: string
+          header_authorized?: boolean | null
+          header_present?: boolean | null
+          http_status?: number | null
           id?: string
           meta?: Json | null
           numbers?: string[]
@@ -948,7 +985,9 @@ export type Database = {
           provider?: string
           raffle_id?: string | null
           request_id?: string | null
+          status?: string | null
           ticket_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
           winners?: Json | null
           winning_key?: string
@@ -2184,6 +2223,19 @@ export type Database = {
       }
     }
     Views: {
+      admin_latest_federal_status: {
+        Row: {
+          concurso_number: string | null
+          draw_date: string | null
+          last_header_authorized: boolean | null
+          last_header_present: boolean | null
+          last_log_at: string | null
+          last_pick_ok: boolean | null
+          last_status: string | null
+          latest_store_updated_at: string | null
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           id: string | null
@@ -2277,7 +2329,20 @@ export type Database = {
         Row: {
           concurso_number: string | null
           draw_date: string | null
-          numbers: Json | null
+          game_slug: string | null
+          numbers: string[] | null
+        }
+        Insert: {
+          concurso_number?: string | null
+          draw_date?: string | null
+          game_slug?: string | null
+          numbers?: string[] | null
+        }
+        Update: {
+          concurso_number?: string | null
+          draw_date?: string | null
+          game_slug?: string | null
+          numbers?: string[] | null
         }
         Relationships: []
       }
@@ -3741,6 +3806,25 @@ export type Database = {
         }
         Relationships: []
       }
+      v_federal_winners: {
+        Row: {
+          concurso_number: string | null
+          draw_date: string | null
+          draw_pairs: string[] | null
+          fetched_url: string | null
+          log_created_at: string | null
+          provider: string | null
+          raffle_id: string | null
+          raffle_title: string | null
+          ticket_created_at: string | null
+          ticket_id: string | null
+          ticket_numbers_json: Json | null
+          user_id: string | null
+          winner_full_name_raw: string | null
+          winner_public_handle: string | null
+        }
+        Relationships: []
+      }
       v_raffle_ticket_stats: {
         Row: {
           paid_tickets: number | null
@@ -4127,6 +4211,19 @@ export type Database = {
         Args: { p_raffle_id: string }
         Returns: string
       }
+      get_admin_latest_federal_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          concurso_number: string
+          draw_date: string
+          last_header_authorized: boolean
+          last_header_present: boolean
+          last_log_at: string
+          last_pick_ok: boolean
+          last_status: string
+          latest_store_updated_at: string
+        }[]
+      }
       get_admin_logs: {
         Args: Record<PropertyKey, never> | { p_limit?: number }
         Returns: {
@@ -4438,6 +4535,10 @@ export type Database = {
       }
       text_to_bytea: {
         Args: { data: string }
+        Returns: string
+      }
+      ticket_tail5_key: {
+        Args: { pairs: string[] }
         Returns: string
       }
       tickets_by_reservation: {
