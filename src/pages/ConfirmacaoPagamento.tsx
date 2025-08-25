@@ -67,7 +67,9 @@ export default function ConfirmacaoPagamento() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [sp] = useSearchParams();
+  const debugOn = sp.get("debug") === "1";
   const [debugToken, setDebugToken] = useState<string>("");
+  const [debugReservationId, setDebugReservationId] = useState<string | null>(null);
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
 
@@ -137,11 +139,11 @@ export default function ConfirmacaoPagamento() {
 
   useEffect(() => {
     (async () => {
-      if (sp.get("debug") !== "1") return;
+      if (!debugOn) return;
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) setDebugToken(session.access_token);
     })();
-  }, [sp]);
+  }, [debugOn]);
 
   // Generate lottery combinations (6 two-digit numbers, like: (12-43-24-56-78-90))
   const generateLotteryCombination = () => {
@@ -240,6 +242,8 @@ export default function ConfirmacaoPagamento() {
         throw new Error(msg);
       }
       const reservation_id = r1[0].reservation_id;
+      if (debugOn) setDebugReservationId(reservation_id);
+      console.log("[debug] reservation_id", reservation_id);
 
       // 4) create PIX on Asaas
       const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
@@ -397,17 +401,31 @@ export default function ConfirmacaoPagamento() {
       <Navigation />
       <div className="container mx-auto p-4 max-w-4xl">
         {/* Debug Block */}
-        {sp.get("debug") === "1" && (
-          <div className="p-3 rounded-lg border bg-yellow-50 text-xs break-all mb-6">
-            <div className="font-semibold mb-1">Debug: Session JWT</div>
-            <div className="mb-2">{debugToken || "(no session found)"}</div>
-            <button
-              className="btn btn-sm"
-              onClick={() => navigator.clipboard.writeText(debugToken)}
-              disabled={!debugToken}
-            >
-              Copiar token
-            </button>
+        {debugOn && (
+          <div className="p-3 rounded-lg border bg-yellow-50 text-xs break-all space-y-3 mb-6">
+            <div>
+              <div className="font-semibold mb-1">Debug: Session JWT</div>
+              <div className="mb-2">{debugToken || "(no session found)"}</div>
+              <button
+                className="btn btn-sm"
+                onClick={() => navigator.clipboard.writeText(debugToken)}
+                disabled={!debugToken}
+              >
+                Copy token
+              </button>
+            </div>
+            {debugReservationId && (
+              <div>
+                <div className="font-semibold mb-1">Debug: reservation_id</div>
+                <div className="mb-2">{debugReservationId}</div>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => navigator.clipboard.writeText(debugReservationId)}
+                >
+                  Copy reservation_id
+                </button>
+              </div>
+            )}
           </div>
         )}
         
