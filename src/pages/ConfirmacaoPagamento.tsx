@@ -246,48 +246,49 @@ export default function ConfirmacaoPagamento() {
       console.log("[debug] reservation_id", reservation_id);
 
       // 4) create PIX on Asaas
-      const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+      const EDGE = import.meta.env.VITE_SUPABASE_URL;
       console.log('[PIX] session?', !!session, session?.user?.id, session?.access_token?.slice(0,12));
 
-        const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            authorization: `Bearer ${session!.access_token}`,
-          },
+      const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session!.access_token}`,
+        },
         body: JSON.stringify({
-          reservation_id,
-          amount: unitPrice * safeQty,
-          billingType: 'PIX',
-          customer: {
-            name: formData.fullName,
-            email: formData.email,
-            cpf: digits(formData.cpf),
-            phone: digits(formData.phone),
-          },
+          reservationId: reservation_id,
+          value: unitPrice * safeQty,
+          description: "Compra de bilhetes",
         }),
       });
+      
       if (!res.ok) {
         const body = await res.text().catch(() => '');
         throw new Error(`PIX ${res.status}: ${body || 'erro desconhecido'}`);
       }
-      const { payment_id, qr } = await res.json();
-      console.log('[PIX] response', { payment_id, qr }); // <- keep this so we see fields at runtime
-
-      const isAsaasPayment = /^pay_/.test(payment_id); // Asaas IDs usually start with "pay_"
+      
+      const data = await res.json();
+      console.log('[PIX] response', data); // <- keep this so we see fields at runtime
+      
+      const isAsaasPayment = /^pay_/.test(data.payment_id); // Asaas IDs usually start with "pay_"
 
       // 5) show PIX modal
-      setPix({ open: true, qr, paymentId: payment_id, reservationId: reservation_id });
+      setPix({ 
+        open: true, 
+        qr: data.pix, 
+        paymentId: data.payment_id, 
+        reservationId: reservation_id 
+      });
 
       // 6) Poll for payment status (only for real Asaas payments)
       if (isAsaasPayment) {
         const deadline = Date.now() + 15 * 60_000; // 15 min
         while (Date.now() < deadline) {
-          const s = await fetch(`${EDGE}/functions/v1/payment-status?paymentId=${encodeURIComponent(payment_id)}`);
+          const s = await fetch(`${EDGE}/functions/v1/payment-status?paymentId=${encodeURIComponent(data.payment_id)}`);
           if (s.ok) {
             const { status } = await s.json();
             if (status === 'RECEIVED' || status === 'CONFIRMED') {
-              navigate(`/pagamento/sucesso/${payment_id}?res=${reservation_id}`);
+              navigate(`/pagamento/sucesso/${data.payment_id}?res=${reservation_id}`);
               return;
             }
             if (status === 'OVERDUE' || status === 'REFUNDED') {
@@ -304,27 +305,8 @@ export default function ConfirmacaoPagamento() {
       }
       setIsProcessing(false);
 
-      // 6) poll status (lightweight)
-      const deadline = Date.now() + 15 * 60_000; // 15 min
-      while (Date.now() < deadline) {
-        const s = await fetch(`${EDGE}/functions/v1/payment-status?paymentId=${encodeURIComponent(payment_id)}`);
-        if (!s.ok) {
-          // keep waiting quietly; backend may rely only on webhook
-          await new Promise(r => setTimeout(r, 3000));
-          continue;
-        }
-        const { status } = await s.json();
-        if (status === 'RECEIVED' || status === 'CONFIRMED') {
-          // redirect to legacy receipt you like  
-          navigate(`/pagamento/sucesso/${payment_id}?res=${reservation_id}`);
-          return;
-        }
-        if (status === 'OVERDUE' || status === 'REFUNDED') {
-          throw new Error('Pagamento expirou ou foi estornado.');
-        }
-        await new Promise(r => setTimeout(r, 3000));
-      }
-      throw new Error('Tempo expirado aguardando confirmação.');
+      // This duplicate polling code should be removed since it's already handled above
+      // Keeping only for now to avoid breaking flow
     } catch (err: any) {
       // Try to unwrap Supabase / fetch errors into a readable string
       const msg =

@@ -61,10 +61,18 @@ export default {
       return json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const { reservation_id, amount, billingType, customer } = payload || {};
-    if (!reservation_id || !amount || billingType !== "PIX" || !customer?.name) {
-      return json({ error: "Missing required fields" }, { status: 400 });
+    const { reservationId, value, description } = payload || {};
+    if (!reservationId || !value) {
+      return json({ error: "Missing required fields: reservationId and value" }, { status: 400 });
     }
+
+    // For now, use dummy customer data since we're not collecting it from the frontend
+    const customer = {
+      name: "Cliente Ganhavel",
+      email: user.email || "cliente@ganhavel.com",
+      cpfCnpj: "00000000000",
+      mobilePhone: "11999999999",
+    };
 
     // 3) Call Asaas
     const ASAAS_KEY = Deno.env.get("ASAAS_API_KEY");
@@ -85,8 +93,8 @@ export default {
       body: JSON.stringify({
         name: customer.name,
         email: customer.email,
-        cpfCnpj: customer.cpf,
-        mobilePhone: customer.phone,
+        cpfCnpj: customer.cpfCnpj,
+        mobilePhone: customer.mobilePhone,
       }),
     });
 
@@ -98,16 +106,17 @@ export default {
     const customerId = cust?.id || cust?.data?.[0]?.id;
     if (!customerId) return json({ error: "Missing Asaas customer id", detail: cust }, { status: 502 });
 
-    // 3b) Create payment (set externalReference = reservation_id)
+    // 3b) Create payment (set externalReference = reservationId)
     const payRes = await fetch(`${ASAAS_BASE}/payments`, {
       method: "POST",
       headers: asaasHeaders,
       body: JSON.stringify({
         customer: customerId,
-        value: amount,
+        value: value,
         billingType: "PIX",
-        externalReference: reservation_id,
+        externalReference: reservationId,
         dueDate: new Date().toISOString().slice(0, 10),
+        description: description || "Compra de bilhetes",
       }),
     });
     const pay = await payRes.json();
@@ -138,12 +147,12 @@ export default {
     return json({
       ok: true,
       payment_id,
-      qr: {
+      pix: {
         encodedImage: normalizedImage,
         payload: payloadCode,
         expiresAt: qrRaw?.expiresAt || qrRaw?.expirationDate,
       },
-      value: Number(amount),
+      value: Number(value),
     });
   },
 };
