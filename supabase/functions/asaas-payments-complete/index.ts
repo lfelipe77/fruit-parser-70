@@ -1,225 +1,147 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { withCORS } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-interface CompletePaymentRequest {
-  reservation_id: string;
-  amount: number;
-  customer: {
-    name: string;
-    email: string;
-    cpf?: string;
-    phone?: string;
-  };
-  billingType: 'PIX';
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "POST, OPTIONS",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "vary": "Origin",
+};
+
+function json(body: any, init: ResponseInit = {}) {
+  const h = new Headers(init.headers || {});
+  for (const [k, v] of Object.entries(CORS_HEADERS)) h.set(k, String(v));
+  h.set("content-type", "application/json; charset=utf-8");
+  h.set("cache-control", "no-store");
+  return new Response(JSON.stringify(body), { ...init, headers: h });
 }
 
-interface CompletePaymentResponse {
-  payment_id: string;
-  qr: {
-    encodedImage: string;
-    payload: string;
-    expiresAt: string;
-  };
-  value: number;
+function noContent(init: ResponseInit = {}) {
+  const h = new Headers(init.headers || {});
+  for (const [k, v] of Object.entries(CORS_HEADERS)) h.set(k, String(v));
+  return new Response(null, { ...init, headers: h, status: 204 });
 }
 
-/**
- * Complete Payment Creation with Customer and QR Code
- * 
- * Creates customer, payment, and returns PIX QR code in one call.
- * Expected by the new checkout flow.
- */
-async function handler(req: Request): Promise<Response> {
-  // CORS
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, content-type',
-      }
-    });
-  }
+async function getUserFromAuth(req: Request) {
+  const auth = req.headers.get("authorization") || "";
+  const m = auth.match(/^bearer\s+(.+)$/i);
+  const jwt = m?.[1] || "";
 
-  try {
-    // Set CORS for actual POSTs too
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Content-Type': 'application/json'
+  if (!jwt) return { error: "Missing Authorization Bearer token" };
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+    auth: { persistSession: false },
+  });
+
+  const { data, error } = await sb.auth.getUser();
+  if (error || !data?.user) return { error: "Invalid JWT" };
+  return { user: data.user, jwt };
+}
+
+export default {
+  async fetch(req: Request) {
+    // CORS preflight
+    if (req.method === "OPTIONS") return noContent();
+
+    if (req.method !== "POST") {
+      return json({ error: "Method Not Allowed" }, { status: 405 });
+    }
+
+    // 1) Auth: use Authorization Bearer only
+    const { user, error } = await getUserFromAuth(req) as any;
+    if (!user) return json({ error: error || "Unauthorized" }, { status: 401 });
+
+    // 2) Parse input
+    let payload: any;
+    try {
+      payload = await req.json();
+    } catch {
+      return json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    const { reservation_id, amount, billingType, customer } = payload || {};
+    if (!reservation_id || !amount || billingType !== "PIX" || !customer?.name) {
+      return json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // 3) Call Asaas
+    const ASAAS_KEY = Deno.env.get("ASAAS_API_KEY");
+    const ASAAS_BASE = Deno.env.get("ASAAS_BASE_URL") || "https://api-sandbox.asaas.com/v3";
+    if (!ASAAS_KEY) return json({ error: "Asaas not configured" }, { status: 500 });
+
+    const asaasHeaders = {
+      "Authorization": `Bearer ${ASAAS_KEY}`,
+      "Content-Type": "application/json",
+      "Accept": "application/json",
     };
 
-    // Accept Authorization: Bearer <token> header
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || '';
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
-
-    if (!token) {
-      console.error('[AsaasComplete] Missing authentication token');
-      return new Response(JSON.stringify({
-        error: "O cabeçalho de autenticação 'Authorization: Bearer <token>' é obrigatório"
-      }), {
-        status: 401,
-        headers: corsHeaders
-      });
-    }
-
-    const apiKey = Deno.env.get('ASAAS_API_KEY');
-    if (!apiKey) {
-      console.error('[AsaasComplete] Missing ASAAS_API_KEY environment variable');
-      return new Response(JSON.stringify({
-        error: 'Configuração do servidor'
-      }), {
-        status: 500,
-        headers: corsHeaders
-      });
-    }
-
-    const useMock = !apiKey || Deno.env.get('USE_ASAAS') === 'false';
-    if (useMock) {
-      console.log('[AsaasComplete] Using mock mode, returning mock response');
-      const mockResponse: CompletePaymentResponse = {
-        payment_id: 'mock_payment_' + Date.now(),
-        qr: {
-          encodedImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          payload: '00020101021226620014br.gov.bcb.pix2540example.com/qr/v2/mock-qr-code-12345678901234567890123456789012345254040000520400005303986540510.005802BR5913Mock Merchant6008BRASILIA62070503***63045678',
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-        },
-        value: 25.00
-      };
-      return new Response(JSON.stringify(mockResponse), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Parse and validate request body
-    const body: CompletePaymentRequest = await req.json();
-    
-    if (!body.reservation_id || !body.amount || body.amount <= 0 || !body.customer?.name || !body.customer?.email) {
-      return new Response(JSON.stringify({
-        error: 'reservation_id, amount, customer.name e customer.email são obrigatórios'
-      }), {
-        status: 400,
-        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
-      });
-    }
-
-    console.log('[AsaasComplete] Creating complete payment flow for reservation:', body.reservation_id);
-
-    // Step 1: Create customer
-    const customerResponse = await fetch('https://api-sandbox.asaas.com/v3/customers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+    // 3a) Ensure/Find customer
+    const custRes = await fetch(`${ASAAS_BASE}/customers`, {
+      method: "POST",
+      headers: asaasHeaders,
       body: JSON.stringify({
-        name: body.customer.name.trim(),
-        email: body.customer.email.trim(),
-        cpfCnpj: body.customer.cpf?.trim(),
-        mobilePhone: body.customer.phone?.trim()
-      })
+        name: customer.name,
+        email: customer.email,
+        cpfCnpj: customer.cpf,
+        mobilePhone: customer.phone,
+      }),
     });
 
-    const customerData = await customerResponse.json();
-
-    if (!customerResponse.ok) {
-      console.error('[AsaasComplete] Customer creation failed:', customerData);
-      return new Response(JSON.stringify({
-        error: customerData.errors?.[0]?.description || 'Erro ao criar cliente'
-      }), {
-        status: customerResponse.status,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const cust = await custRes.json();
+    if (!custRes.ok) {
+      return json({ error: "Asaas customer error", detail: cust }, { status: custRes.status });
     }
 
-    console.log('[AsaasComplete] Customer created:', customerData.id);
+    const customerId = cust?.id || cust?.data?.[0]?.id;
+    if (!customerId) return json({ error: "Missing Asaas customer id", detail: cust }, { status: 502 });
 
-    // Step 2: Create PIX payment
-    const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
-    const paymentResponse = await fetch('https://api-sandbox.asaas.com/v3/payments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+    // 3b) Create payment (set externalReference = reservation_id)
+    const payRes = await fetch(`${ASAAS_BASE}/payments`, {
+      method: "POST",
+      headers: asaasHeaders,
       body: JSON.stringify({
-        customer: customerData.id,
-        billingType: 'PIX',
-        value: body.amount,
-        description: `Compra de bilhetes - Reserva ${body.reservation_id}`,
-        externalReference: body.reservation_id,
-        dueDate: dueDate
-      })
+        customer: customerId,
+        value: amount,
+        billingType: "PIX",
+        externalReference: reservation_id,
+      }),
     });
-
-    const paymentData = await paymentResponse.json();
-
-    if (!paymentResponse.ok) {
-      console.error('[AsaasComplete] Payment creation failed:', paymentData);
-      return new Response(JSON.stringify({
-        error: paymentData.errors?.[0]?.description || 'Erro ao criar pagamento'
-      }), {
-        status: paymentResponse.status,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const pay = await payRes.json();
+    if (!payRes.ok) {
+      return json({ error: "Asaas payment error", detail: pay }, { status: payRes.status });
     }
 
-    console.log('[AsaasComplete] Payment created:', paymentData.id);
+    const payment_id = pay?.id;
+    if (!payment_id) return json({ error: "Missing payment id", detail: pay }, { status: 502 });
 
-    // Step 3: Get PIX QR code
-    const qrResponse = await fetch(`https://api-sandbox.asaas.com/v3/payments/${paymentData.id}/pixQrCode`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`
-      }
+    // 3c) Get PIX QR
+    const qrRes = await fetch(`${ASAAS_BASE}/payments/${payment_id}/pixQrCode`, {
+      method: "GET",
+      headers: asaasHeaders,
     });
-
-    const qrData = await qrResponse.json();
-
-    if (!qrResponse.ok) {
-      console.error('[AsaasComplete] QR code generation failed:', qrData);
-      return new Response(JSON.stringify({
-        error: qrData.errors?.[0]?.description || 'Erro ao gerar QR code'
-      }), {
-        status: qrResponse.status,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const qrRaw = await qrRes.json();
+    if (!qrRes.ok) {
+      return json({ error: "Asaas QR error", detail: qrRaw }, { status: qrRes.status });
     }
 
-    console.log('[AsaasComplete] QR code generated successfully');
+    // Normalize QR image
+    const encodedImage = qrRaw?.encodedImage || qrRaw?.image || "";
+    const payloadCode = qrRaw?.payload || qrRaw?.payloadCode || "";
+    const normalizedImage = encodedImage.startsWith("data:image/")
+      ? encodedImage
+      : (encodedImage ? `data:image/png;base64,${encodedImage}` : "");
 
-    // Build complete response with normalized image encoding
-    const encodedImageBase64 = qrData.encodedImage ?? qrData.image ?? '';
-    const encodedImage = encodedImageBase64.startsWith('data:')
-      ? encodedImageBase64
-      : `data:image/png;base64,${encodedImageBase64}`;
-
-    const response: CompletePaymentResponse = {
-      payment_id: paymentData.id,
+    return json({
+      ok: true,
+      payment_id,
       qr: {
-        encodedImage,               // <- already prefixed!
-        payload: qrData.payload,
-        expiresAt: qrData.expiresAt ?? qrData.expirationDate ?? new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        encodedImage: normalizedImage,
+        payload: payloadCode,
+        expiresAt: qrRaw?.expiresAt || qrRaw?.expirationDate,
       },
-      value: body.amount
-    };
-
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
+      value: Number(amount),
     });
-
-  } catch (error) {
-    console.error('[AsaasComplete] Complete payment error:', error);
-    return new Response(JSON.stringify({
-      error: 'Erro interno do servidor'
-    }), {
-      status: 500,
-      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
-    });
-  }
-}
-
-serve(withCORS(handler));
+  },
+};
