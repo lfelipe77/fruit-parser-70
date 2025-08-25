@@ -25,6 +25,21 @@ function dueDateSP(): string {
   return `${y}-${m}-${d}`;
 }
 
+function toAmount(raw: unknown): number | null {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return Math.round(raw * 100) / 100;
+  }
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    // accept "10,00" OR "10.00" (no thousands). If it has a comma and no dot, swap comma->dot.
+    const normalized = (s.includes(',') && !s.includes('.')) ? s.replace(',', '.') : s;
+    const n = Number(normalized);
+    if (!Number.isFinite(n)) return null;
+    return Math.round(n * 100) / 100;
+  }
+  return null;
+}
+
 const ALLOWED = (
   (typeof Deno !== 'undefined' ? Deno.env.get('ALLOWED_ORIGINS') : undefined)
   || (typeof process !== 'undefined' ? (process as any).env?.ALLOWED_ORIGINS : undefined)
@@ -102,15 +117,22 @@ export default {
 
     // 2) Parse input and validate minimum value
     const body = await req.json().catch(()=>({}));
-    const reservationId = body.reservationId ?? body.reservation_id ?? null;
-    const value = (typeof body.value === 'number' ? body.value :
-                   typeof body.amount === 'number' ? body.amount : null);
-    const description = body.description ?? 'Compra de bilhetes';
     console.log('[PIX] in', { hasJWT: !!jwt, bodyKeys: Object.keys(body||{}) });
 
-    const MIN_PIX_VALUE = Number(Deno.env.get('MIN_PIX_VALUE') ?? '5');
-    if (!reservationId || !value || value < MIN_PIX_VALUE) {
-      return json({ error: `O valor mínimo para PIX é R$ ${MIN_PIX_VALUE.toFixed(2)}.` }, { status: 422 }, origin);
+    const rawReservationId = body?.reservationId ?? body?.reservation_id ?? null;
+    const rawValue = body?.value ?? body?.amount ?? null;
+    const reservationId = (typeof rawReservationId === 'string' && rawReservationId) ? rawReservationId : null;
+    const value = toAmount(rawValue);
+    const description = body?.description ?? 'Compra de bilhetes';
+
+    console.log('[PIX] mapped', { reservationId, valueType: typeof rawValue, rawValue, value });
+    if (!reservationId || value === null) {
+      return json({ error: 'Missing required fields: reservationId and value' }, { status: 400 }, origin);
+    }
+
+    const MIN = Number(Deno.env.get('MIN_PIX_VALUE') ?? '5');
+    if (value < MIN) {
+      return json({ error: `Valor mínimo para PIX é R$ ${MIN.toFixed(2)}.` }, { status: 422 }, origin);
     }
 
     // 3) Fetch profile and validate CPF/CNPJ
@@ -123,6 +145,9 @@ export default {
     const mobilePhone = sanitizeBRPhone(body?.customer?.phone ?? null);
 
     // 4) Prepare Asaas requests and create payment
+    const ASAAS_BASE_URL = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
+    const ASAAS_API_KEY  = Deno.env.get('ASAAS_API_KEY') || '';
+    console.log('[PIX] asaas env', { base: ASAAS_BASE_URL, keyPrefix: ASAAS_API_KEY ? ASAAS_API_KEY.slice(0,6) : '(none)' });
     async function asaasFetch(path: string, init: RequestInit = {}) {
       const base = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
       const key  = Deno.env.get('ASAAS_API_KEY')!;

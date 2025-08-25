@@ -275,7 +275,7 @@ export default function ConfirmacaoPagamento() {
       const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
         method: 'POST',
         headers: { 'content-type':'application/json', 'authorization': `Bearer ${session!.access_token}` },
-        body: JSON.stringify({ reservationId: reservation_id, value, description: 'Compra de bilhetes' }),
+        body: JSON.stringify({ reservationId: reservation_id, value: Number(value), description: 'Compra de bilhetes' }),
       });
       
       if (!res.ok) {
