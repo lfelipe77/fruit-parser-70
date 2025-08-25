@@ -222,7 +222,11 @@ export default function ConfirmacaoPagamento() {
         p_raffle_id: id,
         p_qty: safeQty,
       });
-      if (e1 || !r1?.reservation_id) throw e1 || new Error('Falha ao reservar bilhetes');
+      if (e1 || !r1?.reservation_id) {
+        // e1 may include { code, message, hint, details }
+        console.warn('[reserve_tickets_v2] failed:', e1);
+        throw new Error(e1?.message || 'Falha ao reservar bilhetes');
+      }
       const reservation_id = r1.reservation_id;
 
       // 4) create PIX on Asaas
@@ -246,7 +250,10 @@ export default function ConfirmacaoPagamento() {
           },
         }),
       });
-      if (!res.ok) throw new Error(`PIX: ${res.status} ${await res.text().catch(() => '')}`);
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`PIX ${res.status}: ${body || 'erro desconhecido'}`);
+      }
       const { payment_id, qr } = await res.json();
 
       // 5) show PIX modal
@@ -274,10 +281,24 @@ export default function ConfirmacaoPagamento() {
         await new Promise(r => setTimeout(r, 3000));
       }
       throw new Error('Tempo expirado aguardando confirmação.');
-    } catch (e: any) {
-      console.error('[PIX]', e);
-      setPix({ open: false, err: e?.message || 'Falha no pagamento' });
-      toast.error('Pagamento falhou. Tente novamente.');
+    } catch (err: any) {
+      // Try to unwrap Supabase / fetch errors into a readable string
+      const msg =
+        err?.message ||
+        err?.error_description ||
+        err?.hint ||
+        (typeof err === 'object' ? JSON.stringify(err) : String(err));
+
+      console.error('[PIX] error:', msg, err);
+      setPix({ open: false, err: msg });
+
+      // Keep the existing toast but show the real message when available
+      try {
+        toast.error(msg || 'Pagamento falhou. Tente novamente.');
+      } catch {
+        // fallback UI
+        alert(msg || 'Pagamento falhou. Tente novamente.');
+      }
       setIsProcessing(false);
     }
   }
