@@ -35,6 +35,21 @@ async function handler(req: Request): Promise<Response> {
   }
 
   try {
+    // Accept either Authorization: Bearer <token> or access_token header
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || '';
+    const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    const token = bearer || req.headers.get('access_token') || '';
+
+    if (!token) {
+      console.error('[AsaasComplete] Missing authentication token');
+      return new Response(JSON.stringify({
+        error: "O cabeçalho de autenticação 'Authorization: Bearer <token>' ou 'access_token' é obrigatório"
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const apiKey = Deno.env.get('ASAAS_API_KEY');
     if (!apiKey) {
       console.error('[AsaasComplete] Missing ASAAS_API_KEY environment variable');
