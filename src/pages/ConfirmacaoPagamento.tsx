@@ -223,9 +223,11 @@ export default function ConfirmacaoPagamento() {
         p_qty: safeQty,
       });
       if (e1 || !r1?.reservation_id) {
-        // e1 may include { code, message, hint, details }
+        // Log everything Supabase gave us
         console.warn('[reserve_tickets_v2] failed:', e1);
-        throw new Error(e1?.message || 'Falha ao reservar bilhetes');
+        // Surface message, or details/hint/code if message is empty
+        const msg = e1?.message || e1?.details || e1?.hint || e1?.code || 'Falha ao reservar bilhetes';
+        throw new Error(msg);
       }
       const reservation_id = r1.reservation_id;
 
