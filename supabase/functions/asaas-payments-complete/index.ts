@@ -75,7 +75,7 @@ export default {
     const customer = {
       name: "Cliente Ganhavel",
       email: user.email || "cliente@ganhavel.com",
-      cpfCnpj: "00000000000",
+      cpfCnpj: "00000000000", // digits only for Asaas
       mobilePhone: "11999999999",
     };
 
@@ -85,8 +85,7 @@ export default {
     if (!ASAAS_KEY) return json({ error: "Asaas not configured" }, { status: 500 });
 
     const asaasHeaders = {
-      "Authorization": `Bearer ${ASAAS_KEY}`,
-      "access_token": `${ASAAS_KEY}`,
+      "access_token": ASAAS_KEY, // Asaas expects access_token header, not Authorization
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
@@ -154,18 +153,17 @@ export default {
       return json({ error: "Asaas QR error", detail: qrRaw }, { status: qrRes.status });
     }
 
-    // Normalize QR image
-    const encodedImage = qrRaw?.encodedImage || qrRaw?.image || "";
-    const payloadCode = qrRaw?.payload || qrRaw?.payloadCode || "";
-    const normalizedImage = encodedImage.startsWith("data:image/")
-      ? encodedImage
-      : (encodedImage ? `data:image/png;base64,${encodedImage}` : "");
+    // Normalize QR image with consistent data: prefix
+    const base64 = qrRaw?.encodedImage || qrRaw?.image || "";
+    const payloadCode = qrRaw?.payload || qrRaw?.payloadCode || qrRaw?.qrCodeText || "";
+    const encodedImage = base64 && String(base64).startsWith("data:")
+      ? base64
+      : (base64 ? `data:image/png;base64,${base64}` : "");
 
     return json({
-      ok: true,
       payment_id,
-      pix: {
-        encodedImage: normalizedImage,
+      qr: {
+        encodedImage,
         payload: payloadCode,
         expiresAt: qrRaw?.expiresAt || qrRaw?.expirationDate,
       },

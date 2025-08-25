@@ -253,11 +253,11 @@ export default function ConfirmacaoPagamento() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session!.access_token}`,
+          Authorization: `Bearer ${session!.access_token}`, // Only Authorization header with Supabase JWT
         },
         body: JSON.stringify({
-          reservationId: reservation_id,
-          value: unitPrice * safeQty,
+          reservationId: reservation_id, // camelCase format
+          value: unitPrice * safeQty,    // camelCase format  
           description: "Compra de bilhetes",
         }),
       });
@@ -272,10 +272,19 @@ export default function ConfirmacaoPagamento() {
       
       const isAsaasPayment = /^pay_/.test(data.payment_id); // Asaas IDs usually start with "pay_"
 
-      // 5) show PIX modal
+      // 5) show PIX modal with QR normalization fallback
+      const qrData = data.qr || data.pix;
+      const normalizedQr = qrData ? {
+        ...qrData,
+        encodedImage: qrData.encodedImage ? 
+          (String(qrData.encodedImage).startsWith('data:') ? 
+            String(qrData.encodedImage) : 
+            `data:image/png;base64,${String(qrData.encodedImage)}`) : ""
+      } : null;
+      
       setPix({ 
         open: true, 
-        qr: data.pix, 
+        qr: normalizedQr, 
         paymentId: data.payment_id, 
         reservationId: reservation_id 
       });
