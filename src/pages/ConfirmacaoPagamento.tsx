@@ -255,6 +255,7 @@ export default function ConfirmacaoPagamento() {
         throw new Error(`PIX ${res.status}: ${body || 'erro desconhecido'}`);
       }
       const { payment_id, qr } = await res.json();
+      console.log('[PIX] response', { payment_id, qr }); // <- keep this so we see fields at runtime
 
       // 5) show PIX modal
       setPix({ open: true, qr, paymentId: payment_id, reservationId: reservation_id });
@@ -679,11 +680,30 @@ export default function ConfirmacaoPagamento() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-3">Pague com PIX</h3>
-            <img
-              src={pix.qr.encodedImage}
-              alt="QR PIX"
-              className="w-64 h-64 mx-auto border rounded-md mb-4"
-            />
+            {(() => {
+              const qrImageSrc =
+                pix.qr?.encodedImage
+                  ? (pix.qr.encodedImage.startsWith('data:')
+                      ? pix.qr.encodedImage
+                      : `data:image/png;base64,${pix.qr.encodedImage}`)
+                  // Some Asaas SDKs call it "image" or return an object under qrCode.image
+                  : (pix.qr?.image
+                      ? (String(pix.qr.image).startsWith('data:') ? pix.qr.image : `data:image/png;base64,${pix.qr.image}`)
+                      : '');
+
+              return qrImageSrc ? (
+                <img
+                  src={qrImageSrc}
+                  alt="QR PIX"
+                  className="w-64 h-64 mx-auto border rounded-md mb-4 object-contain"
+                />
+              ) : (
+                // Fallback UI if we still don't have a valid image
+                <div className="w-64 h-64 mx-auto border rounded-md mb-4 flex items-center justify-center">
+                  <span className="text-sm opacity-70">QR indisponível — use o código copia-e-cola abaixo</span>
+                </div>
+              );
+            })()}
             <div className="flex items-center gap-2">
               <Input
                 readOnly

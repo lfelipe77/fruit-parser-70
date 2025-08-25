@@ -162,13 +162,18 @@ async function handler(req: Request): Promise<Response> {
 
     console.log('[AsaasComplete] QR code generated successfully');
 
-    // Build complete response
+    // Build complete response with normalized image encoding
+    const encodedImageBase64 = qrData.encodedImage ?? qrData.image ?? '';
+    const encodedImage = encodedImageBase64.startsWith('data:')
+      ? encodedImageBase64
+      : `data:image/png;base64,${encodedImageBase64}`;
+
     const response: CompletePaymentResponse = {
       payment_id: paymentData.id,
       qr: {
-        encodedImage: qrData.encodedImage,
+        encodedImage,               // <- already prefixed!
         payload: qrData.payload,
-        expiresAt: qrData.expirationDate || new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        expiresAt: qrData.expiresAt ?? qrData.expirationDate ?? new Date(Date.now() + 15 * 60 * 1000).toISOString()
       },
       value: body.amount
     };
