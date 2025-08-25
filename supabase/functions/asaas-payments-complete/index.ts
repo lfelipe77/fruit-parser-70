@@ -33,6 +33,15 @@ function normalizeCpfCnpjOrNull(raw: unknown): { digits: string; type: PersonTyp
   if (isValidCNPJ(digits)) return { digits, type: 'JURIDICA' };
   return null;
 }
+function sanitizeBRPhone(raw?: unknown): string | null {
+  if (raw == null) return null;
+  let d = String(raw).replace(/\D+/g, '');
+  // Strip +55 or 55 country code if present
+  if (d.startsWith('55') && (d.length === 13 || d.length === 12)) d = d.slice(2);
+  // Accept only 10 or 11 digits (2-digit DDD + number)
+  if (d.length === 10 || d.length === 11) return d;
+  return null;
+}
 // São Paulo due date generator (YYYY-MM-DD) with no deps
 function dueDateSP(): string {
   const parts = new Intl.DateTimeFormat('pt-BR', {
@@ -193,14 +202,17 @@ export default {
     }
 
     const customerName = "Cliente Ganhavel";
-    const customer = {
-      name: customerName,
-      email: user.email || "cliente@ganhavel.com",
+    const mobilePhone = sanitizeBRPhone(body?.customer?.phone ?? profile?.whatsapp ?? profile?.phone);
+    const customerPayload = {
+      name: customerName || "Cliente",
+      email: user.email || undefined,
+      // only send if valid; Asaas rejects invalid_mobilePhone otherwise
+      ...(mobilePhone ? { mobilePhone } : {}),
       cpfCnpj: docFinal.digits,
       personType: docFinal.type,
-      mobilePhone: "11999999999",
       externalReference: user.id,
     };
+    console.log('[PIX] phoneCheck', { raw: body?.customer?.phone ?? null, mobilePhone });
 
     // 3) Call Asaas
     const ASAAS_KEY = Deno.env.get("ASAAS_API_KEY");
@@ -217,12 +229,7 @@ export default {
     const custRes = await fetch(`${ASAAS_BASE}/customers`, {
       method: "POST",
       headers: asaasHeaders,
-      body: JSON.stringify({
-        name: customer.name,
-        email: customer.email,
-        cpfCnpj: customer.cpfCnpj,
-        mobilePhone: customer.mobilePhone,
-      }),
+      body: JSON.stringify(customerPayload),
     });
 
     const cust = await custRes.json();

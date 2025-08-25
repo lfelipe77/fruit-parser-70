@@ -278,6 +278,18 @@ export default function ConfirmacaoPagamento() {
           reservationId: reservation_id,
           value: unitPrice * safeQty,
           description: 'Compra de bilhetes',
+          customer: {
+            name: formData.fullName,
+            email: formData.email,
+            // don't send if not 10/11 digits; the edge will handle too.
+            ...(() => {
+              const phoneDigits = (formData.phone || '').replace(/\D+/g, '');
+              const cleaned = phoneDigits.startsWith('55') && (phoneDigits.length === 12 || phoneDigits.length === 13)
+                ? phoneDigits.slice(2)
+                : phoneDigits;
+              return cleaned.length === 10 || cleaned.length === 11 ? { phone: cleaned } : {};
+            })(),
+          },
         }),
       });
       
