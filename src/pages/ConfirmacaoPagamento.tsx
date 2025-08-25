@@ -205,11 +205,13 @@ export default function ConfirmacaoPagamento() {
       // ALWAYS use the same supabase client you use for auth
       const { data: { session } } = await supabase.auth.getSession();
       console.log('[reserve] session?', !!session, session?.user?.id);
-      if (!session) {
+      if (!session?.access_token) {
         // force login and bounce back to this page afterwards
         navigate(`/login?redirectTo=${location.pathname}${location.search}`);
         return;
       }
+
+      console.log('[PIX] session?', !!session, session?.user?.id, session?.access_token?.slice(0,16));
 
       setIsProcessing(true);
 
@@ -236,7 +238,10 @@ export default function ConfirmacaoPagamento() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
+          // standard Supabase header
           'authorization': `Bearer ${session.access_token}`,
+          // what your function currently expects
+          'access_token': session.access_token,
         },
         body: JSON.stringify({
           reservation_id,

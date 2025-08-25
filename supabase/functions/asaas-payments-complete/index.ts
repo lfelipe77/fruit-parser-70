@@ -30,15 +30,31 @@ interface CompletePaymentResponse {
  * Expected by the new checkout flow.
  */
 async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+  // CORS (allow your custom header)
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, access_token, content-type',
+      }
+    });
   }
 
   try {
+    // Set CORS for actual POSTs too
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Content-Type': 'application/json'
+    };
+
     // Accept either Authorization: Bearer <token> or access_token header
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || '';
     const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
     const token = bearer || req.headers.get('access_token') || '';
+
+    console.log('[asaas-payments-complete] hasAuthHeader?', !!authHeader, 'hasAccessTokenHeader?', !!req.headers.get('access_token'));
 
     if (!token) {
       console.error('[AsaasComplete] Missing authentication token');
@@ -46,7 +62,7 @@ async function handler(req: Request): Promise<Response> {
         error: "O cabeçalho de autenticação 'Authorization: Bearer <token>' ou 'access_token' é obrigatório"
       }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -57,7 +73,7 @@ async function handler(req: Request): Promise<Response> {
         error: 'Configuração do servidor'
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       });
     }
 
@@ -87,7 +103,7 @@ async function handler(req: Request): Promise<Response> {
         error: 'reservation_id, amount, customer.name e customer.email são obrigatórios'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
       });
     }
 
@@ -195,7 +211,7 @@ async function handler(req: Request): Promise<Response> {
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
@@ -204,7 +220,7 @@ async function handler(req: Request): Promise<Response> {
       error: 'Erro interno do servidor'
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
     });
   }
 }
