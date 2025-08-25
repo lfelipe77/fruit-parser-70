@@ -1,5 +1,47 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Brazilian document validation helpers
+function onlyDigits(v?: string | null): string { 
+  return (v ?? '').replace(/\D+/g, ''); 
+}
+
+function isValidCPF(raw?: string | null): boolean {
+  const v = onlyDigits(raw);
+  if (v.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(v)) return false;
+  let s = 0; for (let i = 0; i < 9; i++) s += Number(v[i]) * (10 - i);
+  let d1 = (s * 10) % 11; if (d1 === 10) d1 = 0; if (d1 !== Number(v[9])) return false;
+  s = 0; for (let i = 0; i < 10; i++) s += Number(v[i]) * (11 - i);
+  let d2 = (s * 10) % 11; if (d2 === 10) d2 = 0; return d2 === Number(v[10]);
+}
+
+function isValidCNPJ(raw?: string | null): boolean {
+  const v = onlyDigits(raw);
+  if (v.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(v)) return false;
+  const calc = (len: number) => {
+    const w = len === 12 ? [5,4,3,2,9,8,7,6,5,4,3,2] : [6,5,4,3,2,9,8,7,6,5,4,3,2];
+    let s = 0; for (let i = 0; i < w.length; i++) s += Number(v[i]) * w[i];
+    const m = s % 11; return m < 2 ? 0 : 11 - m;
+  };
+  const d1 = calc(12); if (d1 !== Number(v[12])) return false;
+  const d2 = calc(13); return d2 === Number(v[13]);
+}
+
+function normalizeCpfCnpjOrNull(raw?: string | null): { digits: string; type: "FISICA" | "JURIDICA" } | null {
+  const cleaned = onlyDigits((raw ?? '').trim());
+  if (!cleaned) return null;
+  if (isValidCPF(cleaned))  return { digits: cleaned, type: "FISICA" };
+  if (isValidCNPJ(cleaned)) return { digits: cleaned, type: "JURIDICA" };
+  return null;
+}
+
+const bad = (msg: string, detail?: unknown) =>
+  new Response(JSON.stringify({ error: msg, detail }), { 
+    status: 422, 
+    headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' } 
+  });
+
 const CORS_HEADERS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "POST, OPTIONS",
@@ -71,12 +113,30 @@ export default {
       return json({ error: "Missing required fields: reservationId and value" }, { status: 400 });
     }
 
-    // For now, use dummy customer data since we're not collecting it from the frontend
+    // Get user profile and validate document
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('tax_id, cpf_cnpj, full_name, username')
+      .eq('id', user.id)
+      .single();
+
+    const rawDoc = profile?.tax_id ?? profile?.cpf_cnpj ?? null;
+    const doc = normalizeCpfCnpjOrNull(
+      typeof rawDoc === 'string' && rawDoc.toLowerCase() !== 'null' ? rawDoc : null
+    );
+    
+    if (!doc) {
+      return bad("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.");
+    }
+
+    const customerName = profile?.full_name || profile?.username || "Cliente Ganhavel";
     const customer = {
-      name: "Cliente Ganhavel",
+      name: customerName,
       email: user.email || "cliente@ganhavel.com",
-      cpfCnpj: "00000000000", // digits only for Asaas
+      cpfCnpj: doc.digits,
+      personType: doc.type,
       mobilePhone: "11999999999",
+      externalReference: user.id,
     };
 
     // 3) Call Asaas

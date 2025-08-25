@@ -14,6 +14,8 @@ import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { normalizeCpfCnpjOrNull } from '@/lib/brdocs';
+import { useMyProfile } from '@/hooks/useMyProfile';
 
 type RaffleRow = {
   id: string;
@@ -66,6 +68,7 @@ export default function ConfirmacaoPagamento() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { profile: userProfile } = useMyProfile();
   const [sp] = useSearchParams();
   const debugOn = sp.get("debug") === "1";
   const [debugToken, setDebugToken] = useState<string>("");
@@ -245,20 +248,36 @@ export default function ConfirmacaoPagamento() {
       if (debugOn) setDebugReservationId(reservation_id);
       console.log("[debug] reservation_id", reservation_id);
 
-      // 4) create PIX on Asaas
+      // 4) validate CPF/CNPJ before calling edge - fetch directly from profile
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('tax_id')
+        .eq('id', user.id)
+        .single();
+      
+      const rawDoc = (profileData as any)?.tax_id ?? null;
+      const docInfo = normalizeCpfCnpjOrNull(
+        typeof rawDoc === 'string' && rawDoc.toLowerCase() !== 'null' ? rawDoc : null
+      );
+      if (!docInfo) {
+        toast.error("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.");
+        throw new Error("Documento inválido");
+      }
+
+      // 5) create PIX on Asaas
       const EDGE = import.meta.env.VITE_SUPABASE_URL;
       console.log('[PIX] session?', !!session, session?.user?.id, session?.access_token?.slice(0,12));
 
       const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session!.access_token}`, // Only Authorization header with Supabase JWT
+          'content-type': 'application/json',
+          'authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          reservationId: reservation_id, // camelCase format
-          value: unitPrice * safeQty,    // camelCase format  
-          description: "Compra de bilhetes",
+          reservationId: reservation_id,
+          value: unitPrice * safeQty,
+          description: 'Compra de bilhetes',
         }),
       });
       
@@ -272,7 +291,7 @@ export default function ConfirmacaoPagamento() {
       
       const isAsaasPayment = /^pay_/.test(data.payment_id); // Asaas IDs usually start with "pay_"
 
-      // 5) show PIX modal with QR normalization fallback
+      // 6) show PIX modal with QR normalization fallback
       const qrData = data.qr || data.pix;
       const normalizedQr = qrData ? {
         ...qrData,
@@ -289,7 +308,7 @@ export default function ConfirmacaoPagamento() {
         reservationId: reservation_id 
       });
 
-      // 6) Poll for payment status (only for real Asaas payments)
+      // 7) Poll for payment status (only for real Asaas payments)
       if (isAsaasPayment) {
         const deadline = Date.now() + 15 * 60_000; // 15 min
         while (Date.now() < deadline) {
