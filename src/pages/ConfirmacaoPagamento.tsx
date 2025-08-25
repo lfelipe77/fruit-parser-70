@@ -253,7 +253,8 @@ export default function ConfirmacaoPagamento() {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
-            authorization: `Bearer ${session!.access_token}`, // ONLY this header
+            authorization: `Bearer ${session!.access_token}`,
+            access_token: session!.access_token,
           },
         body: JSON.stringify({
           reservation_id,
