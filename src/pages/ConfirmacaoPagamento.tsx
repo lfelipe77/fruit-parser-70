@@ -233,12 +233,13 @@ export default function ConfirmacaoPagamento() {
 
       // 4) create PIX on Asaas
       const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+      console.log('[PIX] session?', !!session, session?.user?.id, session?.access_token?.slice(0,12));
 
       const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'authorization': `Bearer ${session.access_token}`,
+          'authorization': `Bearer ${session!.access_token}`,
         },
         body: JSON.stringify({
           reservation_id,
