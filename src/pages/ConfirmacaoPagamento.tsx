@@ -228,7 +228,7 @@ export default function ConfirmacaoPagamento() {
       // 4) create PIX on Asaas
       const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
 
-      const res = await fetch(`${EDGE}/functions/v1/asaas-payments`, {
+      const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',

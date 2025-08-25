@@ -30,9 +30,32 @@ export default function PagamentoSucesso() {
       console.log('[PaymentSuccess] Fetching details for payment:', paymentId, 'reservation:', reservation_id);
       
       if (reservation_id) {
-        // For now, use a simple approach until RPC is set up
-        console.log("[PagamentoSucesso] Reservation payment:", reservation_id);
-        // TODO: Call get_reservation_audit when RPC is available
+        // Use query to get reservation data since RPC types may not be complete
+        const { data: auditData, error } = await supabase
+          .from('transactions')
+          .select('amount, created_at, status')
+          .eq('provider_payment_id', paymentId || '')
+          .maybeSingle();
+        
+        if (error) {
+          console.error('[PagamentoSucesso] query error:', error);
+        } else if (auditData) {
+          // Map transaction data to UI
+          setPaymentDetails({
+            amount: auditData.amount || 25.00,
+            raffleTitle: 'Rifa', // TODO: Get from raffle table if needed
+            ticketCount: 1, // TODO: Get from ticket count
+            createdAt: auditData.created_at || new Date().toISOString()
+          });
+          
+          // Show pending status if not paid
+          if (auditData.status !== 'paid') {
+            console.log('Payment still pending...');
+            // Optional: start polling for updates
+          }
+          
+          return;
+        }
       }
       
       // Fallback to mock data
