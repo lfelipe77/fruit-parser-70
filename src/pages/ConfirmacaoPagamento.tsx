@@ -202,12 +202,12 @@ export default function ConfirmacaoPagamento() {
         return;
       }
 
-      // 1) require auth
+      // ALWAYS use the same supabase client you use for auth
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        const url = new URL("/login", window.location.origin);
-        url.searchParams.set("redirectTo", location.pathname + location.search);
-        navigate(url.pathname + url.search, { replace: true });
+      console.log('[reserve] session?', !!session, session?.user?.id);
+      if (!session) {
+        // force login and bounce back to this page afterwards
+        navigate(`/login?redirectTo=${location.pathname}${location.search}`);
         return;
       }
 
@@ -218,20 +218,16 @@ export default function ConfirmacaoPagamento() {
       const unitPrice = asNumber(raffle?.ticket_price, 0);
 
       // 3) reserve tickets
-      const s = await supabase.auth.getSession();
-      console.log('[reserve] session?', !!s.data.session, s.data.session?.user?.id);
-      const { data: r1, error: e1 } = await (supabase as any).rpc('reserve_tickets_v2', {
+      const { data: r1, error: e1 } = await supabase.rpc('reserve_tickets_v2', {
         p_raffle_id: id,
         p_qty: safeQty,
       });
-      if (e1 || !r1?.reservation_id) {
-        // Log everything Supabase gave us
+      if (e1 || !r1?.[0]?.reservation_id) {
         console.warn('[reserve_tickets_v2] failed:', e1);
-        // Surface message, or details/hint/code if message is empty
-        const msg = e1?.message || e1?.details || e1?.hint || e1?.code || 'Falha ao reservar bilhetes';
+        const msg = e1?.message || e1?.details || e1?.hint || 'Falha ao reservar bilhetes';
         throw new Error(msg);
       }
-      const reservation_id = r1.reservation_id;
+      const reservation_id = r1[0].reservation_id;
 
       // 4) create PIX on Asaas
       const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
@@ -275,7 +271,7 @@ export default function ConfirmacaoPagamento() {
         }
         const { status } = await s.json();
         if (status === 'RECEIVED' || status === 'CONFIRMED') {
-          // redirect to legacy receipt you like
+          // redirect to legacy receipt you like  
           navigate(`/pagamento/sucesso/${payment_id}?res=${reservation_id}`);
           return;
         }
