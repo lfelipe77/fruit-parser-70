@@ -130,19 +130,32 @@ export default {
     }
 
     // Get user profile and validate document
-    const { data: profile } = await sb
+    const { data: profile, error: profErr } = await sb
       .from('user_profiles')
-      .select('tax_id, cpf_cnpj, full_name, username')
+      .select('id, tax_id, cpf_cnpj, full_name, username')
       .eq('id', user.id)
       .single();
 
-    const rawDoc = profile?.tax_id ?? profile?.cpf_cnpj ?? null;
-    const doc = normalizeCpfCnpjOrNull(
-      typeof rawDoc === 'string' && rawDoc.toLowerCase() !== 'null' ? rawDoc : null
-    );
-    
+    const rawDoc = typeof profile?.tax_id === 'string' && profile.tax_id.toLowerCase() !== 'null'
+      ? profile.tax_id
+      : null;
+
+    console.log('[PIX] profile', {
+      userId: user.id,
+      profErr: !!profErr,
+      profile,
+    });
+
+    const doc = normalizeCpfCnpjOrNull(rawDoc);
+
+    console.log('[PIX] docCheck', { rawDoc, ok: !!doc, digits: doc?.digits, type: doc?.type });
+
     if (!doc) {
-      return bad("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.", undefined, origin);
+      return json(
+        { error: 'Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.' },
+        { status: 422 },
+        origin
+      );
     }
 
     const customerName = profile?.full_name || profile?.username || "Cliente Ganhavel";
