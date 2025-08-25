@@ -238,10 +238,7 @@ export default function ConfirmacaoPagamento() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          // standard Supabase header
           'authorization': `Bearer ${session.access_token}`,
-          // what your function currently expects
-          'access_token': session.access_token,
         },
         body: JSON.stringify({
           reservation_id,

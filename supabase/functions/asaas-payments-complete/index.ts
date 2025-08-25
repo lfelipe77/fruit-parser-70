@@ -30,14 +30,14 @@ interface CompletePaymentResponse {
  * Expected by the new checkout flow.
  */
 async function handler(req: Request): Promise<Response> {
-  // CORS (allow your custom header)
+  // CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, access_token, content-type',
+        'Access-Control-Allow-Headers': 'authorization, content-type',
       }
     });
   }
@@ -49,17 +49,14 @@ async function handler(req: Request): Promise<Response> {
       'Content-Type': 'application/json'
     };
 
-    // Accept either Authorization: Bearer <token> or access_token header
+    // Accept Authorization: Bearer <token> header
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || '';
-    const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    const token = bearer || req.headers.get('access_token') || '';
-
-    console.log('[asaas-payments-complete] hasAuthHeader?', !!authHeader, 'hasAccessTokenHeader?', !!req.headers.get('access_token'));
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
 
     if (!token) {
       console.error('[AsaasComplete] Missing authentication token');
       return new Response(JSON.stringify({
-        error: "O cabeçalho de autenticação 'Authorization: Bearer <token>' ou 'access_token' é obrigatório"
+        error: "O cabeçalho de autenticação 'Authorization: Bearer <token>' é obrigatório"
       }), {
         status: 401,
         headers: corsHeaders
