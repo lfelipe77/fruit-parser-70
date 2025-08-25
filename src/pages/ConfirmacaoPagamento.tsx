@@ -1,5 +1,5 @@
-import React from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,8 @@ export default function ConfirmacaoPagamento() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const [sp] = useSearchParams();
+  const [debugToken, setDebugToken] = useState<string>("");
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
 
@@ -132,6 +134,14 @@ export default function ConfirmacaoPagamento() {
     reservationId?: string; 
     err?: string
   }>({ open: false });
+
+  useEffect(() => {
+    (async () => {
+      if (sp.get("debug") !== "1") return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) setDebugToken(session.access_token);
+    })();
+  }, [sp]);
 
   // Generate lottery combinations (6 two-digit numbers, like: (12-43-24-56-78-90))
   const generateLotteryCombination = () => {
@@ -388,6 +398,21 @@ export default function ConfirmacaoPagamento() {
     <>
       <Navigation />
       <div className="container mx-auto p-4 max-w-4xl">
+        {/* Debug Block */}
+        {sp.get("debug") === "1" && (
+          <div className="p-3 rounded-lg border bg-yellow-50 text-xs break-all mb-6">
+            <div className="font-semibold mb-1">Debug: Session JWT</div>
+            <div className="mb-2">{debugToken || "(no session found)"}</div>
+            <button
+              className="btn btn-sm"
+              onClick={() => navigator.clipboard.writeText(debugToken)}
+              disabled={!debugToken}
+            >
+              Copiar token
+            </button>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
