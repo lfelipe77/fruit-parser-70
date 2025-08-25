@@ -1,11 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Brazilian document validation helpers
-function onlyDigits(v?: string | null): string { 
-  return (v ?? '').replace(/\D+/g, ''); 
+function onlyDigits(v?: unknown): string {
+  return typeof v === 'string' ? v.replace(/\D+/g, '') : '';
 }
-
-function isValidCPF(raw?: string | null): boolean {
+function isValidCPF(raw?: unknown): boolean {
   const v = onlyDigits(raw);
   if (v.length !== 11) return false;
   if (/^(\d)\1{10}$/.test(v)) return false;
@@ -14,8 +13,7 @@ function isValidCPF(raw?: string | null): boolean {
   s = 0; for (let i = 0; i < 10; i++) s += Number(v[i]) * (11 - i);
   let d2 = (s * 10) % 11; if (d2 === 10) d2 = 0; return d2 === Number(v[10]);
 }
-
-function isValidCNPJ(raw?: string | null): boolean {
+function isValidCNPJ(raw?: unknown): boolean {
   const v = onlyDigits(raw);
   if (v.length !== 14) return false;
   if (/^(\d)\1{13}$/.test(v)) return false;
@@ -27,13 +25,23 @@ function isValidCNPJ(raw?: string | null): boolean {
   const d1 = calc(12); if (d1 !== Number(v[12])) return false;
   const d2 = calc(13); return d2 === Number(v[13]);
 }
-
-function normalizeCpfCnpjOrNull(raw?: string | null): { digits: string; type: "FISICA" | "JURIDICA" } | null {
-  const cleaned = onlyDigits((raw ?? '').trim());
-  if (!cleaned) return null;
-  if (isValidCPF(cleaned))  return { digits: cleaned, type: "FISICA" };
-  if (isValidCNPJ(cleaned)) return { digits: cleaned, type: "JURIDICA" };
+type PersonType = 'FISICA' | 'JURIDICA';
+function normalizeCpfCnpjOrNull(raw: unknown): { digits: string; type: PersonType } | null {
+  const digits = onlyDigits(raw);
+  if (!digits) return null;
+  if (isValidCPF(digits))  return { digits, type: 'FISICA' };
+  if (isValidCNPJ(digits)) return { digits, type: 'JURIDICA' };
   return null;
+}
+// São Paulo due date generator (YYYY-MM-DD) with no deps
+function dueDateSP(): string {
+  const parts = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date());
+  const y = parts.find(p => p.type === 'year')!.value;
+  const m = parts.find(p => p.type === 'month')!.value;
+  const d = parts.find(p => p.type === 'day')!.value;
+  return `${y}-${m}-${d}`;
 }
 
 const ALLOWED = (
@@ -112,18 +120,24 @@ export default {
     });
 
     // 2) Parse input
-    let payload: any;
+    let body: any;
     try {
-      payload = await req.json();
+      body = await req.json();
     } catch {
       return json({ error: "Invalid JSON" }, { status: 400 }, origin);
     }
 
+    // After parsing body:
+    console.log('[PIX] in', { hasJWT: !!jwt, bodyKeys: Object.keys(body || {}) });
+
     // Accept both camelCase and snake_case formats for backward compatibility
-    const reservationId = payload?.reservationId ?? payload?.reservation_id ?? null;
-    const value = typeof payload?.value === 'number' ? payload.value 
-                : (typeof payload?.amount === 'number' ? payload.amount : null);
-    const description = payload?.description ?? "Compra de bilhetes";
+    const reservationId = body?.reservationId ?? body?.reservation_id ?? null;
+    const value = (typeof body?.value === 'number' ? body.value :
+                 (typeof body?.amount === 'number' ? body.amount : null));
+    const description = body?.description ?? "Compra de bilhetes";
+
+    const dueDate = dueDateSP();
+    console.log('[PIX] mapped', { reservationId, value, dueDate });
     
     if (!reservationId || !value) {
       return json({ error: "Missing required fields: reservationId and value" }, { status: 400 }, origin);
@@ -132,25 +146,45 @@ export default {
     // Get user profile and validate document
     const { data: profile, error: profErr } = await sb
       .from('user_profiles')
-      .select('id, tax_id, cpf_cnpj, full_name, username')
+      .select('id,tax_id')
       .eq('id', user.id)
       .single();
-
-    const rawDoc = typeof profile?.tax_id === 'string' && profile.tax_id.toLowerCase() !== 'null'
-      ? profile.tax_id
-      : null;
 
     console.log('[PIX] profile', {
       userId: user.id,
       profErr: !!profErr,
-      profile,
+      hasProfile: !!profile,
+      tax_id: profile?.tax_id,
+      tax_id_typeof: typeof profile?.tax_id,
+      digits_len: onlyDigits(profile?.tax_id).length,
+      digits_preview: onlyDigits(profile?.tax_id).slice(0, 6),
     });
+    if (profErr || !profile) {
+      return json({ error: 'Profile not found' }, { status: 404 }, origin);
+    }
 
+    const RAW = profile.tax_id;
+    const rawDoc = (typeof RAW === 'string' && RAW.toLowerCase() !== 'null') ? RAW : null;
+    const digits = onlyDigits(rawDoc);
     const doc = normalizeCpfCnpjOrNull(rawDoc);
 
-    console.log('[PIX] docCheck', { rawDoc, ok: !!doc, digits: doc?.digits, type: doc?.type });
+    const LEN_ONLY = (typeof Deno !== 'undefined' ? Deno.env.get('ALLOW_LEN_ONLY') : undefined) === '1';
+    const lenOk = digits.length === 11 || digits.length === 14;
 
-    if (!doc) {
+    console.log('[PIX] docCheck', {
+      rawDoc,
+      digits,
+      len: digits.length,
+      lenOk,
+      cpfValid: isValidCPF(digits),
+      cnpjValid: isValidCNPJ(digits),
+      normalized: !!doc,
+      fallbackLenOnly: LEN_ONLY
+    });
+
+    const docFinal = doc ?? (LEN_ONLY && lenOk ? { digits, type: (digits.length === 11 ? 'FISICA' : 'JURIDICA') as PersonType } : null);
+
+    if (!docFinal) {
       return json(
         { error: 'Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.' },
         { status: 422 },
@@ -158,12 +192,12 @@ export default {
       );
     }
 
-    const customerName = profile?.full_name || profile?.username || "Cliente Ganhavel";
+    const customerName = "Cliente Ganhavel";
     const customer = {
       name: customerName,
       email: user.email || "cliente@ganhavel.com",
-      cpfCnpj: doc.digits,
-      personType: doc.type,
+      cpfCnpj: docFinal.digits,
+      personType: docFinal.type,
       mobilePhone: "11999999999",
       externalReference: user.id,
     };
@@ -208,19 +242,7 @@ export default {
         value: value,
         billingType: "PIX",
         externalReference: reservationId,
-        dueDate: (() => {
-          // Generate dueDate in São Paulo timezone to avoid UTC date issues
-          const spParts = new Intl.DateTimeFormat('pt-BR', {
-            timeZone: 'America/Sao_Paulo', 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit'
-          }).formatToParts(new Date());
-          const year = spParts.find(x => x.type === 'year')!.value;
-          const month = spParts.find(x => x.type === 'month')!.value;  
-          const day = spParts.find(x => x.type === 'day')!.value;
-          return `${year}-${month}-${day}`;
-        })(),
+        dueDate: dueDate,
         description: description || "Compra de bilhetes",
       }),
     });
