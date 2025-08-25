@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const CORS_HEADERS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "POST, OPTIONS",
-  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, access_token",
   "vary": "Origin",
 };
 
@@ -73,6 +73,7 @@ export default {
 
     const asaasHeaders = {
       "Authorization": `Bearer ${ASAAS_KEY}`,
+      "access_token": `${ASAAS_KEY}`,
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
