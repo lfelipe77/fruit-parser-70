@@ -218,6 +218,8 @@ export default function ConfirmacaoPagamento() {
       const unitPrice = asNumber(raffle?.ticket_price, 0);
 
       // 3) reserve tickets
+      const s = await supabase.auth.getSession();
+      console.log('[reserve] session?', !!s.data.session, s.data.session?.user?.id);
       const { data: r1, error: e1 } = await (supabase as any).rpc('reserve_tickets_v2', {
         p_raffle_id: id,
         p_qty: safeQty,
