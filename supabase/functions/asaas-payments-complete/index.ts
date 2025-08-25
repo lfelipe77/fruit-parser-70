@@ -61,7 +61,12 @@ export default {
       return json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const { reservationId, value, description } = payload || {};
+    // Accept both camelCase and snake_case formats for backward compatibility
+    const reservationId = payload?.reservationId ?? payload?.reservation_id ?? null;
+    const value = typeof payload?.value === 'number' ? payload.value 
+                : (typeof payload?.amount === 'number' ? payload.amount : null);
+    const description = payload?.description ?? "Compra de bilhetes";
+    
     if (!reservationId || !value) {
       return json({ error: "Missing required fields: reservationId and value" }, { status: 400 });
     }
@@ -115,7 +120,19 @@ export default {
         value: value,
         billingType: "PIX",
         externalReference: reservationId,
-        dueDate: new Date().toISOString().slice(0, 10),
+        dueDate: (() => {
+          // Generate dueDate in São Paulo timezone to avoid UTC date issues
+          const spParts = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo', 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit'
+          }).formatToParts(new Date());
+          const year = spParts.find(x => x.type === 'year')!.value;
+          const month = spParts.find(x => x.type === 'month')!.value;  
+          const day = spParts.find(x => x.type === 'day')!.value;
+          return `${year}-${month}-${day}`;
+        })(),
         description: description || "Compra de bilhetes",
       }),
     });
