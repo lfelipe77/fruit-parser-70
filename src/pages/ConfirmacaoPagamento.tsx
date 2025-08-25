@@ -257,8 +257,34 @@ export default function ConfirmacaoPagamento() {
       const { payment_id, qr } = await res.json();
       console.log('[PIX] response', { payment_id, qr }); // <- keep this so we see fields at runtime
 
+      const isAsaasPayment = /^pay_/.test(payment_id); // Asaas IDs usually start with "pay_"
+
       // 5) show PIX modal
       setPix({ open: true, qr, paymentId: payment_id, reservationId: reservation_id });
+
+      // 6) Poll for payment status (only for real Asaas payments)
+      if (isAsaasPayment) {
+        const deadline = Date.now() + 15 * 60_000; // 15 min
+        while (Date.now() < deadline) {
+          const s = await fetch(`${EDGE}/functions/v1/payment-status?paymentId=${encodeURIComponent(payment_id)}`);
+          if (s.ok) {
+            const { status } = await s.json();
+            if (status === 'RECEIVED' || status === 'CONFIRMED') {
+              navigate(`/pagamento/sucesso/${payment_id}?res=${reservation_id}`);
+              return;
+            }
+            if (status === 'OVERDUE' || status === 'REFUNDED') {
+              throw new Error('Pagamento expirou ou foi estornado.');
+            }
+          }
+          await new Promise(r => setTimeout(r, 3000));
+        }
+        throw new Error('Tempo expirado aguardando confirmação.');
+      } else {
+        // Mock ID → don't poll the endpoint that only understands real Asaas IDs
+        console.warn('[PIX] Mock payment id, skipping payment-status polling');
+        // Leave the modal open; webhook (or your mock webhook) will mark it paid.
+      }
       setIsProcessing(false);
 
       // 6) poll status (lightweight)
@@ -681,15 +707,11 @@ export default function ConfirmacaoPagamento() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-3">Pague com PIX</h3>
             {(() => {
-              const qrImageSrc =
-                pix.qr?.encodedImage
-                  ? (pix.qr.encodedImage.startsWith('data:')
-                      ? pix.qr.encodedImage
-                      : `data:image/png;base64,${pix.qr.encodedImage}`)
-                  // Some Asaas SDKs call it "image" or return an object under qrCode.image
-                  : (pix.qr?.image
-                      ? (String(pix.qr.image).startsWith('data:') ? pix.qr.image : `data:image/png;base64,${pix.qr.image}`)
-                      : '');
+              // Build a safe data URL from whatever the backend gave us
+              const raw = pix.qr?.encodedImage ?? pix.qr?.image ?? '';
+              const qrImageSrc = raw
+                ? (String(raw).startsWith('data:') ? String(raw) : `data:image/png;base64,${String(raw)}`)
+                : '';
 
               return qrImageSrc ? (
                 <img
@@ -698,9 +720,8 @@ export default function ConfirmacaoPagamento() {
                   className="w-64 h-64 mx-auto border rounded-md mb-4 object-contain"
                 />
               ) : (
-                // Fallback UI if we still don't have a valid image
                 <div className="w-64 h-64 mx-auto border rounded-md mb-4 flex items-center justify-center">
-                  <span className="text-sm opacity-70">QR indisponível — use o código copia-e-cola abaixo</span>
+                  <span className="text-sm opacity-70">QR indisponível — use o código abaixo</span>
                 </div>
               );
             })()}

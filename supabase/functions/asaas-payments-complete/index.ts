@@ -46,9 +46,9 @@ async function handler(req: Request): Promise<Response> {
       });
     }
 
-    const useAsaas = Deno.env.get('USE_ASAAS') === 'true';
-    if (!useAsaas) {
-      console.log('[AsaasComplete] USE_ASAAS is disabled, returning mock response');
+    const useMock = !apiKey || Deno.env.get('USE_ASAAS') === 'false';
+    if (useMock) {
+      console.log('[AsaasComplete] Using mock mode, returning mock response');
       const mockResponse: CompletePaymentResponse = {
         payment_id: 'mock_payment_' + Date.now(),
         qr: {
