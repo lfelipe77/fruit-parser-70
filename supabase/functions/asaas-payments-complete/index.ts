@@ -107,6 +107,7 @@ export default {
         value: amount,
         billingType: "PIX",
         externalReference: reservation_id,
+        dueDate: new Date().toISOString().slice(0, 10),
       }),
     });
     const pay = await payRes.json();
