@@ -245,14 +245,12 @@ export default function ConfirmacaoPagamento() {
       const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
       console.log('[PIX] session?', !!session, session?.user?.id, session?.access_token?.slice(0,12));
 
-      const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          // send BOTH; function will accept either one
-          'authorization': `Bearer ${session.access_token}`,
-          'access_token': session.access_token,
-        },
+        const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${session!.access_token}`, // ONLY this header
+          },
         body: JSON.stringify({
           reservation_id,
           amount: unitPrice * safeQty,
