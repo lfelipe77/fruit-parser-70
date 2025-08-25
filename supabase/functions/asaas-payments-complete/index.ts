@@ -36,32 +36,37 @@ function normalizeCpfCnpjOrNull(raw?: string | null): { digits: string; type: "F
   return null;
 }
 
-const bad = (msg: string, detail?: unknown) =>
-  new Response(JSON.stringify({ error: msg, detail }), { 
-    status: 422, 
-    headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' } 
+const ALLOWED = (
+  (typeof Deno !== 'undefined' ? Deno.env.get('ALLOWED_ORIGINS') : undefined)
+  || (typeof process !== 'undefined' ? (process as any).env?.ALLOWED_ORIGINS : undefined)
+  || 'https://ganhavel.com,https://www.ganhavel.com,http://localhost:3000'
+).split(',').map(s => s.trim()).filter(Boolean);
+
+function corsHeaders(origin: string | null) {
+  const allowOrigin = origin && ALLOWED.includes(origin) ? origin : ALLOWED[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  };
+}
+function withCORS(res: Response, origin: string | null) {
+  const h = new Headers(res.headers);
+  const c = corsHeaders(origin);
+  Object.entries(c).forEach(([k, v]) => h.set(k, v as string));
+  return new Response(res.body, { status: res.status, headers: h });
+}
+function json(body: unknown, init: ResponseInit = {}, origin: string | null = null) {
+  const res = new Response(JSON.stringify(body), {
+    ...init,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(init.headers||{}) }
   });
-
-const CORS_HEADERS = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "POST, OPTIONS",
-  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, access_token",
-  "vary": "Origin",
-};
-
-function json(body: any, init: ResponseInit = {}) {
-  const h = new Headers(init.headers || {});
-  for (const [k, v] of Object.entries(CORS_HEADERS)) h.set(k, String(v));
-  h.set("content-type", "application/json; charset=utf-8");
-  h.set("cache-control", "no-store");
-  return new Response(JSON.stringify(body), { ...init, headers: h });
+  return withCORS(res, origin);
 }
-
-function noContent(init: ResponseInit = {}) {
-  const h = new Headers(init.headers || {});
-  for (const [k, v] of Object.entries(CORS_HEADERS)) h.set(k, String(v));
-  return new Response(null, { ...init, headers: h, status: 204 });
-}
+const bad = (msg: string, detail: unknown = undefined, origin: string | null = null) =>
+  json({ error: msg, detail }, { status: 422 }, origin);
 
 async function getUserFromAuth(req: Request) {
   const auth = req.headers.get("authorization") || "";
@@ -84,23 +89,34 @@ async function getUserFromAuth(req: Request) {
 
 export default {
   async fetch(req: Request) {
+    const origin = req.headers.get('origin');
     // CORS preflight
-    if (req.method === "OPTIONS") return noContent();
+    if (req.method === 'OPTIONS') {
+      return withCORS(new Response(null, { status: 204 }), origin);
+    }
 
-    if (req.method !== "POST") {
-      return json({ error: "Method Not Allowed" }, { status: 405 });
+    if (req.method !== 'POST') {
+      return json({ ok: false, error: 'Method Not Allowed' }, { status: 405 }, origin);
     }
 
     // 1) Auth: use Authorization Bearer only
-    const { user, error } = await getUserFromAuth(req) as any;
-    if (!user) return json({ error: error || "Unauthorized" }, { status: 401 });
+    const { user, jwt, error } = await getUserFromAuth(req) as any;
+    if (!user) return json({ error: error || "Unauthorized" }, { status: 401 }, origin);
+
+    // Create Supabase client for DB operations with user's JWT
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+      auth: { persistSession: false },
+    });
 
     // 2) Parse input
     let payload: any;
     try {
       payload = await req.json();
     } catch {
-      return json({ error: "Invalid JSON" }, { status: 400 });
+      return json({ error: "Invalid JSON" }, { status: 400 }, origin);
     }
 
     // Accept both camelCase and snake_case formats for backward compatibility
@@ -110,11 +126,11 @@ export default {
     const description = payload?.description ?? "Compra de bilhetes";
     
     if (!reservationId || !value) {
-      return json({ error: "Missing required fields: reservationId and value" }, { status: 400 });
+      return json({ error: "Missing required fields: reservationId and value" }, { status: 400 }, origin);
     }
 
     // Get user profile and validate document
-    const { data: profile } = await supabase
+    const { data: profile } = await sb
       .from('user_profiles')
       .select('tax_id, cpf_cnpj, full_name, username')
       .eq('id', user.id)
@@ -126,7 +142,7 @@ export default {
     );
     
     if (!doc) {
-      return bad("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.");
+      return bad("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.", undefined, origin);
     }
 
     const customerName = profile?.full_name || profile?.username || "Cliente Ganhavel";
@@ -142,7 +158,7 @@ export default {
     // 3) Call Asaas
     const ASAAS_KEY = Deno.env.get("ASAAS_API_KEY");
     const ASAAS_BASE = Deno.env.get("ASAAS_BASE_URL") || "https://api-sandbox.asaas.com/v3";
-    if (!ASAAS_KEY) return json({ error: "Asaas not configured" }, { status: 500 });
+    if (!ASAAS_KEY) return json({ error: "Asaas not configured" }, { status: 500 }, origin);
 
     const asaasHeaders = {
       "access_token": ASAAS_KEY, // Asaas expects access_token header, not Authorization
@@ -164,11 +180,11 @@ export default {
 
     const cust = await custRes.json();
     if (!custRes.ok) {
-      return json({ error: "Asaas customer error", detail: cust }, { status: custRes.status });
+      return json({ error: "Asaas customer error", detail: cust }, { status: custRes.status }, origin);
     }
 
     const customerId = cust?.id || cust?.data?.[0]?.id;
-    if (!customerId) return json({ error: "Missing Asaas customer id", detail: cust }, { status: 502 });
+    if (!customerId) return json({ error: "Missing Asaas customer id", detail: cust }, { status: 502 }, origin);
 
     // 3b) Create payment (set externalReference = reservationId)
     const payRes = await fetch(`${ASAAS_BASE}/payments`, {
@@ -197,11 +213,11 @@ export default {
     });
     const pay = await payRes.json();
     if (!payRes.ok) {
-      return json({ error: "Asaas payment error", detail: pay }, { status: payRes.status });
+      return json({ error: "Asaas payment error", detail: pay }, { status: payRes.status }, origin);
     }
 
     const payment_id = pay?.id;
-    if (!payment_id) return json({ error: "Missing payment id", detail: pay }, { status: 502 });
+    if (!payment_id) return json({ error: "Missing payment id", detail: pay }, { status: 502 }, origin);
 
     // 3c) Get PIX QR
     const qrRes = await fetch(`${ASAAS_BASE}/payments/${payment_id}/pixQrCode`, {
@@ -210,7 +226,7 @@ export default {
     });
     const qrRaw = await qrRes.json();
     if (!qrRes.ok) {
-      return json({ error: "Asaas QR error", detail: qrRaw }, { status: qrRes.status });
+      return json({ error: "Asaas QR error", detail: qrRaw }, { status: qrRes.status }, origin);
     }
 
     // Normalize QR image with consistent data: prefix
@@ -228,6 +244,6 @@ export default {
         expiresAt: qrRaw?.expiresAt || qrRaw?.expirationDate,
       },
       value: Number(value),
-    });
+    }, {}, origin);
   },
 };
