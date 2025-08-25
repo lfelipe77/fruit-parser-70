@@ -264,33 +264,18 @@ export default function ConfirmacaoPagamento() {
         throw new Error("Documento inválido");
       }
 
-      // 5) create PIX on Asaas
-      const EDGE = import.meta.env.VITE_SUPABASE_URL;
-      console.log('[PIX] session?', !!session, session?.user?.id, session?.access_token?.slice(0,12));
-
+      // 5) create PIX on Asaas with minimum value check
+      const MIN_PIX_VALUE = 5.00;
+      const value = unitPrice * safeQty;
+      if (value < MIN_PIX_VALUE) {
+        alert(`O valor mínimo para PIX é R$ ${MIN_PIX_VALUE.toFixed(2)}.`);
+        throw new Error('Valor abaixo do mínimo PIX');
+      }
+      const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          reservationId: reservation_id,
-          value: unitPrice * safeQty,
-          description: 'Compra de bilhetes',
-          customer: {
-            name: formData.fullName,
-            email: formData.email,
-            // don't send if not 10/11 digits; the edge will handle too.
-            ...(() => {
-              const phoneDigits = (formData.phone || '').replace(/\D+/g, '');
-              const cleaned = phoneDigits.startsWith('55') && (phoneDigits.length === 12 || phoneDigits.length === 13)
-                ? phoneDigits.slice(2)
-                : phoneDigits;
-              return cleaned.length === 10 || cleaned.length === 11 ? { phone: cleaned } : {};
-            })(),
-          },
-        }),
+        headers: { 'content-type':'application/json', 'authorization': `Bearer ${session!.access_token}` },
+        body: JSON.stringify({ reservationId: reservation_id, value, description: 'Compra de bilhetes' }),
       });
       
       if (!res.ok) {
