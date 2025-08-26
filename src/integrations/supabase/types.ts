@@ -1458,6 +1458,67 @@ export type Database = {
         }
         Relationships: []
       }
+      reservation_audit_cache: {
+        Row: {
+          all_paid: boolean
+          any_paid: boolean
+          buyer_user_id: string
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string
+          reservation_id: string
+          ticket_count: number
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+          updated_at: string | null
+        }
+        Insert: {
+          all_paid: boolean
+          any_paid: boolean
+          buyer_user_id: string
+          first_ticket_at?: string | null
+          last_provider?: string | null
+          last_provider_payment_id?: string | null
+          last_ticket_at?: string | null
+          last_tx_amount?: number | null
+          last_tx_at?: string | null
+          last_tx_status?: string | null
+          raffle_id: string
+          reservation_id: string
+          ticket_count: number
+          ticket_numbers?: number[] | null
+          ticket_statuses?:
+            | Database["public"]["Enums"]["ticket_status"][]
+            | null
+          updated_at?: string | null
+        }
+        Update: {
+          all_paid?: boolean
+          any_paid?: boolean
+          buyer_user_id?: string
+          first_ticket_at?: string | null
+          last_provider?: string | null
+          last_provider_payment_id?: string | null
+          last_ticket_at?: string | null
+          last_tx_amount?: number | null
+          last_tx_at?: string | null
+          last_tx_status?: string | null
+          raffle_id?: string
+          reservation_id?: string
+          ticket_count?: number
+          ticket_numbers?: number[] | null
+          ticket_statuses?:
+            | Database["public"]["Enums"]["ticket_status"][]
+            | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       security_alerts: {
         Row: {
           context: Json | null
@@ -2124,6 +2185,8 @@ export type Database = {
           rating: number | null
           role: string | null
           social_links: Json | null
+          tax_id: string | null
+          tax_kind: string | null
           telegram: string | null
           tiktok: string | null
           total_ganhaveis: number | null
@@ -2148,6 +2211,8 @@ export type Database = {
           rating?: number | null
           role?: string | null
           social_links?: Json | null
+          tax_id?: string | null
+          tax_kind?: string | null
           telegram?: string | null
           tiktok?: string | null
           total_ganhaveis?: number | null
@@ -2172,6 +2237,8 @@ export type Database = {
           rating?: number | null
           role?: string | null
           social_links?: Json | null
+          tax_id?: string | null
+          tax_kind?: string | null
           telegram?: string | null
           tiktok?: string | null
           total_ganhaveis?: number | null
@@ -3601,6 +3668,140 @@ export type Database = {
           },
         ]
       }
+      reservation_audit_v1: {
+        Row: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
+        Relationships: []
+      }
+      reservation_by_user_v1: {
+        Row: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
+        Relationships: []
+      }
+      reservation_tickets_v1: {
+        Row: {
+          buyer_user_id: string | null
+          is_paid: boolean | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_created_at: string | null
+          ticket_number: number | null
+          ticket_status: Database["public"]["Enums"]["ticket_status"] | null
+          tx_amount: number | null
+          tx_created_at: string | null
+          tx_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+        ]
+      }
+      reservation_unpaid_v1: {
+        Row: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
+        Relationships: []
+      }
       subcategories_public: {
         Row: {
           active_raffles: number | null
@@ -4271,6 +4472,26 @@ export type Database = {
           id: string
         }[]
       }
+      get_reservation_audit: {
+        Args: { p_reservation_id: string }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
+      }
       hello_secure: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -4334,6 +4555,18 @@ export type Database = {
         Args: { uid: string }
         Returns: boolean
       }
+      is_valid_cnpj: {
+        Args: { raw: string }
+        Returns: boolean
+      }
+      is_valid_cpf: {
+        Args: { raw: string }
+        Returns: boolean
+      }
+      is_valid_cpf_or_cnpj: {
+        Args: { raw: string }
+        Returns: boolean
+      }
       job_assign_next_draw: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -4345,6 +4578,103 @@ export type Database = {
       job_mark_funded: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      list_reservations_audit: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
+      }
+      list_reservations_by_me: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
+      }
+      list_reservations_by_user_admin: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+          p_user_id: string
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
+      }
+      list_reservations_unpaid: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
       }
       log_audit_event: {
         Args:
@@ -4394,6 +4724,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_transaction_webhook: {
+        Args: {
+          p_amount: number
+          p_provider: string
+          p_provider_payment_id: string
+          p_reservation_id: string
+        }
+        Returns: undefined
+      }
       log_user_action: {
         Args: { p_action: string; p_payload: Json; p_user_id: string }
         Returns: undefined
@@ -4413,6 +4752,10 @@ export type Database = {
       maybe_close_raffle: {
         Args: { p_raffle_id: string }
         Returns: undefined
+      }
+      only_digits: {
+        Args: { v: string }
+        Returns: string
       }
       pick_winners_from_latest_federal: {
         Args: Record<PropertyKey, never>
@@ -4437,6 +4780,10 @@ export type Database = {
           paid_tickets: number
           participants_count: number
         }[]
+      }
+      rebuild_reservation_audit_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       record_mock_purchase: {
         Args: {
@@ -4569,6 +4916,10 @@ export type Database = {
       }
       update_user_role: {
         Args: { new_role: string; user_id: string }
+        Returns: undefined
+      }
+      upsert_reservation_audit: {
+        Args: { p_reservation_id: string }
         Returns: undefined
       }
       upsert_verified_payment: {
