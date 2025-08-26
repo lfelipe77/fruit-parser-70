@@ -60,11 +60,25 @@ async function oauthEarly() {
 (async () => {
   console.log('[MAIN] Starting app boot...');
   console.log('[MAIN] Current URL:', window.location.href);
+  console.log('[MAIN] Environment check:', {
+    isDev: import.meta.env.DEV,
+    mode: import.meta.env.MODE,
+    supabaseUrl: !!import.meta.env.VITE_SUPABASE_URL
+  });
+  
   try {
     await oauthEarly();
     console.log('[MAIN] OAuth early completed, rendering app...');
+    
+    // Check if root element exists
+    const rootElement = document.getElementById("root");
+    if (!rootElement) {
+      throw new Error('Root element not found');
+    }
+    console.log('[MAIN] Root element found, creating React root...');
+    
     // existing React render here (unchanged):
-    createRoot(document.getElementById("root")!).render(
+    createRoot(rootElement).render(
       <AppErrorBoundary>
         <HelmetProvider>
           <App />
@@ -74,6 +88,29 @@ async function oauthEarly() {
     console.log('[MAIN] App rendered successfully');
   } catch (error) {
     console.error('[MAIN] App boot failed:', error);
-    document.body.innerHTML = `<div style="padding: 20px; color: red;">App failed to start: ${error}</div>`;
+    console.error('[MAIN] Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    });
+    
+    const rootElement = document.getElementById("root");
+    if (rootElement) {
+      rootElement.innerHTML = `
+        <div style="padding: 20px; max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+          <h1 style="color: #dc2626; margin-bottom: 16px;">⚠️ App Failed to Start</h1>
+          <p style="margin-bottom: 12px;"><strong>Error:</strong> ${error?.message || 'Unknown error'}</p>
+          <details style="margin-top: 16px;">
+            <summary style="cursor: pointer; color: #6b7280;">Technical Details</summary>
+            <pre style="background: #f3f4f6; padding: 12px; border-radius: 4px; overflow: auto; font-size: 12px; margin-top: 8px;">${error?.stack || 'No stack trace available'}</pre>
+          </details>
+          <button onclick="window.location.reload()" style="margin-top: 16px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Reload Page
+          </button>
+        </div>
+      `;
+    } else {
+      document.body.innerHTML = `<div style="padding: 20px; color: red;">Critical Error: Cannot find root element. App failed to start: ${error?.message || error}</div>`;
+    }
   }
 })();
