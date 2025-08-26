@@ -210,6 +210,9 @@ export default {
         return json({ error: 'Missing Asaas customer id', body: cust.text, debug }, { status: 502 }, origin);
       }
 
+      const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://ganhavel.com';
+      const successUrl = `${APP_BASE_URL}/?pix=success&reservationId=${encodeURIComponent(reservationId)}`;
+
       const payBody = {
         customer: customerId,
         value,
@@ -218,6 +221,10 @@ export default {
         dueDate: dueDateSP(),
         externalReference: reservationId,
         postalService: false,
+        callback: {
+          successUrl,
+          autoRedirect: true
+        }
       };
       const pay = await asaasCall('/payments', { method:'POST', body: JSON.stringify(payBody) });
       if (!pay.resp.ok) {
@@ -227,6 +234,7 @@ export default {
       if (!payment_id) {
         return json({ error: 'Missing payment id', body: pay.text, debug }, { status: 502 }, origin);
       }
+      const invoiceUrl = (pay.parsed as any)?.invoiceUrl ?? null;
 
       const qr = await asaasCall(`/payments/${payment_id}/pixQrCode`, { method:'GET' });
       if (!qr.resp.ok) {
@@ -237,7 +245,7 @@ export default {
       const encodedImage = base64 && String(base64).startsWith('data:') ? base64 : (base64 ? `data:image/png;base64,${base64}` : '');
       const payloadCode = qrRaw?.payload ?? qrRaw?.payloadCode ?? qrRaw?.qrCodeText ?? null;
 
-      return json({ ok:true, payment_id, qr:{ encodedImage, payload: payloadCode, expiresAt: qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null }, value, debug }, { status:200 }, origin);
+      return json({ ok:true, payment_id, qr:{ encodedImage, payload: payloadCode, expiresAt: qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null }, value, debug, invoiceUrl }, { status:200 }, origin);
     } catch (err) {
       console.error('[asaas-payments-complete] error', err);
       return json({ error: String(err) }, { status: 500 }, origin);
