@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/v135/@supabase/supabase-js@2.53.0?target=deno'
 import { withCORS } from "../_shared/cors.ts"
 
 

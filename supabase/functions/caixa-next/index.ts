@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { withCORS } from "../_shared/cors.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/v135/@supabase/supabase-js@2.53.0?target=deno";
 
 // Fetches CAIXA data and stores lightweight rows for each game in lottery_next_draws
 // Note: This function writes to DB and requires SERVICE ROLE key.
