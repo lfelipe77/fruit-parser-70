@@ -386,7 +386,7 @@ export default function Profile() {
                 placeholder="@seuusername"
               />
               <p className="text-sm text-muted-foreground mt-1">
-                Seu perfil público será: @{formData.username || 'username'}@ganhavel
+                Seu perfil público será: ganhavel.com/@{formData.username || 'username'}
               </p>
             </div>
 
