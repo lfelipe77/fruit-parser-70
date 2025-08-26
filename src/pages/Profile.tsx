@@ -23,8 +23,17 @@ export default function Profile() {
     full_name: '',
     username: '',
     bio: '',
-    location: ''
+    location: '',
+    website_url: '',
+    instagram: '',
+    twitter: '',
+    facebook: '',
+    youtube: '',
+    tiktok: '',
+    whatsapp: '',
+    telegram: ''
   });
+  const [userEmail, setUserEmail] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -40,10 +49,25 @@ export default function Profile() {
         full_name: profile.full_name || '',
         username: profile.username || '',
         bio: profile.bio || '',
-        location: profile.location || ''
+        location: profile.location || '',
+        website_url: profile.website_url || '',
+        instagram: profile.instagram || '',
+        twitter: profile.twitter || '',
+        facebook: profile.facebook || '',
+        youtube: profile.youtube || '',
+        tiktok: profile.tiktok || '',
+        whatsapp: profile.whatsapp || '',
+        telegram: profile.telegram || ''
       });
     }
   }, [profile]);
+
+  // Get user email from auth
+  useEffect(() => {
+    if (session?.user?.email) {
+      setUserEmail(session.user.email);
+    }
+  }, [session]);
 
   // Debug auth session
   useEffect(() => {
@@ -361,6 +385,23 @@ export default function Profile() {
                 onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
                 placeholder="@seuusername"
               />
+              <p className="text-sm text-muted-foreground mt-1">
+                Seu perfil público será: @{formData.username || 'username'}@ganhavel
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                value={userEmail}
+                disabled
+                placeholder="Seu email"
+                className="bg-muted"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Para alterar o email, use as configurações de conta
+              </p>
             </div>
 
             <div>
@@ -382,6 +423,83 @@ export default function Profile() {
                 placeholder="Conte um pouco sobre você..."
                 rows={4}
               />
+            </div>
+
+            {/* Website & Social Media Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-lg font-medium">Website e Redes Sociais</h3>
+              
+              <div>
+                <Label htmlFor="website_url">Website</Label>
+                <Input
+                  id="website_url"
+                  value={formData.website_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, website_url: e.target.value }))}
+                  placeholder="https://seusite.com"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    value={formData.instagram}
+                    onChange={(e) => setFormData(prev => ({ ...prev, instagram: e.target.value }))}
+                    placeholder="@seuinstagram"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="twitter">Twitter</Label>
+                  <Input
+                    id="twitter"
+                    value={formData.twitter}
+                    onChange={(e) => setFormData(prev => ({ ...prev, twitter: e.target.value }))}
+                    placeholder="@seutwitter"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="facebook">Facebook</Label>
+                  <Input
+                    id="facebook"
+                    value={formData.facebook}
+                    onChange={(e) => setFormData(prev => ({ ...prev, facebook: e.target.value }))}
+                    placeholder="Seu Facebook"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="youtube">YouTube</Label>
+                  <Input
+                    id="youtube"
+                    value={formData.youtube}
+                    onChange={(e) => setFormData(prev => ({ ...prev, youtube: e.target.value }))}
+                    placeholder="Seu canal do YouTube"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="tiktok">TikTok</Label>
+                  <Input
+                    id="tiktok"
+                    value={formData.tiktok}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tiktok: e.target.value }))}
+                    placeholder="@seutiktok"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <Input
+                    id="whatsapp"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                    placeholder="+55 11 99999-9999"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
