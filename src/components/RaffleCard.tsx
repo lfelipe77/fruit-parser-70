@@ -1,5 +1,15 @@
-import { brl, timeAgo, RaffleCardInfo } from "@/types/raffles";
+import { brl, timeAgo } from "@/types/raffles";
+import { RaffleCardInfo } from "@/types/public-views";
 import { Link } from "react-router-dom";
+
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(n => n[0]?.toUpperCase() || '')
+    .join('');
+}
 
 export function RaffleCard({ r }: { r: RaffleCardInfo }) {
   const pct = Math.max(0, Math.min(100, r.progress_pct_money ?? 0));
@@ -10,12 +20,32 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
   return (
     <Link to={`/ganhavel/${r.id}`} className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow cursor-pointer">
       {/* Image */}
-      <div className="h-44 w-full overflow-hidden rounded-lg">
+      <div className="relative h-44 w-full overflow-hidden rounded-lg">
         {r.image_url ? (
           <img src={r.image_url} alt={r.title} className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="h-full w-full bg-muted" />
         )}
+        
+        {/* Organizer avatar (no link) */}
+        <div className="absolute top-2 right-2">
+          {r.organizer_avatar_url ? (
+            <img
+              src={r.organizer_avatar_url}
+              alt={r.organizer_display_name || 'Organizador'}
+              className="h-6 w-6 rounded-full ring-2 ring-white shadow"
+              loading="lazy"
+            />
+          ) : (
+            <div
+              className="h-6 w-6 rounded-full bg-muted-foreground/20 ring-2 ring-white shadow flex items-center justify-center text-[10px] font-semibold text-muted-foreground"
+              aria-label={r.organizer_display_name || 'Organizador'}
+              title={r.organizer_display_name || 'Organizador'}
+            >
+              {getInitials(r.organizer_display_name || 'O')}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Title + excerpt */}

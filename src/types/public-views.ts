@@ -53,6 +53,11 @@ export type RaffleCardInfo = {
   category_name: string | null;
   subcategory_name: string | null;
   direct_purchase_link?: string | null;
+  organizer_avatar_url?: string | null;
+  organizer_display_name?: string | null;
+  participants_count?: number;
+  location_city?: string | null;
+  location_state?: string | null;
 };
 
 export type PublicProfile = {
