@@ -4441,6 +4441,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      finalize_paid_purchase: {
+        Args: {
+          p_asaas_payment_id: string
+          p_customer_cpf?: string
+          p_customer_name?: string
+          p_customer_phone?: string
+          p_reservation_id: string
+        }
+        Returns: Json
+      }
       finalize_payout: {
         Args: { p_raffle_id: string }
         Returns: string

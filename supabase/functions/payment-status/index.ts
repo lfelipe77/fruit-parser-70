@@ -101,8 +101,26 @@ serve(async (req) => {
         const paid = resp.ok && j && (j.status === "RECEIVED" || j.status === "CONFIRMED");
 
         if (paid) {
-          // Optional: call an idempotent finalize RPC here if your project has one.
-          // await userClient.rpc("finalize_payment_by_reservation", { p_reservation_id: reservationId }).catch(() => {});
+          // Call finalize function to convert reservation to paid transaction
+          try {
+            const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+            
+            await adminClient.functions.invoke('payment-finalize', {
+              body: {
+                reservationId,
+                asaasPaymentId: pending.asaas_payment_id,
+                customerName: null,
+                customerPhone: null,
+                customerCpf: null
+              }
+            });
+            console.log(`[payment-status] Finalization triggered for reservation ${reservationId}`);
+          } catch (finalizeError) {
+            console.error('[payment-status] Finalization error:', finalizeError);
+            // Continue anyway - user will see PAID status
+          }
+          
           return new Response(
             JSON.stringify({ status: "PAID", reservationId, paymentId: pending.asaas_payment_id }),
             { status: 200, headers: corsHeaders },
