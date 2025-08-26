@@ -17,63 +17,95 @@ export default function PagamentoSucesso() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
   const [sp] = useSearchParams();
-  const reservation_id = sp.get("res");
+  // Accept both reservationId and legacy "res"
+  const reservationId = sp.get("reservationId") || sp.get("res");
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPaymentDetails();
-  }, [paymentId, reservation_id]);
+  }, [paymentId, reservationId]);
 
   const fetchPaymentDetails = async () => {
     try {
-      console.log('[PaymentSuccess] Fetching details for payment:', paymentId, 'reservation:', reservation_id);
-      
-      if (reservation_id) {
-        // Use query to get reservation data since RPC types may not be complete
-        const { data: auditData, error } = await supabase
-          .from('transactions')
-          .select('amount, created_at, status')
-          .eq('provider_payment_id', paymentId || '')
+      console.log('[PagamentoSucesso] Fetching details for payment:', paymentId, 'reservation:', reservationId);
+
+      // 1) If we have a reservationId, try to resolve the finalized transaction via tickets
+      if (reservationId) {
+        const { data: paidTicket, error: ticketErr } = await supabase
+          .from('tickets')
+          .select('transaction_id, raffle_id, user_id')
+          .eq('reservation_id', reservationId)
+          .eq('status', 'paid')
+          .order('updated_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
-        
-        if (error) {
-          console.error('[PagamentoSucesso] query error:', error);
-        } else if (auditData) {
-          // Map transaction data to UI
-          setPaymentDetails({
-            amount: auditData.amount || 25.00,
-            raffleTitle: 'Rifa', // TODO: Get from raffle table if needed
-            ticketCount: 1, // TODO: Get from ticket count
-            createdAt: auditData.created_at || new Date().toISOString()
-          });
-          
-          // Show pending status if not paid
-          if (auditData.status !== 'paid') {
-            console.log('Payment still pending...');
-            // Optional: start polling for updates
+
+        if (ticketErr) console.warn('[PagamentoSucesso] ticket lookup error:', ticketErr);
+
+        if (paidTicket?.transaction_id) {
+          const { data: tx, error: txErr } = await supabase
+            .from('transactions')
+            .select('id, amount, status, created_at, raffle_id, numbers')
+            .eq('id', paidTicket.transaction_id)
+            .maybeSingle();
+
+          if (txErr) console.error('[PagamentoSucesso] tx lookup error:', txErr);
+
+          if (tx) {
+            // get raffle title
+            const { data: r } = await supabase
+              .from('raffles')
+              .select('title')
+              .eq('id', tx.raffle_id)
+              .maybeSingle();
+
+            setPaymentDetails({
+              amount: Number(tx.amount) || 0,
+              raffleTitle: r?.title || 'Rifa',
+              ticketCount: Array.isArray(tx.numbers) ? tx.numbers.length : 1,
+              createdAt: tx.created_at || new Date().toISOString(),
+            });
+            return;
           }
-          
+        }
+      }
+
+      // 2) If we have a provider payment id in the URL, resolve by provider_payment_id
+      if (paymentId) {
+        const { data: byPid } = await supabase
+          .from('transactions')
+          .select('amount, created_at, status, raffle_id, numbers')
+          .eq('provider_payment_id', paymentId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (byPid) {
+          const { data: r } = await supabase
+            .from('raffles')
+            .select('title')
+            .eq('id', byPid.raffle_id)
+            .maybeSingle();
+          setPaymentDetails({
+            amount: Number(byPid.amount) || 0,
+            raffleTitle: r?.title || 'Rifa',
+            ticketCount: Array.isArray(byPid.numbers) ? byPid.numbers.length : 1,
+            createdAt: byPid.created_at || new Date().toISOString(),
+          });
           return;
         }
       }
-      
-      // Fallback to mock data
+
+      // Fallback to mock while it finalizes
       setPaymentDetails({
-        amount: 25.00,
-        raffleTitle: 'iPhone 15 Pro Max',
-        ticketCount: 1,
-        createdAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('[PaymentSuccess] Error fetching payment details:', error);
-      // Fallback to mock data on error
-      setPaymentDetails({
-        amount: 25.00,
+        amount: 25.0,
         raffleTitle: 'Rifa',
         ticketCount: 1,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       });
+    } catch (error) {
+      console.error('[PagamentoSucesso] Error fetching payment details:', error);
+      setPaymentDetails({ amount: 25.0, raffleTitle: 'Rifa', ticketCount: 1, createdAt: new Date().toISOString() });
     } finally {
       setLoading(false);
     }
