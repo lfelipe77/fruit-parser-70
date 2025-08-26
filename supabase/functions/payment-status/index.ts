@@ -101,26 +101,35 @@ serve(async (req) => {
         const paid = resp.ok && j && (j.status === "RECEIVED" || j.status === "CONFIRMED");
 
         if (paid) {
-          // Call finalize function to convert reservation to paid transaction
-          try {
+          // Check if transaction already exists to avoid duplicate finalization
+          const { data: hasTx } = await userClient
+            .from("transactions")
+            .select("id")
+            .eq("provider_payment_id", pending.asaas_payment_id)
+            .limit(1)
+            .maybeSingle();
+
+          if (!hasTx) {
+            // Service client (already validated JWT & ownership via userClient)
             const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-            const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+            const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
             
-            await adminClient.functions.invoke('payment-finalize', {
-              body: {
-                reservationId,
-                asaasPaymentId: pending.asaas_payment_id,
-                customerName: null,
-                customerPhone: null,
-                customerCpf: null
-              }
-            });
-            console.log(`[payment-status] Finalization triggered for reservation ${reservationId}`);
-          } catch (finalizeError) {
-            console.error('[payment-status] Finalization error:', finalizeError);
-            // Continue anyway - user will see PAID status
+            // Idempotent — RPC returns success even if previously finalized
+            try {
+              await admin.rpc("finalize_paid_purchase", {
+                p_reservation_id: reservationId,
+                p_asaas_payment_id: pending.asaas_payment_id,
+                p_customer_name: null,
+                p_customer_phone: null,
+                p_customer_cpf: null,
+              });
+              console.log(`[payment-status] Finalization triggered for reservation ${reservationId}`);
+            } catch (finalizeError) {
+              console.error('[payment-status] Finalization error:', finalizeError);
+              // Continue anyway - user will see PAID status
+            }
           }
-          
+
           return new Response(
             JSON.stringify({ status: "PAID", reservationId, paymentId: pending.asaas_payment_id }),
             { status: 200, headers: corsHeaders },

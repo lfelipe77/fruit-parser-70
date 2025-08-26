@@ -30,31 +30,93 @@ export default function PagamentoSucesso() {
     try {
       console.log('[PagamentoSucesso] Fetching details for payment:', paymentId, 'reservation:', reservationId);
 
-      // 1) If we have a reservationId, try to resolve the finalized transaction via tickets
-      if (reservationId) {
-        const { data: paidTicket, error: ticketErr } = await supabase
+      if (!reservationId && !paymentId) {
+        setPaymentDetails({
+          amount: 25.0,
+          raffleTitle: 'Rifa',
+          ticketCount: 1,
+          createdAt: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token;
+      
+      if (!jwt) {
+        console.warn('[PagamentoSucesso] No JWT token found');
+        setPaymentDetails({
+          amount: 25.0,
+          raffleTitle: 'Rifa',
+          ticketCount: 1,
+          createdAt: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // 1) Check payment status first
+      let statusResponse: any = null;
+      let detectedReservationId = reservationId;
+      
+      if (reservationId || paymentId) {
+        const EDGE_URL = "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1";
+        const params = new URLSearchParams();
+        if (reservationId) params.set('reservationId', reservationId);
+        if (paymentId) params.set('paymentId', paymentId);
+        
+        try {
+          const sres = await fetch(`${EDGE_URL}/payment-status?${params.toString()}`, {
+            headers: { Authorization: `Bearer ${jwt}` }
+          });
+          statusResponse = await sres.json();
+          detectedReservationId = statusResponse.reservationId || reservationId;
+          console.log('[PagamentoSucesso] Status response:', statusResponse);
+        } catch (statusError) {
+          console.warn('[PagamentoSucesso] Status check failed:', statusError);
+        }
+      }
+
+      // 2) Fallback finalize (idempotent) if status is PAID
+      if (statusResponse?.status === "PAID" && detectedReservationId) {
+        try {
+          const EDGE_URL = "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1";
+          await fetch(`${EDGE_URL}/payment-finalize`, {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json", 
+              Authorization: `Bearer ${jwt}` 
+            },
+            body: JSON.stringify({ 
+              reservationId: detectedReservationId, 
+              paymentId: statusResponse.paymentId || paymentId 
+            })
+          });
+          console.log('[PagamentoSucesso] Fallback finalize called');
+        } catch (finalizeError) {
+          console.warn('[PagamentoSucesso] Fallback finalize failed:', finalizeError);
+        }
+      }
+
+      // 3) Load UI data (paid tickets + transaction + raffle)
+      if (detectedReservationId) {
+        const { data: paidTicket } = await supabase
           .from('tickets')
-          .select('transaction_id, raffle_id, user_id')
-          .eq('reservation_id', reservationId)
+          .select('transaction_id, raffle_id')
+          .eq('reservation_id', detectedReservationId)
           .eq('status', 'paid')
-          .order('updated_at', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
-        if (ticketErr) console.warn('[PagamentoSucesso] ticket lookup error:', ticketErr);
-
         if (paidTicket?.transaction_id) {
-          const { data: tx, error: txErr } = await supabase
+          const { data: tx } = await supabase
             .from('transactions')
             .select('id, amount, status, created_at, raffle_id, numbers')
             .eq('id', paidTicket.transaction_id)
             .maybeSingle();
 
-          if (txErr) console.error('[PagamentoSucesso] tx lookup error:', txErr);
-
           if (tx) {
-            // get raffle title
-            const { data: r } = await supabase
+            const { data: raffle } = await supabase
               .from('raffles')
               .select('title')
               .eq('id', tx.raffle_id)
@@ -62,7 +124,7 @@ export default function PagamentoSucesso() {
 
             setPaymentDetails({
               amount: Number(tx.amount) || 0,
-              raffleTitle: r?.title || 'Rifa',
+              raffleTitle: raffle?.title || 'Rifa',
               ticketCount: Array.isArray(tx.numbers) ? tx.numbers.length : 1,
               createdAt: tx.created_at || new Date().toISOString(),
             });
@@ -71,7 +133,7 @@ export default function PagamentoSucesso() {
         }
       }
 
-      // 2) If we have a provider payment id in the URL, resolve by provider_payment_id
+      // 4) Fallback by paymentId if we have it
       if (paymentId) {
         const { data: byPid } = await supabase
           .from('transactions')
@@ -80,15 +142,17 @@ export default function PagamentoSucesso() {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+          
         if (byPid) {
-          const { data: r } = await supabase
+          const { data: raffle } = await supabase
             .from('raffles')
             .select('title')
             .eq('id', byPid.raffle_id)
             .maybeSingle();
+            
           setPaymentDetails({
             amount: Number(byPid.amount) || 0,
-            raffleTitle: r?.title || 'Rifa',
+            raffleTitle: raffle?.title || 'Rifa',
             ticketCount: Array.isArray(byPid.numbers) ? byPid.numbers.length : 1,
             createdAt: byPid.created_at || new Date().toISOString(),
           });
@@ -96,16 +160,22 @@ export default function PagamentoSucesso() {
         }
       }
 
-      // Fallback to mock while it finalizes
+      // Final fallback
       setPaymentDetails({
         amount: 25.0,
         raffleTitle: 'Rifa',
         ticketCount: 1,
         createdAt: new Date().toISOString(),
       });
+      
     } catch (error) {
       console.error('[PagamentoSucesso] Error fetching payment details:', error);
-      setPaymentDetails({ amount: 25.0, raffleTitle: 'Rifa', ticketCount: 1, createdAt: new Date().toISOString() });
+      setPaymentDetails({ 
+        amount: 25.0, 
+        raffleTitle: 'Rifa', 
+        ticketCount: 1, 
+        createdAt: new Date().toISOString() 
+      });
     } finally {
       setLoading(false);
     }
