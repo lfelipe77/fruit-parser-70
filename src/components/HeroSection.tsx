@@ -6,12 +6,21 @@ import { useHeroCopy } from "@/hooks/useHeroCopy";
 import { FadeText } from "@/components/FadeText";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHeroStats } from "@/hooks/useHeroStats";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
   const { user } = useAuthContext();
   const isMobile = useIsMobile();
+  const { 
+    totalPrizeAmount, 
+    totalParticipants, 
+    totalRaffles, 
+    loading, 
+    formatCurrency, 
+    formatCount 
+  } = useHeroStats();
   
   // Auto-rotating text every 2 minutes
   const { headline, subline } = useHeroCopy({ 
@@ -90,7 +99,9 @@ export default function HeroSection() {
                     <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">R$ 8M+</div>
+                <div className="font-semibold text-base md:text-lg">
+                  {loading ? "..." : formatCurrency(totalPrizeAmount)}
+                </div>
                 <div className="text-xs md:text-sm text-muted-foreground">Premiado</div>
               </div>
               <div className="text-center">
@@ -99,7 +110,9 @@ export default function HeroSection() {
                     <Users className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">25K+</div>
+                <div className="font-semibold text-base md:text-lg">
+                  {loading ? "..." : formatCount(totalParticipants)}
+                </div>
                 <div className="text-xs md:text-sm text-muted-foreground">Participantes</div>
               </div>
               <div className="text-center">
@@ -108,7 +121,9 @@ export default function HeroSection() {
                     <Target className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">890+</div>
+                <div className="font-semibold text-base md:text-lg">
+                  {loading ? "..." : formatCount(totalRaffles)}
+                </div>
                 <div className="text-xs md:text-sm text-muted-foreground">Ganhaveis</div>
               </div>
             </div>
