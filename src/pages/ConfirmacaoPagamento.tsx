@@ -400,6 +400,60 @@ export default function ConfirmacaoPagamento() {
     }
   };
 
+  // Developer test function
+  const handleTestAsaasPayment = async () => {
+    try {
+      console.log('🧪 Testing Asaas Payment...');
+      
+      // 1. Get current user session JWT
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('❌ No user session found');
+        return;
+      }
+      console.log('✅ User session found');
+
+      // 2. Fetch most recent reservation for this user
+      const { data: reservations, error: reservationError } = await supabase
+        .from('tickets')
+        .select('reservation_id')
+        .eq('user_id', session.user.id)
+        .not('reservation_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (reservationError || !reservations?.length) {
+        console.error('❌ No reservations found:', reservationError);
+        return;
+      }
+
+      const reservationId = reservations[0].reservation_id;
+      console.log('✅ Found reservation:', reservationId);
+
+      // 3. Call Edge Function
+      const { data, error } = await supabase.functions.invoke('asaas-payments-complete', {
+        body: {
+          reservationId,
+          value: 15,
+          description: 'Teste via DevButton'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        console.log('Status:', error.status || 'unknown');
+        console.log('Body:', error.message || 'no message');
+      } else {
+        console.log('✅ Edge function success:');
+        console.log('Status: 200');
+        console.log('Body:', data);
+      }
+
+    } catch (err) {
+      console.error('❌ Test failed:', err);
+    }
+  };
+
   if (loading || authLoading) return <div className="p-6">Carregando…</div>;
   if (!raffle) return <div className="p-6">Rifa não encontrada.</div>;
 
@@ -456,6 +510,21 @@ export default function ConfirmacaoPagamento() {
           </div>
           <h1 className="text-2xl font-bold">Confirmação de Pagamento</h1>
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
+          
+          {/* Developer Test Button */}
+          {import.meta.env.VITE_ENV === 'dev' && (
+            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-xs text-orange-700 mb-2">Developer Tools:</p>
+              <Button
+                onClick={handleTestAsaasPayment}
+                variant="outline"
+                size="sm"
+                className="text-orange-700 border-orange-300 hover:bg-orange-100"
+              >
+                💳 Test Asaas Payment
+              </Button>
+            </div>
+          )}
         </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
