@@ -1,84 +1,132 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/v135/@supabase/supabase-js@2.53.0?target=deno";
-import { withCORS } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://ganhavel.com",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-request-id",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Content-Type": "application/json",
+};
 
-interface PaymentStatusResponse {
-  status: string;
-  updatedAt: string;
-  providerPaymentId: string;
-}
-
-/**
- * Payment Status Checker
- * 
- * Returns the current status of a payment from our database.
- * Used for frontend polling to check payment status.
- */
-async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'GET') {
-    return new Response('Method Not Allowed', { status: 405 });
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Extract payment ID from URL path
     const url = new URL(req.url);
-    const pathParts = url.pathname.split('/');
-    const localPaymentId = pathParts[pathParts.length - 2]; // .../payments/{id}/status
+    const paymentId = url.searchParams.get("paymentId") ?? undefined;
+    const reservationIdParam = url.searchParams.get("reservationId") ?? undefined;
 
-    if (!localPaymentId) {
-      return new Response(JSON.stringify({
-        error: 'Payment ID é obrigatório'
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
+    if (!paymentId && !reservationIdParam) {
+      return new Response(JSON.stringify({ error: "Missing paymentId or reservationId" }), { status: 400, headers: corsHeaders });
+    }
+
+    // Auth (user JWT required)
+    const auth = req.headers.get("authorization") ?? "";
+    if (!auth.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing Authorization Bearer token" }), { status: 401, headers: corsHeaders });
+    }
+    const jwt = auth.slice(7);
+
+    // User client (RLS enforced)
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+    });
+
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid user" }), { status: 401, headers: corsHeaders });
+    }
+
+    // --- Resolve reservation/payment rows with ownership via RLS ---
+    let pending: any = null;
+    let reservationId = reservationIdParam ?? undefined;
+
+    if (reservationId) {
+      const { data } = await userClient
+        .from("payments_pending")
+        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .eq("reservation_id", reservationId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      pending = data || null;
+    } else if (paymentId) {
+      const { data } = await userClient
+        .from("payments_pending")
+        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .eq("asaas_payment_id", paymentId)
+        .maybeSingle();
+      pending = data || null;
+      reservationId = pending?.reservation_id;
+    }
+
+    if (!reservationId) {
+      return new Response(JSON.stringify({ status: "UNKNOWN", reservationId: null, paymentId: paymentId ?? null }), {
+        status: 200,
+        headers: corsHeaders,
       });
     }
 
-    console.log('[PaymentStatus] Checking status for payment:', localPaymentId);
+    // --- Already verified? ---
+    const { data: verified } = await userClient
+      .from("payments_verified")
+      .select("reservation_id, asaas_payment_id, amount, paid_at")
+      .eq("reservation_id", reservationId)
+      .order("paid_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    // Query our database for payment status
-    const { data: payment, error } = await supabase
-      .from('payments')
-      .select('status, updated_at, provider_payment_id')
-      .eq('id', localPaymentId)
-      .single();
-
-    if (error || !payment) {
-      console.error('[PaymentStatus] Payment not found:', localPaymentId);
-      return new Response(JSON.stringify({
-        error: 'Pagamento não encontrado'
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    if (verified) {
+      return new Response(
+        JSON.stringify({ status: "PAID", reservationId, paymentId: verified.asaas_payment_id }),
+        { status: 200, headers: corsHeaders },
+      );
     }
 
-    const statusResponse: PaymentStatusResponse = {
-      status: payment.status,
-      updatedAt: payment.updated_at,
-      providerPaymentId: payment.provider_payment_id
-    };
+    // --- Live check at Asaas if we have a payment id ---
+    if (pending?.asaas_payment_id) {
+      const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY") || "";
+      const ASAAS_BASE = Deno.env.get("ASAAS_BASE") ?? "https://api.asaas.com/v3";
+      if (ASAAS_API_KEY) {
+        const h = new Headers();
+        h.set("access_token", ASAAS_API_KEY);
 
-    console.log('[PaymentStatus] Status found:', statusResponse.status, 'for payment:', localPaymentId);
+        const resp = await fetch(`${ASAAS_BASE}/payments/${pending.asaas_payment_id}`, { headers: h });
+        const txt = await resp.text();
+        let j: any = null; try { j = txt ? JSON.parse(txt) : null; } catch {}
+        const paid = resp.ok && j && (j.status === "RECEIVED" || j.status === "CONFIRMED");
 
-    return new Response(JSON.stringify(statusResponse), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+        if (paid) {
+          // Optional: call an idempotent finalize RPC here if your project has one.
+          // await userClient.rpc("finalize_payment_by_reservation", { p_reservation_id: reservationId }).catch(() => {});
+          return new Response(
+            JSON.stringify({ status: "PAID", reservationId, paymentId: pending.asaas_payment_id }),
+            { status: 200, headers: corsHeaders },
+          );
+        }
 
-  } catch (error) {
-    console.error('[PaymentStatus] Error checking payment status:', error);
-    return new Response(JSON.stringify({
-      error: 'Erro interno do servidor'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+        return new Response(
+          JSON.stringify({
+            status: "PENDING",
+            reservationId,
+            paymentId: pending.asaas_payment_id,
+            asaasStatus: j?.status ?? "UNKNOWN",
+          }),
+          { status: 200, headers: corsHeaders },
+        );
+      }
+    }
+
+    // --- Default: unknown/pending ---
+    return new Response(
+      JSON.stringify({ status: "UNKNOWN", reservationId, paymentId: pending?.asaas_payment_id ?? null }),
+      { status: 200, headers: corsHeaders },
+    );
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
   }
-}
-
-serve(withCORS(handler));
+});

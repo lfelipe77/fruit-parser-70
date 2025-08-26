@@ -208,6 +208,14 @@ export default function ConfirmacaoPagamento() {
   const fee = 2.00;
   const total = subtotal + fee;
 
+  // Payment polling helper
+  async function pollPaymentStatus(EDGE: string, jwt: string, reservationId: string) {
+    const url = `${EDGE}/functions/v1/payment-status?reservationId=${encodeURIComponent(reservationId)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${jwt}` } });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    return res.json(); // { status, reservationId, paymentId, asaasStatus? }
+  }
+
   // Handle PIX payment with modal
   async function onPayPix() {
     try {
@@ -285,8 +293,6 @@ export default function ConfirmacaoPagamento() {
       
       const data = await res.json();
       console.log('[PIX] response', data); // <- keep this so we see fields at runtime
-      
-      const isAsaasPayment = /^pay_/.test(data.payment_id); // Asaas IDs usually start with "pay_"
 
       // 6) show PIX modal with QR normalization fallback
       const qrData = data.qr || data.pix;
@@ -305,33 +311,34 @@ export default function ConfirmacaoPagamento() {
         reservationId: reservation_id 
       });
 
-      // 7) Poll for payment status (only for real Asaas payments)
-      if (isAsaasPayment) {
-        const deadline = Date.now() + 15 * 60_000; // 15 min
-        while (Date.now() < deadline) {
-          const s = await fetch(`${EDGE}/functions/v1/payment-status?paymentId=${encodeURIComponent(data.payment_id)}`);
-          if (s.ok) {
-            const { status } = await s.json();
-            if (status === 'RECEIVED' || status === 'CONFIRMED') {
-              navigate(`/pagamento/sucesso/${data.payment_id}?res=${reservation_id}`);
-              return;
-            }
-            if (status === 'OVERDUE' || status === 'REFUNDED') {
-              throw new Error('Pagamento expirou ou foi estornado.');
-            }
-          }
-          await new Promise(r => setTimeout(r, 3000));
-        }
-        throw new Error('Tempo expirado aguardando confirmação.');
-      } else {
-        // Mock ID → don't poll the endpoint that only understands real Asaas IDs
-        console.warn('[PIX] Mock payment id, skipping payment-status polling');
-        // Leave the modal open; webhook (or your mock webhook) will mark it paid.
-      }
-      setIsProcessing(false);
+      // 7) Start polling for payment status using reservationId
+      const jwt = session.access_token;
+      let tries = 0;
+      const maxTries = 60;           // ~10 minutes if interval = 10s
+      const intervalMs = 10_000;
 
-      // This duplicate polling code should be removed since it's already handled above
-      // Keeping only for now to avoid breaking flow
+      const timer = setInterval(async () => {
+        try {
+          const s = await pollPaymentStatus(EDGE, jwt, reservation_id);
+          if (s.status === "PAID") {
+            clearInterval(timer);
+            navigate(`/ganhavel/${id}/pagamento-sucesso`);
+          } else if (s.status === "UNKNOWN") {
+            // keep waiting; optional debug
+            console.debug("[payment-status] UNKNOWN", s);
+          } // PENDING → keep waiting
+        } catch (e) {
+          console.warn("[payment-status] error", e);
+        } finally {
+          tries++;
+          if (tries >= maxTries) {
+            clearInterval(timer);
+            setPix(prev => ({ ...prev, err: "Tempo expirado aguardando confirmação." }));
+          }
+        }
+      }, intervalMs);
+
+      setIsProcessing(false);
     } catch (err: any) {
       // Try to unwrap Supabase / fetch errors into a readable string
       const msg =
@@ -862,7 +869,32 @@ export default function ConfirmacaoPagamento() {
             <p className="text-sm opacity-70 mt-2">
               Expira em: {new Date(pix.qr.expiresAt || pix.qr.expirationDate).toLocaleString()}
             </p>
-            <div className="mt-4 flex justify-end">
+            {pix.err && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{pix.err}</p>
+              </div>
+            )}
+            <div className="mt-4 flex justify-between">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const jwt = session?.access_token!;
+                    const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+                    const s = await pollPaymentStatus(EDGE, jwt, pix.reservationId!);
+                    if (s.status === "PAID") {
+                      navigate(`/ganhavel/${id}/pagamento-sucesso`);
+                    } else {
+                      toast.info("Ainda aguardando confirmação do PIX…");
+                    }
+                  } catch {
+                    toast.error("Não foi possível verificar agora. Tente novamente.");
+                  }
+                }}
+              >
+                Já paguei
+              </Button>
               <Button onClick={() => setPix({open:false})}>Fechar</Button>
             </div>
           </div>
