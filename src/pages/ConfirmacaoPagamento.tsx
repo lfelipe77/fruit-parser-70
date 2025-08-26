@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,37 @@ export default function ConfirmacaoPagamento() {
   const debugOn = sp.get("debug") === "1";
   const [debugToken, setDebugToken] = useState<string>("");
   const [debugReservationId, setDebugReservationId] = useState<string | null>(null);
+
+  // Router + guard
+  const hasNavigatedRef = useRef(false);
+
+  // Resolve raffle_id via reservationId -> reservations.raffle_id if needed
+  async function resolveRaffleIdFromReservation(reservationId: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("raffle_id")
+        .eq("reservation_id", reservationId)
+        .limit(1)
+        .single();
+      if (error) {
+        console.warn("[payment-status] could not resolve raffle_id:", error);
+        return null;
+      }
+      return data?.raffle_id ?? null;
+    } catch (e) {
+      console.warn("[payment-status] resolve raffleId error:", e);
+      return null;
+    }
+  }
+
+  function handlePaidNavigate(raffleId: string, reservationId: string) {
+    if (hasNavigatedRef.current) return;
+    hasNavigatedRef.current = true;
+    console.log("[payment-status] PAID → navigating to success");
+    // Include reservationId in query for the success page to fetch all details.
+    navigate(`/ganhavel/${raffleId}/pagamento-sucesso?reservationId=${encodeURIComponent(reservationId)}`, { replace: true });
+  }
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
 
@@ -203,6 +234,77 @@ export default function ConfirmacaoPagamento() {
     };
   }, [id]);
 
+  // Robust payment status polling effect
+  useEffect(() => {
+    if (!pix.reservationId) return; // Only start polling when we have a reservationId from PIX flow
+    
+    let timer: number | undefined;
+    let stopped = false;
+
+    (async () => {
+      // 1) get JWT
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token!;
+      const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+
+      // 2) a safe navigate function that resolves raffleId if missing
+      const ensureNavigateToSuccess = async () => {
+        const raffleIdKnown: string | undefined = id; // if this page already receives `id` (raffleId) prop/param
+        let raffleId = raffleIdKnown;
+        if (!raffleId) {
+          raffleId = await resolveRaffleIdFromReservation(pix.reservationId!) ?? undefined;
+        }
+        if (raffleId) {
+          handlePaidNavigate(raffleId, pix.reservationId!);
+        } else {
+          console.warn("[payment-status] PAID but raffleId not resolved yet — retrying on next tick");
+        }
+      };
+
+      // 3) tick function
+      let tries = 0;
+      const maxTries = 60;         // ~10 minutes
+      const intervalMs = 10_000;
+
+      async function tick() {
+        if (stopped || hasNavigatedRef.current) return;
+        try {
+          const s = await pollPaymentStatus(EDGE, jwt, pix.reservationId!);
+          console.log("[payment-status] response:", s);
+          const status = String(s?.status || "").toUpperCase();
+          if (status === "PAID") {
+            await ensureNavigateToSuccess();
+            return;
+          }
+          // PENDING or UNKNOWN → keep polling
+        } catch (e) {
+          console.warn("[payment-status] error:", e);
+        } finally {
+          tries++;
+          if (tries >= maxTries || hasNavigatedRef.current) {
+            if (!hasNavigatedRef.current) {
+              console.warn("[payment-status] timeout waiting for PAID");
+              setPix(prev => ({ ...prev, err: "Tempo expirado aguardando confirmação." }));
+            }
+            stopped = true;
+            if (timer) clearInterval(timer);
+            return;
+          }
+        }
+      }
+
+      // 4) kick now, then set interval
+      tick();
+      // @ts-ignore
+      timer = setInterval(tick, intervalMs);
+    })();
+
+    return () => {
+      stopped = true;
+      if (timer) clearInterval(timer);
+    };
+  }, [id, pix.reservationId]);
+
   // Calculations
   const subtotal = (raffle?.ticket_price ?? 0) * qty;
   const fee = 2.00;
@@ -212,8 +314,10 @@ export default function ConfirmacaoPagamento() {
   async function pollPaymentStatus(EDGE: string, jwt: string, reservationId: string) {
     const url = `${EDGE}/functions/v1/payment-status?reservationId=${encodeURIComponent(reservationId)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${jwt}` } });
-    if (!res.ok) throw new Error(`status ${res.status}`);
-    return res.json(); // { status, reservationId, paymentId, asaasStatus? }
+    const text = await res.text();
+    let json: any = null; try { json = text ? JSON.parse(text) : null; } catch {}
+    if (!res.ok) throw new Error(`payment-status ${res.status} ${res.statusText}: ${text}`);
+    return json; // { status, reservationId, paymentId, asaasStatus? }
   }
 
   // Handle PIX payment with modal
@@ -311,32 +415,8 @@ export default function ConfirmacaoPagamento() {
         reservationId: reservation_id 
       });
 
-      // 7) Start polling for payment status using reservationId
-      const jwt = session.access_token;
-      let tries = 0;
-      const maxTries = 60;           // ~10 minutes if interval = 10s
-      const intervalMs = 10_000;
-
-      const timer = setInterval(async () => {
-        try {
-          const s = await pollPaymentStatus(EDGE, jwt, reservation_id);
-          if (s.status === "PAID") {
-            clearInterval(timer);
-            navigate(`/ganhavel/${id}/pagamento-sucesso`);
-          } else if (s.status === "UNKNOWN") {
-            // keep waiting; optional debug
-            console.debug("[payment-status] UNKNOWN", s);
-          } // PENDING → keep waiting
-        } catch (e) {
-          console.warn("[payment-status] error", e);
-        } finally {
-          tries++;
-          if (tries >= maxTries) {
-            clearInterval(timer);
-            setPix(prev => ({ ...prev, err: "Tempo expirado aguardando confirmação." }));
-          }
-        }
-      }, intervalMs);
+      // 7) Start robust polling with useEffect cleanup
+      // We'll trigger the polling effect by setting the reservationId in PIX state
 
       setIsProcessing(false);
     } catch (err: any) {
@@ -883,8 +963,12 @@ export default function ConfirmacaoPagamento() {
                     const jwt = session?.access_token!;
                     const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
                     const s = await pollPaymentStatus(EDGE, jwt, pix.reservationId!);
-                    if (s.status === "PAID") {
-                      navigate(`/ganhavel/${id}/pagamento-sucesso`);
+                    const status = String(s?.status || "").toUpperCase();
+                    if (status === "PAID") {
+                      const raffleIdKnown: string | undefined = id;
+                      const raffleId = raffleIdKnown ?? (await resolveRaffleIdFromReservation(pix.reservationId!) ?? undefined);
+                      if (raffleId) handlePaidNavigate(raffleId, pix.reservationId!);
+                      else console.warn("[payment-status] Paid but raffleId unresolved");
                     } else {
                       toast.info("Ainda aguardando confirmação do PIX…");
                     }
