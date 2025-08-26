@@ -160,21 +160,36 @@ export default {
       const mobilePhone = sanitizeBRPhone(payload?.customer?.phone ?? null);
 
       // 4) Prepare Asaas requests and create payment
-      const ASAAS_BASE_URL = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
-      const ASAAS_API_KEY  = Deno.env.get('ASAAS_API_KEY') || '';
-      console.log('[PIX] asaas env', { baseConfigured: !!ASAAS_BASE_URL, keyConfigured: !!ASAAS_API_KEY });
+      const ASAAS_BASE = Deno.env.get('ASAAS_BASE') ?? Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
+      const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') || '';
+
+      if (!ASAAS_API_KEY) {
+        return json({ error: 'Missing ASAAS_API_KEY secret in Edge environment', debug: { asaasBase: ASAAS_BASE, keyMask: '***', headerName: 'access_token' } }, { status: 500 }, origin);
+      }
+
+      // small helper to mask keys in logs/responses
+      const mask = (s: string) => s.length <= 8 ? '***' : (s.slice(0,4) + '...' + s.slice(-4));
+
+      // 1) Before fetch, include a debug echo
+      const debug = {
+        asaasBase: ASAAS_BASE,
+        keyMask: mask(ASAAS_API_KEY),
+        headerName: 'access_token'
+      };
+
+      // 2) Build headers EXACTLY as Asaas expects
+      const headers = new Headers();
+      headers.set('access_token', ASAAS_API_KEY);
+      headers.set('Content-Type','application/json');
 
       // Helper: text-first fetch with robust error context
       async function asaasCall(path: string, init: RequestInit = {}) {
-        const base = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
-        const key  = Deno.env.get('ASAAS_API_KEY')!;
-        const headers = new Headers(init.headers ?? {});
-        headers.set('Content-Type','application/json');
-        headers.set('access_token', key);
-        const resp = await fetch(`${base}${path}`, { ...init, headers });
+        const h = new Headers(headers);
+        const extra = new Headers(init.headers ?? {});
+        extra.forEach((v,k)=>h.set(k,v));
+        const resp = await fetch(`${ASAAS_BASE}${path}`, { ...init, headers: h });
         const text = await resp.text();
-        let parsed: unknown = null;
-        try { parsed = text ? JSON.parse(text) : null; } catch {}
+        let parsed: unknown = null; try { parsed = text ? JSON.parse(text) : null; } catch {}
         return { resp, text, parsed };
       }
 
@@ -188,11 +203,11 @@ export default {
       };
       const cust = await asaasCall('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
       if (!cust.resp.ok) {
-        return json({ error: 'Asaas error', status: cust.resp.status, statusText: cust.resp.statusText, body: cust.text }, { status: 502 }, origin);
+        return json({ error: 'Asaas error', status: cust.resp.status, statusText: cust.resp.statusText, body: cust.text, debug }, { status: 502 }, origin);
       }
       const customerId = (cust.parsed as any)?.id || (cust.parsed as any)?.data?.[0]?.id;
       if (!customerId) {
-        return json({ error: 'Missing Asaas customer id', body: cust.text }, { status: 502 }, origin);
+        return json({ error: 'Missing Asaas customer id', body: cust.text, debug }, { status: 502 }, origin);
       }
 
       const payBody = {
@@ -206,23 +221,23 @@ export default {
       };
       const pay = await asaasCall('/payments', { method:'POST', body: JSON.stringify(payBody) });
       if (!pay.resp.ok) {
-        return json({ error: 'Asaas error', status: pay.resp.status, statusText: pay.resp.statusText, body: pay.text }, { status: 502 }, origin);
+        return json({ error: 'Asaas error', status: pay.resp.status, statusText: pay.resp.statusText, body: pay.text, debug }, { status: 502 }, origin);
       }
       const payment_id = (pay.parsed as any)?.id;
       if (!payment_id) {
-        return json({ error: 'Missing payment id', body: pay.text }, { status: 502 }, origin);
+        return json({ error: 'Missing payment id', body: pay.text, debug }, { status: 502 }, origin);
       }
 
       const qr = await asaasCall(`/payments/${payment_id}/pixQrCode`, { method:'GET' });
       if (!qr.resp.ok) {
-        return json({ error: 'Asaas error', status: qr.resp.status, statusText: qr.resp.statusText, body: qr.text }, { status: 502 }, origin);
+        return json({ error: 'Asaas error', status: qr.resp.status, statusText: qr.resp.statusText, body: qr.text, debug }, { status: 502 }, origin);
       }
       const qrRaw: any = qr.parsed || {};
       const base64 = qrRaw?.encodedImage ?? qrRaw?.image ?? '';
       const encodedImage = base64 && String(base64).startsWith('data:') ? base64 : (base64 ? `data:image/png;base64,${base64}` : '');
       const payloadCode = qrRaw?.payload ?? qrRaw?.payloadCode ?? qrRaw?.qrCodeText ?? null;
 
-      return json({ ok:true, payment_id, qr:{ encodedImage, payload: payloadCode, expiresAt: qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null }, value }, { status:200 }, origin);
+      return json({ ok:true, payment_id, qr:{ encodedImage, payload: payloadCode, expiresAt: qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null }, value, debug }, { status:200 }, origin);
     } catch (err) {
       console.error('[asaas-payments-complete] error', err);
       return json({ error: String(err) }, { status: 500 }, origin);
