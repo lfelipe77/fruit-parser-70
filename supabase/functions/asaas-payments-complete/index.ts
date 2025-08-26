@@ -147,7 +147,8 @@ export default {
     // 4) Prepare Asaas requests and create payment
     const ASAAS_BASE_URL = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
     const ASAAS_API_KEY  = Deno.env.get('ASAAS_API_KEY') || '';
-    console.log('[PIX] asaas env', { base: ASAAS_BASE_URL, keyPrefix: ASAAS_API_KEY ? ASAAS_API_KEY.slice(0,6) : '(none)' });
+    // Do not log any part of the key; just indicate presence
+    console.log('[PIX] asaas env', { baseConfigured: !!ASAAS_BASE_URL, keyConfigured: !!ASAAS_API_KEY });
     async function asaasFetch(path: string, init: RequestInit = {}) {
       const base = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
       const key  = Deno.env.get('ASAAS_API_KEY')!;
