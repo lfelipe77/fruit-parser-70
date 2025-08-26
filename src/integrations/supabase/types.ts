@@ -668,6 +668,39 @@ export type Database = {
           },
         ]
       }
+      payments_pending: {
+        Row: {
+          amount: number
+          asaas_payment_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          reservation_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          asaas_payment_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          reservation_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          asaas_payment_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          reservation_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments_verified: {
         Row: {
           amount: number
