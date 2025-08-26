@@ -50,8 +50,8 @@ function corsHeaders(origin: string | null) {
   const allowOrigin = origin && ALLOWED.includes(origin) ? origin : ALLOWED[0];
   return {
     'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info, x-request-id',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
   };
@@ -103,91 +103,97 @@ export default {
       return json({ ok: false, error: 'Method Not Allowed' }, { status: 405 }, origin);
     }
 
-    // 1) Auth: use Authorization Bearer only
-    const { user, jwt, error } = await getUserFromAuth(req) as any;
-    if (!user) return json({ error: error || "Unauthorized" }, { status: 401 }, origin);
+    try {
+      // 1) Auth: use Authorization Bearer only
+      const { user, jwt, error } = await getUserFromAuth(req) as any;
+      if (!user) return json({ error: error || "Unauthorized" }, { status: 401 }, origin);
 
-    // Create Supabase client for DB operations with user's JWT
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${jwt}` } },
-      auth: { persistSession: false },
-    });
+      // Create Supabase client for DB operations with user's JWT
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: `Bearer ${jwt}` } },
+        auth: { persistSession: false },
+      });
 
-    // 2) Parse input and validate minimum value
-    const body = await req.json().catch(()=>({}));
-    console.log('[PIX] in', { hasJWT: !!jwt, bodyKeys: Object.keys(body||{}) });
+      // 2) Parse input and validate minimum value
+      const body = await req.json().catch(()=>({}));
+      console.log('[PIX] in', { hasJWT: !!jwt, bodyKeys: Object.keys(body||{}) });
 
-    const rawReservationId = body?.reservationId ?? body?.reservation_id ?? null;
-    const rawValue = body?.value ?? body?.amount ?? null;
-    const reservationId = (typeof rawReservationId === 'string' && rawReservationId) ? rawReservationId : null;
-    const value = toAmount(rawValue);
-    const description = body?.description ?? 'Compra de bilhetes';
+      const rawReservationId = body?.reservationId ?? body?.reservation_id ?? null;
+      const rawValue = body?.value ?? body?.amount ?? null;
+      const reservationId = (typeof rawReservationId === 'string' && rawReservationId) ? rawReservationId : null;
+      const value = toAmount(rawValue);
+      const description = body?.description ?? 'Compra de bilhetes';
 
-    console.log('[PIX] mapped', { reservationId, valueType: typeof rawValue, rawValue, value });
-    if (!reservationId || value === null) {
-      return json({ error: 'Missing required fields: reservationId and value' }, { status: 400 }, origin);
+      console.log('[PIX] mapped', { reservationId, valueType: typeof rawValue, rawValue, value });
+      if (!reservationId || value === null) {
+        return json({ error: 'Missing required fields: reservationId and value' }, { status: 400 }, origin);
+      }
+
+      const MIN = Number(Deno.env.get('MIN_PIX_VALUE') ?? '5');
+      if (value < MIN) {
+        return json({ error: `Valor mínimo para PIX é R$ ${MIN.toFixed(2)}.` }, { status: 422 }, origin);
+      }
+
+      // 3) Fetch profile and validate CPF/CNPJ
+      const { data: profile, error: profErr } = await sb
+        .from('user_profiles').select('id,tax_id').eq('id', user.id).single();
+      if (profErr || !profile) return json({ error:'Profile not found' }, { status:404 }, origin);
+
+      const doc = normalizeCpfCnpjOrNull(profile.tax_id);
+      if (!doc) return json({ error:'Documento inválido. Atualize seu CPF/CNPJ no perfil.' }, { status:422 }, origin);
+      const mobilePhone = sanitizeBRPhone(body?.customer?.phone ?? null);
+
+      // 4) Prepare Asaas requests and create payment
+      const ASAAS_BASE_URL = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
+      const ASAAS_API_KEY  = Deno.env.get('ASAAS_API_KEY') || '';
+      // Do not log any part of the key; just indicate presence
+      console.log('[PIX] asaas env', { baseConfigured: !!ASAAS_BASE_URL, keyConfigured: !!ASAAS_API_KEY });
+      async function asaasFetch(path: string, init: RequestInit = {}) {
+        const base = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
+        const key  = Deno.env.get('ASAAS_API_KEY')!;
+        const headers = new Headers(init.headers ?? {});
+        headers.set('content-type','application/json');
+        headers.set('access_token', key);
+        return fetch(`${base}${path}`, { ...init, headers });
+      }
+      const customerPayload:any = {
+        name: body?.customer?.name ?? 'Cliente',
+        email: body?.customer?.email ?? undefined,
+        ...(mobilePhone ? { mobilePhone } : {}),
+        cpfCnpj: doc.digits,
+        personType: doc.type,
+        externalReference: user.id,
+      };
+      const custRes = await asaasFetch('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
+      const cust = await custRes.json(); if(!custRes.ok) return json({ error:'Asaas customer error', detail:cust }, { status:custRes.status }, origin);
+      const customerId = cust?.id || cust?.data?.[0]?.id; if(!customerId) return json({ error:'Missing Asaas customer id', detail:cust }, { status:502 }, origin);
+
+      const payBody = {
+        customer: customerId,
+        value,
+        description,
+        billingType: 'PIX',
+        dueDate: dueDateSP(),
+        externalReference: reservationId,
+        postalService: false,
+      };
+      const payRes = await asaasFetch('/payments', { method:'POST', body: JSON.stringify(payBody) });
+      const pay = await payRes.json(); if(!payRes.ok) return json({ error:'Asaas payment error', detail:pay }, { status:payRes.status }, origin);
+      const payment_id = pay?.id; if(!payment_id) return json({ error:'Missing payment id', detail: pay }, { status:502 }, origin);
+
+      const qrRes = await asaasFetch(`/payments/${payment_id}/pixQrCode`, { method:'GET' });
+      const qrRaw = await qrRes.json(); if(!qrRes.ok) return json({ error:'Asaas QR error', detail: qrRaw }, { status:qrRes.status }, origin);
+      const base64 = qrRaw?.encodedImage ?? qrRaw?.image ?? '';
+      const encodedImage = base64 && String(base64).startsWith('data:') ? base64 : (base64 ? `data:image/png;base64,${base64}` : '');
+      const payload = qrRaw?.payload ?? qrRaw?.payloadCode ?? qrRaw?.qrCodeText ?? null;
+
+      return json({ ok:true, payment_id, qr:{ encodedImage, payload, expiresAt: qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null }, value }, { status:200 }, origin);
+    } catch (err) {
+      console.error('[asaas-payments-complete] error', err);
+      const msg = (err && typeof err === 'object' && 'message' in err) ? (err as any).message : String(err);
+      return json({ error: msg }, { status: 500 }, origin);
     }
-
-    const MIN = Number(Deno.env.get('MIN_PIX_VALUE') ?? '5');
-    if (value < MIN) {
-      return json({ error: `Valor mínimo para PIX é R$ ${MIN.toFixed(2)}.` }, { status: 422 }, origin);
-    }
-
-    // 3) Fetch profile and validate CPF/CNPJ
-    const { data: profile, error: profErr } = await sb
-      .from('user_profiles').select('id,tax_id').eq('id', user.id).single();
-    if (profErr || !profile) return json({ error:'Profile not found' }, { status:404 }, origin);
-
-    const doc = normalizeCpfCnpjOrNull(profile.tax_id);
-    if (!doc) return json({ error:'Documento inválido. Atualize seu CPF/CNPJ no perfil.' }, { status:422 }, origin);
-    const mobilePhone = sanitizeBRPhone(body?.customer?.phone ?? null);
-
-    // 4) Prepare Asaas requests and create payment
-    const ASAAS_BASE_URL = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
-    const ASAAS_API_KEY  = Deno.env.get('ASAAS_API_KEY') || '';
-    // Do not log any part of the key; just indicate presence
-    console.log('[PIX] asaas env', { baseConfigured: !!ASAAS_BASE_URL, keyConfigured: !!ASAAS_API_KEY });
-    async function asaasFetch(path: string, init: RequestInit = {}) {
-      const base = Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
-      const key  = Deno.env.get('ASAAS_API_KEY')!;
-      const headers = new Headers(init.headers ?? {});
-      headers.set('content-type','application/json');
-      headers.set('access_token', key);
-      return fetch(`${base}${path}`, { ...init, headers });
-    }
-    const customerPayload:any = {
-      name: body?.customer?.name ?? 'Cliente',
-      email: body?.customer?.email ?? undefined,
-      ...(mobilePhone ? { mobilePhone } : {}),
-      cpfCnpj: doc.digits,
-      personType: doc.type,
-      externalReference: user.id,
-    };
-    const custRes = await asaasFetch('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
-    const cust = await custRes.json(); if(!custRes.ok) return json({ error:'Asaas customer error', detail:cust }, { status:custRes.status }, origin);
-    const customerId = cust?.id || cust?.data?.[0]?.id; if(!customerId) return json({ error:'Missing Asaas customer id', detail:cust }, { status:502 }, origin);
-
-    const payBody = {
-      customer: customerId,
-      value,
-      description,
-      billingType: 'PIX',
-      dueDate: dueDateSP(),
-      externalReference: reservationId,
-      postalService: false,
-    };
-    const payRes = await asaasFetch('/payments', { method:'POST', body: JSON.stringify(payBody) });
-    const pay = await payRes.json(); if(!payRes.ok) return json({ error:'Asaas payment error', detail:pay }, { status:payRes.status }, origin);
-    const payment_id = pay?.id; if(!payment_id) return json({ error:'Missing payment id', detail: pay }, { status:502 }, origin);
-
-    const qrRes = await asaasFetch(`/payments/${payment_id}/pixQrCode`, { method:'GET' });
-    const qrRaw = await qrRes.json(); if(!qrRes.ok) return json({ error:'Asaas QR error', detail: qrRaw }, { status:qrRes.status }, origin);
-    const base64 = qrRaw?.encodedImage ?? qrRaw?.image ?? '';
-    const encodedImage = base64 && String(base64).startsWith('data:') ? base64 : (base64 ? `data:image/png;base64,${base64}` : '');
-    const payload = qrRaw?.payload ?? qrRaw?.payloadCode ?? qrRaw?.qrCodeText ?? null;
-
-    return json({ ok:true, payment_id, qr:{ encodedImage, payload, expiresAt: qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null }, value }, { status:200 }, origin);
   },
 };
