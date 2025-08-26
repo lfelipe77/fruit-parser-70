@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/v135/@supabase/supabase-js@2.53.0?target=deno";
 
+// Admin client for DB writes (service role)
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
 // Compact Brazilian document validation helpers
 function onlyDigits(v?: unknown){ return typeof v === 'string' ? v.replace(/\D+/g,'') : ''; }
 function isValidCPF(raw?: unknown){ const v=onlyDigits(raw); if(v.length!==11||/^(\d)\1{10}$/.test(v))return false;
@@ -245,7 +250,60 @@ export default {
       const encodedImage = base64 && String(base64).startsWith('data:') ? base64 : (base64 ? `data:image/png;base64,${base64}` : '');
       const payloadCode = qrRaw?.payload ?? qrRaw?.payloadCode ?? qrRaw?.qrCodeText ?? null;
 
-      return json({ ok:true, payment_id, qr:{ encodedImage, payload: payloadCode, expiresAt: qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null }, value, debug, invoiceUrl }, { status:200 }, origin);
+      // Capture IDs and PIX fields
+      const asaasPaymentId = payment_id;
+      const qrCodeImage = encodedImage;
+      const pixPayload = payloadCode;
+      const expiresAtIso = qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null;
+
+      // Idempotent upsert into payments_pending (service role)
+      const { data: pendingRow, error: pendingErr } = await admin
+        .from('payments_pending')
+        .upsert({
+          reservation_id: reservationId,
+          asaas_payment_id: asaasPaymentId,
+          amount: Number(value),
+          status: 'PENDING',
+          expires_at: expiresAtIso ?? new Date(Date.now() + 30*60*1000).toISOString()
+        }, { onConflict: 'reservation_id' })
+        .select('reservation_id, asaas_payment_id, status, expires_at')
+        .single();
+
+      if (pendingErr) {
+        // Still return QR so user can pay
+        return json({
+          ok: true,
+          warning: 'Failed to insert payments_pending',
+          pendingError: pendingErr,
+          reservationId,
+          paymentId: asaasPaymentId,
+          qrCode: qrCodeImage,
+          payload: pixPayload,
+          expiresAt: expiresAtIso ?? null,
+          // keep backward-compat fields
+          payment_id,
+          qr: { encodedImage: qrCodeImage, payload: pixPayload, expiresAt: expiresAtIso ?? null },
+          value,
+          debug,
+          invoiceUrl
+        }, { status: 200 }, origin);
+      }
+
+      // Success response
+      return json({
+        ok: true,
+        reservationId,
+        paymentId: asaasPaymentId,
+        qrCode: qrCodeImage,
+        payload: pixPayload,
+        expiresAt: expiresAtIso ?? null,
+        // keep backward-compat fields
+        payment_id,
+        qr: { encodedImage: qrCodeImage, payload: pixPayload, expiresAt: expiresAtIso ?? null },
+        value,
+        debug,
+        invoiceUrl
+      }, { status: 200 }, origin);
     } catch (err) {
       console.error('[asaas-payments-complete] error', err);
       return json({ error: String(err) }, { status: 500 }, origin);
