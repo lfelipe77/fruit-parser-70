@@ -5,6 +5,7 @@ export interface HeroStats {
   totalPrizeAmount: number;
   totalParticipants: number;
   totalRaffles: number;
+  activeRaffles: number;  // NEW: For floating card
 }
 
 export const useHeroStats = () => {
@@ -12,6 +13,7 @@ export const useHeroStats = () => {
     totalPrizeAmount: 0,
     totalParticipants: 0,
     totalRaffles: 0,
+    activeRaffles: 0,  // NEW
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +77,22 @@ export const useHeroStats = () => {
           throw raffleError;
         }
 
+        // Get active raffles count (for floating card)
+        const { count: activeRaffleCount, error: activeRaffleError } = await supabase
+          .from('raffles')
+          .select('id', { count: 'exact' })
+          .eq('status', 'active');
+
+        if (activeRaffleError) {
+          console.error('Error fetching active raffle count:', activeRaffleError);
+          throw activeRaffleError;
+        }
+
         setStats({
           totalPrizeAmount,
           totalParticipants: uniqueParticipants,
           totalRaffles: raffleCount || 0,
+          activeRaffles: activeRaffleCount || 0,  // NEW
         });
 
       } catch (err) {
@@ -90,6 +104,7 @@ export const useHeroStats = () => {
           totalPrizeAmount: 8000000, // 8M
           totalParticipants: 25000,  // 25K
           totalRaffles: 890,         // 890
+          activeRaffles: 128,        // 128 (fallback)
         });
       } finally {
         setLoading(false);

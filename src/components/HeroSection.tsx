@@ -17,6 +17,7 @@ export default function HeroSection() {
     totalPrizeAmount, 
     totalParticipants, 
     totalRaffles, 
+    activeRaffles,  // NEW: For floating card
     loading, 
     formatCurrency, 
     formatCount 
@@ -143,7 +144,9 @@ export default function HeroSection() {
             {/* Floating stats cards - only on desktop */}
             <div className="absolute -top-4 -left-4 bg-white p-4 rounded-lg shadow-lg animate-pulse">
               <div className="text-sm text-muted-foreground">Ganhaveis Ativos</div>
-              <div className="text-2xl font-bold text-primary">128</div>
+              <div className="text-2xl font-bold text-primary">
+                {loading ? "..." : activeRaffles}
+              </div>
             </div>
             
             <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg animate-pulse delay-150">
