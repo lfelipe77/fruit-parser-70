@@ -4,10 +4,15 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useHeroCopy } from "@/hooks/useHeroCopy";
 import { FadeText } from "@/components/FadeText";
+import { useAuthContext } from "@/providers/AuthProvider";
+import { useIsMobile } from "@/hooks/use-mobile";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
+  const { user } = useAuthContext();
+  const isMobile = useIsMobile();
+  
   // Auto-rotating text every 2 minutes
   const { headline, subline } = useHeroCopy({ 
     autoRotateMs: 120000, // 2 minutes
@@ -62,19 +67,21 @@ export default function HeroSection() {
               </Button>
             </div>
             
-            {/* Login/Signup buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-4">
-              <Button variant="outline" size="default" className="text-sm px-6" asChild>
-                <Link to="/login">
-                  Entrar
-                </Link>
-              </Button>
-              <Button variant="secondary" size="default" className="text-sm px-6" asChild>
-                <Link to="/cadastro">
-                  Criar Conta
-                </Link>
-              </Button>
-            </div>
+            {/* Login/Signup buttons - only show on mobile when not logged in */}
+            {isMobile && !user && (
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-4">
+                <Button variant="outline" size="default" className="text-sm px-6" asChild>
+                  <Link to="/login">
+                    Entrar
+                  </Link>
+                </Button>
+                <Button variant="secondary" size="default" className="text-sm px-6" asChild>
+                  <Link to="/cadastro">
+                    Criar Conta
+                  </Link>
+                </Button>
+              </div>
+            )}
             
             <div className="grid grid-cols-3 gap-4 md:gap-6 pt-6 md:pt-8 max-w-lg mx-auto lg:mx-0">
               <div className="text-center">
