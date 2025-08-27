@@ -41,27 +41,36 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid user" }), { status: 401, headers: corsHeaders });
     }
 
-    // --- Resolve reservation/payment rows with ownership via RLS ---
+    // --- Resolve reservation/payment and enforce ownership, then use admin for reads ---
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
     let pending: any = null;
     let reservationId = reservationIdParam ?? undefined;
 
-    if (reservationId) {
-      const { data } = await userClient
-        .from("payments_pending")
-        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
-        .eq("reservation_id", reservationId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      pending = data || null;
-    } else if (paymentId) {
-      const { data } = await userClient
+    // If we only have paymentId, try to resolve reservation via user RLS first, then fallback to admin
+    if (!reservationId && paymentId) {
+      const { data: ppUser } = await userClient
         .from("payments_pending")
         .select("reservation_id, asaas_payment_id, status, expires_at, amount")
         .eq("asaas_payment_id", paymentId)
         .maybeSingle();
-      pending = data || null;
-      reservationId = pending?.reservation_id;
+      if (ppUser) {
+        pending = ppUser;
+        reservationId = ppUser.reservation_id;
+      }
+    }
+
+    if (!reservationId && paymentId) {
+      const { data: ppAdmin } = await admin
+        .from("payments_pending")
+        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .eq("asaas_payment_id", paymentId)
+        .maybeSingle();
+      if (ppAdmin) {
+        pending = ppAdmin;
+        reservationId = ppAdmin.reservation_id;
+      }
     }
 
     if (!reservationId) {
@@ -71,8 +80,42 @@ serve(async (req) => {
       });
     }
 
-    // --- Already verified? ---
-    const { data: verified } = await userClient
+    // Ownership check (strict): ensure the authenticated user owns this reservation
+    const { data: own } = await userClient
+      .from("tickets")
+      .select("reservation_id")
+      .eq("reservation_id", reservationId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!own) {
+      return new Response(
+        JSON.stringify({ status: "UNKNOWN", reservationId, paymentId: paymentId ?? null, reason: "not_owner" }),
+        { status: 200, headers: corsHeaders },
+      );
+    }
+
+    // Ensure we have latest pending using admin (bypass RLS)
+    if (!pending) {
+      const { data: pp } = await admin
+        .from("payments_pending")
+        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .eq("reservation_id", reservationId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      pending = pp || null;
+    }
+
+    if (!reservationId) {
+      return new Response(JSON.stringify({ status: "UNKNOWN", reservationId: null, paymentId: paymentId ?? null }), {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // --- Already verified? (admin bypasses RLS) ---
+    const { data: verified } = await admin
       .from("payments_verified")
       .select("reservation_id, asaas_payment_id, amount, paid_at")
       .eq("reservation_id", reservationId)
@@ -102,7 +145,7 @@ serve(async (req) => {
 
         if (paid) {
           // Check if transaction already exists to avoid duplicate finalization
-          const { data: hasTx } = await userClient
+          const { data: hasTx } = await admin
             .from("transactions")
             .select("id")
             .eq("provider_payment_id", pending.asaas_payment_id)
@@ -110,9 +153,7 @@ serve(async (req) => {
             .maybeSingle();
 
           if (!hasTx) {
-            // Service client (already validated JWT & ownership via userClient)
-            const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-            const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+            // Service client already initialized above
             
             // Idempotent — RPC returns success even if previously finalized
             try {
