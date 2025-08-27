@@ -5,39 +5,19 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// === helpers: observable, single-source, temporarily permissive ===
-type PersonType = 'FISICA' | 'JURIDICA';
-
-const onlyDigits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
-
-function resolveCpfCnpj(opts: {
-  profileTaxId?: string | null;
-  formDoc?: string | null;
-  validateMode?: 'strict' | 'loose'; // loose by default
-}) {
-  const fromForm = onlyDigits(opts.formDoc);
-  const fromProfile = onlyDigits(opts.profileTaxId);
-  const chosen = fromForm || fromProfile || '';
-  const len = chosen.length;
-  const personType = len === 14 ? 'JURIDICA' : 'FISICA'; // fallback FISICA
-
-  console.log('[asaas] cpfCnpj.check', { 
-    fromForm, 
-    fromProfile, 
-    chosen, 
-    len, 
-    validateMode: opts.validateMode 
-  });
-
-  if (opts.validateMode === 'strict') {
-    if (!(len === 11 || len === 14)) {
-      const err = new Error('Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números).');
-      (err as any).status = 400;
-      throw err;
-    }
-  }
-  // loose mode: return whatever we have (may be empty), let Asaas decide
-  return { cpfCnpj: chosen, len, personType };
+// Compact Brazilian document validation helpers
+function onlyDigits(v?: unknown){ return typeof v === 'string' ? v.replace(/\D+/g,'') : ''; }
+function isValidCPF(raw?: unknown){ const v=onlyDigits(raw); if(v.length!==11||/^(\d)\1{10}$/.test(v))return false;
+  let s=0; for(let i=0;i<9;i++) s+=Number(v[i])*(10-i); let d1=(s*10)%11; if(d1===10)d1=0; if(d1!==Number(v[9])) return false;
+  s=0; for(let i=0;i<10;i++) s+=Number(v[i])*(11-i); let d2=(s*10)%11; if(d2===10)d2=0; return d2===Number(v[10]); }
+function isValidCNPJ(raw?: unknown){ const v=onlyDigits(raw); if(v.length!==14||/^(\d)\1{13}$/.test(v))return false;
+  const calc=(len:number)=>{const w=len===12?[5,4,3,2,9,8,7,6,5,4,3,2]:[6,5,4,3,2,9,8,7,6,5,4,3,2];
+    let s=0; for(let i=0;i<w.length;i++) s+=Number(v[i])*w[i]; const m=s%11; return m<2?0:11-m;};
+  const d1=calc(12); if(d1!==Number(v[12])) return false; const d2=calc(13); return d2===Number(v[13]); }
+type PersonType='FISICA'|'JURIDICA';
+function normalizeCpfCnpjOrNull(raw?: unknown):{digits:string;type:PersonType}|null{
+  const d=onlyDigits(typeof raw==='string' && raw.toLowerCase()!=='null'?raw:null);
+  if(!d) return null; if(isValidCPF(d)) return {digits:d,type:'FISICA'}; if(isValidCNPJ(d)) return {digits:d,type:'JURIDICA'}; return null;
 }
 function sanitizeBRPhone(raw?: unknown): string | null {
   if(raw==null) return null; let d=String(raw).replace(/\D+/g,'');
@@ -119,9 +99,6 @@ async function getUserFromAuth(req: Request) {
 export default {
   async fetch(req: Request) {
     const origin = req.headers.get('origin');
-    const url = new URL(req.url);
-    const validateParam = (url.searchParams.get('validate') || 'loose') as 'strict' | 'loose';
-
     // CORS preflight
     if (req.method === 'OPTIONS') {
       return withCORS(new Response(null, { status: 204 }), origin);
@@ -180,26 +157,12 @@ export default {
 
       // 3) Fetch profile and validate CPF/CNPJ
       const { data: profile, error: profErr } = await sb
-        .from('user_profiles').select('id,full_name,phone,tax_id').eq('id', user.id).maybeSingle();
+        .from('user_profiles').select('id,tax_id').eq('id', user.id).single();
       if (profErr || !profile) return json({ error:'Profile not found' }, { status:404 }, origin);
 
-      // Resolve and validate document with new flexible approach
-      const { customer_name, customer_phone, customer_cpf } = payload?.customer ?? {};
-      let cpfCnpj: string, len: number, personType: PersonType;
-      try {
-        const r = resolveCpfCnpj({
-          profileTaxId: profile?.tax_id,
-          formDoc: customer_cpf,
-          validateMode: validateParam,
-        });
-        cpfCnpj = r.cpfCnpj; 
-        len = r.len; 
-        personType = r.personType as PersonType;
-      } catch (e: any) {
-        return json({ ok: false, error: e.message, _where: 'precheck' }, { status: e.status || 400 }, origin);
-      }
-
-      const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);
+      const doc = normalizeCpfCnpjOrNull(profile.tax_id);
+      if (!doc) return json({ error:'Documento inválido. Atualize seu CPF/CNPJ no perfil.' }, { status:422 }, origin);
+      const mobilePhone = sanitizeBRPhone(payload?.customer?.phone ?? null);
 
       // 4) Prepare Asaas requests and create payment
       const ASAAS_KEY_RAW = (Deno.env.get('ASAAS_API_KEY') ?? '').trim();
@@ -246,25 +209,17 @@ export default {
         return { resp, text, parsed };
       }
 
-      // Prepare customer payload with validated document
       const customerPayload: any = {
-        name: profile?.full_name || customer_name || 'Cliente',
-        cpfCnpj: cpfCnpj || undefined,     // allow empty in loose mode; Asaas will respond
-        personType,
-        email: user.email,
+        name: payload?.customer?.name ?? 'Cliente',
+        email: payload?.customer?.email ?? undefined,
         ...(mobilePhone ? { mobilePhone } : {}),
+        cpfCnpj: doc.digits,
+        personType: doc.type,
         externalReference: user.id,
       };
-
-      console.log('[asaas] customer payload (preview)', { ...customerPayload, cpfCnpj_len: len });
       const cust = await asaasCall('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
       if (!cust.resp.ok) {
-        const msg = cust.parsed?.errors?.[0]?.description
-                || cust.parsed?.message
-                || cust.text
-                || 'Falha ao criar cliente';
-        console.warn('[asaas] customer creation error', cust.parsed ?? cust.text);
-        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
+        return json({ error: 'Asaas error', status: cust.resp.status, statusText: cust.resp.statusText, body: cust.text, debug }, { status: 502 }, origin);
       }
       const customerId = (cust.parsed as any)?.id || (cust.parsed as any)?.data?.[0]?.id;
       if (!customerId) {
@@ -289,12 +244,7 @@ export default {
       };
       const pay = await asaasCall('/payments', { method:'POST', body: JSON.stringify(payBody) });
       if (!pay.resp.ok) {
-        const msg = pay.parsed?.errors?.[0]?.description
-                || pay.parsed?.message
-                || pay.text
-                || 'Falha ao criar cobrança';
-        console.warn('[asaas] payment creation error', pay.parsed ?? pay.text);
-        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
+        return json({ error: 'Asaas error', status: pay.resp.status, statusText: pay.resp.statusText, body: pay.text, debug }, { status: 502 }, origin);
       }
       const payment_id = (pay.parsed as any)?.id;
       if (!payment_id) {
@@ -304,12 +254,7 @@ export default {
 
       const qr = await asaasCall(`/payments/${payment_id}/pixQrCode`, { method:'GET' });
       if (!qr.resp.ok) {
-        const msg = qr.parsed?.errors?.[0]?.description
-                || qr.parsed?.message
-                || qr.text
-                || 'Falha ao gerar QR Code';
-        console.warn('[asaas] QR code generation error', qr.parsed ?? qr.text);
-        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
+        return json({ error: 'Asaas error', status: qr.resp.status, statusText: qr.resp.statusText, body: qr.text, debug }, { status: 502 }, origin);
       }
       const qrRaw: any = qr.parsed || {};
       const base64 = qrRaw?.encodedImage ?? qrRaw?.image ?? '';

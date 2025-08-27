@@ -48,9 +48,9 @@ export default function RaffleDetail() {
       if (!id) return;
       setLoading(true);
       
-      // Get raffle details from public money view that includes active raffles
+      // Get raffle details from unified public view (includes tickets_remaining)
       const { data: raffleData, error: raffleError } = await supabase
-        .from('raffles_public_money_ext')
+        .from('raffles_public_v2')
         .select('*')
         .eq("id", id)
         .maybeSingle();
@@ -66,18 +66,11 @@ export default function RaffleDetail() {
       if (raffleData) {
         console.log('Raw raffle data:', raffleData);
         
-        // Calculate tickets from amount raised and ticket price  
-        const amountRaised = (raffleData.amount_raised ?? 0) as number;
-        const ticketPrice = (raffleData.ticket_price ?? 0) as number;
-        const goalAmount = (raffleData.goal_amount ?? 0) as number;
-        const paidTickets = ticketPrice > 0 ? Math.floor(amountRaised / ticketPrice) : 0;
-        
-        // For total tickets, calculate from goal_amount / ticket_price since total_tickets isn't in this view
-        const totalTickets = (goalAmount > 0 && ticketPrice > 0 ? Math.ceil(goalAmount / ticketPrice) : 100) as number;
-        const remaining = Math.max(0, totalTickets - paidTickets);
-        const progressPct = (raffleData.progress_pct_money ?? 0) as number;
+        const paid = (raffleData.paid_tickets ?? raffleData.participants_count ?? 0) as number;
+        const total = (raffleData.total_tickets ?? 0) as number;
+        const remaining = (raffleData.tickets_remaining ?? Math.max(0, total - paid)) as number;
 
-        console.log('Calculated values:', { paidTickets, totalTickets, remaining, status: raffleData.status });
+        console.log('Calculated values:', { paid, total, remaining, status: raffleData.status });
 
         setRaffle({
           id: raffleData.id as string,
@@ -86,13 +79,13 @@ export default function RaffleDetail() {
           image_url: raffleData.image_url,
           draw_date: raffleData.draw_date,
           status: raffleData.status as string,
-          ticket_price: ticketPrice,
-          total_tickets: totalTickets,
-          paid_tickets: paidTickets,
+          ticket_price: (raffleData.ticket_price ?? 0) as number,
+          total_tickets: total,
+          paid_tickets: paid,
           tickets_remaining: remaining,
-          amount_collected: amountRaised,
-          goal_amount: goalAmount,
-          progress_pct: progressPct,
+          amount_collected: (raffleData.amount_collected ?? 0) as number,
+          goal_amount: raffleData.goal_amount ?? null,
+          progress_pct: (raffleData.progress_pct ?? 0) as number,
         } as Raffle);
       }
       
@@ -114,20 +107,12 @@ export default function RaffleDetail() {
         { event: "*", schema: "public", table: "tickets", filter: `raffle_id=eq.${raffle.id}` },
         async () => {
           const { data } = await (supabase as any)
-            .from('raffles_public_money_ext')
-            .select('participants_count,amount_raised')
+            .from('raffles_public_v2')
+            .select('paid_tickets,tickets_remaining')
             .eq("id", raffle.id)
             .maybeSingle();
           if (data && raffle) {
-            // Calculate tickets from amount raised and ticket price
-            const paidTickets = Math.floor((data.amount_raised || 0) / (raffle.ticket_price || 1));
-            const remaining = Math.max(0, (raffle.total_tickets || 0) - paidTickets);
-            setRaffle({ 
-              ...raffle, 
-              paid_tickets: paidTickets, 
-              tickets_remaining: remaining,
-              amount_collected: data.amount_raised || 0
-            });
+            setRaffle({ ...raffle, paid_tickets: data.paid_tickets ?? raffle.paid_tickets, tickets_remaining: data.tickets_remaining ?? raffle.tickets_remaining });
           }
         }
       )

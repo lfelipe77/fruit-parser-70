@@ -72,15 +72,35 @@ export default function MyTicketsPage() {
     (async () => {
       setLoading(true);
       
-      // Use only v6 with defensive paid filter
-      let query = supabase
-        .from("my_tickets_ext_v6" as any)
-        .select("*")
-        .eq('buyer_user_id', user.id)
-        .eq('tx_status', 'paid') // Defensive filter for paid transactions only
-        .order("purchase_date", { ascending: false });
+      // Build query with proper user scoping + resilient fallback across view versions
+      const fetchFromView = async (viewName: string) => {
+        let q = supabase
+          .from(viewName as any)
+          .select("*")
+          .eq('buyer_user_id', user.id)
+          .order("purchase_date", { ascending: false });
+        // Note: 'won' filter applied client-side to avoid schema drift across views
+        return await q;
+      };
 
-      const { data, error } = await query;
+      let data: any[] | null = null;
+      let error: any = null;
+
+      // Try latest view first, then fall back
+      const attempts = ["my_tickets_ext_v6", "my_tickets_ext_v5", "my_tickets_ext_v3"];
+      for (const v of attempts) {
+        const res = await fetchFromView(v);
+        if (!res.error && (res.data?.length ?? 0) >= 0) {
+          data = res.data as any[];
+          error = res.error;
+          if ((data?.length ?? 0) > 0 || v === attempts[attempts.length - 1]) {
+            console.log("[MyTickets] Using view:", v, "rows:", data?.length || 0);
+            break;
+          }
+        } else {
+          error = res.error;
+        }
+      }
 
       if (error) {
         console.error("[MyTickets] fetch error", error);
