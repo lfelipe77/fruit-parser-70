@@ -48,7 +48,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
     image_url: null,
     goal_amount: "",
     ticket_price: "",
-    status: "pending",
+    status: "active",
     location_city: "",
     location_state: "",
     direct_purchase_link: "",
@@ -96,7 +96,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
         image_url: null,
         goal_amount: "",
         ticket_price: "",
-        status: "pending",
+        status: "active",
         location_city: "",
         location_state: "",
         direct_purchase_link: "",
@@ -107,17 +107,17 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
     }
 
     // Load existing row data
-    setForm({
-      title: row.title ?? "",
-      description: row.description ?? "",
-      image_url: row.image_url ?? null,
-      goal_amount: row.goal_amount != null ? String(row.goal_amount) : "",
-      ticket_price: row.ticket_price != null ? String(row.ticket_price) : "",
-      status: (row.status as FormState["status"]) ?? "pending",
-      location_city: row.location_city ?? "",
-      location_state: row.location_state ?? "",
-      direct_purchase_link: row.direct_purchase_link ?? "",
-    });
+  setForm({
+    title: row.title ?? "",
+    description: row.description ?? "",
+    image_url: row.image_url ?? null,
+    goal_amount: row.goal_amount != null ? String(row.goal_amount) : "",
+    ticket_price: row.ticket_price != null ? String(row.ticket_price) : "",
+    status: (row.status as FormState["status"]) ?? "active",
+    location_city: row.location_city ?? "",
+    location_state: row.location_state ?? "",
+    direct_purchase_link: row.direct_purchase_link ?? "",
+  });
     setSelectedCategoryId(row.category_id);
     setSelectedSubcategoryId(row.subcategory_id);
   }, [open, row]);
