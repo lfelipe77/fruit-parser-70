@@ -64,9 +64,13 @@ export default function RaffleDetail() {
       }
       
       if (raffleData) {
+        console.log('Raw raffle data:', raffleData);
+        
         const paid = (raffleData.paid_tickets ?? raffleData.participants_count ?? 0) as number;
         const total = (raffleData.total_tickets ?? 0) as number;
         const remaining = (raffleData.tickets_remaining ?? Math.max(0, total - paid)) as number;
+
+        console.log('Calculated values:', { paid, total, remaining, status: raffleData.status });
 
         setRaffle({
           id: raffleData.id as string,
@@ -135,6 +139,7 @@ export default function RaffleDetail() {
         setErrorMsg("Informe uma quantidade válida.");
         return;
       }
+      console.log('Checking tickets_remaining:', raffle.tickets_remaining, 'for raffle:', raffle.id);
       if ((raffle.tickets_remaining ?? 0) < 1) {
         setErrorMsg("Rifa esgotada.");
         return;
