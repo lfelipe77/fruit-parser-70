@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import SEOHead from "@/components/SEOHead";
+import { edgeBase, edgeHeaders } from "@/helpers/edge";
 
 interface PaymentDetails {
   amount: number;
@@ -59,14 +60,14 @@ export default function PagamentoSucesso() {
       let detectedReservationId = reservationId;
       
       if (reservationId || paymentId) {
-        const EDGE_URL = "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1";
+        const EDGE_URL = edgeBase();
         const params = new URLSearchParams();
         if (reservationId) params.set('reservationId', reservationId);
         if (paymentId) params.set('paymentId', paymentId);
         
         try {
-          const sres = await fetch(`${EDGE_URL}/payment-status?${params.toString()}`, {
-            headers: { Authorization: `Bearer ${jwt}` }
+          const sres = await fetch(`${EDGE_URL}/functions/v1/payment-status?${params.toString()}`, {
+            headers: edgeHeaders(jwt)
           });
           statusResponse = await sres.json();
           detectedReservationId = statusResponse.reservationId || reservationId;
@@ -79,13 +80,10 @@ export default function PagamentoSucesso() {
       // 2) Fallback finalize (idempotent) if status is PAID
       if (statusResponse?.status === "PAID" && detectedReservationId) {
         try {
-          const EDGE_URL = "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1";
-          await fetch(`${EDGE_URL}/payment-finalize`, {
+          const EDGE_URL = edgeBase();
+          await fetch(`${EDGE_URL}/functions/v1/payment-finalize`, {
             method: "POST",
-            headers: { 
-              "Content-Type": "application/json", 
-              Authorization: `Bearer ${jwt}` 
-            },
+            headers: edgeHeaders(jwt),
             body: JSON.stringify({ 
               reservationId: detectedReservationId, 
               paymentId: statusResponse.paymentId || paymentId 

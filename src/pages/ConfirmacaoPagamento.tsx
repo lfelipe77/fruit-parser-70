@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { normalizeCpfCnpjOrNull } from '@/lib/brdocs';
 import { useMyProfile } from '@/hooks/useMyProfile';
+import { edgeBase, edgeHeaders } from "@/helpers/edge";
 
 type RaffleRow = {
   id: string;
@@ -313,7 +314,7 @@ export default function ConfirmacaoPagamento() {
   // Payment polling helper
   async function pollPaymentStatus(EDGE: string, jwt: string, reservationId: string) {
     const url = `${EDGE}/functions/v1/payment-status?reservationId=${encodeURIComponent(reservationId)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${jwt}` } });
+    const res = await fetch(url, { headers: edgeHeaders(jwt) });
     const text = await res.text();
     let json: any = null; try { json = text ? JSON.parse(text) : null; } catch {}
     if (!res.ok) throw new Error(`payment-status ${res.status} ${res.statusText}: ${text}`);
@@ -383,10 +384,10 @@ export default function ConfirmacaoPagamento() {
         alert(`O valor mínimo para PIX é R$ ${MIN_PIX_VALUE.toFixed(2)}.`);
         throw new Error('Valor abaixo do mínimo PIX');
       }
-      const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+      const EDGE = edgeBase();
       const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
         method: 'POST',
-        headers: { 'content-type':'application/json', 'authorization': `Bearer ${session!.access_token}` },
+        headers: edgeHeaders(session!.access_token),
         body: JSON.stringify({ reservationId: reservation_id, value: Number(value), description: 'Compra de bilhetes' }),
       });
       
