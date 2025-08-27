@@ -157,12 +157,22 @@ export default {
 
       // 3) Fetch profile and validate CPF/CNPJ
       const { data: profile, error: profErr } = await sb
-        .from('user_profiles').select('id,tax_id').eq('id', user.id).single();
+        .from('user_profiles').select('id,full_name,phone,tax_id').eq('id', user.id).maybeSingle();
       if (profErr || !profile) return json({ error:'Profile not found' }, { status:404 }, origin);
 
-      const doc = normalizeCpfCnpjOrNull(profile.tax_id);
-      if (!doc) return json({ error:'Documento inválido. Atualize seu CPF/CNPJ no perfil.' }, { status:422 }, origin);
-      const mobilePhone = sanitizeBRPhone(payload?.customer?.phone ?? null);
+      // Normalize and validate document (using profile first, fallback to form field)
+      const { customer_name, customer_phone, customer_cpf } = payload?.customer ?? {};
+      let cpfCnpj: string, personType: PersonType;
+      try {
+        const doc = normalizeCpfCnpjOrNull(profile.tax_id) || normalizeCpfCnpjOrNull(customer_cpf);
+        if (!doc) throw new Error('No valid document found');
+        cpfCnpj = doc.digits;
+        personType = doc.type;
+      } catch {
+        return json({ ok: false, error: 'Documento inválido' }, { status: 400 }, origin);
+      }
+
+      const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);
 
       // 4) Prepare Asaas requests and create payment
       const ASAAS_KEY_RAW = (Deno.env.get('ASAAS_API_KEY') ?? '').trim();
@@ -209,14 +219,17 @@ export default {
         return { resp, text, parsed };
       }
 
+      // Prepare customer payload with validated document
       const customerPayload: any = {
-        name: payload?.customer?.name ?? 'Cliente',
-        email: payload?.customer?.email ?? undefined,
+        name: profile?.full_name || customer_name || 'Cliente',
+        cpfCnpj,
+        personType,
+        email: user.email,
         ...(mobilePhone ? { mobilePhone } : {}),
-        cpfCnpj: doc.digits,
-        personType: doc.type,
         externalReference: user.id,
       };
+
+      console.log('[asaas] payload about to send', JSON.stringify(customerPayload));
       const cust = await asaasCall('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
       if (!cust.resp.ok) {
         return json({ error: 'Asaas error', status: cust.resp.status, statusText: cust.resp.statusText, body: cust.text, debug }, { status: 502 }, origin);

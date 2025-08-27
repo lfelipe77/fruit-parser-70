@@ -127,78 +127,65 @@ export function AsaasCheckoutDrawer({
 
       const name = (prof?.full_name || authUser.user_metadata?.name || 'Cliente').toString();
       const email = (authUser.email || '').toString();
-      const tax = normalizeCpfCnpjOrNull((prof as any)?.tax_id);
-      const mobilePhone = '';
-
-      if (!tax) {
+      
+      // Frontend validation - strip formatting and validate early
+      const digits = onlyDigits((prof as any)?.tax_id || '');
+      if (!(digits.length === 11 || digits.length === 14)) {
         toast({
           title: 'Documento inválido',
           description: 'Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.',
           variant: 'destructive'
         });
-        throw new Error('Documento inválido. Atualize seu CPF/CNPJ no perfil.');
+        throw new Error('Documento inválido. Digite 11 (CPF) ou 14 (CNPJ) números.');
       }
 
-      // Step 3: Criar cliente no Asaas com CPF/CNPJ válido
-      const customerResponse = await supabase.functions.invoke('asaas-customers', {
-        body: {
-          name,
-          email,
-          cpfCnpj: tax.digits,
-          mobilePhone
-        }
-      });
+      const tax = normalizeCpfCnpjOrNull(digits);
+      const mobilePhone = '';
 
-      if (customerResponse.error) {
-        throw new Error('Erro ao criar cliente: ' + customerResponse.error.message);
+      if (!tax) {
+        toast({
+          title: 'Documento inválido',
+          description: 'CPF ou CNPJ com checksum inválido. Verifique os números.',
+          variant: 'destructive'
+        });
+        throw new Error('Documento inválido. Verifique os números do CPF/CNPJ.');
       }
 
-      const customer = customerResponse.data;
-      console.log('[Checkout] Customer created:', customer.id);
-
-      // Step 3: Create payment (com reservation_id -> externalReference)
+      // Step 3: Create complete PIX payment with validated CPF/CNPJ
       const total = ticketPrice * quantity;
-      const paymentResponse = await supabase.functions.invoke('asaas-payments', {
+      const paymentResponse = await supabase.functions.invoke('asaas-payments-complete', {
         body: {
-          customerId: customer.id,
+          reservationId,
           value: total,
           description: `Raffle ${raffleId} — ${quantity} tickets`,
-          reservation_id: reservationId,
+          customer: {
+            name,
+            email,
+            phone: mobilePhone,
+            cpf: tax.digits
+          }
         }
       });
 
       if (paymentResponse.error) {
-        throw new Error('Erro ao criar pagamento: ' + paymentResponse.error.message);
+        console.error('[Checkout] Payment error:', paymentResponse.error);
+        throw new Error(paymentResponse.error.message || 'Erro ao criar pagamento');
       }
 
-      const payment = paymentResponse.data;
-      console.log('[Checkout] Payment created:', payment.id);
-      setPaymentId(payment.id);
-
-      // Store payment in local database (would need to be implemented)
-      // For now, we'll use the provider payment ID as local ID
-      setLocalPaymentId(payment.id);
-
-      // Step 3: Get PIX QR
-      const qrResponse = await supabase.functions.invoke('asaas-pix-qr', {
-        body: null
-      });
-
-      // Since invoke doesn't support path params, we'll call directly
-      const qrDirectResponse = await fetch(`/functions/v1/asaas-pix-qr?paymentId=${payment.id}`, {
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-
-      if (!qrDirectResponse.ok) {
-        throw new Error('Erro ao buscar QR Code');
+      const response = paymentResponse.data;
+      if (!response.ok) {
+        throw new Error(response.error || 'Erro no pagamento');
       }
 
-      const qrData = await qrDirectResponse.json();
-      console.log('[Checkout] PIX QR fetched successfully');
+      console.log('[Checkout] PIX payment created successfully');
+      setPaymentId(response.paymentId || response.payment_id);
+      setLocalPaymentId(response.paymentId || response.payment_id);
       
-      setPixData(qrData);
+      setPixData({
+        encodedImage: response.qrCode || response.qr?.encodedImage,
+        payload: response.payload || response.qr?.payload,
+        expirationDate: response.expiresAt || response.qr?.expiresAt
+      });
       setStep('payment');
 
     } catch (error) {
