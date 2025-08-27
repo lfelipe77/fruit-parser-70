@@ -1181,6 +1181,7 @@ export type Database = {
           prize_value: number | null
           product_name: string | null
           product_value: number | null
+          published: boolean | null
           slug: string | null
           state: string | null
           state_uf: string | null
@@ -1222,6 +1223,7 @@ export type Database = {
           prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
+          published?: boolean | null
           slug?: string | null
           state?: string | null
           state_uf?: string | null
@@ -1263,6 +1265,7 @@ export type Database = {
           prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
+          published?: boolean | null
           slug?: string | null
           state?: string | null
           state_uf?: string | null
@@ -4323,6 +4326,10 @@ export type Database = {
       anonymize_ip: {
         Args: { ip_address: string }
         Returns: string
+      }
+      approve_raffle: {
+        Args: { p_raffle_id: string }
+        Returns: undefined
       }
       bytea_to_text: {
         Args: { data: string }
