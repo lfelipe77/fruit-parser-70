@@ -165,12 +165,23 @@ export default {
       const mobilePhone = sanitizeBRPhone(payload?.customer?.phone ?? null);
 
       // 4) Prepare Asaas requests and create payment
-      const ASAAS_BASE = Deno.env.get('ASAAS_BASE') ?? Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3';
-      const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') || '';
+      const ASAAS_KEY_RAW = (Deno.env.get('ASAAS_API_KEY') ?? '').trim();
+      const ASAAS_BASE = (Deno.env.get('ASAAS_BASE') ?? Deno.env.get('ASAAS_BASE_URL') ?? 'https://api.asaas.com/v3').trim();
 
-      if (!ASAAS_API_KEY) {
-        return json({ error: 'Missing ASAAS_API_KEY secret in Edge environment', debug: { asaasBase: ASAAS_BASE, keyMask: '***', headerName: 'access_token' } }, { status: 500 }, origin);
+      if (!ASAAS_KEY_RAW) {
+        return json({ error: 'Missing ASAAS_API_KEY' }, { status: 500 }, origin);
       }
+      const isSandboxKey = ASAAS_KEY_RAW.includes('_hmlg_') || ASAAS_KEY_RAW.startsWith('aact_hmlg_');
+      const isSandboxBase = ASAAS_BASE.includes('sandbox.asaas.com');
+
+      if (isSandboxKey && !isSandboxBase) {
+        return json({ error: 'Sandbox key used with production base', hint: 'Set ASAAS_BASE=https://sandbox.asaas.com/api/v3' }, { status: 400 }, origin);
+      }
+      if (!isSandboxKey && isSandboxBase) {
+        return json({ error: 'Production key used with sandbox base', hint: 'Remove sandbox base or use sandbox key' }, { status: 400 }, origin);
+      }
+
+      const ASAAS_API_KEY = ASAAS_KEY_RAW;
 
       // small helper to mask keys in logs/responses
       const mask = (s: string) => s.length <= 8 ? '***' : (s.slice(0,4) + '...' + s.slice(-4));
