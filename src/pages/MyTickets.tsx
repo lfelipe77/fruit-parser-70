@@ -72,24 +72,27 @@ export default function MyTicketsPage() {
     (async () => {
       setLoading(true);
       
-      // Build query with proper user scoping
+      // Use only v6 with defensive paid filter
       let query = supabase
         .from("my_tickets_ext_v6" as any)
         .select("*")
-        .eq('buyer_user_id', user.id); // Ensure we only get current user's tickets
-      
-      // Apply filter if present
-      if (filter === 'won') {
-        query = query.not('winner_ticket_id', 'is', null);
-      }
-      
-      query = query.order("purchase_date", { ascending: false });
+        .eq('buyer_user_id', user.id)
+        .eq('tx_status', 'paid') // Defensive filter for paid transactions only
+        .order("purchase_date", { ascending: false });
 
       const { data, error } = await query;
 
       if (error) {
         console.error("[MyTickets] fetch error", error);
       }
+      
+      console.log("[MyTickets] Debug:", {
+        userExists: !!user,
+        userId: user?.id,
+        dataLength: data?.length || 0,
+        error: error,
+        rawData: data
+      });
       
       if (mounted) {
         const rawRows = (data as unknown as Row[]) ?? [];
@@ -103,8 +106,10 @@ export default function MyTicketsPage() {
           }
         }
         
+        // Apply 'won' filter client-side for compatibility across views
+        const filtered = filter === 'won' ? rawRows.filter(r => !!r.winner_ticket_id) : rawRows;
         // Consolidate multiple transactions per raffle into single cards
-        const consolidatedRows = consolidateByRaffle(rawRows);
+        const consolidatedRows = consolidateByRaffle(filtered);
         setRows(consolidatedRows);
         setLoading(false);
       }

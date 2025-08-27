@@ -12,6 +12,14 @@ interface UserProfile {
   role?: string;
   banned?: boolean;
   total_ganhaveis?: number;
+  website_url?: string;
+  instagram?: string;
+  twitter?: string;
+  facebook?: string;
+  youtube?: string;
+  tiktok?: string;
+  whatsapp?: string;
+  telegram?: string;
 }
 
 export const useMyProfile = () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,9 @@ import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { normalizeCpfCnpjOrNull } from '@/lib/brdocs';
+import { onlyDigits } from '@/lib/brdocs';
 import { useMyProfile } from '@/hooks/useMyProfile';
+import { edgeBase, edgeHeaders } from "@/helpers/edge";
 
 type RaffleRow = {
   id: string;
@@ -73,6 +74,37 @@ export default function ConfirmacaoPagamento() {
   const debugOn = sp.get("debug") === "1";
   const [debugToken, setDebugToken] = useState<string>("");
   const [debugReservationId, setDebugReservationId] = useState<string | null>(null);
+
+  // Router + guard
+  const hasNavigatedRef = useRef(false);
+
+  // Resolve raffle_id via reservationId -> reservations.raffle_id if needed
+  async function resolveRaffleIdFromReservation(reservationId: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("raffle_id")
+        .eq("reservation_id", reservationId)
+        .limit(1)
+        .single();
+      if (error) {
+        console.warn("[payment-status] could not resolve raffle_id:", error);
+        return null;
+      }
+      return data?.raffle_id ?? null;
+    } catch (e) {
+      console.warn("[payment-status] resolve raffleId error:", e);
+      return null;
+    }
+  }
+
+  function handlePaidNavigate(raffleId: string, reservationId: string) {
+    if (hasNavigatedRef.current) return;
+    hasNavigatedRef.current = true;
+    console.log("[payment-status] PAID → navigating to success");
+    // Include reservationId in query for the success page to fetch all details.
+    navigate(`/ganhavel/${raffleId}/pagamento-sucesso?reservationId=${encodeURIComponent(reservationId)}`, { replace: true });
+  }
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
 
@@ -203,10 +235,91 @@ export default function ConfirmacaoPagamento() {
     };
   }, [id]);
 
+  // Robust payment status polling effect
+  useEffect(() => {
+    if (!pix.reservationId) return; // Only start polling when we have a reservationId from PIX flow
+    
+    let timer: number | undefined;
+    let stopped = false;
+
+    (async () => {
+      // 1) get JWT
+      const { data: { session } } = await supabase.auth.getSession();
+      const jwt = session?.access_token!;
+      const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+
+      // 2) a safe navigate function that resolves raffleId if missing
+      const ensureNavigateToSuccess = async () => {
+        const raffleIdKnown: string | undefined = id; // if this page already receives `id` (raffleId) prop/param
+        let raffleId = raffleIdKnown;
+        if (!raffleId) {
+          raffleId = await resolveRaffleIdFromReservation(pix.reservationId!) ?? undefined;
+        }
+        if (raffleId) {
+          handlePaidNavigate(raffleId, pix.reservationId!);
+        } else {
+          console.warn("[payment-status] PAID but raffleId not resolved yet — retrying on next tick");
+        }
+      };
+
+      // 3) tick function
+      let tries = 0;
+      const maxTries = 60;         // ~10 minutes
+      const intervalMs = 10_000;
+
+      async function tick() {
+        if (stopped || hasNavigatedRef.current) return;
+        try {
+          const s = await pollPaymentStatus(EDGE, jwt, pix.reservationId!);
+          console.log("[payment-status] response:", s);
+          const status = String(s?.status || "").toUpperCase();
+          if (status === "PAID") {
+            await ensureNavigateToSuccess();
+            return;
+          }
+          // PENDING or UNKNOWN → keep polling
+        } catch (e) {
+          console.warn("[payment-status] error:", e);
+        } finally {
+          tries++;
+          if (tries >= maxTries || hasNavigatedRef.current) {
+            if (!hasNavigatedRef.current) {
+              console.warn("[payment-status] timeout waiting for PAID");
+              setPix(prev => ({ ...prev, err: "Tempo expirado aguardando confirmação." }));
+            }
+            stopped = true;
+            if (timer) clearInterval(timer);
+            return;
+          }
+        }
+      }
+
+      // 4) kick now, then set interval
+      tick();
+      // @ts-ignore
+      timer = setInterval(tick, intervalMs);
+    })();
+
+    return () => {
+      stopped = true;
+      if (timer) clearInterval(timer);
+    };
+  }, [id, pix.reservationId]);
+
   // Calculations
   const subtotal = (raffle?.ticket_price ?? 0) * qty;
   const fee = 2.00;
   const total = subtotal + fee;
+
+  // Payment polling helper
+  async function pollPaymentStatus(EDGE: string, jwt: string, reservationId: string) {
+    const url = `${EDGE}/functions/v1/payment-status?reservationId=${encodeURIComponent(reservationId)}`;
+    const res = await fetch(url, { headers: edgeHeaders(jwt) });
+    const text = await res.text();
+    let json: any = null; try { json = text ? JSON.parse(text) : null; } catch {}
+    if (!res.ok) throw new Error(`payment-status ${res.status} ${res.statusText}: ${text}`);
+    return json; // { status, reservationId, paymentId, asaasStatus? }
+  }
 
   // Handle PIX payment with modal
   async function onPayPix() {
@@ -256,10 +369,10 @@ export default function ConfirmacaoPagamento() {
         .single();
       
       const rawDoc = (profileData as any)?.tax_id ?? null;
-      const docInfo = normalizeCpfCnpjOrNull(
+      const docDigits = onlyDigits(
         typeof rawDoc === 'string' && rawDoc.toLowerCase() !== 'null' ? rawDoc : null
       );
-      if (!docInfo) {
+      if (!(docDigits.length === 11 || docDigits.length === 14)) {
         toast.error("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.");
         throw new Error("Documento inválido");
       }
@@ -271,10 +384,10 @@ export default function ConfirmacaoPagamento() {
         alert(`O valor mínimo para PIX é R$ ${MIN_PIX_VALUE.toFixed(2)}.`);
         throw new Error('Valor abaixo do mínimo PIX');
       }
-      const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+      const EDGE = edgeBase();
       const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
         method: 'POST',
-        headers: { 'content-type':'application/json', 'authorization': `Bearer ${session!.access_token}` },
+        headers: edgeHeaders(session!.access_token),
         body: JSON.stringify({ reservationId: reservation_id, value: Number(value), description: 'Compra de bilhetes' }),
       });
       
@@ -285,8 +398,6 @@ export default function ConfirmacaoPagamento() {
       
       const data = await res.json();
       console.log('[PIX] response', data); // <- keep this so we see fields at runtime
-      
-      const isAsaasPayment = /^pay_/.test(data.payment_id); // Asaas IDs usually start with "pay_"
 
       // 6) show PIX modal with QR normalization fallback
       const qrData = data.qr || data.pix;
@@ -305,33 +416,10 @@ export default function ConfirmacaoPagamento() {
         reservationId: reservation_id 
       });
 
-      // 7) Poll for payment status (only for real Asaas payments)
-      if (isAsaasPayment) {
-        const deadline = Date.now() + 15 * 60_000; // 15 min
-        while (Date.now() < deadline) {
-          const s = await fetch(`${EDGE}/functions/v1/payment-status?paymentId=${encodeURIComponent(data.payment_id)}`);
-          if (s.ok) {
-            const { status } = await s.json();
-            if (status === 'RECEIVED' || status === 'CONFIRMED') {
-              navigate(`/pagamento/sucesso/${data.payment_id}?res=${reservation_id}`);
-              return;
-            }
-            if (status === 'OVERDUE' || status === 'REFUNDED') {
-              throw new Error('Pagamento expirou ou foi estornado.');
-            }
-          }
-          await new Promise(r => setTimeout(r, 3000));
-        }
-        throw new Error('Tempo expirado aguardando confirmação.');
-      } else {
-        // Mock ID → don't poll the endpoint that only understands real Asaas IDs
-        console.warn('[PIX] Mock payment id, skipping payment-status polling');
-        // Leave the modal open; webhook (or your mock webhook) will mark it paid.
-      }
-      setIsProcessing(false);
+      // 7) Start robust polling with useEffect cleanup
+      // We'll trigger the polling effect by setting the reservationId in PIX state
 
-      // This duplicate polling code should be removed since it's already handled above
-      // Keeping only for now to avoid breaking flow
+      setIsProcessing(false);
     } catch (err: any) {
       // Try to unwrap Supabase / fetch errors into a readable string
       const msg =
@@ -400,6 +488,60 @@ export default function ConfirmacaoPagamento() {
     }
   };
 
+  // Developer test function
+  const handleTestAsaasPayment = async () => {
+    try {
+      console.log('🧪 Testing Asaas Payment...');
+      
+      // 1. Get current user session JWT
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('❌ No user session found');
+        return;
+      }
+      console.log('✅ User session found');
+
+      // 2. Fetch most recent reservation for this user
+      const { data: reservations, error: reservationError } = await supabase
+        .from('tickets')
+        .select('reservation_id')
+        .eq('user_id', session.user.id)
+        .not('reservation_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (reservationError || !reservations?.length) {
+        console.error('❌ No reservations found:', reservationError);
+        return;
+      }
+
+      const reservationId = reservations[0].reservation_id;
+      console.log('✅ Found reservation:', reservationId);
+
+      // 3. Call Edge Function
+      const { data, error } = await supabase.functions.invoke('asaas-payments-complete', {
+        body: {
+          reservationId,
+          value: 15,
+          description: 'Teste via DevButton'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        console.log('Status:', error.status || 'unknown');
+        console.log('Body:', error.message || 'no message');
+      } else {
+        console.log('✅ Edge function success:');
+        console.log('Status: 200');
+        console.log('Body:', data);
+      }
+
+    } catch (err) {
+      console.error('❌ Test failed:', err);
+    }
+  };
+
   if (loading || authLoading) return <div className="p-6">Carregando…</div>;
   if (!raffle) return <div className="p-6">Rifa não encontrada.</div>;
 
@@ -456,6 +598,21 @@ export default function ConfirmacaoPagamento() {
           </div>
           <h1 className="text-2xl font-bold">Confirmação de Pagamento</h1>
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
+          
+          {/* Developer Test Button */}
+          {import.meta.env.VITE_ENV === 'dev' && (
+            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-xs text-orange-700 mb-2">Developer Tools:</p>
+              <Button
+                onClick={handleTestAsaasPayment}
+                variant="outline"
+                size="sm"
+                className="text-orange-700 border-orange-300 hover:bg-orange-100"
+              >
+                💳 Test Asaas Payment
+              </Button>
+            </div>
+          )}
         </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
@@ -793,7 +950,36 @@ export default function ConfirmacaoPagamento() {
             <p className="text-sm opacity-70 mt-2">
               Expira em: {new Date(pix.qr.expiresAt || pix.qr.expirationDate).toLocaleString()}
             </p>
-            <div className="mt-4 flex justify-end">
+            {pix.err && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{pix.err}</p>
+              </div>
+            )}
+            <div className="mt-4 flex justify-between">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const jwt = session?.access_token!;
+                    const EDGE = import.meta.env.VITE_SUPABASE_EDGE_URL || import.meta.env.VITE_SUPABASE_URL;
+                    const s = await pollPaymentStatus(EDGE, jwt, pix.reservationId!);
+                    const status = String(s?.status || "").toUpperCase();
+                    if (status === "PAID") {
+                      const raffleIdKnown: string | undefined = id;
+                      const raffleId = raffleIdKnown ?? (await resolveRaffleIdFromReservation(pix.reservationId!) ?? undefined);
+                      if (raffleId) handlePaidNavigate(raffleId, pix.reservationId!);
+                      else console.warn("[payment-status] Paid but raffleId unresolved");
+                    } else {
+                      toast.info("Ainda aguardando confirmação do PIX…");
+                    }
+                  } catch {
+                    toast.error("Não foi possível verificar agora. Tente novamente.");
+                  }
+                }}
+              >
+                Já paguei
+              </Button>
               <Button onClick={() => setPix({open:false})}>Fechar</Button>
             </div>
           </div>

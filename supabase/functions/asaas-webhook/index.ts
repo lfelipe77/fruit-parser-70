@@ -1,7 +1,7 @@
 // supabase/functions/asaas-webhook/index.ts
 // Validates Asaas token, parses payload, and (only here) flips tickets to paid.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/v135/@supabase/supabase-js@2.53.0?target=deno";
 
 function json(body: any, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), {

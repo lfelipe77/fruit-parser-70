@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { QrCode, Copy, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { onlyDigits } from "@/helpers/ids";
 
 interface AsaasCheckoutDrawerProps {
   isOpen: boolean;
@@ -111,64 +112,66 @@ export function AsaasCheckoutDrawer({
         throw new Error('Falha ao criar reserva.');
       }
 
-      // Step 2: Criar cliente
-      const customerResponse = await supabase.functions.invoke('asaas-customers', {
-        body: {
-          name: 'Cliente Sandbox',
-          email: 'cliente@exemplo.com'
-        }
-      });
-
-      if (customerResponse.error) {
-        throw new Error('Erro ao criar cliente: ' + customerResponse.error.message);
+      // Step 2: Buscar perfil para validar CPF/CNPJ
+      const { data: sess } = await supabase.auth.getSession();
+      const authUser = sess?.session?.user;
+      if (!authUser) {
+        throw new Error('Faça login para continuar.');
       }
 
-      const customer = customerResponse.data;
-      console.log('[Checkout] Customer created:', customer.id);
+      const { data: prof } = await supabase
+        .from('user_profiles')
+        .select('full_name, tax_id')
+        .eq('id', authUser.id)
+        .maybeSingle();
 
-      // Step 3: Create payment (com reservation_id -> externalReference)
+      const name = (prof?.full_name || authUser.user_metadata?.name || 'Cliente').toString();
+      const email = (authUser.email || '').toString();
+      
+      // Extract document but don't block - let server handle validation
+      const docRaw = onlyDigits((prof as any)?.tax_id || '');
+      const mobilePhone = '';
+
+      console.log('[checkout] sending doc', { docRaw, len: docRaw.length, validate: 'loose' });
+
+      // Step 3: Create complete PIX payment - send document without blocking
       const total = ticketPrice * quantity;
-      const paymentResponse = await supabase.functions.invoke('asaas-payments', {
+      const paymentResponse = await supabase.functions.invoke('asaas-payments-complete', {
         body: {
-          customerId: customer.id,
+          reservationId,
           value: total,
           description: `Raffle ${raffleId} — ${quantity} tickets`,
-          reservation_id: reservationId,
+          customer: {
+            customer_name: name,
+            customer_phone: mobilePhone,
+            customer_cpf: docRaw || null
+          }
         }
       });
 
       if (paymentResponse.error) {
-        throw new Error('Erro ao criar pagamento: ' + paymentResponse.error.message);
+        console.error('[Checkout] Payment error:', paymentResponse.error);
+        const errorMsg = paymentResponse.error.message || 'Erro ao criar pagamento';
+        const whereMarker = paymentResponse.data?._where ? ` (${paymentResponse.data._where})` : '';
+        throw new Error(errorMsg + whereMarker);
       }
 
-      const payment = paymentResponse.data;
-      console.log('[Checkout] Payment created:', payment.id);
-      setPaymentId(payment.id);
-
-      // Store payment in local database (would need to be implemented)
-      // For now, we'll use the provider payment ID as local ID
-      setLocalPaymentId(payment.id);
-
-      // Step 3: Get PIX QR
-      const qrResponse = await supabase.functions.invoke('asaas-pix-qr', {
-        body: null
-      });
-
-      // Since invoke doesn't support path params, we'll call directly
-      const qrDirectResponse = await fetch(`/functions/v1/asaas-pix-qr?paymentId=${payment.id}`, {
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
-      });
-
-      if (!qrDirectResponse.ok) {
-        throw new Error('Erro ao buscar QR Code');
+      const response = paymentResponse.data;
+      if (!response.ok) {
+        const errorMsg = response.error || 'Erro no pagamento';
+        const whereMarker = response._where ? ` (${response._where})` : '';
+        throw new Error(errorMsg + whereMarker);
       }
 
-      const qrData = await qrDirectResponse.json();
-      console.log('[Checkout] PIX QR fetched successfully');
+      console.log('[Checkout] PIX payment created successfully');
+      setPaymentId(response.paymentId || response.payment_id);
+      setLocalPaymentId(response.paymentId || response.payment_id);
       
-      setPixData(qrData);
+      setPixData({
+        encodedImage: response.qrCode || response.qr?.encodedImage,
+        payload: response.payload || response.qr?.payload,
+        expirationDate: response.expiresAt || response.qr?.expiresAt
+      });
       setStep('payment');
 
     } catch (error) {
