@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { QrCode, Copy, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { onlyDigits } from "@/lib/brdocs";
+import { onlyDigits } from "@/helpers/ids";
 
 interface AsaasCheckoutDrawerProps {
   isOpen: boolean;
@@ -128,42 +128,39 @@ export function AsaasCheckoutDrawer({
       const name = (prof?.full_name || authUser.user_metadata?.name || 'Cliente').toString();
       const email = (authUser.email || '').toString();
       
-      // Frontend validation - strip formatting and validate early
-      const digits = onlyDigits((prof as any)?.tax_id || '');
-      if (!(digits.length === 11 || digits.length === 14)) {
-        toast({
-          title: 'Documento inválido',
-          description: 'Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.',
-          variant: 'destructive'
-        });
-        throw new Error('Documento inválido. Digite 11 (CPF) ou 14 (CNPJ) números.');
-      }
-
+      // Extract document but don't block - let server handle validation
+      const docRaw = onlyDigits((prof as any)?.tax_id || '');
       const mobilePhone = '';
 
-      // Step 3: Create complete PIX payment with validated CPF/CNPJ
+      console.log('[checkout] sending doc', { docRaw, len: docRaw.length, validate: 'loose' });
+
+      // Step 3: Create complete PIX payment - send document without blocking
       const total = ticketPrice * quantity;
       const paymentResponse = await supabase.functions.invoke('asaas-payments-complete', {
         body: {
           reservationId,
           value: total,
           description: `Raffle ${raffleId} — ${quantity} tickets`,
-            customer: {
-              customer_name: name,
-              customer_phone: mobilePhone,
-              customer_cpf: digits
-            }
+          customer: {
+            customer_name: name,
+            customer_phone: mobilePhone,
+            customer_cpf: docRaw || null
+          }
         }
       });
 
       if (paymentResponse.error) {
         console.error('[Checkout] Payment error:', paymentResponse.error);
-        throw new Error(paymentResponse.error.message || 'Erro ao criar pagamento');
+        const errorMsg = paymentResponse.error.message || 'Erro ao criar pagamento';
+        const whereMarker = paymentResponse.data?._where ? ` (${paymentResponse.data._where})` : '';
+        throw new Error(errorMsg + whereMarker);
       }
 
       const response = paymentResponse.data;
       if (!response.ok) {
-        throw new Error(response.error || 'Erro no pagamento');
+        const errorMsg = response.error || 'Erro no pagamento';
+        const whereMarker = response._where ? ` (${response._where})` : '';
+        throw new Error(errorMsg + whereMarker);
       }
 
       console.log('[Checkout] PIX payment created successfully');

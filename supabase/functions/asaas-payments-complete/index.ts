@@ -5,27 +5,39 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// === helpers: revert to length-only validation ===
+// === helpers: observable, single-source, temporarily permissive ===
 type PersonType = 'FISICA' | 'JURIDICA';
 
 const onlyDigits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
 
-function getCpfCnpj(profileTaxId?: string | null, formDoc?: string | null) {
-  const fromProfile = onlyDigits(profileTaxId);
-  const fromForm = onlyDigits(formDoc);
+function resolveCpfCnpj(opts: {
+  profileTaxId?: string | null;
+  formDoc?: string | null;
+  validateMode?: 'strict' | 'loose'; // loose by default
+}) {
+  const fromForm = onlyDigits(opts.formDoc);
+  const fromProfile = onlyDigits(opts.profileTaxId);
+  const chosen = fromForm || fromProfile || '';
+  const len = chosen.length;
+  const personType = len === 14 ? 'JURIDICA' : 'FISICA'; // fallback FISICA
 
-  const raw = fromProfile || fromForm; // prefer profile
-  const len = raw.length;
+  console.log('[asaas] cpfCnpj.check', { 
+    fromForm, 
+    fromProfile, 
+    chosen, 
+    len, 
+    validateMode: opts.validateMode 
+  });
 
-  // Debug so we know exactly what the server received
-  console.log('[asaas] cpfCnpj.check', { fromProfile, fromForm, chosen: raw, len });
-
-  if (len === 11) return { cpfCnpj: raw, personType: 'FISICA' as PersonType };
-  if (len === 14) return { cpfCnpj: raw, personType: 'JURIDICA' as PersonType };
-
-  const err = new Error('Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil, somente números.');
-  (err as any).status = 400;
-  throw err;
+  if (opts.validateMode === 'strict') {
+    if (!(len === 11 || len === 14)) {
+      const err = new Error('Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números).');
+      (err as any).status = 400;
+      throw err;
+    }
+  }
+  // loose mode: return whatever we have (may be empty), let Asaas decide
+  return { cpfCnpj: chosen, len, personType };
 }
 function sanitizeBRPhone(raw?: unknown): string | null {
   if(raw==null) return null; let d=String(raw).replace(/\D+/g,'');
@@ -107,6 +119,9 @@ async function getUserFromAuth(req: Request) {
 export default {
   async fetch(req: Request) {
     const origin = req.headers.get('origin');
+    const url = new URL(req.url);
+    const validateParam = (url.searchParams.get('validate') || 'loose') as 'strict' | 'loose';
+
     // CORS preflight
     if (req.method === 'OPTIONS') {
       return withCORS(new Response(null, { status: 204 }), origin);
@@ -168,14 +183,20 @@ export default {
         .from('user_profiles').select('id,full_name,phone,tax_id').eq('id', user.id).maybeSingle();
       if (profErr || !profile) return json({ error:'Profile not found' }, { status:404 }, origin);
 
-      // Normalize and validate document (using profile first, fallback to form field)
+      // Resolve and validate document with new flexible approach
       const { customer_name, customer_phone, customer_cpf } = payload?.customer ?? {};
-      let cpfCnpj: string, personType: PersonType;
+      let cpfCnpj: string, len: number, personType: PersonType;
       try {
-        ({ cpfCnpj, personType } = getCpfCnpj(profile.tax_id, customer_cpf));
+        const r = resolveCpfCnpj({
+          profileTaxId: profile?.tax_id,
+          formDoc: customer_cpf,
+          validateMode: validateParam,
+        });
+        cpfCnpj = r.cpfCnpj; 
+        len = r.len; 
+        personType = r.personType as PersonType;
       } catch (e: any) {
-        // bubble our own message so UI shows the reason
-        return json({ ok: false, error: e.message }, { status: e.status || 400 }, origin);
+        return json({ ok: false, error: e.message, _where: 'precheck' }, { status: e.status || 400 }, origin);
       }
 
       const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);
@@ -228,14 +249,14 @@ export default {
       // Prepare customer payload with validated document
       const customerPayload: any = {
         name: profile?.full_name || customer_name || 'Cliente',
-        cpfCnpj,
+        cpfCnpj: cpfCnpj || undefined,     // allow empty in loose mode; Asaas will respond
         personType,
         email: user.email,
         ...(mobilePhone ? { mobilePhone } : {}),
         externalReference: user.id,
       };
 
-      console.log('[asaas] customer payload', customerPayload);
+      console.log('[asaas] customer payload (preview)', { ...customerPayload, cpfCnpj_len: len });
       const cust = await asaasCall('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
       if (!cust.resp.ok) {
         const msg = cust.parsed?.errors?.[0]?.description
@@ -243,7 +264,7 @@ export default {
                 || cust.text
                 || 'Falha ao criar cliente';
         console.warn('[asaas] customer creation error', cust.parsed ?? cust.text);
-        return json({ ok: false, error: msg }, { status: 400 }, origin);
+        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
       }
       const customerId = (cust.parsed as any)?.id || (cust.parsed as any)?.data?.[0]?.id;
       if (!customerId) {
@@ -273,7 +294,7 @@ export default {
                 || pay.text
                 || 'Falha ao criar cobrança';
         console.warn('[asaas] payment creation error', pay.parsed ?? pay.text);
-        return json({ ok: false, error: msg }, { status: 400 }, origin);
+        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
       }
       const payment_id = (pay.parsed as any)?.id;
       if (!payment_id) {
@@ -288,7 +309,7 @@ export default {
                 || qr.text
                 || 'Falha ao gerar QR Code';
         console.warn('[asaas] QR code generation error', qr.parsed ?? qr.text);
-        return json({ ok: false, error: msg }, { status: 400 }, origin);
+        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
       }
       const qrRaw: any = qr.parsed || {};
       const base64 = qrRaw?.encodedImage ?? qrRaw?.image ?? '';
