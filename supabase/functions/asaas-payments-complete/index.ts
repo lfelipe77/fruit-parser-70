@@ -11,10 +11,18 @@ type PersonType = 'FISICA' | 'JURIDICA';
 const onlyDigits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
 
 function getCpfCnpj(profileTaxId?: string | null, formDoc?: string | null) {
-  const raw = onlyDigits(profileTaxId) || onlyDigits(formDoc);
-  if (raw.length === 11) return { cpfCnpj: raw, personType: 'FISICA' as PersonType };
-  if (raw.length === 14) return { cpfCnpj: raw, personType: 'JURIDICA' as PersonType };
-  // keep a clear 400 for the UI
+  const fromProfile = onlyDigits(profileTaxId);
+  const fromForm = onlyDigits(formDoc);
+
+  const raw = fromProfile || fromForm; // prefer profile
+  const len = raw.length;
+
+  // Debug so we know exactly what the server received
+  console.log('[asaas] cpfCnpj.check', { fromProfile, fromForm, chosen: raw, len });
+
+  if (len === 11) return { cpfCnpj: raw, personType: 'FISICA' as PersonType };
+  if (len === 14) return { cpfCnpj: raw, personType: 'JURIDICA' as PersonType };
+
   const err = new Error('Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil, somente números.');
   (err as any).status = 400;
   throw err;
@@ -166,7 +174,8 @@ export default {
       try {
         ({ cpfCnpj, personType } = getCpfCnpj(profile.tax_id, customer_cpf));
       } catch (e: any) {
-        return json({ ok: false, error: e.message || 'Documento inválido' }, { status: e.status || 400 }, origin);
+        // bubble our own message so UI shows the reason
+        return json({ ok: false, error: e.message }, { status: e.status || 400 }, origin);
       }
 
       const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);
@@ -226,10 +235,15 @@ export default {
         externalReference: user.id,
       };
 
-      console.log('[asaas] payload about to send', JSON.stringify(customerPayload));
+      console.log('[asaas] customer payload', customerPayload);
       const cust = await asaasCall('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
       if (!cust.resp.ok) {
-        return json({ error: 'Asaas error', status: cust.resp.status, statusText: cust.resp.statusText, body: cust.text, debug }, { status: 502 }, origin);
+        const msg = cust.parsed?.errors?.[0]?.description
+                || cust.parsed?.message
+                || cust.text
+                || 'Falha ao criar cliente';
+        console.warn('[asaas] customer creation error', cust.parsed ?? cust.text);
+        return json({ ok: false, error: msg }, { status: 400 }, origin);
       }
       const customerId = (cust.parsed as any)?.id || (cust.parsed as any)?.data?.[0]?.id;
       if (!customerId) {
@@ -254,7 +268,12 @@ export default {
       };
       const pay = await asaasCall('/payments', { method:'POST', body: JSON.stringify(payBody) });
       if (!pay.resp.ok) {
-        return json({ error: 'Asaas error', status: pay.resp.status, statusText: pay.resp.statusText, body: pay.text, debug }, { status: 502 }, origin);
+        const msg = pay.parsed?.errors?.[0]?.description
+                || pay.parsed?.message
+                || pay.text
+                || 'Falha ao criar cobrança';
+        console.warn('[asaas] payment creation error', pay.parsed ?? pay.text);
+        return json({ ok: false, error: msg }, { status: 400 }, origin);
       }
       const payment_id = (pay.parsed as any)?.id;
       if (!payment_id) {
@@ -264,7 +283,12 @@ export default {
 
       const qr = await asaasCall(`/payments/${payment_id}/pixQrCode`, { method:'GET' });
       if (!qr.resp.ok) {
-        return json({ error: 'Asaas error', status: qr.resp.status, statusText: qr.resp.statusText, body: qr.text, debug }, { status: 502 }, origin);
+        const msg = qr.parsed?.errors?.[0]?.description
+                || qr.parsed?.message
+                || qr.text
+                || 'Falha ao gerar QR Code';
+        console.warn('[asaas] QR code generation error', qr.parsed ?? qr.text);
+        return json({ ok: false, error: msg }, { status: 400 }, origin);
       }
       const qrRaw: any = qr.parsed || {};
       const base64 = qrRaw?.encodedImage ?? qrRaw?.image ?? '';
