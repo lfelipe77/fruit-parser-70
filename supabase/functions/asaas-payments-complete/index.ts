@@ -5,15 +5,44 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// === helpers: observable, single-source, temporarily permissive ===
+// === CPF/CNPJ validation helpers ===
 type PersonType = 'FISICA' | 'JURIDICA';
 
 const onlyDigits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
 
+function isValidCPF(raw: string): boolean {
+  const cpf = onlyDigits(raw);
+  
+  // Must be exactly 11 digits
+  if (cpf.length !== 11) return false;
+  
+  // Reject repeated digits (111.111.111-11, 222.222.222-22, etc.)
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+  
+  // Validate check digits
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cpf[i]) * (10 - i);
+  }
+  let firstDigit = (sum * 10) % 11;
+  if (firstDigit === 10) firstDigit = 0;
+  if (firstDigit !== parseInt(cpf[9])) return false;
+  
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cpf[i]) * (11 - i);
+  }
+  let secondDigit = (sum * 10) % 11;
+  if (secondDigit === 10) secondDigit = 0;
+  if (secondDigit !== parseInt(cpf[10])) return false;
+  
+  return true;
+}
+
 function resolveCpfCnpj(opts: {
   profileTaxId?: string | null;
   formDoc?: string | null;
-  validateMode?: 'strict' | 'loose'; // loose by default
+  validateMode?: 'strict' | 'loose'; // strict by default for production
 }) {
   const fromForm = onlyDigits(opts.formDoc);
   const fromProfile = onlyDigits(opts.profileTaxId);
@@ -30,9 +59,21 @@ function resolveCpfCnpj(opts: {
   });
 
   if (opts.validateMode === 'strict') {
-    if (!(len === 11 || len === 14)) {
-      const err = new Error('Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números).');
+    if (len === 11) {
+      // Strict CPF validation
+      if (!isValidCPF(chosen)) {
+        const err = new Error('Documento inválido (CPF).');
+        (err as any).status = 400;
+        (err as any).code = 'INVALID_DOCUMENT';
+        throw err;
+      }
+    } else if (len === 14) {
+      // For CNPJ, just check length (could add full CNPJ validation later)
+      // For now, accept any 14-digit sequence
+    } else {
+      const err = new Error('Documento inválido (CPF).');
       (err as any).status = 400;
+      (err as any).code = 'INVALID_DOCUMENT';
       throw err;
     }
   }
@@ -120,7 +161,7 @@ export default {
   async fetch(req: Request) {
     const origin = req.headers.get('origin');
     const url = new URL(req.url);
-    const validateParam = (url.searchParams.get('validate') || 'loose') as 'strict' | 'loose';
+    const validateParam = (url.searchParams.get('validate') || 'strict') as 'strict' | 'loose';
 
     // CORS preflight
     if (req.method === 'OPTIONS') {
@@ -196,7 +237,12 @@ export default {
         len = r.len; 
         personType = r.personType as PersonType;
       } catch (e: any) {
-        return json({ ok: false, error: e.message, _where: 'precheck' }, { status: e.status || 400 }, origin);
+        return json({ 
+          ok: false, 
+          error: e.message, 
+          code: e.code || 'VALIDATION_ERROR',
+          _where: 'precheck' 
+        }, { status: e.status || 400 }, origin);
       }
 
       const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);

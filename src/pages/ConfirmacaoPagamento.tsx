@@ -1,3 +1,13 @@
+/*
+DEV NOTES: Valid sandbox CPFs for testing:
+- 52998224725
+- 15350946056  
+- 11144477735
+
+To use loose validation mode in dev:
+Set VITE_PIX_VALIDATE="loose" in .env.local
+*/
+
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +24,7 @@ import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { onlyDigits } from '@/lib/brdocs';
+import { normalizeCPFForAsaas, tryNormalizeCPF, onlyDigits } from '@/lib/cpf';
 import { useMyProfile } from '@/hooks/useMyProfile';
 import { edgeBase, edgeHeaders } from "@/helpers/edge";
 
@@ -74,6 +84,9 @@ export default function ConfirmacaoPagamento() {
   const debugOn = sp.get("debug") === "1";
   const [debugToken, setDebugToken] = useState<string>("");
   const [debugReservationId, setDebugReservationId] = useState<string | null>(null);
+
+  // PIX validation mode from environment (strict by default)
+  const pixValidateMode = import.meta.env.VITE_PIX_VALIDATE || 'strict';
 
   // Router + guard
   const hasNavigatedRef = useRef(false);
@@ -361,39 +374,58 @@ export default function ConfirmacaoPagamento() {
       if (debugOn) setDebugReservationId(reservation_id);
       console.log("[debug] reservation_id", reservation_id);
 
-      // 4) validate CPF/CNPJ before calling edge - fetch directly from profile
-      const { data: profileData } = await supabase
-        .from('user_profiles')
-        .select('tax_id')
-        .eq('id', user.id)
-        .single();
+      // 4) Validate CPF before calling edge function
+      const cpfInput = formData.cpf || (userProfile as any)?.tax_id || '';
+      let normalizedCPF: string;
       
-      const rawDoc = (profileData as any)?.tax_id ?? null;
-      const docDigits = onlyDigits(
-        typeof rawDoc === 'string' && rawDoc.toLowerCase() !== 'null' ? rawDoc : null
-      );
-      if (!(docDigits.length === 11 || docDigits.length === 14)) {
-        toast.error("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.");
-        throw new Error("Documento inválido");
+      try {
+        normalizedCPF = normalizeCPFForAsaas(cpfInput);
+        console.log('[checkout] sending CPF', { 
+          raw: cpfInput, 
+          normalized: normalizedCPF, 
+          validate: pixValidateMode 
+        });
+      } catch (err: any) {
+        toast.error(err.message || 'CPF inválido. Corrija o documento.');
+        throw new Error("CPF validation failed");
       }
 
-      // 5) create PIX on Asaas with minimum value check
+      // 5) create PIX on Asaas with minimum value check and validated CPF
       const MIN_PIX_VALUE = 5.00;
       const value = unitPrice * safeQty;
       if (value < MIN_PIX_VALUE) {
         alert(`O valor mínimo para PIX é R$ ${MIN_PIX_VALUE.toFixed(2)}.`);
         throw new Error('Valor abaixo do mínimo PIX');
       }
+      
       const EDGE = edgeBase();
-      const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete`, {
+      const validateParam = pixValidateMode === 'loose' ? '?validate=loose' : '?validate=strict';
+      const res = await fetch(`${EDGE}/functions/v1/asaas-payments-complete${validateParam}`, {
         method: 'POST',
         headers: edgeHeaders(session!.access_token),
-        body: JSON.stringify({ reservationId: reservation_id, value: Number(value), description: 'Compra de bilhetes' }),
+        body: JSON.stringify({ 
+          reservationId: reservation_id, 
+          value: Number(value), 
+          description: 'Compra de bilhetes',
+          customer: {
+            customer_cpf: normalizedCPF,
+            customer_name: formData.fullName || userProfile?.full_name,
+            customer_phone: formData.phone || (userProfile as any)?.phone
+          }
+        }),
       });
       
       if (!res.ok) {
-        const body = await res.text().catch(() => '');
-        throw new Error(`PIX ${res.status}: ${body || 'erro desconhecido'}`);
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData?.error || 'Erro desconhecido';
+        const errorSource = errorData?._where ? ` (${errorData._where})` : '';
+        
+        if (errorData?.code === 'INVALID_DOCUMENT') {
+          toast.error('CPF inválido. Corrija o documento.');
+        } else {
+          toast.error(`${errorMessage}${errorSource}`);
+        }
+        throw new Error(`PIX ${res.status}: ${errorMessage}`);
       }
       
       const data = await res.json();
@@ -452,7 +484,7 @@ export default function ConfirmacaoPagamento() {
   // Helper function to extract only digits
   const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
 
-  // Validate form data
+  // Validate form data with strict CPF validation
   const validateForm = () => {
     const errors = { name: '', phone: '', cpf: '' };
     
@@ -465,9 +497,12 @@ export default function ConfirmacaoPagamento() {
       errors.phone = 'Telefone deve ter entre 10 e 13 dígitos';
     }
     
-    const cpfDigits = digits(formData.cpf);
-    if (cpfDigits.length !== 11) {
-      errors.cpf = 'CPF deve ter exatamente 11 dígitos';
+    // Strict CPF validation using our utility
+    const cpfInput = formData.cpf || (userProfile as any)?.tax_id || '';
+    if (cpfInput && !tryNormalizeCPF(cpfInput)) {
+      errors.cpf = 'CPF inválido. Verifique e tente novamente.';
+    } else if (!cpfInput) {
+      errors.cpf = 'CPF é obrigatório';
     }
     
     setFormErrors(errors);
