@@ -947,6 +947,21 @@ export type Database = {
         }
         Relationships: []
       }
+      raffle_counters: {
+        Row: {
+          next_number: number
+          raffle_id: string
+        }
+        Insert: {
+          next_number?: number
+          raffle_id: string
+        }
+        Update: {
+          next_number?: number
+          raffle_id?: string
+        }
+        Relationships: []
+      }
       raffle_winner_logs: {
         Row: {
           concurso_number: string
@@ -4323,13 +4338,17 @@ export type Database = {
         }
         Returns: string
       }
+      allocate_numbers: {
+        Args: { p_qty: number; p_raffle_id: string }
+        Returns: number[]
+      }
       anonymize_ip: {
         Args: { ip_address: string }
         Returns: string
       }
       approve_raffle: {
         Args: { p_raffle_id: string }
-        Returns: undefined
+        Returns: Json
       }
       bytea_to_text: {
         Args: { data: string }
