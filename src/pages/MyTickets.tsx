@@ -91,6 +91,14 @@ export default function MyTicketsPage() {
         console.error("[MyTickets] fetch error", error);
       }
       
+      console.log("[MyTickets] Debug:", {
+        userExists: !!user,
+        userId: user?.id,
+        dataLength: data?.length || 0,
+        error: error,
+        rawData: data
+      });
+      
       if (mounted) {
         const rawRows = (data as unknown as Row[]) ?? [];
         
