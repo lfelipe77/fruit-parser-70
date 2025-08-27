@@ -72,8 +72,8 @@ export default function RaffleDetail() {
         const goalAmount = (raffleData.goal_amount ?? 0) as number;
         const paidTickets = ticketPrice > 0 ? Math.floor(amountRaised / ticketPrice) : 0;
         
-        // For total tickets, use goal_amount / ticket_price if total_tickets not set
-        const totalTickets = (raffleData.total_tickets ?? (goalAmount > 0 && ticketPrice > 0 ? Math.ceil(goalAmount / ticketPrice) : 0)) as number;
+        // For total tickets, calculate from goal_amount / ticket_price since total_tickets isn't in this view
+        const totalTickets = (goalAmount > 0 && ticketPrice > 0 ? Math.ceil(goalAmount / ticketPrice) : 100) as number;
         const remaining = Math.max(0, totalTickets - paidTickets);
         const progressPct = (raffleData.progress_pct_money ?? 0) as number;
 
@@ -117,7 +117,6 @@ export default function RaffleDetail() {
             .from('raffles_public_money_ext')
             .select('participants_count,amount_raised')
             .eq("id", raffle.id)
-            .maybeSingle();
             .maybeSingle();
           if (data && raffle) {
             // Calculate tickets from amount raised and ticket price
