@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { QrCode, Copy, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { onlyDigits, normalizeCpfCnpjOrNull } from "@/lib/brdocs";
 
 interface AsaasCheckoutDrawerProps {
   isOpen: boolean;
@@ -111,11 +112,40 @@ export function AsaasCheckoutDrawer({
         throw new Error('Falha ao criar reserva.');
       }
 
-      // Step 2: Criar cliente
+      // Step 2: Buscar perfil para validar CPF/CNPJ
+      const { data: sess } = await supabase.auth.getSession();
+      const authUser = sess?.session?.user;
+      if (!authUser) {
+        throw new Error('Faça login para continuar.');
+      }
+
+      const { data: prof } = await supabase
+        .from('user_profiles')
+        .select('full_name, tax_id')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      const name = (prof?.full_name || authUser.user_metadata?.name || 'Cliente').toString();
+      const email = (authUser.email || '').toString();
+      const tax = normalizeCpfCnpjOrNull((prof as any)?.tax_id);
+      const mobilePhone = '';
+
+      if (!tax) {
+        toast({
+          title: 'Documento inválido',
+          description: 'Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.',
+          variant: 'destructive'
+        });
+        throw new Error('Documento inválido. Atualize seu CPF/CNPJ no perfil.');
+      }
+
+      // Step 3: Criar cliente no Asaas com CPF/CNPJ válido
       const customerResponse = await supabase.functions.invoke('asaas-customers', {
         body: {
-          name: 'Cliente Sandbox',
-          email: 'cliente@exemplo.com'
+          name,
+          email,
+          cpfCnpj: tax.digits,
+          mobilePhone
         }
       });
 
