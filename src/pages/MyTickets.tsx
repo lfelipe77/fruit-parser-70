@@ -72,47 +72,24 @@ export default function MyTicketsPage() {
     (async () => {
       setLoading(true);
       
-      // Build query with proper user scoping + resilient fallback across view versions
-      const fetchFromView = async (viewName: string) => {
-        let q = supabase
-          .from(viewName as any)
-          .select("*")
-          .eq('buyer_user_id', user.id)
-          .order("purchase_date", { ascending: false });
-        // Note: 'won' filter applied client-side to avoid schema drift across views
-        return await q;
-      };
-
-      let data: any[] | null = null;
-      let error: any = null;
-
-      // Try latest view first, then fall back
-      const attempts = ["my_tickets_ext_v6", "my_tickets_ext_v5", "my_tickets_ext_v3"];
-      for (const v of attempts) {
-        const res = await fetchFromView(v);
-        if (!res.error && (res.data?.length ?? 0) >= 0) {
-          data = res.data as any[];
-          error = res.error;
-          if ((data?.length ?? 0) > 0 || v === attempts[attempts.length - 1]) {
-            console.log("[MyTickets] Using view:", v, "rows:", data?.length || 0);
-            break;
-          }
-        } else {
-          error = res.error;
-        }
+      // Build query with proper user scoping
+      let query = supabase
+        .from("my_tickets_ext_v6" as any)
+        .select("*")
+        .eq('buyer_user_id', user.id); // Ensure we only get current user's tickets
+      
+      // Apply filter if present
+      if (filter === 'won') {
+        query = query.not('winner_ticket_id', 'is', null);
       }
+      
+      query = query.order("purchase_date", { ascending: false });
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("[MyTickets] fetch error", error);
       }
-      
-      console.log("[MyTickets] Debug:", {
-        userExists: !!user,
-        userId: user?.id,
-        dataLength: data?.length || 0,
-        error: error,
-        rawData: data
-      });
       
       if (mounted) {
         const rawRows = (data as unknown as Row[]) ?? [];
@@ -126,10 +103,8 @@ export default function MyTicketsPage() {
           }
         }
         
-        // Apply 'won' filter client-side for compatibility across views
-        const filtered = filter === 'won' ? rawRows.filter(r => !!r.winner_ticket_id) : rawRows;
         // Consolidate multiple transactions per raffle into single cards
-        const consolidatedRows = consolidateByRaffle(filtered);
+        const consolidatedRows = consolidateByRaffle(rawRows);
         setRows(consolidatedRows);
         setLoading(false);
       }

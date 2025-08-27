@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { withCORS } from "../_shared/cors.ts";
-import { createClient } from "https://esm.sh/v135/@supabase/supabase-js@2.53.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Optional: Edge runtime types for editor intellisense only
 // import * as _mod from "jsr:@supabase/functions-js/edge-runtime.d.ts";

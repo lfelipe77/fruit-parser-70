@@ -668,39 +668,6 @@ export type Database = {
           },
         ]
       }
-      payments_pending: {
-        Row: {
-          amount: number
-          asaas_payment_id: string
-          created_at: string
-          expires_at: string
-          id: string
-          reservation_id: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          asaas_payment_id: string
-          created_at?: string
-          expires_at: string
-          id?: string
-          reservation_id: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          asaas_payment_id?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          reservation_id?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       payments_verified: {
         Row: {
           amount: number
@@ -947,21 +914,6 @@ export type Database = {
         }
         Relationships: []
       }
-      raffle_counters: {
-        Row: {
-          next_number: number
-          raffle_id: string
-        }
-        Insert: {
-          next_number?: number
-          raffle_id: string
-        }
-        Update: {
-          next_number?: number
-          raffle_id?: string
-        }
-        Relationships: []
-      }
       raffle_winner_logs: {
         Row: {
           concurso_number: string
@@ -1196,7 +1148,6 @@ export type Database = {
           prize_value: number | null
           product_name: string | null
           product_value: number | null
-          published: boolean | null
           slug: string | null
           state: string | null
           state_uf: string | null
@@ -1238,7 +1189,6 @@ export type Database = {
           prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
-          published?: boolean | null
           slug?: string | null
           state?: string | null
           state_uf?: string | null
@@ -1280,7 +1230,6 @@ export type Database = {
           prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
-          published?: boolean | null
           slug?: string | null
           state?: string | null
           state_uf?: string | null
@@ -1746,7 +1695,6 @@ export type Database = {
           total_amount: number | null
           transaction_id: string | null
           unit_price: number | null
-          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -1770,7 +1718,6 @@ export type Database = {
           total_amount?: number | null
           transaction_id?: string | null
           unit_price?: number | null
-          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -1794,7 +1741,6 @@ export type Database = {
           total_amount?: number | null
           transaction_id?: string | null
           unit_price?: number | null
-          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -4341,17 +4287,9 @@ export type Database = {
         }
         Returns: string
       }
-      allocate_numbers: {
-        Args: { p_qty: number; p_raffle_id: string }
-        Returns: number[]
-      }
       anonymize_ip: {
         Args: { ip_address: string }
         Returns: string
-      }
-      approve_raffle: {
-        Args: { p_raffle_id: string }
-        Returns: Json
       }
       bytea_to_text: {
         Args: { data: string }
@@ -4469,16 +4407,6 @@ export type Database = {
       expire_stale_reservations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      finalize_paid_purchase: {
-        Args: {
-          p_asaas_payment_id: string
-          p_customer_cpf?: string
-          p_customer_name?: string
-          p_customer_phone?: string
-          p_reservation_id: string
-        }
-        Returns: Json
       }
       finalize_payout: {
         Args: { p_raffle_id: string }
@@ -4983,7 +4911,6 @@ export type Database = {
           total_amount: number | null
           transaction_id: string | null
           unit_price: number | null
-          updated_at: string
           user_id: string | null
         }[]
       }

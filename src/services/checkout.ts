@@ -25,8 +25,7 @@ export async function createPixPayment(
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json', 
-      'Authorization': `Bearer ${accessToken}`,
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY!
+      'Authorization': `Bearer ${accessToken}` 
     },
     body: JSON.stringify({ 
       reservation_id, 
@@ -52,11 +51,7 @@ export async function createPixPayment(
 
 export async function getPaymentStatus(edgeUrl: string, paymentId: string) {
   try {
-    const res = await fetch(`${edgeUrl}/functions/v1/payment-status?paymentId=${encodeURIComponent(paymentId)}`, {
-      headers: {
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY!
-      }
-    });
+    const res = await fetch(`${edgeUrl}/functions/v1/payment-status?paymentId=${encodeURIComponent(paymentId)}`);
     
     if (!res.ok) {
       const errorText = await res.text().catch(() => '');
