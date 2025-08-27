@@ -2959,56 +2959,56 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_by_category_public"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_money_view"
             referencedColumns: ["raffle_id"]
           },
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_ext"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_money_ext"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tickets_raffle_fk"
+            foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
