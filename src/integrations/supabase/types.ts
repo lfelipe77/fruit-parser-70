@@ -1746,6 +1746,7 @@ export type Database = {
           total_amount: number | null
           transaction_id: string | null
           unit_price: number | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -1769,6 +1770,7 @@ export type Database = {
           total_amount?: number | null
           transaction_id?: string | null
           unit_price?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -1792,6 +1794,7 @@ export type Database = {
           total_amount?: number | null
           transaction_id?: string | null
           unit_price?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -4980,6 +4983,7 @@ export type Database = {
           total_amount: number | null
           transaction_id: string | null
           unit_price: number | null
+          updated_at: string
           user_id: string | null
         }[]
       }
