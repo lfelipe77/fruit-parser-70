@@ -80,16 +80,18 @@ export default function PagamentoSucesso() {
       // 2) Fallback finalize (idempotent) if status is PAID
       if (statusResponse?.status === "PAID" && detectedReservationId) {
         try {
-          const EDGE_URL = edgeBase();
-          await fetch(`${EDGE_URL}/functions/v1/payment-finalize`, {
-            method: "POST",
-            headers: edgeHeaders(jwt),
-            body: JSON.stringify({ 
-              reservationId: detectedReservationId, 
-              paymentId: statusResponse.paymentId || paymentId 
-            })
+          const { data, error } = await supabase.functions.invoke('payment-finalize', {
+            body: {
+              reservationId: detectedReservationId,
+              paymentId: statusResponse.paymentId || paymentId,
+            },
+            headers: { Authorization: `Bearer ${jwt}` },
           });
-          console.log('[PagamentoSucesso] Fallback finalize called');
+          if (error) {
+            console.warn('[payment-finalize] error', error);
+          } else {
+            console.log('[payment-finalize] OK', data);
+          }
         } catch (finalizeError) {
           console.warn('[PagamentoSucesso] Fallback finalize failed:', finalizeError);
         }
