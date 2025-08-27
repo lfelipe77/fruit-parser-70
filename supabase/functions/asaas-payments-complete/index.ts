@@ -5,19 +5,19 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Compact Brazilian document validation helpers
-function onlyDigits(v?: unknown){ return typeof v === 'string' ? v.replace(/\D+/g,'') : ''; }
-function isValidCPF(raw?: unknown){ const v=onlyDigits(raw); if(v.length!==11||/^(\d)\1{10}$/.test(v))return false;
-  let s=0; for(let i=0;i<9;i++) s+=Number(v[i])*(10-i); let d1=(s*10)%11; if(d1===10)d1=0; if(d1!==Number(v[9])) return false;
-  s=0; for(let i=0;i<10;i++) s+=Number(v[i])*(11-i); let d2=(s*10)%11; if(d2===10)d2=0; return d2===Number(v[10]); }
-function isValidCNPJ(raw?: unknown){ const v=onlyDigits(raw); if(v.length!==14||/^(\d)\1{13}$/.test(v))return false;
-  const calc=(len:number)=>{const w=len===12?[5,4,3,2,9,8,7,6,5,4,3,2]:[6,5,4,3,2,9,8,7,6,5,4,3,2];
-    let s=0; for(let i=0;i<w.length;i++) s+=Number(v[i])*w[i]; const m=s%11; return m<2?0:11-m;};
-  const d1=calc(12); if(d1!==Number(v[12])) return false; const d2=calc(13); return d2===Number(v[13]); }
-type PersonType='FISICA'|'JURIDICA';
-function normalizeCpfCnpjOrNull(raw?: unknown):{digits:string;type:PersonType}|null{
-  const d=onlyDigits(typeof raw==='string' && raw.toLowerCase()!=='null'?raw:null);
-  if(!d) return null; if(isValidCPF(d)) return {digits:d,type:'FISICA'}; if(isValidCNPJ(d)) return {digits:d,type:'JURIDICA'}; return null;
+// === helpers: revert to length-only validation ===
+type PersonType = 'FISICA' | 'JURIDICA';
+
+const onlyDigits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
+
+function getCpfCnpj(profileTaxId?: string | null, formDoc?: string | null) {
+  const raw = onlyDigits(profileTaxId) || onlyDigits(formDoc);
+  if (raw.length === 11) return { cpfCnpj: raw, personType: 'FISICA' as PersonType };
+  if (raw.length === 14) return { cpfCnpj: raw, personType: 'JURIDICA' as PersonType };
+  // keep a clear 400 for the UI
+  const err = new Error('Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil, somente números.');
+  (err as any).status = 400;
+  throw err;
 }
 function sanitizeBRPhone(raw?: unknown): string | null {
   if(raw==null) return null; let d=String(raw).replace(/\D+/g,'');
@@ -164,12 +164,9 @@ export default {
       const { customer_name, customer_phone, customer_cpf } = payload?.customer ?? {};
       let cpfCnpj: string, personType: PersonType;
       try {
-        const doc = normalizeCpfCnpjOrNull(profile.tax_id) || normalizeCpfCnpjOrNull(customer_cpf);
-        if (!doc) throw new Error('No valid document found');
-        cpfCnpj = doc.digits;
-        personType = doc.type;
-      } catch {
-        return json({ ok: false, error: 'Documento inválido' }, { status: 400 }, origin);
+        ({ cpfCnpj, personType } = getCpfCnpj(profile.tax_id, customer_cpf));
+      } catch (e: any) {
+        return json({ ok: false, error: e.message || 'Documento inválido' }, { status: e.status || 400 }, origin);
       }
 
       const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);
