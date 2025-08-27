@@ -14,7 +14,7 @@ import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { normalizeCpfCnpjOrNull } from '@/lib/brdocs';
+import { onlyDigits } from '@/lib/brdocs';
 import { useMyProfile } from '@/hooks/useMyProfile';
 import { edgeBase, edgeHeaders } from "@/helpers/edge";
 
@@ -369,10 +369,10 @@ export default function ConfirmacaoPagamento() {
         .single();
       
       const rawDoc = (profileData as any)?.tax_id ?? null;
-      const docInfo = normalizeCpfCnpjOrNull(
+      const docDigits = onlyDigits(
         typeof rawDoc === 'string' && rawDoc.toLowerCase() !== 'null' ? rawDoc : null
       );
-      if (!docInfo) {
+      if (!(docDigits.length === 11 || docDigits.length === 14)) {
         toast.error("Documento inválido. Atualize seu CPF (11) ou CNPJ (14) no perfil (somente números) para gerar o PIX.");
         throw new Error("Documento inválido");
       }

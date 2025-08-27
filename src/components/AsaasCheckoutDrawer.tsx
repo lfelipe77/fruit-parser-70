@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { QrCode, Copy, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { onlyDigits, normalizeCpfCnpjOrNull } from "@/lib/brdocs";
+import { onlyDigits } from "@/lib/brdocs";
 
 interface AsaasCheckoutDrawerProps {
   isOpen: boolean;
@@ -139,17 +139,7 @@ export function AsaasCheckoutDrawer({
         throw new Error('Documento inválido. Digite 11 (CPF) ou 14 (CNPJ) números.');
       }
 
-      const tax = normalizeCpfCnpjOrNull(digits);
       const mobilePhone = '';
-
-      if (!tax) {
-        toast({
-          title: 'Documento inválido',
-          description: 'CPF ou CNPJ com checksum inválido. Verifique os números.',
-          variant: 'destructive'
-        });
-        throw new Error('Documento inválido. Verifique os números do CPF/CNPJ.');
-      }
 
       // Step 3: Create complete PIX payment with validated CPF/CNPJ
       const total = ticketPrice * quantity;
@@ -158,12 +148,11 @@ export function AsaasCheckoutDrawer({
           reservationId,
           value: total,
           description: `Raffle ${raffleId} — ${quantity} tickets`,
-          customer: {
-            name,
-            email,
-            phone: mobilePhone,
-            cpf: tax.digits
-          }
+            customer: {
+              customer_name: name,
+              customer_phone: mobilePhone,
+              customer_cpf: digits
+            }
         }
       });
 
