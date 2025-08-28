@@ -27,7 +27,7 @@ serve(async (req) => {
       } catch {}
     }
     // Use reservation from params or body
-    const reservationId = reservationIdParam || body?.reservationId || '';
+    let reservationId = reservationIdParam || body?.reservationId || '' as string;
     if (!reservationId && !paymentId) {
       return new Response(JSON.stringify({ error: "Missing paymentId or reservationId" }), { status: 400, headers: corsHeaders });
     }
@@ -144,84 +144,81 @@ serve(async (req) => {
     if (qrId) {
       const ASAAS_BASE = Deno.env.get("ASAAS_BASE") ?? "https://api.asaas.com/v3";
       const headers = new Headers();
-      const apiKey = Deno.env.get('ASAAS_API_KEY');
-      if (apiKey) {
-        headers.set('access_token', apiKey);
-        const sub = Deno.env.get('ASAAS_SUBACCOUNT_ID');
-        if (sub) headers.set('access_token_subaccount', sub);
+      headers.set('access_token', Deno.env.get('ASAAS_API_KEY')!);
+      const sub = Deno.env.get('ASAAS_SUBACCOUNT_ID');
+      if (sub) headers.set('access_token_subaccount', sub);
 
-        // poll Asaas by pixQrCodeId
-        const r = await fetch(`${ASAAS_BASE}/payments?pixQrCodeId=${qrId}`, { headers });
-        if (!r.ok) {
-          if (debug) {
-            const raw = await r.text();
-            return new Response(
-              JSON.stringify({ status: 'PENDING', reservationId, pixQrCodeId: qrId, asaasError: { httpStatus: r.status, body: raw } }),
-              { headers: corsHeaders }
-            );
-          }
-          return new Response(JSON.stringify({ status: 'PENDING', reservationId }), { headers: corsHeaders });
+      // poll Asaas by pixQrCodeId
+      const r = await fetch(`${ASAAS_BASE}/payments?pixQrCodeId=${qrId}`, { headers });
+      if (!r.ok) {
+        if (debug) {
+          const raw = await r.text();
+          return new Response(
+            JSON.stringify({ status: 'PENDING', reservationId, pixQrCodeId: qrId, asaasError: { httpStatus: r.status, body: raw } }),
+            { headers: corsHeaders }
+          );
         }
+        return new Response(JSON.stringify({ status: 'PENDING', reservationId }), { headers: corsHeaders });
+      }
 
-        const j = await r.json();
-        const paid = (j?.data || []).find((p:any) =>
-          (p.status === 'RECEIVED' || p.status === 'CONFIRMED') &&
-          Number(p.value) === Number(pending?.amount ?? body?.amount)
-        );
+      const j = await r.json();
+      const paid = (j?.data || []).find((p:any) =>
+        (p.status === 'RECEIVED' || p.status === 'CONFIRMED') &&
+        Number(p.value) === Number(pending?.amount ?? body?.amount)
+      );
 
-        if (!paid) return new Response(JSON.stringify({ status:'PENDING', reservationId }), { headers: corsHeaders });
+      if (!paid) return new Response(JSON.stringify({ status:'PENDING', reservationId }), { headers: corsHeaders });
 
-        // 1) mark pending as PAID + set asaas_payment_id
-        await admin.from('payments_pending').update({
-          status: 'PAID',
-          asaas_payment_id: paid.id,
-          updated_at: new Date().toISOString()
-        }).eq('reservation_id', reservationId);
+      // 1) mark pending as PAID + set asaas_payment_id
+      await admin.from('payments_pending').update({
+        status: 'PAID',
+        asaas_payment_id: paid.id,
+        updated_at: new Date().toISOString()
+      }).eq('reservation_id', reservationId);
 
-          // Check if transaction already exists to avoid duplicate finalization
-          const { data: hasTx } = await admin
-            .from("transactions")
-            .select("id")
-            .eq("provider_payment_id", paid.id)
+        // Check if transaction already exists to avoid duplicate finalization
+        const { data: hasTx } = await admin
+          .from("transactions")
+          .select("id")
+          .eq("provider_payment_id", paid.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (!hasTx) {
+          // Lookup buyer by reservation and fetch profile CPF server-side
+          const { data: buyer } = await admin
+            .from('tickets')
+            .select('user_id')
+            .eq('reservation_id', reservationId)
             .limit(1)
             .maybeSingle();
 
-          if (!hasTx) {
-            // Lookup buyer by reservation and fetch profile CPF server-side
-            const { data: buyer } = await admin
-              .from('tickets')
-              .select('user_id')
-              .eq('reservation_id', reservationId)
+          let profileCpf: string | null = null;
+          let profileName: string | null = null;
+          let profilePhone: string | null = null;
+          if (buyer?.user_id) {
+            const { data: profile } = await admin
+              .from('user_profiles')
+              .select('tax_id, full_name, phone')
+              .eq('id', buyer.user_id)
               .limit(1)
               .maybeSingle();
-
-            let profileCpf: string | null = null;
-            let profileName: string | null = null;
-            let profilePhone: string | null = null;
-            if (buyer?.user_id) {
-              const { data: profile } = await admin
-                .from('user_profiles')
-                .select('tax_id, full_name, phone')
-                .eq('id', buyer.user_id)
-                .limit(1)
-                .maybeSingle();
-              profileCpf = profile?.tax_id ?? null;
-              profileName = profile?.full_name ?? null;
-              profilePhone = profile?.phone ?? null;
-            }
-            
-            // 2) finalize (idempotent)
-            await admin.rpc('finalize_paid_purchase', {
-              p_reservation_id: reservationId,
-              p_asaas_payment_id: paid.id,
-              p_customer_name: body?.customer_name ?? null,
-              p_customer_phone: body?.customer_phone ?? null,
-              p_customer_cpf: body?.customer_cpf ?? null
-            });
+            profileCpf = profile?.tax_id ?? null;
+            profileName = profile?.full_name ?? null;
+            profilePhone = profile?.phone ?? null;
           }
+          
+          // 2) finalize (idempotent)
+          await admin.rpc('finalize_paid_purchase', {
+            p_reservation_id: reservationId,
+            p_asaas_payment_id: paid.id,
+            p_customer_name: body?.customer_name ?? null,
+            p_customer_phone: body?.customer_phone ?? null,
+            p_customer_cpf: body?.customer_cpf ?? null
+          });
+        }
 
-        return new Response(JSON.stringify({ status:'PAID', reservationId, paymentId: paid.id }), { headers: corsHeaders });
-      }
+      return new Response(JSON.stringify({ status:'PAID', reservationId, paymentId: paid.id }), { headers: corsHeaders });
     }
 
     // --- Default: unknown/pending ---
