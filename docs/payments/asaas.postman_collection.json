@@ -1,0 +1,306 @@
+{
+  "info": {
+    "name": "Ganhavel Asaas PIX Payment Flow",
+    "description": "Complete collection for testing the PIX payment flow with Asaas integration",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "supabase_url",
+      "value": "https://your-project.supabase.co",
+      "description": "Supabase project URL"
+    },
+    {
+      "key": "supabase_anon_key",
+      "value": "your_anon_key_here",
+      "description": "Supabase anonymous key"
+    },
+    {
+      "key": "user_jwt",
+      "value": "your_user_jwt_here",
+      "description": "Authenticated user JWT token"
+    },
+    {
+      "key": "raffle_id",
+      "value": "123e4567-e89b-12d3-a456-426614174000",
+      "description": "Test raffle ID"
+    },
+    {
+      "key": "reservation_id",
+      "value": "",
+      "description": "Reservation ID from reserve_tickets_v2 response"
+    },
+    {
+      "key": "payment_id",
+      "value": "",
+      "description": "Asaas payment ID from payment creation"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Reserve Tickets",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_jwt}}"
+          },
+          {
+            "key": "apikey",
+            "value": "{{supabase_anon_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"p_raffle_id\": \"{{raffle_id}}\",\n  \"p_qty\": 5\n}"
+        },
+        "url": {
+          "raw": "{{supabase_url}}/rest/v1/rpc/reserve_tickets_v2",
+          "host": ["{{supabase_url}}"],
+          "path": ["rest", "v1", "rpc", "reserve_tickets_v2"]
+        },
+        "description": "Reserve tickets for a raffle and get reservation_id"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"p_raffle_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"p_qty\": 5\n}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "[\n  {\n    \"reservation_id\": \"456e7890-e89b-12d3-a456-426614174001\",\n    \"expires_at\": \"2025-08-28T12:00:00Z\",\n    \"unit_price\": 5.00,\n    \"total_amount\": 25.00,\n    \"currency\": \"BRL\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "2. Create PIX Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_jwt}}"
+          },
+          {
+            "key": "apikey",
+            "value": "{{supabase_anon_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reservationId\": \"{{reservation_id}}\",\n  \"value\": 25.00,\n  \"description\": \"Compra de bilhetes\",\n  \"customer\": {\n    \"customer_cpf\": \"52998224725\",\n    \"customer_name\": \"João Silva\",\n    \"customer_phone\": \"11999999999\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{supabase_url}}/functions/v1/asaas-payments-complete?validate=strict",
+          "host": ["{{supabase_url}}"],
+          "path": ["functions", "v1", "asaas-payments-complete"],
+          "query": [
+            {
+              "key": "validate",
+              "value": "strict",
+              "description": "CPF validation mode: strict or loose"
+            }
+          ]
+        },
+        "description": "Create PIX payment on Asaas and get QR code"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationId\": \"456e7890-e89b-12d3-a456-426614174001\",\n  \"value\": 25.00,\n  \"description\": \"Compra de bilhetes\",\n  \"customer\": {\n    \"customer_cpf\": \"52998224725\",\n    \"customer_name\": \"João Silva\",\n    \"customer_phone\": \"11999999999\"\n  }\n}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"ok\": true,\n  \"reservationId\": \"456e7890-e89b-12d3-a456-426614174001\",\n  \"paymentId\": \"pay_asaas123456\",\n  \"qrCode\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\",\n  \"payload\": \"00020126580014br.gov.bcb.pix2536api.sandbox.asaas.com...\",\n  \"expiresAt\": \"2025-08-28T12:00:00Z\",\n  \"value\": 25.00,\n  \"invoiceUrl\": \"https://sandbox.asaas.com/invoice/pay_asaas123456\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. Check Payment Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_jwt}}"
+          },
+          {
+            "key": "apikey",
+            "value": "{{supabase_anon_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{supabase_url}}/functions/v1/payment-status?reservationId={{reservation_id}}",
+          "host": ["{{supabase_url}}"],
+          "path": ["functions", "v1", "payment-status"],
+          "query": [
+            {
+              "key": "reservationId",
+              "value": "{{reservation_id}}"
+            },
+            {
+              "key": "paymentId",
+              "value": "{{payment_id}}",
+              "disabled": true,
+              "description": "Optional: Asaas payment ID"
+            }
+          ]
+        },
+        "description": "Check payment status at Asaas and trigger finalization if paid"
+      },
+      "response": [
+        {
+          "name": "Paid Response",
+          "originalRequest": {
+            "method": "GET"
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"status\": \"PAID\",\n  \"reservationId\": \"456e7890-e89b-12d3-a456-426614174001\",\n  \"paymentId\": \"pay_asaas123456\"\n}"
+        },
+        {
+          "name": "Pending Response",
+          "originalRequest": {
+            "method": "GET"
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"status\": \"PENDING\",\n  \"reservationId\": \"456e7890-e89b-12d3-a456-426614174001\",\n  \"paymentId\": \"pay_asaas123456\",\n  \"asaasStatus\": \"PENDING\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. Get Reservation Audit",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_jwt}}"
+          },
+          {
+            "key": "apikey",
+            "value": "{{supabase_anon_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"p_reservation_id\": \"{{reservation_id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{supabase_url}}/rest/v1/rpc/get_reservation_audit",
+          "host": ["{{supabase_url}}"],
+          "path": ["rest", "v1", "rpc", "get_reservation_audit"]
+        },
+        "description": "Get reservation details and payment status"
+      }
+    },
+    {
+      "name": "5. Get Purchase Summary",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_jwt}}"
+          },
+          {
+            "key": "apikey",
+            "value": "{{supabase_anon_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"p_reservation_id\": \"{{reservation_id}}\"\n}"
+        },
+        "url": {
+          "raw": "{{supabase_url}}/rest/v1/rpc/purchase_summary_by_reservation",
+          "host": ["{{supabase_url}}"],
+          "path": ["rest", "v1", "rpc", "purchase_summary_by_reservation"]
+        },
+        "description": "Get transaction details for finalized purchase"
+      }
+    },
+    {
+      "name": "6. Manual Payment Finalization",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_jwt}}"
+          },
+          {
+            "key": "apikey",
+            "value": "{{supabase_anon_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reservationId\": \"{{reservation_id}}\",\n  \"paymentId\": \"{{payment_id}}\",\n  \"name\": \"João Silva\",\n  \"phone\": \"11999999999\",\n  \"cpf\": \"52998224725\"\n}"
+        },
+        "url": {
+          "raw": "{{supabase_url}}/functions/v1/payment-finalize",
+          "host": ["{{supabase_url}}"],
+          "path": ["functions", "v1", "payment-finalize"]
+        },
+        "description": "Manually finalize a paid purchase (admin function)"
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-extract reservation_id from reserve_tickets response",
+          "if (pm.response.json() && pm.response.json()[0] && pm.response.json()[0].reservation_id) {",
+          "    pm.environment.set('reservation_id', pm.response.json()[0].reservation_id);",
+          "}",
+          "",
+          "// Auto-extract payment_id from payment creation response", 
+          "if (pm.response.json() && pm.response.json().paymentId) {",
+          "    pm.environment.set('payment_id', pm.response.json().paymentId);",
+          "}"
+        ]
+      }
+    }
+  ]
+}
