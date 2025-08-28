@@ -61,7 +61,7 @@ export function AsaasCheckoutDrawer({
     if (step === 'waiting' && polling) {
       interval = setInterval(() => {
         checkPaymentStatus();
-      }, 3000); // Poll every 3 seconds
+      }, 10000); // Poll every 10 seconds
     }
 
     return () => {
@@ -375,7 +375,7 @@ export function AsaasCheckoutDrawer({
             <div>
               <p className="font-medium">Aguardando pagamento...</p>
               <p className="text-sm text-muted-foreground">
-                Verificando automaticamente a cada 3 segundos
+                Verificando automaticamente a cada 10 segundos
               </p>
             </div>
             <Button 
