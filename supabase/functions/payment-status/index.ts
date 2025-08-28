@@ -160,16 +160,37 @@ serve(async (req) => {
             .maybeSingle();
 
           if (!hasTx) {
-            // Service client already initialized above
+            // Lookup buyer by reservation and fetch profile CPF server-side
+            const { data: buyer } = await admin
+              .from('tickets')
+              .select('user_id')
+              .eq('reservation_id', reservationId)
+              .limit(1)
+              .maybeSingle();
+
+            let profileCpf: string | null = null;
+            let profileName: string | null = null;
+            let profilePhone: string | null = null;
+            if (buyer?.user_id) {
+              const { data: profile } = await admin
+                .from('user_profiles')
+                .select('tax_id, full_name, phone')
+                .eq('id', buyer.user_id)
+                .limit(1)
+                .maybeSingle();
+              profileCpf = profile?.tax_id ?? null;
+              profileName = profile?.full_name ?? null;
+              profilePhone = profile?.phone ?? null;
+            }
             
             // Idempotent — RPC returns success even if previously finalized
             try {
               await admin.rpc("finalize_paid_purchase", {
                 p_reservation_id: reservationId,
                 p_asaas_payment_id: paidPayment.id,
-                p_customer_name: null,
-                p_customer_phone: null,
-                p_customer_cpf: null,
+                p_customer_name: profileName,
+                p_customer_phone: profilePhone,
+                p_customer_cpf: profileCpf,
               });
               console.log(`[payment-status] Finalization triggered for reservation ${reservationId}`);
             } catch (finalizeError) {

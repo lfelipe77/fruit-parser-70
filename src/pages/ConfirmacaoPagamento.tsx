@@ -380,11 +380,7 @@ export default function ConfirmacaoPagamento() {
       
       try {
         normalizedCPF = normalizeCPFForAsaas(cpfInput);
-        console.log('[checkout] sending CPF', { 
-          raw: cpfInput, 
-          normalized: normalizedCPF, 
-          validate: pixValidateMode 
-        });
+        // removed: no cpf logs
       } catch (err: any) {
         toast.error(err.message || 'CPF inválido. Corrija o documento.');
         throw new Error("CPF validation failed");
@@ -409,8 +405,7 @@ export default function ConfirmacaoPagamento() {
           description: 'Compra de bilhetes',
           customer: {
             customer_name: formData.fullName || userProfile?.full_name,
-            customer_phone: formData.phone || (userProfile as any)?.phone,
-            customer_cpf: normalizedCPF  // Keep locally only, not sent to Asaas
+            customer_phone: formData.phone || (userProfile as any)?.phone
           }
         }),
       });

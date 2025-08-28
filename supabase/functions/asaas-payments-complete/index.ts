@@ -210,6 +210,10 @@ export default {
       }
 
       const { reservationId, value, description } = payload;
+      // hard drop any cpf coming from client
+      if (payload?.customer) {
+        delete payload.customer.customer_cpf;
+      }
       if (!reservationId || typeof value !== 'number') {
         return json({ error: 'Invalid payload: reservationId (string) and value (number) are required.' }, { status: 400 }, origin);
       }
@@ -347,7 +351,8 @@ export default {
           pix_qr_code_id: pixQrCodeId,
           amount: Number(value),
           status: 'PENDING',
-          expires_at: expiresAtIso
+          expires_at: expiresAtIso,
+          updated_at: new Date().toISOString()
         }, { onConflict: 'reservation_id' })
         .select('reservation_id, pix_qr_code_id, status, expires_at')
         .single();
