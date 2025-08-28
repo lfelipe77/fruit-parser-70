@@ -268,6 +268,8 @@ export default {
       }
 
       const ASAAS_API_KEY = ASAAS_KEY_RAW;
+      const ASAAS_SUBACCOUNT_ID = (Deno.env.get('ASAAS_SUBACCOUNT_ID') ?? '').trim();
+      console.log('[asaas] subaccount', ASAAS_SUBACCOUNT_ID || '(none)');
 
       // small helper to mask keys in logs/responses
       const mask = (s: string) => s.length <= 8 ? '***' : (s.slice(0,4) + '...' + s.slice(-4));
@@ -283,7 +285,9 @@ export default {
       const headers = new Headers();
       headers.set('access_token', ASAAS_API_KEY);
       headers.set('Content-Type','application/json');
-
+      if (ASAAS_SUBACCOUNT_ID) {
+        headers.set('access_token_subaccount', ASAAS_SUBACCOUNT_ID);
+      }
       // Helper: text-first fetch with robust error context
       async function asaasCall(path: string, init: RequestInit = {}) {
         const h = new Headers(headers);
