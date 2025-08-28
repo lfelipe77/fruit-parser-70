@@ -209,7 +209,7 @@ export default {
         return json({ error: 'Invalid JSON', rawBody }, { status: 400 }, origin);
       }
 
-      const { reservationId, value, description } = payload;
+      const { reservationId, value } = payload;
       // hard drop any cpf coming from client
       if (payload?.customer) {
         delete payload.customer.customer_cpf;
