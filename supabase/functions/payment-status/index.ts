@@ -17,6 +17,7 @@ serve(async (req) => {
     const url = new URL(req.url);
     const paymentId = url.searchParams.get("paymentId") ?? undefined;
     const reservationIdParam = url.searchParams.get("reservationId") ?? undefined;
+    const debug = url.searchParams.get("debug") === "1";
 
     // Accept POST body for fallback data
     let body: any = null;
@@ -25,7 +26,6 @@ serve(async (req) => {
         body = await req.json(); 
       } catch {}
     }
-
     // Use reservation from params or body
     const reservationId = reservationIdParam || body?.reservationId || '';
     if (!reservationId && !paymentId) {
@@ -142,14 +142,27 @@ serve(async (req) => {
 
     // --- Live check at Asaas using qrId ---
     if (qrId) {
-      const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY") || "";
       const ASAAS_BASE = Deno.env.get("ASAAS_BASE") ?? "https://api.asaas.com/v3";
-      if (ASAAS_API_KEY) {
-        const headers = new Headers();
-        headers.set("access_token", ASAAS_API_KEY);
+      const headers = new Headers();
+      const apiKey = Deno.env.get('ASAAS_API_KEY');
+      if (apiKey) {
+        headers.set('access_token', apiKey);
+        const sub = Deno.env.get('ASAAS_SUBACCOUNT_ID');
+        if (sub) headers.set('access_token_subaccount', sub);
 
         // poll Asaas by pixQrCodeId
         const r = await fetch(`${ASAAS_BASE}/payments?pixQrCodeId=${qrId}`, { headers });
+        if (!r.ok) {
+          if (debug) {
+            const raw = await r.text();
+            return new Response(
+              JSON.stringify({ status: 'PENDING', reservationId, pixQrCodeId: qrId, asaasError: { httpStatus: r.status, body: raw } }),
+              { headers: corsHeaders }
+            );
+          }
+          return new Response(JSON.stringify({ status: 'PENDING', reservationId }), { headers: corsHeaders });
+        }
+
         const j = await r.json();
         const paid = (j?.data || []).find((p:any) =>
           (p.status === 'RECEIVED' || p.status === 'CONFIRMED') &&
