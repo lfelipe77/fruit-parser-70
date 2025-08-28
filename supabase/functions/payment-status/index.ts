@@ -99,7 +99,7 @@ serve(async (req) => {
     if (!pending) {
       const { data: pp } = await admin
         .from("payments_pending")
-        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .select("reservation_id, asaas_payment_id, pix_qr_code_id, status, expires_at, amount")
         .eq("reservation_id", reservationId)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -130,25 +130,32 @@ serve(async (req) => {
       );
     }
 
-    // --- Live check at Asaas if we have a payment id ---
-    if (pending?.asaas_payment_id) {
+    // --- Live check at Asaas using pixQrCodeId ---
+    if (pending?.pix_qr_code_id) {
       const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY") || "";
       const ASAAS_BASE = Deno.env.get("ASAAS_BASE") ?? "https://api.asaas.com/v3";
       if (ASAAS_API_KEY) {
         const h = new Headers();
         h.set("access_token", ASAAS_API_KEY);
 
-        const resp = await fetch(`${ASAAS_BASE}/payments/${pending.asaas_payment_id}`, { headers: h });
+        // New strategy: look up payments by pixQrCodeId
+        const resp = await fetch(`${ASAAS_BASE}/payments?pixQrCodeId=${pending.pix_qr_code_id}`, { headers: h });
         const txt = await resp.text();
         let j: any = null; try { j = txt ? JSON.parse(txt) : null; } catch {}
-        const paid = resp.ok && j && (j.status === "RECEIVED" || j.status === "CONFIRMED");
+        
+        // Find a paid payment with matching value
+        const payments = j?.data || [];
+        const paidPayment = payments.find((p: any) => 
+          (p.status === "RECEIVED" || p.status === "CONFIRMED") && 
+          Number(p.value) === Number(pending.amount)
+        );
 
-        if (paid) {
+        if (paidPayment) {
           // Check if transaction already exists to avoid duplicate finalization
           const { data: hasTx } = await admin
             .from("transactions")
             .select("id")
-            .eq("provider_payment_id", pending.asaas_payment_id)
+            .eq("provider_payment_id", paidPayment.id)
             .limit(1)
             .maybeSingle();
 
@@ -159,7 +166,7 @@ serve(async (req) => {
             try {
               await admin.rpc("finalize_paid_purchase", {
                 p_reservation_id: reservationId,
-                p_asaas_payment_id: pending.asaas_payment_id,
+                p_asaas_payment_id: paidPayment.id,
                 p_customer_name: null,
                 p_customer_phone: null,
                 p_customer_cpf: null,
@@ -172,7 +179,7 @@ serve(async (req) => {
           }
 
           return new Response(
-            JSON.stringify({ status: "PAID", reservationId, paymentId: pending.asaas_payment_id }),
+            JSON.stringify({ status: "PAID", reservationId, paymentId: paidPayment.id }),
             { status: 200, headers: corsHeaders },
           );
         }
@@ -181,8 +188,8 @@ serve(async (req) => {
           JSON.stringify({
             status: "PENDING",
             reservationId,
-            paymentId: pending.asaas_payment_id,
-            asaasStatus: j?.status ?? "UNKNOWN",
+            paymentId: null,
+            asaasStatus: "PENDING",
           }),
           { status: 200, headers: corsHeaders },
         );
@@ -191,7 +198,7 @@ serve(async (req) => {
 
     // --- Default: unknown/pending ---
     return new Response(
-      JSON.stringify({ status: "UNKNOWN", reservationId, paymentId: pending?.asaas_payment_id ?? null }),
+      JSON.stringify({ status: "UNKNOWN", reservationId, paymentId: pending?.asaas_payment_id ?? pending?.pix_qr_code_id ?? null }),
       { status: 200, headers: corsHeaders },
     );
   } catch (e) {

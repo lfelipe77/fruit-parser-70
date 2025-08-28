@@ -408,9 +408,9 @@ export default function ConfirmacaoPagamento() {
           value: Number(value), 
           description: 'Compra de bilhetes',
           customer: {
-            customer_cpf: normalizedCPF,
             customer_name: formData.fullName || userProfile?.full_name,
-            customer_phone: formData.phone || (userProfile as any)?.phone
+            customer_phone: formData.phone || (userProfile as any)?.phone,
+            customer_cpf: normalizedCPF  // Keep locally only, not sent to Asaas
           }
         }),
       });
