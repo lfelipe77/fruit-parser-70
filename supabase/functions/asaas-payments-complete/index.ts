@@ -304,7 +304,13 @@ export default {
         expirationSeconds: 900         // 15 min to match our reservation window
       };
 
-      console.log('[asaas] static QR payload', staticQrBody);
+    // Log redacted payload (don't log the PIX address key)
+    console.log('[asaas] static QR payload', {
+      description: staticQrBody.description,
+      value: staticQrBody.value,
+      format: staticQrBody.format,
+      expirationSeconds: staticQrBody.expirationSeconds,
+    });
       const staticQr = await asaasCall('/pix/qrCodes/static', { method:'POST', body: JSON.stringify(staticQrBody) });
       if (!staticQr.resp.ok) {
         const msg = staticQr.parsed?.errors?.[0]?.description
