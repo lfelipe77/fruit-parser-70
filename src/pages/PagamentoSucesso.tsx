@@ -231,7 +231,7 @@ export default function PagamentoSucesso() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rifa:</span>
+                  <span className="text-muted-foreground">Ganhavel:</span>
                   <span className="font-medium">{paymentDetails.raffleTitle}</span>
                 </div>
                 
@@ -243,7 +243,7 @@ export default function PagamentoSucesso() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor pago:</span>
                   <span className="font-medium text-green-600">
-                    R$ {paymentDetails.amount.toFixed(2).replace('.', ',')}
+                    R$ {(paymentDetails.amount / 100).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
                 
