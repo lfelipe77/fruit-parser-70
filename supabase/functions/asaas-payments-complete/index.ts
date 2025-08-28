@@ -343,8 +343,8 @@ export default {
       const pixPayload = payloadCode;
       const expiresAtIso = new Date(Date.now() + 15*60*1000).toISOString(); // 15 minutes from now
 
-      // Idempotent upsert into payments_pending (service role)
-      const { data: pendingRow, error: pendingErr } = await admin
+      // Idempotent upsert into payments_pending (service role) - no asaas_payment_id on create
+      const { error: pendingErr } = await admin
         .from('payments_pending')
         .upsert({
           reservation_id: reservationId,
@@ -353,9 +353,7 @@ export default {
           status: 'PENDING',
           expires_at: expiresAtIso,
           updated_at: new Date().toISOString()
-        }, { onConflict: 'reservation_id' })
-        .select('reservation_id, pix_qr_code_id, status, expires_at')
-        .single();
+        }, { onConflict: 'reservation_id' });
 
       if (pendingErr) {
         // Still return QR so user can pay
@@ -371,10 +369,11 @@ export default {
         }, { status: 200 }, origin);
       }
 
-      // Success response
+      // Success response - include pixQrCodeId for polling fallback
       return json({
         ok: true,
         reservationId,
+        pixQrCodeId: pixQrCodeId,
         qrCode: qrCodeImage,
         payload: pixPayload,
         expiresAt: expiresAtIso,

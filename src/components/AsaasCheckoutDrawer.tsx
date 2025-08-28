@@ -164,8 +164,9 @@ export function AsaasCheckoutDrawer({
       }
 
       console.log('[Checkout] PIX payment created successfully');
-      setPaymentId(response.paymentId || response.payment_id);
-      setLocalPaymentId(response.paymentId || response.payment_id);
+      const resId = response.reservationId || response.paymentId || response.payment_id;
+      setPaymentId(resId);
+      setLocalPaymentId(resId);
       
       setPixData({
         encodedImage: response.qrCode || response.qr?.encodedImage,
@@ -195,25 +196,31 @@ export function AsaasCheckoutDrawer({
     if (!localPaymentId) return;
 
     try {
-      const response = await supabase.functions.invoke('payment-status', {
-        body: null
-      });
-
-      // Since invoke doesn't support path params, we'll call directly  
-      const statusResponse = await fetch(`/functions/v1/payment-status?paymentId=${localPaymentId}`, {
+      // Use payment-status with POST + fallback pixQrCodeId
+      const { data: session } = await supabase.auth.getSession();
+      const statusResponse = await fetch(`https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/payment-status`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.access_token}`
+        },
+        body: JSON.stringify({
+          reservationId: localPaymentId, // Using localPaymentId as reservationId fallback
+          pixQrCodeId: localPaymentId,   // fallback field
+          customer_name: null,
+          customer_phone: null,
+          customer_cpf: null
+        })
       });
 
       if (statusResponse.ok) {
-        const status: PaymentStatus = await statusResponse.json();
+        const status = await statusResponse.json();
         console.log('[Checkout] Payment status:', status.status);
 
-        if (status.status === 'received' || status.status === 'confirmed') {
+        if (status.status === 'PAID') {
           setPolling(false);
-          onSuccess(localPaymentId);
-        } else if (status.status === 'overdue' || status.status === 'refunded') {
+          onSuccess(status.paymentId || localPaymentId);
+        } else if (status.status === 'OVERDUE' || status.status === 'REFUNDED') {
           setPolling(false);
           // Redirect to declined page
           window.location.href = `/pagamento/recusado/${localPaymentId}`;
