@@ -42,6 +42,7 @@ export function AsaasCheckoutDrawer({
   const [localPaymentId, setLocalPaymentId] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [polling, setPolling] = useState(false);
+  const [pixQrId, setPixQrId] = useState<string>('');
 
   const useAsaas = process.env.NODE_ENV === 'production' ? 
     localStorage.getItem('USE_ASAAS') === 'true' : true;
@@ -167,6 +168,7 @@ export function AsaasCheckoutDrawer({
       const resId = response.reservationId || response.paymentId || response.payment_id;
       setPaymentId(resId);
       setLocalPaymentId(resId);
+      setPixQrId(response.pixQrCodeId || '');
       
       setPixData({
         encodedImage: response.qrCode || response.qr?.encodedImage,
@@ -205,8 +207,8 @@ export function AsaasCheckoutDrawer({
           'Authorization': `Bearer ${session?.session?.access_token}`
         },
         body: JSON.stringify({
-          reservationId: localPaymentId, // Using localPaymentId as reservationId fallback
-          pixQrCodeId: localPaymentId,   // fallback field
+          reservationId: localPaymentId,
+          pixQrCodeId: pixQrId || undefined,
           customer_name: null,
           customer_phone: null,
           customer_cpf: null
