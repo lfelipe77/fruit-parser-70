@@ -304,15 +304,15 @@ export default {
       const addressKey = (Deno.env.get('ASAAS_PIX_ADDRESS_KEY') ?? '+5521985588220').trim();
 
       // Description must be <= 37 chars per Asaas spec
-      const shortId = String(reservationId).split('-')[0].slice(0, 12);
-      const qrDescription = `Ganhavel rsv ${shortId}`.slice(0, 37);
+      const short = reservationId.split('-')[0]; // e.g. "dba4b774"
+      const description = `Ganhavel rsv ${short}`; // matches what you're seeing in payload
 
       const staticQrBody = {
-        addressKey,
-        description: qrDescription,
+        addressKey,   // can be your phone key +5521985588220
+        description,
         value: Number(value),
-        format: 'ALL',                 // we need both 'payload' and base64 image
-        expirationSeconds: 900         // 15 min to match our reservation window
+        format: "ALL",
+        expirationSeconds: 900
       };
 
     // Log redacted payload (don't log the PIX address key)
@@ -343,30 +343,24 @@ export default {
       const pixPayload = payloadCode;
       const expiresAtIso = new Date(Date.now() + 15*60*1000).toISOString(); // 15 minutes from now
 
-      // Idempotent upsert into payments_pending (service role) - no asaas_payment_id on create
+      // IMPORTANT: never set asaas_payment_id here
+      const pending = {
+        reservation_id: reservationId,
+        pix_qr_code_id: pixQrCodeId,
+        amount: Number(value),
+        status: 'PENDING',
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { error: pendingErr } = await admin
         .from('payments_pending')
-        .upsert({
-          reservation_id: reservationId,
-          pix_qr_code_id: pixQrCodeId,
-          amount: Number(value),
-          status: 'PENDING',
-          expires_at: expiresAtIso,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'reservation_id' });
+        .upsert(pending, { onConflict: 'reservation_id' });
 
       if (pendingErr) {
-        // Still return QR so user can pay
-        return json({
-          ok: true,
-          warning: 'Failed to insert payments_pending',
-          pendingError: pendingErr,
-          reservationId,
-          qrCode: qrCodeImage,
-          payload: pixPayload,
-          expiresAt: expiresAtIso,
-          value
-        }, { status: 200 }, origin);
+        console.warn('[static-pix] upsert payments_pending failed', pendingErr);
+        // still return QR so the user can pay, but surface a warning to the UI
+        return json({ ok: true, warning: 'Failed to insert payments_pending', pendingError: pendingErr, reservationId, pixQrCodeId, qrCode: qrCodeImage, payload: pixPayload, expiresAt: expiresAtIso, value }, { status: 200 }, origin);
       }
 
       // Success response - include pixQrCodeId for polling fallback
