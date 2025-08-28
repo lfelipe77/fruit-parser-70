@@ -296,9 +296,16 @@ export default {
       }
 
       // Create static PIX QR Code (no customer creation, no CPF sent to Asaas)
+      // Use phone-based Pix key by default; override with ASAAS_PIX_ADDRESS_KEY if set
+      const addressKey = (Deno.env.get('ASAAS_PIX_ADDRESS_KEY') ?? '+5521985588220').trim();
+
+      // Description must be <= 37 chars per Asaas spec
+      const shortId = String(reservationId).split('-')[0].slice(0, 12);
+      const qrDescription = `Ganhavel rsv ${shortId}`.slice(0, 37);
+
       const staticQrBody = {
-        addressKey: (Deno.env.get('ASAAS_PIX_ADDRESS_KEY') ?? '2b91c0ae-9ccf-4397-9aac-d68bbaa069f2'),
-        description: `Ganhavel PIX • reserva ${reservationId}`,
+        addressKey,
+        description: qrDescription,
         value: Number(value),
         format: 'ALL',                 // we need both 'payload' and base64 image
         expirationSeconds: 900         // 15 min to match our reservation window
