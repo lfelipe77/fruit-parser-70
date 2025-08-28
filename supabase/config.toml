@@ -42,7 +42,7 @@ verify_jwt = false
 [functions.asaas-pix-qr]
 verify_jwt = false
 
-[functions.payment-status]
+[functions."payment-status"]
 verify_jwt = false
 
 [functions.asaas-reconcile]
