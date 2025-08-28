@@ -50,13 +50,7 @@ function resolveCpfCnpj(opts: {
   const len = chosen.length;
   const personType = len === 14 ? 'JURIDICA' : 'FISICA'; // fallback FISICA
 
-  console.log('[asaas] cpfCnpj.check', { 
-    fromForm, 
-    fromProfile, 
-    chosen, 
-    len, 
-    validateMode: opts.validateMode 
-  });
+  // [asaas] PII log removed
 
   if (opts.validateMode === 'strict') {
     if (len === 11) {
@@ -221,7 +215,7 @@ export default {
 
       // 3) Fetch profile and validate CPF/CNPJ
       const { data: profile, error: profErr } = await sb
-        .from('user_profiles').select('id,full_name,tax_id').eq('id', user.id).maybeSingle();
+        .from('user_profiles').select('id,full_name,tax_id,phone').eq('id', user.id).maybeSingle();
       if (profErr) {
         console.warn('[asaas] profile fetch error (continuing with form data):', profErr);
       }
@@ -229,16 +223,14 @@ export default {
 
       // Resolve and validate document with new flexible approach
       const { customer_name, customer_phone, customer_cpf } = payload?.customer ?? {};
-      let cpfCnpj: string, len: number, personType: PersonType;
+      let cpfCnpj: string;
       try {
         const r = resolveCpfCnpj({
           profileTaxId: profile?.tax_id,
           formDoc: customer_cpf,
           validateMode: validateParam,
         });
-        cpfCnpj = r.cpfCnpj; 
-        len = r.len; 
-        personType = r.personType as PersonType;
+        cpfCnpj = r.cpfCnpj;
       } catch (e: any) {
         return json({ 
           ok: false, 
@@ -248,7 +240,8 @@ export default {
         }, { status: e.status || 400 }, origin);
       }
 
-      const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);
+      const localPhone = sanitizeBRPhone(customer_phone ?? (profile as any)?.phone ?? null);
+      const phoneE164 = localPhone ? `+55${localPhone}` : '+5521985588220';
 
       // 4) Prepare Asaas requests and create payment
       const ASAAS_KEY_RAW = (Deno.env.get('ASAAS_API_KEY') ?? '').trim();
@@ -295,46 +288,15 @@ export default {
         return { resp, text, parsed };
       }
 
-      // Prepare customer payload with validated document
-      const customerPayload: any = {
-        name: profile?.full_name || customer_name || 'Cliente',
-        cpfCnpj: cpfCnpj || undefined,     // allow empty in loose mode; Asaas will respond
-        personType,
-        email: user.email,
-        ...(mobilePhone ? { mobilePhone } : {}),
-        externalReference: user.id,
-      };
-
-      console.log('[asaas] customer payload (preview)', { ...customerPayload, cpfCnpj_len: len });
-      const cust = await asaasCall('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
-      if (!cust.resp.ok) {
-        const msg = cust.parsed?.errors?.[0]?.description
-                || cust.parsed?.message
-                || cust.text
-                || 'Falha ao criar cliente';
-        console.warn('[asaas] customer creation error', cust.parsed ?? cust.text);
-        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
-      }
-      const customerId = (cust.parsed as any)?.id || (cust.parsed as any)?.data?.[0]?.id;
-      if (!customerId) {
-        return json({ error: 'Missing Asaas customer id', body: cust.text, debug }, { status: 502 }, origin);
-      }
-
-      const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://ganhavel.com';
-      const successUrl = `${APP_BASE_URL}/?pix=success&reservationId=${encodeURIComponent(reservationId)}`;
+      // Skipping Asaas customer creation: no customer PII sent per policy
 
       const payBody = {
-        customer: customerId,
+        billingType: 'PIX',
         value,
         description: description ?? 'Compra de bilhetes',
-        billingType: 'PIX',
         dueDate: dueDateSP(),
         externalReference: reservationId,
-        postalService: false,
-        callback: {
-          successUrl,
-          autoRedirect: true
-        }
+        pixKey: phoneE164
       };
       const pay = await asaasCall('/payments', { method:'POST', body: JSON.stringify(payBody) });
       if (!pay.resp.ok) {
