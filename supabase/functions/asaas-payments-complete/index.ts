@@ -79,6 +79,18 @@ function sanitizeBRPhone(raw?: unknown): string | null {
   if(d.startsWith('55') && (d.length===12||d.length===13)) d=d.slice(2);
   return (d.length===10||d.length===11)? d : null;
 }
+function normalizePhoneToE164(input: string): string {
+  const fallback = '+5521985588220';
+  if (!input) return fallback;
+  let d = String(input).replace(/\D+/g, '');
+  if (d.startsWith('55') && (d.length === 12 || d.length === 13)) {
+    return `+${d}`;
+  }
+  if (!d.startsWith('55') && d.length === 11) {
+    return `+55${d}`;
+  }
+  return fallback;
+}
 function dueDateSP(): string {
   const p=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
   const y=p.find(x=>x.type==='year')!.value, m=p.find(x=>x.type==='month')!.value, d=p.find(x=>x.type==='day')!.value;
@@ -240,8 +252,7 @@ export default {
         }, { status: e.status || 400 }, origin);
       }
 
-      const localPhone = sanitizeBRPhone(customer_phone ?? (profile as any)?.phone ?? null);
-      const phoneE164 = localPhone ? `+55${localPhone}` : '+5521985588220';
+      const phoneE164 = normalizePhoneToE164(String(customer_phone ?? (profile as any)?.phone ?? ''));
 
       // 4) Prepare Asaas requests and create payment
       const ASAAS_KEY_RAW = (Deno.env.get('ASAAS_API_KEY') ?? '').trim();
