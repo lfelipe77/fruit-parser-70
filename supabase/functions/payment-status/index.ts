@@ -151,6 +151,16 @@ serve(async (req) => {
         );
 
         if (paidPayment) {
+          // Update pending with real Asaas payment id and mark as PAID
+          await admin
+            .from("payments_pending")
+            .update({
+              asaas_payment_id: paidPayment.id,
+              status: "PAID",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("reservation_id", reservationId);
+
           // Check if transaction already exists to avoid duplicate finalization
           const { data: hasTx } = await admin
             .from("transactions")
