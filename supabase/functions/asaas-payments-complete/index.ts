@@ -209,11 +209,7 @@ export default {
         return json({ error: 'Invalid JSON', rawBody }, { status: 400 }, origin);
       }
 
-      const { reservationId, value } = payload;
-      // hard drop any cpf coming from client
-      if (payload?.customer) {
-        delete payload.customer.customer_cpf;
-      }
+      const { reservationId, value, description } = payload;
       if (!reservationId || typeof value !== 'number') {
         return json({ error: 'Invalid payload: reservationId (string) and value (number) are required.' }, { status: 400 }, origin);
       }
@@ -299,79 +295,129 @@ export default {
         return { resp, text, parsed };
       }
 
-      // Create static PIX QR Code (no customer creation, no CPF sent to Asaas)
-      // Use phone-based Pix key by default; override with ASAAS_PIX_ADDRESS_KEY if set
-      const addressKey = (Deno.env.get('ASAAS_PIX_ADDRESS_KEY') ?? '+5521985588220').trim();
-
-      // Description must be <= 37 chars per Asaas spec
-      const short = reservationId.split('-')[0]; // e.g. "dba4b774"
-      const description = `Ganhavel rsv ${short}`; // matches what you're seeing in payload
-
-      const staticQrBody = {
-        addressKey,   // can be your phone key +5521985588220
-        description,
-        value: Number(value),
-        format: "ALL",
-        expirationSeconds: 900
+      // Prepare customer payload with validated document
+      const customerPayload: any = {
+        name: profile?.full_name || customer_name || 'Cliente',
+        cpfCnpj: cpfCnpj || undefined,     // allow empty in loose mode; Asaas will respond
+        personType,
+        email: user.email,
+        ...(mobilePhone ? { mobilePhone } : {}),
+        externalReference: user.id,
       };
 
-    // Log redacted payload (don't log the PIX address key)
-    console.log('[asaas] static QR payload', {
-      description: staticQrBody.description,
-      value: staticQrBody.value,
-      format: staticQrBody.format,
-      expirationSeconds: staticQrBody.expirationSeconds,
-    });
-      const staticQr = await asaasCall('/pix/qrCodes/static', { method:'POST', body: JSON.stringify(staticQrBody) });
-      if (!staticQr.resp.ok) {
-        const msg = staticQr.parsed?.errors?.[0]?.description
-                || staticQr.parsed?.message
-                || staticQr.text
-                || 'Falha ao criar QR Code PIX estático';
-        console.warn('[asaas] static QR creation error', staticQr.parsed ?? staticQr.text);
+      console.log('[asaas] customer payload (preview)', { ...customerPayload, cpfCnpj_len: len });
+      const cust = await asaasCall('/customers', { method:'POST', body: JSON.stringify(customerPayload) });
+      if (!cust.resp.ok) {
+        const msg = cust.parsed?.errors?.[0]?.description
+                || cust.parsed?.message
+                || cust.text
+                || 'Falha ao criar cliente';
+        console.warn('[asaas] customer creation error', cust.parsed ?? cust.text);
         return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
       }
-      
-      const qrRaw: any = staticQr.parsed || {};
+      const customerId = (cust.parsed as any)?.id || (cust.parsed as any)?.data?.[0]?.id;
+      if (!customerId) {
+        return json({ error: 'Missing Asaas customer id', body: cust.text, debug }, { status: 502 }, origin);
+      }
+
+      const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://ganhavel.com';
+      const successUrl = `${APP_BASE_URL}/?pix=success&reservationId=${encodeURIComponent(reservationId)}`;
+
+      const payBody = {
+        customer: customerId,
+        value,
+        description: description ?? 'Compra de bilhetes',
+        billingType: 'PIX',
+        dueDate: dueDateSP(),
+        externalReference: reservationId,
+        postalService: false,
+        callback: {
+          successUrl,
+          autoRedirect: true
+        }
+      };
+      const pay = await asaasCall('/payments', { method:'POST', body: JSON.stringify(payBody) });
+      if (!pay.resp.ok) {
+        const msg = pay.parsed?.errors?.[0]?.description
+                || pay.parsed?.message
+                || pay.text
+                || 'Falha ao criar cobrança';
+        console.warn('[asaas] payment creation error', pay.parsed ?? pay.text);
+        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
+      }
+      const payment_id = (pay.parsed as any)?.id;
+      if (!payment_id) {
+        return json({ error: 'Missing payment id', body: pay.text, debug }, { status: 502 }, origin);
+      }
+      const invoiceUrl = (pay.parsed as any)?.invoiceUrl ?? null;
+
+      const qr = await asaasCall(`/payments/${payment_id}/pixQrCode`, { method:'GET' });
+      if (!qr.resp.ok) {
+        const msg = qr.parsed?.errors?.[0]?.description
+                || qr.parsed?.message
+                || qr.text
+                || 'Falha ao gerar QR Code';
+        console.warn('[asaas] QR code generation error', qr.parsed ?? qr.text);
+        return json({ ok: false, error: msg, _where: 'asaas' }, { status: 400 }, origin);
+      }
+      const qrRaw: any = qr.parsed || {};
       const base64 = qrRaw?.encodedImage ?? qrRaw?.image ?? '';
       const encodedImage = base64 && String(base64).startsWith('data:') ? base64 : (base64 ? `data:image/png;base64,${base64}` : '');
       const payloadCode = qrRaw?.payload ?? qrRaw?.payloadCode ?? qrRaw?.qrCodeText ?? null;
-      const pixQrCodeId = qrRaw?.id ?? null;
 
       // Capture IDs and PIX fields
+      const asaasPaymentId = payment_id;
       const qrCodeImage = encodedImage;
       const pixPayload = payloadCode;
-      const expiresAtIso = new Date(Date.now() + 15*60*1000).toISOString(); // 15 minutes from now
+      const expiresAtIso = qrRaw?.expiresAt ?? qrRaw?.expirationDate ?? null;
 
-      // IMPORTANT: never set asaas_payment_id here
-      const pending = {
-        reservation_id: reservationId,
-        pix_qr_code_id: pixQrCodeId,
-        amount: Number(value),
-        status: 'PENDING',
-        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { error: pendingErr } = await admin
+      // Idempotent upsert into payments_pending (service role)
+      const { data: pendingRow, error: pendingErr } = await admin
         .from('payments_pending')
-        .upsert(pending, { onConflict: 'reservation_id' });
+        .upsert({
+          reservation_id: reservationId,
+          asaas_payment_id: asaasPaymentId,
+          amount: Number(value),
+          status: 'PENDING',
+          expires_at: expiresAtIso ?? new Date(Date.now() + 30*60*1000).toISOString()
+        }, { onConflict: 'reservation_id' })
+        .select('reservation_id, asaas_payment_id, status, expires_at')
+        .single();
 
       if (pendingErr) {
-        console.warn('[static-pix] upsert payments_pending failed', pendingErr);
-        // still return QR so the user can pay, but surface a warning to the UI
-        return json({ ok: true, warning: 'Failed to insert payments_pending', pendingError: pendingErr, reservationId, pixQrCodeId, qrCode: qrCodeImage, payload: pixPayload, expiresAt: expiresAtIso, value }, { status: 200 }, origin);
+        // Still return QR so user can pay
+        return json({
+          ok: true,
+          warning: 'Failed to insert payments_pending',
+          pendingError: pendingErr,
+          reservationId,
+          paymentId: asaasPaymentId,
+          qrCode: qrCodeImage,
+          payload: pixPayload,
+          expiresAt: expiresAtIso ?? null,
+          // keep backward-compat fields
+          payment_id,
+          qr: { encodedImage: qrCodeImage, payload: pixPayload, expiresAt: expiresAtIso ?? null },
+          value,
+          debug,
+          invoiceUrl
+        }, { status: 200 }, origin);
       }
 
-      // Success response - include pixQrCodeId for polling fallback
+      // Success response
       return json({
         ok: true,
         reservationId,
-        pixQrCodeId: pixQrCodeId,
+        paymentId: asaasPaymentId,
         qrCode: qrCodeImage,
         payload: pixPayload,
-        expiresAt: expiresAtIso,
-        value
+        expiresAt: expiresAtIso ?? null,
+        // keep backward-compat fields
+        payment_id,
+        qr: { encodedImage: qrCodeImage, payload: pixPayload, expiresAt: expiresAtIso ?? null },
+        value,
+        debug,
+        invoiceUrl
       }, { status: 200 }, origin);
     } catch (err) {
       console.error('[asaas-payments-complete] error', err);

@@ -42,7 +42,6 @@ export function AsaasCheckoutDrawer({
   const [localPaymentId, setLocalPaymentId] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [polling, setPolling] = useState(false);
-  const [pixQrId, setPixQrId] = useState<string>('');
 
   const useAsaas = process.env.NODE_ENV === 'production' ? 
     localStorage.getItem('USE_ASAAS') === 'true' : true;
@@ -61,7 +60,7 @@ export function AsaasCheckoutDrawer({
     if (step === 'waiting' && polling) {
       interval = setInterval(() => {
         checkPaymentStatus();
-      }, 10000); // Poll every 10 seconds
+      }, 3000); // Poll every 3 seconds
     }
 
     return () => {
@@ -165,10 +164,8 @@ export function AsaasCheckoutDrawer({
       }
 
       console.log('[Checkout] PIX payment created successfully');
-      const resId = response.reservationId || response.paymentId || response.payment_id;
-      setPaymentId(resId);
-      setLocalPaymentId(resId);
-      setPixQrId(response.pixQrCodeId || '');
+      setPaymentId(response.paymentId || response.payment_id);
+      setLocalPaymentId(response.paymentId || response.payment_id);
       
       setPixData({
         encodedImage: response.qrCode || response.qr?.encodedImage,
@@ -198,31 +195,25 @@ export function AsaasCheckoutDrawer({
     if (!localPaymentId) return;
 
     try {
-      // Use payment-status with POST + fallback pixQrCodeId
-      const { data: session } = await supabase.auth.getSession();
-      const statusResponse = await fetch(`https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/payment-status`, {
-        method: 'POST',
+      const response = await supabase.functions.invoke('payment-status', {
+        body: null
+      });
+
+      // Since invoke doesn't support path params, we'll call directly  
+      const statusResponse = await fetch(`/functions/v1/payment-status?paymentId=${localPaymentId}`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.session?.access_token}`
-        },
-        body: JSON.stringify({
-          reservationId: localPaymentId,
-          pixQrCodeId: pixQrId || undefined,
-          customer_name: null,
-          customer_phone: null,
-          customer_cpf: null
-        })
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
       });
 
       if (statusResponse.ok) {
-        const status = await statusResponse.json();
+        const status: PaymentStatus = await statusResponse.json();
         console.log('[Checkout] Payment status:', status.status);
 
-        if (status.status === 'PAID') {
+        if (status.status === 'received' || status.status === 'confirmed') {
           setPolling(false);
-          onSuccess(status.paymentId || localPaymentId);
-        } else if (status.status === 'OVERDUE' || status.status === 'REFUNDED') {
+          onSuccess(localPaymentId);
+        } else if (status.status === 'overdue' || status.status === 'refunded') {
           setPolling(false);
           // Redirect to declined page
           window.location.href = `/pagamento/recusado/${localPaymentId}`;
@@ -375,7 +366,7 @@ export function AsaasCheckoutDrawer({
             <div>
               <p className="font-medium">Aguardando pagamento...</p>
               <p className="text-sm text-muted-foreground">
-                Verificando automaticamente a cada 10 segundos
+                Verificando automaticamente a cada 3 segundos
               </p>
             </div>
             <Button 

@@ -675,7 +675,6 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          pix_qr_code_id: string | null
           reservation_id: string
           status: string
           updated_at: string
@@ -686,7 +685,6 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          pix_qr_code_id?: string | null
           reservation_id: string
           status?: string
           updated_at?: string
@@ -697,7 +695,6 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          pix_qr_code_id?: string | null
           reservation_id?: string
           status?: string
           updated_at?: string
@@ -4475,7 +4472,7 @@ export type Database = {
       }
       finalize_paid_purchase: {
         Args: {
-          p_asaas_payment_id?: string
+          p_asaas_payment_id: string
           p_customer_cpf?: string
           p_customer_name?: string
           p_customer_phone?: string

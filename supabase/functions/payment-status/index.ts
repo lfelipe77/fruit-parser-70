@@ -1,216 +1,200 @@
-// Polls Asaas for a PIX payment tied to a reservation and finalizes the purchase when paid.
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Origin": "https://ganhavel.com",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-request-id",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Content-Type": "application/json",
 };
 
-// ---- Defaults for quick testing if caller omits them ----
-const DEFAULT_RES_ID = "5eb26722-5154-42c2-bd6b-73df81684092";
-const DEFAULT_PIX_ID = "LUIZFELI00000511984892ASA";
-// ---------------------------------------------------------
-
-type PendingRow = {
-  reservation_id: string;
-  pix_qr_code_id: string | null;
-  asaas_payment_id: string | null;
-  status: string | null;
-  amount: number | string | null;
-  updated_at?: string;
-};
-
-type AsaasPayment = {
-  id: string;
-  status: string; // RECEIVED | CONFIRMED | ...
-  value: number;
-};
-
-function respond(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8", ...corsHeaders },
-  });
-}
-
-function toNumber(n: unknown): number | null {
-  if (n === null || n === undefined) return null;
-  const num = Number(n);
-  return Number.isFinite(num) ? num : null;
-}
-
-function eqMoney(a: number, b: number, centsTol = 0.005) {
-  return Math.abs(a - b) < centsTol;
-}
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
-  const url = new URL(req.url);
-  const debug = url.searchParams.get("debug") === "1";
-
-  // Env
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY")!;
-  const ASAAS_SUBACCOUNT_ID = Deno.env.get("ASAAS_SUBACCOUNT_ID") || null;
-  const ASAAS_BASE =
-    (Deno.env.get("ASAAS_BASE") || "https://api.asaas.com/v3").replace(/\/+$/, "");
-
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return respond({ error: "Missing Supabase service env" }, 500);
-  }
-  if (!ASAAS_API_KEY) {
-    return respond({ error: "Missing ASAAS_API_KEY secret" }, 500);
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
-  // Inputs
-  let body: any = null;
-  if (req.method.toUpperCase() === "POST") {
-    try { body = await req.json(); } catch { body = null; }
-  }
+  try {
+    const url = new URL(req.url);
+    const paymentId = url.searchParams.get("paymentId") ?? undefined;
+    const reservationIdParam = url.searchParams.get("reservationId") ?? undefined;
 
-  const reservationId =
-    body?.reservationId ||
-    url.searchParams.get("reservationId") ||
-    url.searchParams.get("id") ||
-    DEFAULT_RES_ID;
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-    global: { headers: { "x-fn": "payment-status" } },
-  });
-
-  // 1) Fetch pending row
-  const { data: pending, error: pendErr } = await supabase
-    .from("payments_pending")
-    .select("reservation_id, pix_qr_code_id, asaas_payment_id, status, amount, updated_at")
-    .eq("reservation_id", reservationId)
-    .maybeSingle<PendingRow>();
-
-  if (pendErr) return respond({ error: "DB error fetching pending", details: pendErr.message }, 500);
-  if (!pending) return respond({ error: "Reservation not found", reservationId }, 404);
-
-  const currentStatus = (pending.status || "").toUpperCase();
-  if (currentStatus === "PAID" || pending.asaas_payment_id) {
-    return respond({ status: "PAID", reservationId, asaasPaymentId: pending.asaas_payment_id, alreadyPaid: true });
-  }
-
-  const pixQrCodeId =
-    body?.pixQrCodeId ||
-    url.searchParams.get("pixQrCodeId") ||
-    pending.pix_qr_code_id ||
-    DEFAULT_PIX_ID;
-
-  if (!pixQrCodeId) {
-    return respond({ status: "PENDING", reservationId, note: "No pix_qr_code_id available yet for this reservation." });
-  }
-
-  // 2) Ask Asaas about payments for this QR
-  const headers = new Headers();
-  headers.set("access_token", ASAAS_API_KEY); // Asaas auth (NOT Bearer)
-  headers.set("User-Agent", "GanhavelApp/1.0 (+https://ganhavel.com)");
-  headers.set("Content-Type", "application/json");
-  headers.set("Accept", "application/json");
-  if (ASAAS_SUBACCOUNT_ID) headers.set("access_token_subaccount", ASAAS_SUBACCOUNT_ID);
-
-  const asaasUrl = `${ASAAS_BASE}/payments?pixQrCodeId=${encodeURIComponent(pixQrCodeId)}`;
-  const asaasResp = await fetch(asaasUrl, { headers, method: "GET" });
-
-  if (!asaasResp.ok) {
-    const raw = await asaasResp.text().catch(() => "");
-    if (debug) {
-      return respond({
-        status: "PENDING",
-        reservationId,
-        pixQrCodeId,
-        asaasError: { httpStatus: asaasResp.status, body: raw?.slice(0, 2000) ?? "" },
-      });
+    if (!paymentId && !reservationIdParam) {
+      return new Response(JSON.stringify({ error: "Missing paymentId or reservationId" }), { status: 400, headers: corsHeaders });
     }
-    return respond({ status: "PENDING", reservationId });
-  }
 
-  let asaasJson: { data?: AsaasPayment[] } = {};
-  try { asaasJson = await asaasResp.json(); } catch { asaasJson = {}; }
-  const payments = (asaasJson?.data || []) as AsaasPayment[];
-
-  // 3) Qualifying payment (status + amount if available)
-  const okStatuses = new Set(["RECEIVED", "CONFIRMED"]);
-  const expected = toNumber(pending.amount);
-
-  const paidPayment = payments.find((p) => {
-    if (!okStatuses.has((p.status || "").toUpperCase())) return false;
-    if (expected === null) return true;
-    const val = toNumber(p.value);
-    return val !== null && eqMoney(val, expected);
-  });
-
-  if (!paidPayment) {
-    if (debug) {
-      return respond({
-        status: "PENDING",
-        reservationId,
-        pixQrCodeId,
-        expectedAmount: expected,
-        seenPayments: payments.map((p) => ({ id: p.id, status: p.status, value: p.value })),
-      });
+    // Auth (user JWT required)
+    const auth = req.headers.get("authorization") ?? "";
+    if (!auth.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing Authorization Bearer token" }), { status: 401, headers: corsHeaders });
     }
-    return respond({ status: "PENDING", reservationId });
-  }
+    const jwt = auth.slice(7);
 
-  // 4) Flip payments_pending → PAID
-  const { error: updErr } = await supabase
-    .from("payments_pending")
-    .update({ status: "PAID", asaas_payment_id: paidPayment.id, updated_at: new Date().toISOString() })
-    .eq("reservation_id", reservationId);
-
-  if (updErr) {
-    return respond({
-      error: "Failed to update payments_pending to PAID",
-      reservationId,
-      details: updErr.message,
-      asaasPayment: { id: paidPayment.id, status: paidPayment.status, value: paidPayment.value },
-    }, 500);
-  }
-
-  // 5) Finalize purchase (support two common param name variants)
-  const finalizeAttempt = async () => {
-    let rv = await supabase.rpc("finalize_paid_purchase", {
-      reservation_id: reservationId,
-      provider_payment_id: paidPayment.id,
-      extra1: null, extra2: null, extra3: null,
-    } as any);
-    if (!rv.error) return rv;
-    rv = await supabase.rpc("finalize_paid_purchase", {
-      p_reservation_id: reservationId,
-      p_provider_payment_id: paidPayment.id,
-      p_extra1: null, p_extra2: null, p_extra3: null,
-    } as any);
-    return rv;
-  };
-
-  const { data: finalizeData, error: finalizeErr } = await finalizeAttempt();
-
-  if (finalizeErr) {
-    return respond({
-      error: "Marked as PAID but finalize_paid_purchase failed",
-      reservationId,
-      details: finalizeErr.message,
-      asaasPayment: { id: paidPayment.id, status: paidPayment.status, value: paidPayment.value },
-    }, 500);
-  }
-
-  if (debug) {
-    return respond({
-      status: "PAID",
-      reservationId,
-      pixQrCodeId,
-      asaasPaymentId: paidPayment.id,
-      seenPayments: payments.map((p) => ({ id: p.id, status: p.status, value: p.value })),
-      finalize: finalizeData,
+    // User client (RLS enforced)
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
     });
-  }
 
-  return respond({ status: "PAID", reservationId, asaasPaymentId: paidPayment.id });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Invalid user" }), { status: 401, headers: corsHeaders });
+    }
+
+    // --- Resolve reservation/payment and enforce ownership, then use admin for reads ---
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    let pending: any = null;
+    let reservationId = reservationIdParam ?? undefined;
+
+    // If we only have paymentId, try to resolve reservation via user RLS first, then fallback to admin
+    if (!reservationId && paymentId) {
+      const { data: ppUser } = await userClient
+        .from("payments_pending")
+        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .eq("asaas_payment_id", paymentId)
+        .maybeSingle();
+      if (ppUser) {
+        pending = ppUser;
+        reservationId = ppUser.reservation_id;
+      }
+    }
+
+    if (!reservationId && paymentId) {
+      const { data: ppAdmin } = await admin
+        .from("payments_pending")
+        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .eq("asaas_payment_id", paymentId)
+        .maybeSingle();
+      if (ppAdmin) {
+        pending = ppAdmin;
+        reservationId = ppAdmin.reservation_id;
+      }
+    }
+
+    if (!reservationId) {
+      return new Response(JSON.stringify({ status: "UNKNOWN", reservationId: null, paymentId: paymentId ?? null }), {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // Ownership check (strict): ensure the authenticated user owns this reservation
+    const { data: own } = await userClient
+      .from("tickets")
+      .select("reservation_id")
+      .eq("reservation_id", reservationId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!own) {
+      return new Response(
+        JSON.stringify({ status: "UNKNOWN", reservationId, paymentId: paymentId ?? null, reason: "not_owner" }),
+        { status: 200, headers: corsHeaders },
+      );
+    }
+
+    // Ensure we have latest pending using admin (bypass RLS)
+    if (!pending) {
+      const { data: pp } = await admin
+        .from("payments_pending")
+        .select("reservation_id, asaas_payment_id, status, expires_at, amount")
+        .eq("reservation_id", reservationId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      pending = pp || null;
+    }
+
+    if (!reservationId) {
+      return new Response(JSON.stringify({ status: "UNKNOWN", reservationId: null, paymentId: paymentId ?? null }), {
+        status: 200,
+        headers: corsHeaders,
+      });
+    }
+
+    // --- Already verified? (admin bypasses RLS) ---
+    const { data: verified } = await admin
+      .from("payments_verified")
+      .select("reservation_id, asaas_payment_id, amount, paid_at")
+      .eq("reservation_id", reservationId)
+      .order("paid_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (verified) {
+      return new Response(
+        JSON.stringify({ status: "PAID", reservationId, paymentId: verified.asaas_payment_id }),
+        { status: 200, headers: corsHeaders },
+      );
+    }
+
+    // --- Live check at Asaas if we have a payment id ---
+    if (pending?.asaas_payment_id) {
+      const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY") || "";
+      const ASAAS_BASE = Deno.env.get("ASAAS_BASE") ?? "https://api.asaas.com/v3";
+      if (ASAAS_API_KEY) {
+        const h = new Headers();
+        h.set("access_token", ASAAS_API_KEY);
+
+        const resp = await fetch(`${ASAAS_BASE}/payments/${pending.asaas_payment_id}`, { headers: h });
+        const txt = await resp.text();
+        let j: any = null; try { j = txt ? JSON.parse(txt) : null; } catch {}
+        const paid = resp.ok && j && (j.status === "RECEIVED" || j.status === "CONFIRMED");
+
+        if (paid) {
+          // Check if transaction already exists to avoid duplicate finalization
+          const { data: hasTx } = await admin
+            .from("transactions")
+            .select("id")
+            .eq("provider_payment_id", pending.asaas_payment_id)
+            .limit(1)
+            .maybeSingle();
+
+          if (!hasTx) {
+            // Service client already initialized above
+            
+            // Idempotent — RPC returns success even if previously finalized
+            try {
+              await admin.rpc("finalize_paid_purchase", {
+                p_reservation_id: reservationId,
+                p_asaas_payment_id: pending.asaas_payment_id,
+                p_customer_name: null,
+                p_customer_phone: null,
+                p_customer_cpf: null,
+              });
+              console.log(`[payment-status] Finalization triggered for reservation ${reservationId}`);
+            } catch (finalizeError) {
+              console.error('[payment-status] Finalization error:', finalizeError);
+              // Continue anyway - user will see PAID status
+            }
+          }
+
+          return new Response(
+            JSON.stringify({ status: "PAID", reservationId, paymentId: pending.asaas_payment_id }),
+            { status: 200, headers: corsHeaders },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            status: "PENDING",
+            reservationId,
+            paymentId: pending.asaas_payment_id,
+            asaasStatus: j?.status ?? "UNKNOWN",
+          }),
+          { status: 200, headers: corsHeaders },
+        );
+      }
+    }
+
+    // --- Default: unknown/pending ---
+    return new Response(
+      JSON.stringify({ status: "UNKNOWN", reservationId, paymentId: pending?.asaas_payment_id ?? null }),
+      { status: 200, headers: corsHeaders },
+    );
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
+  }
 });
