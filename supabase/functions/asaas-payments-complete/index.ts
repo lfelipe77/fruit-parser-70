@@ -8,7 +8,7 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // === CPF/CNPJ validation helpers ===
 type PersonType = 'FISICA' | 'JURIDICA';
 
-const onlyDigits = (s?: unknown) => String(s ?? '').replace(/\D/g, '');
+const onlyDigits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
 
 function isValidCPF(raw: string): boolean {
   const cpf = onlyDigits(raw);
@@ -221,11 +221,8 @@ export default {
 
       // 3) Fetch profile and validate CPF/CNPJ
       const { data: profile, error: profErr } = await sb
-        .from('user_profiles').select('id,full_name,tax_id').eq('id', user.id).maybeSingle();
-      if (profErr) {
-        console.warn('[asaas] profile fetch error (continuing with form data):', profErr);
-      }
-
+        .from('user_profiles').select('id,full_name,phone,tax_id').eq('id', user.id).maybeSingle();
+      if (profErr || !profile) return json({ error:'Profile not found' }, { status:404 }, origin);
 
       // Resolve and validate document with new flexible approach
       const { customer_name, customer_phone, customer_cpf } = payload?.customer ?? {};
@@ -268,8 +265,6 @@ export default {
       }
 
       const ASAAS_API_KEY = ASAAS_KEY_RAW;
-      const ASAAS_SUBACCOUNT_ID = (Deno.env.get('ASAAS_SUBACCOUNT_ID') ?? '').trim();
-      console.log('[asaas] subaccount', ASAAS_SUBACCOUNT_ID || '(none)');
 
       // small helper to mask keys in logs/responses
       const mask = (s: string) => s.length <= 8 ? '***' : (s.slice(0,4) + '...' + s.slice(-4));
@@ -285,9 +280,7 @@ export default {
       const headers = new Headers();
       headers.set('access_token', ASAAS_API_KEY);
       headers.set('Content-Type','application/json');
-      if (ASAAS_SUBACCOUNT_ID) {
-        headers.set('access_token_subaccount', ASAAS_SUBACCOUNT_ID);
-      }
+
       // Helper: text-first fetch with robust error context
       async function asaasCall(path: string, init: RequestInit = {}) {
         const h = new Headers(headers);

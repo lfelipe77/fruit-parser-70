@@ -4484,17 +4484,6 @@ export type Database = {
         Args: { p_raffle_id: string }
         Returns: string
       }
-      find_ticket_by_number: {
-        Args: { p_raffle_id: string; p_ticket_number: number }
-        Returns: {
-          purchased_at: string
-          reservation_id: string
-          status: string
-          ticket_id: string
-          transaction_id: string
-          user_id: string
-        }[]
-      }
       get_admin_latest_federal_status: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -4844,34 +4833,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
-      purchase_preview_by_reservation: {
-        Args: { p_reservation_id: string }
-        Returns: {
-          buyer_user_id: string
-          numbers: Json
-          qty: number
-          raffle_id: string
-          reservation_id: string
-          status: string
-          total_amount: number
-        }[]
-      }
-      purchase_summary_by_reservation: {
-        Args: { p_reservation_id: string }
-        Returns: {
-          amount: number
-          buyer_user_id: string
-          created_at: string
-          numbers: Json
-          provider: string
-          provider_payment_id: string
-          qty: number
-          raffle_id: string
-          reservation_id: string
-          status: string
-          transaction_id: string
-        }[]
-      }
       purge_old_audit_logs: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -4890,24 +4851,6 @@ export type Database = {
           last_paid_at: string
           paid_tickets: number
           participants_count: number
-        }[]
-      }
-      raffle_ticket_counts: {
-        Args: { p_raffle_id: string }
-        Returns: {
-          qty: number
-          status: string
-        }[]
-      }
-      raffle_tickets_paid: {
-        Args: { p_raffle_id: string }
-        Returns: {
-          purchased_at: string
-          reservation_id: string
-          ticket_id: string
-          ticket_number: number
-          transaction_id: string
-          user_id: string
         }[]
       }
       rebuild_reservation_audit_cache: {
