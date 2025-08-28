@@ -324,7 +324,7 @@ export default function ConfirmacaoPagamento() {
   const fee = 2.00;
   const total = subtotal + fee;
 
-  // Payment polling helper
+  // Payment polling helper (GET)
   async function pollPaymentStatus(EDGE: string, jwt: string, reservationId: string) {
     const url = `${EDGE}/functions/v1/payment-status?reservationId=${encodeURIComponent(reservationId)}`;
     const res = await fetch(url, { headers: edgeHeaders(jwt) });
@@ -374,19 +374,7 @@ export default function ConfirmacaoPagamento() {
       if (debugOn) setDebugReservationId(reservation_id);
       console.log("[debug] reservation_id", reservation_id);
 
-      // 4) Validate CPF before calling edge function
-      const cpfInput = formData.cpf || (userProfile as any)?.tax_id || '';
-      let normalizedCPF: string;
-      
-      try {
-        normalizedCPF = normalizeCPFForAsaas(cpfInput);
-        // removed: no cpf logs
-      } catch (err: any) {
-        toast.error(err.message || 'CPF inválido. Corrija o documento.');
-        throw new Error("CPF validation failed");
-      }
-
-      // 5) create PIX on Asaas with minimum value check and validated CPF
+      // 4) (Optional) CPF local normalization removed for static PIX; keep form field only if needed later
       const MIN_PIX_VALUE = 5.00;
       const value = unitPrice * safeQty;
       if (value < MIN_PIX_VALUE) {
@@ -479,7 +467,7 @@ export default function ConfirmacaoPagamento() {
   // Helper function to extract only digits
   const digits = (s?: string) => (s ?? '').replace(/\D/g, '');
 
-  // Validate form data with strict CPF validation
+  // Validate form data (CPF not required for static PIX request)
   const validateForm = () => {
     const errors = { name: '', phone: '', cpf: '' };
     
@@ -492,18 +480,9 @@ export default function ConfirmacaoPagamento() {
       errors.phone = 'Telefone deve ter entre 10 e 13 dígitos';
     }
     
-    // Strict CPF validation using our utility
-    const cpfInput = formData.cpf || (userProfile as any)?.tax_id || '';
-    if (cpfInput && !tryNormalizeCPF(cpfInput)) {
-      errors.cpf = 'CPF inválido. Verifique e tente novamente.';
-    } else if (!cpfInput) {
-      errors.cpf = 'CPF é obrigatório';
-    }
-    
     setFormErrors(errors);
-    return !errors.name && !errors.phone && !errors.cpf;
+    return !errors.name && !errors.phone; // ignore cpf error for PIX
   };
-
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field when user starts typing
@@ -908,7 +887,7 @@ export default function ConfirmacaoPagamento() {
               
               <Button 
                 onClick={onPayPix}
-                disabled={!user || isProcessing || formData.fullName.trim().length < 2 || digits(formData.phone).length < 10 || digits(formData.cpf).length !== 11}
+                disabled={!user || isProcessing || formData.fullName.trim().length < 2 || digits(formData.phone).length < 10}
                 className="w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 size="lg"
               >

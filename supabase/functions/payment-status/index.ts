@@ -114,18 +114,18 @@ serve(async (req) => {
       });
     }
 
-    // --- Already verified? (admin bypasses RLS) ---
-    const { data: verified } = await admin
-      .from("payments_verified")
-      .select("reservation_id, asaas_payment_id, amount, paid_at")
+    // --- Already verified via transactions table? (admin bypasses RLS) ---
+    const { data: tx } = await admin
+      .from("transactions")
+      .select("id, provider_payment_id")
       .eq("reservation_id", reservationId)
-      .order("paid_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (verified) {
+    if (tx) {
       return new Response(
-        JSON.stringify({ status: "PAID", reservationId, paymentId: verified.asaas_payment_id }),
+        JSON.stringify({ status: "PAID", reservationId, paymentId: tx.provider_payment_id }),
         { status: 200, headers: corsHeaders },
       );
     }

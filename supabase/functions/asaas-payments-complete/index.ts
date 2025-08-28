@@ -349,6 +349,7 @@ export default {
         .upsert({
           reservation_id: reservationId,
           pix_qr_code_id: pixQrCodeId,
+          asaas_payment_id: pixQrCodeId ?? 'STATIC_PIX',
           amount: Number(value),
           status: 'PENDING',
           expires_at: expiresAtIso,
