@@ -249,8 +249,6 @@ export default {
       }
 
       const mobilePhone = sanitizeBRPhone(profile?.phone ?? customer_phone ?? null);
-      const fallbackPhone = '+5521985588220';
-      const phone = mobilePhone ? `+55${mobilePhone}` : fallbackPhone;
 
       // 4) Prepare Asaas requests and create payment
       const ASAAS_KEY_RAW = (Deno.env.get('ASAAS_API_KEY') ?? '').trim();
@@ -304,7 +302,6 @@ export default {
         personType,
         email: user.email,
         ...(mobilePhone ? { mobilePhone } : {}),
-        phone, // Ensure Asaas receives `phone` field in customer object
         externalReference: user.id,
       };
 
