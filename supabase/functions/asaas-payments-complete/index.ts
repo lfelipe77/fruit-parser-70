@@ -8,7 +8,7 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // === CPF/CNPJ validation helpers ===
 type PersonType = 'FISICA' | 'JURIDICA';
 
-const onlyDigits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
+const onlyDigits = (s?: unknown) => String(s ?? '').replace(/\D/g, '');
 
 function isValidCPF(raw: string): boolean {
   const cpf = onlyDigits(raw);
@@ -221,8 +221,11 @@ export default {
 
       // 3) Fetch profile and validate CPF/CNPJ
       const { data: profile, error: profErr } = await sb
-        .from('user_profiles').select('id,full_name,phone,tax_id').eq('id', user.id).maybeSingle();
-      if (profErr || !profile) return json({ error:'Profile not found' }, { status:404 }, origin);
+        .from('user_profiles').select('id,full_name,tax_id').eq('id', user.id).maybeSingle();
+      if (profErr) {
+        console.warn('[asaas] profile fetch error (continuing with form data):', profErr);
+      }
+
 
       // Resolve and validate document with new flexible approach
       const { customer_name, customer_phone, customer_cpf } = payload?.customer ?? {};
