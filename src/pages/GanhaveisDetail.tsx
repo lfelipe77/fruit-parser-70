@@ -63,6 +63,7 @@ export default function GanhaveisDetail() {
   const [loading, setLoading] = React.useState(true);
   const [qty, setQty] = React.useState(1);
   const [directLink, setDirectLink] = React.useState<string | null>(null);
+  const [locationData, setLocationData] = React.useState<{city: string | null, state: string | null}>({city: null, state: null});
 
   // ---- Data normalization
   const raffle = React.useMemo(() => 
@@ -91,6 +92,14 @@ export default function GanhaveisDetail() {
         
       if (moneyError) console.warn("money error", moneyError);
       setMoneyRow(v ? v as unknown as MoneyRow : null);
+      
+      // Store location data separately
+      if (v) {
+        setLocationData({
+          city: v.location_city || null,
+          state: v.location_state || null
+        });
+      }
 
       // Load extras from base table
       const { data: baseData, error: baseError } = await supabase
@@ -202,6 +211,16 @@ export default function GanhaveisDetail() {
           </div>
 
           <h1 className="mt-4 text-2xl font-semibold">{raffle.title}</h1>
+          
+          {/* Location Display */}
+          {(locationData.city || locationData.state) && (
+            <div className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-100 border border-blue-200 rounded-lg px-4 py-2 shadow-sm">
+              <span className="text-blue-600">📍</span>
+              <span className="text-sm font-medium text-blue-800">
+                {[locationData.city, locationData.state].filter(Boolean).join(", ")}
+              </span>
+            </div>
+          )}
 
           {/* Tabs */}
           <Tabs defaultValue="detalhes" className="mt-6">
