@@ -18,7 +18,7 @@ import {
   Trophy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePersistMock } from "@/hooks/usePersistMock";
+
 
 interface PaymentSuccessData {
   raffleId?: string;
@@ -141,13 +141,7 @@ export default function PagamentoSucesso() {
     paymentDate
   };
 
-  // Process mock purchase using RPC
-  usePersistMock(
-    paymentData.rifaId,
-    paymentData.quantity,
-    paymentData.totalAmount / paymentData.quantity,
-    paymentData.selectedNumbers
-  );
+  // Transaction already created in ConfirmacaoPagamento - no need to call usePersistMock again
 
 
   const handleDownloadReceipt = () => {
