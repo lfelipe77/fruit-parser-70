@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
-type HomepageStats = {
+type HomeStats = {
   total_raised: number;
   total_prize_paid: number;
   total_participants: number;
@@ -23,7 +23,7 @@ type HomepageStats = {
 export default function HeroSection() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [stats, setStats] = useState<HomepageStats | null>(null);
+  const [stats, setStats] = useState<HomeStats | null>(null);
   const [statsSource, setStatsSource] = useState<'cache' | 'live' | null>(null);
   const isDebugMode = new URLSearchParams(window.location.search).has('debug');
   
@@ -33,25 +33,28 @@ export default function HeroSection() {
     persist: "none" 
   });
 
-  async function fetchStats() {
-    const tryCache = () => supabase.from('homepage_stats_cache').select('*').limit(1).single();
-    const tryLive = () => supabase.from('homepage_stats').select('*').limit(1).single();
-    
-    // attempt cache first; on error or null, fall back to live
-    let src: 'cache' | 'live' = 'cache';
-    let { data, error } = await tryCache();
-    if (error || !data) { 
-      src = 'live'; 
-      ({ data, error } = await tryLive()); 
-    }
-    
-    return { data, error, src };
+  async function fetchStats(): Promise<{ src: 'cache'|'live', data: HomeStats|null }> {
+    const cache = await supabase
+      .from('homepage_stats_cache' as any)   // use `as any` to avoid TS type generation issues for views
+      .select('*')
+      .limit(1)
+      .single();
+    if (!cache.error && cache.data) return { src: 'cache', data: cache.data as unknown as HomeStats };
+
+    const live = await supabase
+      .from('homepage_stats' as any)
+      .select('*')
+      .limit(1)
+      .single();
+    if (!live.error && live.data) return { src: 'live', data: live.data as unknown as HomeStats };
+
+    return { src: 'live', data: null };
   }
 
   useEffect(() => {
-    fetchStats().then(({ data, error, src }) => {
-      if (data && !error) {
-        setStats(data as HomepageStats);
+    fetchStats().then(({ data, src }) => {
+      if (data) {
+        setStats(data);
         setStatsSource(src);
         if (isDebugMode) {
           console.info('[homepage_stats]', { src, data });
@@ -153,8 +156,10 @@ export default function HeroSection() {
                     <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">R$ 8M+</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Premiado</div>
+                <div className={`font-semibold text-base md:text-lg ${stats && stats.total_prize_paid === 0 ? 'text-muted-foreground' : ''}`}>
+                  {displayStats.prizeValue}
+                </div>
+                <div className="text-xs md:text-sm text-muted-foreground">{displayStats.prizeLabel}</div>
               </div>
               <div className="text-center">
                 <div className="flex justify-center mb-2">
@@ -162,7 +167,7 @@ export default function HeroSection() {
                     <Users className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">25K+</div>
+                <div className="font-semibold text-base md:text-lg">{displayStats.participants}</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Participantes</div>
               </div>
               <div className="text-center">
@@ -171,10 +176,17 @@ export default function HeroSection() {
                     <Target className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">890+</div>
+                <div className="font-semibold text-base md:text-lg">{displayStats.ganhaveis}</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Ganhaveis</div>
               </div>
             </div>
+            
+            {/* Debug info - only shown with ?debug=1 */}
+            {isDebugMode && stats && (
+              <div className="text-xs text-muted-foreground mt-2 text-center lg:text-left">
+                stats: source={statsSource}, active={stats.active_ganhaveis}, almost_complete={stats.almost_complete_ganhaveis}, recent_tx_7d={stats.recent_transactions}
+              </div>
+            )}
           </div>
           
           {/* Desktop image - hidden on mobile */}
@@ -191,7 +203,7 @@ export default function HeroSection() {
             {/* Floating stats cards - only on desktop */}
             <div className="absolute -top-4 -left-4 bg-white p-4 rounded-lg shadow-lg animate-pulse">
               <div className="text-sm text-muted-foreground">Ganhaveis Ativos</div>
-              <div className="text-2xl font-bold text-primary">128</div>
+              <div className="text-2xl font-bold text-primary">{displayStats.activeGanhaveis}</div>
             </div>
             
             <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg animate-pulse delay-150">
