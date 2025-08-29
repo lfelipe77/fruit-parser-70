@@ -77,6 +77,8 @@ import AdminPayouts from '@/pages/AdminPayouts';
 import LastPathKeeper from '@/components/LastPathKeeper';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { DebugBanner } from '@/components/DebugBanner';
+import DiagnosticsPage from '@/pages/DiagnosticsPage';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -101,8 +103,8 @@ function RouteBadge() {
 
 const queryClient = new QueryClient();
 
-// Debug Banner Component - minimal styling for immediate render
-const DebugBanner = () => {
+// Legacy Debug Banner - kept for backward compatibility
+const LegacyDebugBanner = () => {
   const showBanner = import.meta.env.VITE_DEBUG_BANNER === 'true';
   const bypass = import.meta.env.VITE_ADMIN_TURNSTILE_BYPASS;
   const supa = import.meta.env.VITE_SUPABASE_URL;
@@ -147,6 +149,7 @@ const AppContent = () => {
   return (
     <>
       <LastPathKeeper isAuthenticated={isAuthenticated} />
+      <LegacyDebugBanner />
       <DebugBanner />
       <VisitLogger />
       <ScrollToTop />
@@ -271,6 +274,8 @@ const AppContent = () => {
         {import.meta.env.DEV && (
           <Route path="/debug-token" element={<DebugToken />} />
         )}
+        {/* Diagnostics page - only visible with ?debug=1 */}
+        <Route path="/_diag" element={<DiagnosticsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

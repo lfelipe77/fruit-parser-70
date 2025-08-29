@@ -14,6 +14,7 @@ import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { isDebugMode, logDebugInfo } from "@/utils/envDebug";
 
 type RaffleRow = {
   id: string;
@@ -68,6 +69,30 @@ export default function ConfirmacaoPagamento() {
   const { user, loading: authLoading } = useAuth();
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
+
+  // Debug instrumentation (only when ?debug=1)
+  React.useEffect(() => {
+    if (!isDebugMode()) return;
+
+    const supabaseUrl = "https://whqxpuyjxoiufzhvqneg.supabase.co";
+    
+    logDebugInfo("ConfirmacaoPagamento:Mount", {
+      edgeBaseUrl: supabaseUrl,
+      endpoints: [
+        `${supabaseUrl}/functions/v1/record_purchase_v2`,
+        `${supabaseUrl}/functions/v1/record_mock_purchase_admin`,
+      ],
+      headers: {
+        "Content-Type": "present",
+        "Authorization": user ? "present (Bearer session.access_token)" : "missing",
+        "apikey": "present (anon key)"
+      },
+      maskedSession: user ? {
+        userId: "****" + (user.id?.slice(-4) || ""),
+        hasAccessToken: !!(user as any)?.access_token
+      } : null
+    });
+  }, [user]);
 
   const navState = (location.state ?? {}) as {
     selectedNumbers?: unknown[];
@@ -223,6 +248,17 @@ export default function ConfirmacaoPagamento() {
         p_customer_phone: digits(formData.phone),
         p_customer_cpf: digits(formData.cpf),
       });
+
+      // Debug: Log RPC response structure (only when ?debug=1)
+      if (isDebugMode()) {
+        logDebugInfo("ConfirmacaoPagamento:RPCResponse", {
+          function: "record_purchase_v2",
+          success: !error,
+          responseKeys: txId ? ["txId"] : [],
+          errorPresent: !!error,
+          maskedTxId: txId ? "****" + String(txId).slice(-4) : null
+        });
+      }
 
       if (error) {
         console.error("[payment] rpc error", {
