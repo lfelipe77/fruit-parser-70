@@ -328,10 +328,14 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+        {/* Federal Lottery Management Section - Moved above other sections */}
+        <section className="mt-6">
+          <FederalLotteryManager />
+        </section>
+
         <section className="mt-6 space-y-6">
           <DrawControls />
           <AdminFederalStatusTile />
-          <FederalLotteryManager />
         </section>
 
         {/* Seção de Alertas de Segurança Recentes - DESTACADA */}
