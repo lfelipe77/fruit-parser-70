@@ -24,6 +24,13 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "CallExpression[callee.name='require']",
+          "message": "Use ESM imports; require() is not allowed in client code."
+        }
+      ],
     },
   }
 );
