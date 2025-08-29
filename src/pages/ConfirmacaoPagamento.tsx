@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/formatters";
-import { asNumber } from "@/utils/money";
+import { asNumber, computeCheckout } from "@/utils/money";
 import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
@@ -205,7 +205,6 @@ export default function ConfirmacaoPagamento() {
 
   // Calculations - compute checkout with minimum validation
   const { qty: adjustedQty, fee, subtotal, chargeTotal } = React.useMemo(() => {
-    const { computeCheckout } = require('@/utils/money');
     return computeCheckout(raffle?.ticket_price ?? 0, qty);
   }, [raffle?.ticket_price, qty]);
   

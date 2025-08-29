@@ -12,6 +12,7 @@ import DetalhesOrganizador from "@/components/DetalhesOrganizador";
 import CompartilheRifa from "@/components/CompartilheRifa";
 import { toRaffleView, type MoneyRow, type RaffleExtras } from "@/adapters/raffleAdapters";
 import { toConfirm } from "@/lib/nav";
+import { computeCheckout } from "@/utils/money";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -159,7 +160,6 @@ export default function GanhaveisDetail() {
 
   // ---- Derived - compute checkout with minimum validation
   const { qty: adjustedQty, fee, subtotal, chargeTotal } = React.useMemo(() => {
-    const { computeCheckout } = require('@/utils/money');
     return computeCheckout(raffle?.ticketPrice ?? 0, qty);
   }, [raffle?.ticketPrice, qty]);
   
