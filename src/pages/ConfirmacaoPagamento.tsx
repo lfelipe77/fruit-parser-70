@@ -211,6 +211,21 @@ export default function ConfirmacaoPagamento() {
   
   const qtyAdjusted = adjustedQty !== qty;
 
+  // Debug: log computed amounts and reservation
+  React.useEffect(() => {
+    if (!isDebugMode()) return;
+    try {
+      logDebugInfo("ConfirmacaoPagamento:Computed", {
+        reservation_id: reservationId,
+        qty: adjustedQty,
+        unit_price: raffle?.ticket_price || 0,
+        subtotal,
+        fee: fee,
+        total: chargeTotal
+      });
+    } catch (_) { /* no-op */ }
+  }, [reservationId, adjustedQty, raffle?.ticket_price, subtotal, fee, chargeTotal]);
+
   // State machine initialization and server persistence
   React.useEffect(() => {
     let mounted = true;

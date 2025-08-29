@@ -12,6 +12,7 @@ type Body = {
   qty: number;
   amount: number;   // base ticket revenue (qty * ticket_price)
   currency: "BRL";
+  reservation_id?: string; // optional reservation to propagate for idempotency
 };
 
 serve(async (req) => {
@@ -28,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, raffle_id, qty, amount, currency } = (await req.json()) as Body;
+    const { provider, raffle_id, qty, amount, currency, reservation_id } = (await req.json()) as Body;
 
     if (!provider || !raffle_id || !qty || !amount || !currency) {
       return new Response("Missing fields", { 
@@ -64,12 +65,13 @@ serve(async (req) => {
     const provider_payment_id = `${provider}_${crypto.randomUUID()}`;
     const redirect_url = `https://example.com/checkout/${provider_payment_id}`;
 
-    console.log(`Creating checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal.toFixed(2)}, fee=${fee_fixed.toFixed(2)}, charge_total=${charge_total.toFixed(2)}`);
+    console.log(`Creating checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal.toFixed(2)}, fee=${fee_fixed.toFixed(2)}, charge_total=${charge_total.toFixed(2)}, reservation_id=${reservation_id || 'none'}`);
 
     return new Response(JSON.stringify({
       provider,
       provider_payment_id,
       redirect_url,
+      reservation_id,
       fee_fixed,
       fee_pct,
       fee_amount,
