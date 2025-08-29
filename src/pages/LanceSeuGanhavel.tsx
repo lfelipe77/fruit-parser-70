@@ -244,8 +244,8 @@ export default function LanceSeuGanhavel() {
       const imageUrlPublic = pub.publicUrl;
 
       // Calculate gross goal (including 2% provider fee)
-      const netGoal = toNum(valueGoal);
-      const grossGoal = Math.round((netGoal! * (1 + PROVIDER_GOAL_FEE_PCT)) * 100) / 100;
+      const netGoal = Number(valueGoal || 0); // Use Number() directly instead of toNum
+      const grossGoal = Math.round((netGoal * (1 + PROVIDER_GOAL_FEE_PCT)) * 100) / 100;
 
       const payload = {
         user_id: session.user.id,
@@ -267,6 +267,15 @@ export default function LanceSeuGanhavel() {
       };
 
       // Debug log
+      // Debug log (always log for now to verify calculation)
+      console.log("[DEBUG] Goal calculation:", {
+        valueGoal,
+        netGoal,
+        PROVIDER_GOAL_FEE_PCT,
+        grossGoal,
+        formula: `${netGoal} * (1 + ${PROVIDER_GOAL_FEE_PCT}) = ${grossGoal}`
+      });
+      
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('debug') === '1') {
         console.info({ 
