@@ -15,12 +15,34 @@ import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { isDebugMode, logDebugInfo } from "@/utils/envDebug";
+import { nanoid } from "nanoid";
 
 type RaffleRow = {
   id: string;
   title: string;
   image_url: string | null;
   ticket_price: number;
+};
+
+type ServerState = {
+  ok: boolean;
+  source: 'pending' | 'transactions';
+  reservationId: string;
+  raffleId: string;
+  status: 'pending' | 'paid' | 'expired' | 'failed';
+  qty: number;
+  unitPrice: number;
+  amount: number;
+  numbers: string[];
+  transaction: {
+    id: string | null;
+    provider: string | null;
+    providerPaymentId: string | null;
+    paidAt: string | null;
+  };
+  debug: {
+    hasTicketsPaid: boolean;
+  };
 };
 
 // 1) Helpers FIRST (hoisted function declaration = no TDZ)
@@ -69,6 +91,15 @@ export default function ConfirmacaoPagamento() {
   const { user, loading: authLoading } = useAuth();
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
+
+  // Get query params
+  const searchParams = new URLSearchParams(location.search);
+  const reservationId = searchParams.get('reservationId') || nanoid();
+  const raffleId = id || searchParams.get('raffleId');
+
+  // Server state for persistence
+  const [serverState, setServerState] = React.useState<ServerState | null>(null);
+  const [stateMachineInitialized, setStateMachineInitialized] = React.useState(false);
 
   // Debug instrumentation (only when ?debug=1)
   React.useEffect(() => {
@@ -172,6 +203,86 @@ export default function ConfirmacaoPagamento() {
 
   // Numbers are initialized properly in useState, no need for qty effect since qty doesn't change
 
+  // Calculations
+  const subtotal = (raffle?.ticket_price ?? 0) * qty;
+  const fee = 2.00;
+  const total = subtotal + fee;
+
+  // State machine initialization and server persistence
+  React.useEffect(() => {
+    let mounted = true;
+
+    async function initializeStateMachine() {
+      if (!user || !raffleId || stateMachineInitialized) return;
+
+      try {
+        // Get session for auth
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        // Build context from current page state
+        const contextData = {
+          reservationId,
+          raffleId,
+          qty,
+          unitPrice: raffle?.ticket_price || 0,
+          amount: total,
+          numbers: selectedNumbers,
+          buyerUserId: user.id,
+          pageFingerprint: `confirm-${raffleId}-${Date.now()}`,
+          uiState: {
+            cameFrom: `ganhavel/${raffleId}`,
+            ts: Date.now(),
+            paymentMethod,
+            formData
+          }
+        };
+
+        // Persist context to server
+        const { data: upsertResult, error: upsertError } = await supabase.functions.invoke('confirm-state-upsert', {
+          body: contextData,
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
+
+        if (upsertError) {
+          console.error('Failed to upsert state:', upsertError);
+          return;
+        }
+
+        // Store local backup
+        localStorage.setItem(`confirm.${reservationId}`, JSON.stringify(contextData));
+
+        // Get current state from server
+        const getUrl = `https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/confirm-state-get?reservationId=${reservationId}`;
+        const getResponse = await fetch(getUrl, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const getResult = getResponse.ok ? await getResponse.json() : null;
+        const getError = !getResponse.ok ? { message: 'Failed to fetch state' } : null;
+
+        if (!getError && getResult?.ok && mounted) {
+          setServerState(getResult);
+          setStateMachineInitialized(true);
+        }
+
+      } catch (error) {
+        console.error('State machine initialization error:', error);
+      }
+    }
+
+    initializeStateMachine();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, raffleId, raffle?.ticket_price, selectedNumbers, total, qty, paymentMethod, formData]);
+
   // Load raffle data
   React.useEffect(() => {
     let mounted = true;
@@ -188,7 +299,7 @@ export default function ConfirmacaoPagamento() {
         const { data } = await (supabase as any)
           .from("raffles_public_money_ext")
           .select("id,title,image_url,ticket_price")
-          .eq("id", id)
+          .eq("id", raffleId)
           .maybeSingle();
         
         if (!mounted) return;
@@ -202,12 +313,7 @@ export default function ConfirmacaoPagamento() {
       mounted = false;
       window.removeEventListener('raffleUpdated', onUpdate);
     };
-  }, [id]);
-
-  // Calculations
-  const subtotal = (raffle?.ticket_price ?? 0) * qty;
-  const fee = 2.00;
-  const total = subtotal + fee;
+  }, [raffleId]);
 
   // Handle form submission
   async function handlePayment() {
@@ -339,8 +445,32 @@ export default function ConfirmacaoPagamento() {
     }
   };
 
+  // Show login required if no user
+  if (!authLoading && !user) {
+    return (
+      <>
+        <Navigation />
+        <div className="container mx-auto p-4 max-w-4xl text-center">
+          <h1 className="text-2xl font-bold mb-4">Login Necessário</h1>
+          <p className="text-muted-foreground mb-4">Você precisa estar logado para confirmar o pagamento.</p>
+          <Button onClick={() => navigate('/login')}>Fazer Login</Button>
+        </div>
+      </>
+    );
+  }
+
   if (loading || authLoading) return <div className="p-6">Carregando…</div>;
   if (!raffle) return <div className="p-6">Rifa não encontrada.</div>;
+
+  // Determine status from server state
+  const currentStatus = serverState?.status || 'pending';
+  const statusBadges = {
+    pending: { text: 'Aguardando Confirmação', color: 'bg-yellow-100 text-yellow-800' },
+    paid: { text: 'Pagamento Aprovado', color: 'bg-green-100 text-green-800' },
+    expired: { text: 'Expirado', color: 'bg-gray-100 text-gray-800' },
+    failed: { text: 'Falhou', color: 'bg-red-100 text-red-800' }
+  };
+  const currentBadge = statusBadges[currentStatus];
 
   return (
     <>
@@ -351,18 +481,23 @@ export default function ConfirmacaoPagamento() {
           <div className="flex items-center justify-between mb-4">
             <Button 
               variant="ghost" 
-              onClick={() => navigate(`/ganhavel/${id}`)}
+              onClick={() => navigate(`/ganhavel/${raffleId}`)}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar
             </Button>
-            <Button 
-              variant="outline" 
-              className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 hover:from-emerald-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              Compartilhe
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${currentBadge.color}`}>
+                {currentBadge.text}
+              </div>
+              <Button 
+                variant="outline" 
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 hover:from-emerald-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Compartilhe
+              </Button>
+            </div>
           </div>
           <h1 className="text-2xl font-bold">Confirmação de Pagamento</h1>
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
@@ -454,6 +589,91 @@ export default function ConfirmacaoPagamento() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Detalhes do Pedido Card (Server State) */}
+          {serverState && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Detalhes do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Reservation ID:</span>
+                    <p className="font-mono text-xs">{serverState.reservationId}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Raffle ID:</span>
+                    <p className="font-mono text-xs">{serverState.raffleId}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Quantidade:</span>
+                    <p>{serverState.qty}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Valor Unitário:</span>
+                    <p>{formatBRL(serverState.unitPrice)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Total:</span>
+                    <p className="font-semibold">{formatBRL(serverState.amount)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Status:</span>
+                    <p className="capitalize">{serverState.status}</p>
+                  </div>
+                </div>
+                
+                {serverState.numbers.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground text-sm">Números:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {serverState.numbers.slice(0, 3).map((num, idx) => (
+                        <span key={idx} className="font-mono text-xs bg-emerald-50 px-2 py-1 rounded">
+                          {num}
+                        </span>
+                      ))}
+                      {serverState.numbers.length > 3 && (
+                        <span className="text-xs text-muted-foreground">
+                          +{serverState.numbers.length - 3} mais
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {serverState.transaction.id && (
+                  <div className="border-t pt-3">
+                    <span className="text-muted-foreground text-sm">Transação:</span>
+                    <div className="text-xs space-y-1 mt-1">
+                      <p><span className="text-muted-foreground">ID:</span> {serverState.transaction.id}</p>
+                      {serverState.transaction.provider && (
+                        <p><span className="text-muted-foreground">Provider:</span> {serverState.transaction.provider}</p>
+                      )}
+                      {serverState.transaction.paidAt && (
+                        <p><span className="text-muted-foreground">Pago em:</span> {new Date(serverState.transaction.paidAt).toLocaleString()}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Diagnóstico Card (debug only) */}
+          {isDebugMode() && serverState && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Diagnóstico</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs">
+                <div><span className="text-muted-foreground">Source:</span> {serverState.source}</div>
+                <div><span className="text-muted-foreground">Has Tickets Paid:</span> {serverState.debug.hasTicketsPaid ? 'Yes' : 'No'}</div>
+                <div><span className="text-muted-foreground">State Machine:</span> {stateMachineInitialized ? 'Initialized' : 'Pending'}</div>
+                <div><span className="text-muted-foreground">Local Storage Key:</span> confirm.{reservationId}</div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Contact Information */}
           <Card>
