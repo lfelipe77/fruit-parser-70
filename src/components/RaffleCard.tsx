@@ -40,8 +40,10 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
         {/* Participants + last sale */}
         <div className="text-xs text-muted-foreground space-y-1">
           <div>{Number(r.participants_count ?? 0)} participantes</div>
-          <div>{r.last_paid_at ? `Última venda: ${timeAgo(r.last_paid_at)}` : "Sem vendas ainda"}</div>
-          {cityState && <div>{cityState}</div>}
+          <div className="flex justify-between items-center">
+            <span>{r.last_paid_at ? `Última venda: ${timeAgo(r.last_paid_at)}` : "Sem vendas ainda"}</span>
+            {cityState && <span className="text-primary font-medium">{cityState}</span>}
+          </div>
         </div>
 
         {/* CTA */}
