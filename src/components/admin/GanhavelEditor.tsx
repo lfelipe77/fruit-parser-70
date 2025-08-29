@@ -186,11 +186,13 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       const directLink = form.direct_purchase_link?.trim();
 
       // Editor payload must match exactly the raffles table columns
+      // NOTE: For editing, we assume goal_amount already includes the 2% fee
+      // Do NOT double-apply the fee here since it was applied during creation
       const payload: Partial<RaffleRow> = {
         title: form.title.trim(),
         description: (form.description ?? "").trim() || null,
         image_url: imageUrl || null,
-        goal_amount: goal !== "" ? Number(goal) : null,
+        goal_amount: goal !== "" ? Number(goal) : null, // Keep as-is (already includes fee)
         ticket_price: ticket !== "" ? Number(ticket) : null,
         category_id: selectedCategoryId ?? null,
         subcategory_id: selectedSubcategoryId ?? null,
