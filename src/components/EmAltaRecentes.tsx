@@ -127,7 +127,9 @@ export default function EmAltaRecentesSection() {
           <h2 className="text-xl md:text-2xl font-semibold">🔥 Ganhavéis em alta</h2>
           <Link to="/descobrir" className="text-sm underline text-emerald-700">Ver todos</Link>
         </div>
-        {loading ? <SkeletonGrid /> : (top.length ? <Grid items={top} /> : <Empty />)}
+        <div className="mt-4">
+          {loading ? <SkeletonGrid /> : (top.length ? <Grid items={top} /> : <Empty />)}
+        </div>
       </div>
 
       <div>
@@ -135,7 +137,9 @@ export default function EmAltaRecentesSection() {
           <h2 className="text-xl md:text-2xl font-semibold">🆕 Recentes</h2>
           <Link to="/descobrir" className="text-sm underline text-emerald-700">Ver todos</Link>
         </div>
-        {loading ? <SkeletonGrid /> : (recent.length ? <Grid items={recent} /> : <Empty />)}
+        <div className="mt-4">
+          {loading ? <SkeletonGrid /> : (recent.length ? <Grid items={recent} /> : <Empty />)}
+        </div>
       </div>
     </section>
   );
