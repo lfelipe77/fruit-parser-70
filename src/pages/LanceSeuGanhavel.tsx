@@ -141,11 +141,14 @@ export default function LanceSeuGanhavel() {
 
   const userId = useMemo(() => session?.user?.id ?? null, [session]);
 
+  // Provider fee constant
+  const PROVIDER_GOAL_FEE_PCT = 0.02; // 2% ASAAS provider fee
+
   // Cálculo interno para exibir taxa e meta
   const calc = useMemo(() => {
     const pv = Number(valueGoal || 0);
     const tp = Number(valueTicket || 0);
-    const fee = Math.round(pv * 0.02 * 100) / 100; // 2% arredondado para centavos
+    const fee = Math.round(pv * PROVIDER_GOAL_FEE_PCT * 100) / 100; // 2% arredondado para centavos
     const goal = Math.round((pv + fee) * 100) / 100;
 
     return { pv, tp, fee, goal };
@@ -240,13 +243,17 @@ export default function LanceSeuGanhavel() {
       const { data: pub } = supabase.storage.from(RAFFLE_IMAGE_BUCKET).getPublicUrl(path);
       const imageUrlPublic = pub.publicUrl;
 
+      // Calculate gross goal (including 2% provider fee)
+      const netGoal = toNum(valueGoal);
+      const grossGoal = Math.round((netGoal! * (1 + PROVIDER_GOAL_FEE_PCT)) * 100) / 100;
+
       const payload = {
         user_id: session.user.id,
         title: title.trim(),
         description: description.trim() || null,
         image_url: imageUrlPublic,
 
-        goal_amount: toNum(valueGoal),
+        goal_amount: grossGoal, // IMPORTANT: save gross (with 2% fee)
         ticket_price: toNum(valueTicket),
 
         status: "active",
@@ -259,6 +266,16 @@ export default function LanceSeuGanhavel() {
         updated_at: new Date().toISOString(),
       };
 
+      // Debug log
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('debug') === '1') {
+        console.info({ 
+          net_input: netGoal, 
+          fee_pct: PROVIDER_GOAL_FEE_PCT, 
+          gross_saved: grossGoal 
+        });
+      }
+      
       console.log("[lancar ganhavel] payload", payload);
       const { data, error } = await supabase
         .from("raffles")
@@ -567,7 +584,7 @@ export default function LanceSeuGanhavel() {
               </div>
 
               <p className="text-xs text-gray-600 mt-2">
-                Os 2% adicionais cobrem o processamento via API e garantem a segurança das transações.
+                💡 O valor da meta será salvo com 2% da taxa ASAAS inclusa.
               </p>
             </div>
           </section>
