@@ -27,6 +27,7 @@ import { getAllCategories } from "@/data/categoriesData";
 import { supabase } from "@/integrations/supabase/client";
 import { RafflePublicMoney } from "@/types/public-views";
 import { AdminRaffleRow } from "@/components/AdminRaffleRow";
+import FederalLotteryManager from "@/components/admin/FederalLotteryManager";
 
 
 const PAUSE_TO = "archived"; // toggle policy: active <-> archived
@@ -385,6 +386,11 @@ export default function GanhaveisManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Federal Lottery Management Section */}
+      <section className="mt-6">
+        <FederalLotteryManager />
+      </section>
 
       {/* Filters */}
       <Card>
