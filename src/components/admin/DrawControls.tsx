@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 function timeAgo(iso?: string | null) {
   if (!iso) return "—";
@@ -15,11 +16,16 @@ function timeAgo(iso?: string | null) {
   return `${d}d atrás`;
 }
 
+function isJsonLike(s: unknown): s is string {
+  return typeof s === 'string' && (s.startsWith('{') || s.startsWith('['));
+}
+
 export default function DrawControls() {
-  const [busy, setBusy] = useState<null | "sync" | "pick">(null);
+  const [busy, setBusy] = useState<null | "sync" | "pick" | "federal_sync">(null);
   const [msg, setMsg] = useState("");
   const [lastSync, setLastSync] = useState<{ updated_at?: string | null; concurso?: string | null; draw_date?: string | null } | null>(null);
   const [lastPick, setLastPick] = useState<{ picked_at?: string | null; concurso?: string | null; draw_date?: string | null; winning_key?: string | null } | null>(null);
+  const { toast } = useToast();
 
   async function fetchStatus() {
     try {
@@ -104,6 +110,60 @@ export default function DrawControls() {
     }
   }
 
+  async function syncFederalNow() {
+    try {
+      setBusy("federal_sync");
+      setMsg("Sincronizando resultado da Caixa…");
+      
+      // Type the RPC response
+      const { data, error } = await supabase.rpc('admin_federal_sync_now' as any);
+      
+      if (error) {
+        toast({ 
+          title: 'Erro ao sincronizar', 
+          description: error.message, 
+          variant: 'destructive' 
+        });
+        setMsg(`Erro: ${error.message}`);
+        return;
+      }
+
+      // Type the data response
+      const response = data as { ok?: boolean; status?: string; body?: string; url?: string } | null;
+      let body: unknown = response?.body ?? null;
+      
+      if (isJsonLike(body)) {
+        try { 
+          body = JSON.parse(body as string); 
+        } catch {
+          // Keep original body if parsing fails
+        }
+      }
+
+      const concurso = (body && typeof body === 'object' && 'concurso' in (body as any)) 
+        ? (body as any).concurso 
+        : undefined;
+
+      toast({
+        title: 'Sincronizado com sucesso',
+        description: concurso ? `Concurso ${concurso}` : `Status ${response?.status ?? ''}`,
+      });
+
+      setMsg("Sincronização da Caixa concluída.");
+      window.dispatchEvent(new CustomEvent("federal:refetch"));
+      fetchStatus();
+    } catch (e: any) {
+      toast({ 
+        title: 'Erro ao sincronizar', 
+        description: e?.message || String(e), 
+        variant: 'destructive' 
+      });
+      setMsg(`Erro: ${e?.message || String(e)}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -113,6 +173,9 @@ export default function DrawControls() {
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={syncLatest} disabled={busy !== null}>
             {busy === "sync" ? "Sincronizando…" : "Sincronizar agora"}
+          </Button>
+          <Button onClick={syncFederalNow} disabled={busy !== null} variant="outline">
+            {busy === "federal_sync" ? "Sincronizando…" : "Sincronizar Resultado (Caixa)"}
           </Button>
           <Button onClick={pickWinners} disabled={busy !== null} variant="secondary">
             {busy === "pick" ? "Calculando…" : "Escolher vencedor agora"}
