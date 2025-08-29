@@ -1,5 +1,8 @@
 project_id = "whqxpuyjxoiufzhvqneg"
 
+[functions.my-tickets-get]
+verify_jwt = true
+
 [functions.audit-logger]
 verify_jwt = true
 

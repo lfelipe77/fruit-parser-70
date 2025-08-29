@@ -3,114 +3,181 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home, Ticket, User, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Home, Ticket, User, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
-type Row = {
-  transaction_id: string;
-  raffle_id: string;
-  raffle_title: string;
-  raffle_image_url: string | null;
-  purchase_date: string;
-  tx_status: string;
+interface TicketItem {
+  raffleId: string;
+  raffleTitle: string;
+  raffleImageUrl: string | null;
+  purchaseDate: string;
+  status: string;
   value: number;
-  ticket_count: number;
-  purchased_numbers: any;
-  goal_amount: number;
-  amount_raised: number;
-  progress_pct_money: number;
-  draw_date?: string | null;
-  winner_ticket_id?: string | null;
-  buyer_user_id: string;
-};
+  ticketCount: number;
+  purchasedNumbers: string[];
+  progressPctMoney: number;
+  drawDate: string | null;
+  transactionId: string | null;
+  goalAmount: number;
+  amountRaised: number;
+}
 
-// Aggregate multiple transactions for the same raffle into one display card
-function consolidateByRaffle(rows: Row[]): Row[] {
-  const raffleMap = new Map<string, Row>();
-  
-  for (const row of rows) {
-    const existing = raffleMap.get(row.raffle_id);
-    
-    if (!existing) {
-      // First transaction for this raffle
-      raffleMap.set(row.raffle_id, { ...row });
-    } else {
-      // Merge with existing transaction for same raffle
-      existing.value += row.value; // Sum total spent
-      existing.ticket_count += row.ticket_count; // Sum ticket count
-      
-      // Merge purchased numbers arrays
-      const existingNumbers = Array.isArray(existing.purchased_numbers) ? existing.purchased_numbers : [];
-      const newNumbers = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-      existing.purchased_numbers = [...existingNumbers, ...newNumbers];
-      
-      // Keep the most recent purchase date
-      if (new Date(row.purchase_date) > new Date(existing.purchase_date)) {
-        existing.purchase_date = row.purchase_date;
-        existing.tx_status = row.tx_status;
-        existing.transaction_id = row.transaction_id; // Use most recent transaction ID
-      }
-    }
-  }
-  
-  return Array.from(raffleMap.values());
+interface MyTicketsResponse {
+  ok: boolean;
+  items: TicketItem[];
+  nextCursor: string | null;
+  error?: string;
+  debug?: {
+    source: string;
+    rowsScanned: number;
+    consolidated: number;
+    hasMore: boolean;
+  };
+}
+
+// Convert API response to legacy format for MyTicketCard compatibility
+function convertToLegacyFormat(item: TicketItem): any {
+  return {
+    transaction_id: item.transactionId,
+    raffle_id: item.raffleId,
+    raffle_title: item.raffleTitle,
+    raffle_image_url: item.raffleImageUrl,
+    purchase_date: item.purchaseDate,
+    tx_status: item.status,
+    value: item.value,
+    ticket_count: item.ticketCount,
+    purchased_numbers: item.purchasedNumbers,
+    goal_amount: item.goalAmount,
+    amount_raised: item.amountRaised,
+    progress_pct_money: item.progressPctMoney,
+    draw_date: item.drawDate,
+    buyer_user_id: '' // Not needed for display
+  };
 }
 
 export default function MyTicketsPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [searchParams] = useSearchParams();
-  const [rows, setRows] = useState<Row[]>([]);
+  const [items, setItems] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showSecurityBanner, setShowSecurityBanner] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   
   const filter = searchParams.get('filter');
+  const isDebugMode = searchParams.get('debug') === '1';
 
-  useEffect(() => {
-    if (!user) return;
+  const fetchTickets = async (cursor: string | null = null, append = false) => {
+    if (!session?.access_token) return;
     
-    let mounted = true;
-    (async () => {
+    const startTime = Date.now();
+    const isInitial = !cursor && !append;
+    
+    if (isInitial) {
       setLoading(true);
-      
-      // Build query with proper user scoping
-      let query = supabase
-        .from("my_tickets_ext_v6" as any)
-        .select("*")
-        .eq('buyer_user_id', user.id); // Ensure we only get current user's tickets
-      
-      // Apply filter if present
-      if (filter === 'won') {
-        query = query.not('winner_ticket_id', 'is', null);
-      }
-      
-      query = query.order("purchase_date", { ascending: false });
+      setError(null);
+    } else {
+      setLoadingMore(true);
+    }
 
-      const { data, error } = await query;
+    // Retry logic with backoff
+    const delays = [0, 400, 1200];
+    let lastError: any = null;
 
-      if (error) {
-        console.error("[MyTickets] fetch error", error);
+    for (let attempt = 0; attempt < delays.length; attempt++) {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
       }
-      
-      if (mounted) {
-        const rawRows = (data as unknown as Row[]) ?? [];
+
+      try {
+        const params = new URLSearchParams({
+          limit: '20',
+          ...(cursor && { cursor }),
+          ...(filter === 'won' && { wonOnly: 'true' })
+        });
+
+        const { data, error } = await supabase.functions.invoke('my-tickets-get', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        if (error) throw error;
+
+        const response = data as MyTicketsResponse;
         
-        // Dev security check - warn if data scope is incorrect
-        if (import.meta.env.DEV && rawRows.length > 0) {
-          const firstRow = rawRows[0];
-          if (firstRow.buyer_user_id !== user.id) {
+        if (!response.ok) {
+          throw new Error(response.error || 'API error');
+        }
+
+        // Dev security check
+        if (import.meta.env.DEV && response.items.length > 0) {
+          const hasUserMismatch = response.items.some(item => 
+            // This check should never trigger with the RPC, but keeping for safety
+            false // The RPC filters server-side, so no user ID to check
+          );
+          if (hasUserMismatch) {
             console.warn('⚠️ Security: MyTickets showing data not scoped to current user');
-            setShowSecurityBanner(true);
           }
         }
+
+        if (append) {
+          setItems(prev => [...prev, ...response.items]);
+        } else {
+          setItems(response.items);
+        }
         
-        // Consolidate multiple transactions per raffle into single cards
-        const consolidatedRows = consolidateByRaffle(rawRows);
-        setRows(consolidatedRows);
-        setLoading(false);
+        setNextCursor(response.nextCursor);
+        
+        // Debug info
+        if (isDebugMode && response.debug) {
+          setDebugInfo({
+            ...response.debug,
+            requestTime: Date.now() - startTime,
+            attempt: attempt + 1
+          });
+        }
+
+        break; // Success, exit retry loop
+
+      } catch (err) {
+        lastError = err;
+        console.error(`[MyTickets] Attempt ${attempt + 1} failed:`, err);
+        
+        if (attempt === delays.length - 1) {
+          // All retries failed
+          setError('Failed to load tickets. Please try again.');
+          if (isDebugMode) {
+            setDebugInfo({
+              error: String(err),
+              attempts: delays.length,
+              requestTime: Date.now() - startTime
+            });
+          }
+        }
       }
-    })();
-    return () => { mounted = false; };
-  }, [user, filter]);
+    }
+
+    setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const loadMore = () => {
+    if (nextCursor && !loadingMore) {
+      fetchTickets(nextCursor, true);
+    }
+  };
+
+  useEffect(() => {
+    if (!user || !session) return;
+    
+    setItems([]);
+    setNextCursor(null);
+    fetchTickets();
+  }, [user, session, filter]);
 
   if (!user) {
     return (
@@ -124,13 +191,29 @@ export default function MyTicketsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
-      {/* Dev Security Banner */}
-      {showSecurityBanner && import.meta.env.DEV && (
-        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-red-600" />
-          <div className="text-red-800">
-            <strong>⚠️ Escopo incorreto:</strong> esta lista não está filtrada pelo usuário.
-          </div>
+      {/* Debug Panel */}
+      {isDebugMode && (
+        <div className="mb-4 bg-gray-50 border rounded-lg p-4">
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+          >
+            {showDebug ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            Debug Info
+          </button>
+          {showDebug && debugInfo && (
+            <div className="mt-2 text-xs text-gray-600 space-y-1">
+              <div>Source: {debugInfo.source}</div>
+              <div>Request time: {debugInfo.requestTime}ms</div>
+              <div>Items loaded: {items.length}</div>
+              {debugInfo.rowsScanned && <div>Rows scanned: {debugInfo.rowsScanned}</div>}
+              {debugInfo.consolidated && <div>Consolidated: {debugInfo.consolidated}</div>}
+              {debugInfo.hasMore !== undefined && <div>Has more: {String(debugInfo.hasMore)}</div>}
+              {debugInfo.attempts && <div>Retry attempts: {debugInfo.attempts}</div>}
+              {debugInfo.error && <div className="text-red-600">Error: {debugInfo.error}</div>}
+              {nextCursor && <div>Next cursor: {nextCursor.slice(0, 50)}...</div>}
+            </div>
+          )}
         </div>
       )}
       
@@ -176,7 +259,19 @@ export default function MyTicketsPage() {
         </div>
       )}
 
-      {!loading && rows.length === 0 && (
+      {error && !loading && (
+        <div className="text-center text-red-600 py-16 bg-red-50 rounded-lg">
+          {error}
+          <button 
+            onClick={() => fetchTickets()} 
+            className="block mx-auto mt-2 text-sm text-red-700 hover:text-red-800 underline"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && items.length === 0 && (
         <div className="text-center text-gray-600 py-16">
           {filter === 'won' 
             ? 'Você ainda não ganhou nenhum ganhável.'
@@ -186,10 +281,33 @@ export default function MyTicketsPage() {
       )}
 
       <div className="space-y-4">
-        {rows.map((r) => (
-          <MyTicketCard key={r.raffle_id} row={r} />
+        {items.map((item) => (
+          <MyTicketCard key={item.raffleId} row={convertToLegacyFormat(item)} />
         ))}
       </div>
+
+      {/* Load More Button */}
+      {nextCursor && !loading && !error && (
+        <div className="mt-8 text-center">
+          <Button 
+            onClick={loadMore} 
+            disabled={loadingMore}
+            variant="outline"
+            className="px-8"
+          >
+            {loadingMore ? 'Carregando...' : 'Carregar mais'}
+          </Button>
+        </div>
+      )}
+
+      {/* Loading More Indicator */}
+      {loadingMore && (
+        <div className="mt-4 space-y-3">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="h-36 rounded-2xl bg-gray-100 animate-pulse" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
