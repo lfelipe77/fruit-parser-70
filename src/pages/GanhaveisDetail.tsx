@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import DetalhesOrganizador from "@/components/DetalhesOrganizador";
 import CompartilheRifa from "@/components/CompartilheRifa";
-
 import { toRaffleView, type MoneyRow, type RaffleExtras } from "@/adapters/raffleAdapters";
-import { useAuth } from "@/hooks/useAuth";
+import { toConfirm } from "@/lib/nav";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -55,7 +54,6 @@ const FALLBACK_RULES = `
 export default function GanhaveisDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   // ---- Hooks (always first)
   const [moneyRow, setMoneyRow] = React.useState<MoneyRow | null>(null);
@@ -64,7 +62,6 @@ export default function GanhaveisDetail() {
   const [loading, setLoading] = React.useState(true);
   const [qty, setQty] = React.useState(1);
   const [directLink, setDirectLink] = React.useState<string | null>(null);
-  
 
   // ---- Data normalization
   const raffle = React.useMemo(() => 
@@ -321,17 +318,11 @@ export default function GanhaveisDetail() {
             </div>
 
             <button
-              onClick={() => {
-                if (!user) {
-                  navigate('/login');
-                  return;
-                }
-                navigate(`/ganhavel/${id}/confirmacao-pagamento?qty=${qty}`);
-              }}
+              onClick={() => navigate(toConfirm(raffle.id, qty))}
               disabled={!isActive}
               className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {!user ? 'Fazer Login para Comprar' : `Comprar ${qty} bilhetes`}
+              Comprar {qty} bilhetes
             </button>
 
             {/* Share section */}
@@ -410,7 +401,6 @@ export default function GanhaveisDetail() {
           }}
         />
       </div>
-
       </div>
     </>
   );

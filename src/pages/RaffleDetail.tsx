@@ -48,7 +48,7 @@ export default function RaffleDetail() {
       if (!id) return;
       setLoading(true);
       
-      // Get raffle details from public money view that includes active raffles
+      // Get raffle details from money view (enhanced with financial data)
       const { data: raffleData, error: raffleError } = await supabase
         .from('raffles_public_money_ext')
         .select('*')
@@ -64,35 +64,20 @@ export default function RaffleDetail() {
       }
       
       if (raffleData) {
-        console.log('Raw raffle data:', raffleData);
-        
-        // Calculate tickets from amount raised and ticket price  
-        const amountRaised = (raffleData.amount_raised ?? 0) as number;
-        const ticketPrice = (raffleData.ticket_price ?? 0) as number;
-        const goalAmount = (raffleData.goal_amount ?? 0) as number;
-        const paidTickets = ticketPrice > 0 ? Math.floor(amountRaised / ticketPrice) : 0;
-        
-        // For total tickets, calculate from goal_amount / ticket_price since total_tickets isn't in this view
-        const totalTickets = (goalAmount > 0 && ticketPrice > 0 ? Math.ceil(goalAmount / ticketPrice) : 100) as number;
-        const remaining = Math.max(0, totalTickets - paidTickets);
-        const progressPct = (raffleData.progress_pct_money ?? 0) as number;
-
-        console.log('Calculated values:', { paidTickets, totalTickets, remaining, status: raffleData.status });
-
         setRaffle({
-          id: raffleData.id as string,
-          title: raffleData.title as string,
+          id: raffleData.id,
+          title: raffleData.title,
           description: raffleData.description,
           image_url: raffleData.image_url,
           draw_date: raffleData.draw_date,
-          status: raffleData.status as string,
-          ticket_price: ticketPrice,
-          total_tickets: totalTickets,
-          paid_tickets: paidTickets,
-          tickets_remaining: remaining,
-          amount_collected: amountRaised,
-          goal_amount: goalAmount,
-          progress_pct: progressPct,
+          status: raffleData.status,
+          ticket_price: raffleData.ticket_price,
+          total_tickets: raffleData.participants_count || 0,
+          paid_tickets: raffleData.participants_count || 0,
+          tickets_remaining: Math.max(0, 1000 - (raffleData.participants_count || 0)), // Fallback calculation
+          amount_collected: raffleData.amount_raised,
+          goal_amount: raffleData.goal_amount,
+          progress_pct: raffleData.progress_pct_money
         } as Raffle);
       }
       
@@ -114,20 +99,12 @@ export default function RaffleDetail() {
         { event: "*", schema: "public", table: "tickets", filter: `raffle_id=eq.${raffle.id}` },
         async () => {
           const { data } = await (supabase as any)
-            .from('raffles_public_money_ext')
-            .select('participants_count,amount_raised')
+            .from('raffles_public_ext')
+            .select('paid_tickets,tickets_remaining')
             .eq("id", raffle.id)
             .maybeSingle();
           if (data && raffle) {
-            // Calculate tickets from amount raised and ticket price
-            const paidTickets = Math.floor((data.amount_raised || 0) / (raffle.ticket_price || 1));
-            const remaining = Math.max(0, (raffle.total_tickets || 0) - paidTickets);
-            setRaffle({ 
-              ...raffle, 
-              paid_tickets: paidTickets, 
-              tickets_remaining: remaining,
-              amount_collected: data.amount_raised || 0
-            });
+            setRaffle({ ...raffle, paid_tickets: data.paid_tickets, tickets_remaining: data.tickets_remaining });
           }
         }
       )
@@ -154,7 +131,6 @@ export default function RaffleDetail() {
         setErrorMsg("Informe uma quantidade válida.");
         return;
       }
-      console.log('Checking tickets_remaining:', raffle.tickets_remaining, 'for raffle:', raffle.id);
       if ((raffle.tickets_remaining ?? 0) < 1) {
         setErrorMsg("Rifa esgotada.");
         return;
@@ -163,7 +139,7 @@ export default function RaffleDetail() {
       setSubmitting(true);
 
       // 1) reserve tickets
-      const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_tickets_v2", {
+      const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_tickets", {
         p_raffle_id: raffle.id,
         p_qty: qty,
       });

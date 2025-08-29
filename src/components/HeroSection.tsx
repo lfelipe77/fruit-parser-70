@@ -4,25 +4,10 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useHeroCopy } from "@/hooks/useHeroCopy";
 import { FadeText } from "@/components/FadeText";
-import { useAuthContext } from "@/providers/AuthProvider";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useHeroStats } from "@/hooks/useHeroStats";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
 export default function HeroSection() {
   const { t } = useTranslation();
-  const { user } = useAuthContext();
-  const isMobile = useIsMobile();
-  const { 
-    totalPrizeAmount, 
-    totalParticipants, 
-    totalRaffles, 
-    activeRaffles,  // NEW: For floating card
-    loading, 
-    formatCurrency, 
-    formatCount 
-  } = useHeroStats();
-  
   // Auto-rotating text every 2 minutes
   const { headline, subline } = useHeroCopy({ 
     autoRotateMs: 120000, // 2 minutes
@@ -77,21 +62,19 @@ export default function HeroSection() {
               </Button>
             </div>
             
-            {/* Login/Signup buttons - only show on mobile when not logged in */}
-            {isMobile && !user && (
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-4">
-                <Button variant="outline" size="default" className="text-sm px-6" asChild>
-                  <Link to="/login">
-                    Entrar
-                  </Link>
-                </Button>
-                <Button variant="secondary" size="default" className="text-sm px-6" asChild>
-                  <Link to="/cadastro">
-                    Criar Conta
-                  </Link>
-                </Button>
-              </div>
-            )}
+            {/* Login/Signup buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-4">
+              <Button variant="outline" size="default" className="text-sm px-6" asChild>
+                <Link to="/login">
+                  Entrar
+                </Link>
+              </Button>
+              <Button variant="secondary" size="default" className="text-sm px-6" asChild>
+                <Link to="/cadastro">
+                  Criar Conta
+                </Link>
+              </Button>
+            </div>
             
             <div className="grid grid-cols-3 gap-4 md:gap-6 pt-6 md:pt-8 max-w-lg mx-auto lg:mx-0">
               <div className="text-center">
@@ -100,9 +83,7 @@ export default function HeroSection() {
                     <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">
-                  {loading ? "..." : formatCurrency(totalPrizeAmount)}
-                </div>
+                <div className="font-semibold text-base md:text-lg">R$ 8M+</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Premiado</div>
               </div>
               <div className="text-center">
@@ -111,9 +92,7 @@ export default function HeroSection() {
                     <Users className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">
-                  {loading ? "..." : formatCount(totalParticipants)}
-                </div>
+                <div className="font-semibold text-base md:text-lg">25K+</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Participantes</div>
               </div>
               <div className="text-center">
@@ -122,9 +101,7 @@ export default function HeroSection() {
                     <Target className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className="font-semibold text-base md:text-lg">
-                  {loading ? "..." : formatCount(totalRaffles)}
-                </div>
+                <div className="font-semibold text-base md:text-lg">890+</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Ganhaveis</div>
               </div>
             </div>
@@ -144,9 +121,7 @@ export default function HeroSection() {
             {/* Floating stats cards - only on desktop */}
             <div className="absolute -top-4 -left-4 bg-white p-4 rounded-lg shadow-lg animate-pulse">
               <div className="text-sm text-muted-foreground">Ganhaveis Ativos</div>
-              <div className="text-2xl font-bold text-primary">
-                {loading ? "..." : activeRaffles}
-              </div>
+              <div className="text-2xl font-bold text-primary">128</div>
             </div>
             
             <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg animate-pulse delay-150">

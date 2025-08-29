@@ -35,7 +35,6 @@ import GerenciarGanhavel from "./pages/GerenciarGanhavel";
 import GerenciarCartoesEPix from "./pages/GerenciarCartoesEPix";
 import ConfirmacaoPagamento from "./pages/ConfirmacaoPagamento";
 import PagamentoSucesso from "./pages/PagamentoSucesso";
-
 import PagamentoErro from "./pages/PagamentoErro";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PerfilPublico from "./pages/PerfilPublico";
@@ -78,7 +77,6 @@ import AdminPayouts from '@/pages/AdminPayouts';
 import LastPathKeeper from '@/components/LastPathKeeper';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthProvider } from '@/providers/AuthProvider';
-import PagamentoRecusado from './pages/PagamentoRecusado';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -273,9 +271,6 @@ const AppContent = () => {
         {import.meta.env.DEV && (
           <Route path="/debug-token" element={<DebugToken />} />
         )}
-        {/* Payment success/declined routes */}
-        <Route path="/pagamento/sucesso/:paymentId" element={<PagamentoSucesso />} />
-        <Route path="/pagamento/recusado/:paymentId" element={<PagamentoRecusado />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

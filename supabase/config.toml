@@ -26,24 +26,3 @@ verify_jwt = false
 
 [functions.federal-sync]
 verify_jwt = false
-
-[functions.asaas-webhook]
-verify_jwt = false
-
-[functions.debug-secrets]
-verify_jwt = false
-
-[functions.asaas-customers]
-verify_jwt = false
-
-[functions.asaas-payments]
-verify_jwt = false
-
-[functions.asaas-pix-qr]
-verify_jwt = false
-
-[functions.payment-status]
-verify_jwt = false
-
-[functions.asaas-reconcile]
-verify_jwt = false

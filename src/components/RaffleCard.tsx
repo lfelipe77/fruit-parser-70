@@ -8,7 +8,7 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
   const cityState = [r.location_city, r.location_state].filter(Boolean).join(" • ");
 
   return (
-    <Link to={`/ganhavel/${r.id}`} className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+    <div className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
       {/* Image */}
       <div className="h-44 w-full overflow-hidden rounded-lg">
         {r.image_url ? (
@@ -44,11 +44,11 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
         </div>
 
         {/* CTA */}
-        <div className="w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground group-hover:bg-primary/90 transition-colors">
+        <Link to={`/ganhavel/${r.id}`} className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
           Comprar Bilhete
-        </div>
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }
 

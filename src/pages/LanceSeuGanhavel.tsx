@@ -250,7 +250,6 @@ export default function LanceSeuGanhavel() {
         ticket_price: toNum(valueTicket),
 
         status: "active",
-        published: true,
         category_id: categoryId ? Number(categoryId) : null,
         subcategory_id: subcategoryId || null,
         city: locationType === "cidade" ? city : null,
