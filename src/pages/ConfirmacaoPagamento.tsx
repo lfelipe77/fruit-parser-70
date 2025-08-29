@@ -203,10 +203,13 @@ export default function ConfirmacaoPagamento() {
 
   // Numbers are initialized properly in useState, no need for qty effect since qty doesn't change
 
-  // Calculations - R$2 institutional fee charged to buyer but NOT counted towards raffle progress
-  const subtotal = (raffle?.ticket_price ?? 0) * qty;
-  const institutionalFee = 2.00; // flat per checkout
-  const chargeTotal = subtotal + institutionalFee;
+  // Calculations - compute checkout with minimum validation
+  const { qty: adjustedQty, fee, subtotal, chargeTotal } = React.useMemo(() => {
+    const { computeCheckout } = require('@/utils/money');
+    return computeCheckout(raffle?.ticket_price ?? 0, qty);
+  }, [raffle?.ticket_price, qty]);
+  
+  const qtyAdjusted = adjustedQty !== qty;
 
   // State machine initialization and server persistence
   React.useEffect(() => {
@@ -236,8 +239,10 @@ export default function ConfirmacaoPagamento() {
             paymentMethod,
             formData,
             // Store fee info for audit and ASAAS payment
-            institutional_fee: institutionalFee,
-            charge_total: chargeTotal
+            institutional_fee: fee,
+            charge_total: chargeTotal,
+            qty: adjustedQty,
+            unit_price: raffle?.ticket_price || 0
           }
         };
 
@@ -839,13 +844,18 @@ export default function ConfirmacaoPagamento() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span>Bilhetes ({qty}x)</span>
+                <span>Bilhetes ({adjustedQty}x)</span>
                 <span>{formatBRL(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Taxa de processamento</span>
-                <span>{formatBRL(institutionalFee)}</span>
+                <span>{formatBRL(fee)}</span>
               </div>
+              {qtyAdjusted && (
+                <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
+                  Quantidade ajustada para atender o mínimo de R$ 5,00.
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>

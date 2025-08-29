@@ -37,25 +37,34 @@ serve(async (req) => {
       });
     }
 
-    // Fees - R$2 institutional fee charged to buyer but NOT counted towards raffle progress
-    let fee_fixed = 0;
+    // Validate minimum charge requirements server-side
+    const fee_fixed = 2.0;   // R$2,00 per purchase (institutional fee)
+    const subtotal = amount; // tickets only (what counts toward raffle progress)
+    const charge_total = subtotal + fee_fixed; // what buyer pays
+    
+    // Reject if doesn't meet minimum charge requirement
+    if (subtotal < 3.00 || charge_total < 5.00) {
+      return new Response(JSON.stringify({
+        error: "Minimum charge requirement not met",
+        minimum_subtotal: 3.00,
+        minimum_charge_total: 5.00,
+        received_subtotal: subtotal,
+        received_charge_total: charge_total
+      }), { 
+        status: 400, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     let fee_pct = 0;
     let fee_amount = 0;
-
-    if (provider === "asaas") {
-      fee_fixed = 2.0;   // R$2,00 per purchase (institutional fee)
-    }
-    // Stripe: keep 0; your Stripe pricing is charged to you, not buyer, unless you choose to add it.
-
-    const charge_total = amount + fee_fixed + fee_amount; // what buyer pays
-    const subtotal = amount; // tickets only (what counts toward raffle progress)
 
     // TODO: Create real checkout with provider SDK/API
     // IMPORTANT: Use value = charge_total (subtotal + institutional fee)
     const provider_payment_id = `${provider}_${crypto.randomUUID()}`;
     const redirect_url = `https://example.com/checkout/${provider_payment_id}`;
 
-    console.log(`Creating checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal}, fee=${fee_fixed}, charge_total=${charge_total}`);
+    console.log(`Creating checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal.toFixed(2)}, fee=${fee_fixed.toFixed(2)}, charge_total=${charge_total.toFixed(2)}`);
 
     return new Response(JSON.stringify({
       provider,

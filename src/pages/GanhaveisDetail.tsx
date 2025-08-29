@@ -157,10 +157,13 @@ export default function GanhaveisDetail() {
     };
   }, [fetchData, id]);
 
-  // ---- Derived - R$2 institutional fee charged to buyer but NOT counted towards raffle progress
-  const subtotal = (raffle?.ticketPrice ?? 0) * qty;
-  const institutionalFee = 2.00; // flat per checkout
-  const chargeTotal = subtotal + institutionalFee;
+  // ---- Derived - compute checkout with minimum validation
+  const { qty: adjustedQty, fee, subtotal, chargeTotal } = React.useMemo(() => {
+    const { computeCheckout } = require('@/utils/money');
+    return computeCheckout(raffle?.ticketPrice ?? 0, qty);
+  }, [raffle?.ticketPrice, qty]);
+  
+  const qtyAdjusted = adjustedQty !== qty;
   const drawLabel = raffle?.drawDate ? formatDateBR(raffle.drawDate) : "—";
   const isActive = raffle?.status === "active";
 
@@ -295,7 +298,7 @@ export default function GanhaveisDetail() {
               >
                 –
               </button>
-              <span className="w-12 text-center font-semibold">{qty}</span>
+              <span className="w-12 text-center font-semibold">{adjustedQty}</span>
               <button 
                 onClick={() => setQty(q => q + 1)} 
                 className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
@@ -303,13 +306,19 @@ export default function GanhaveisDetail() {
                 +
               </button>
             </div>
+            
+            {qtyAdjusted && (
+              <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
+                Quantidade ajustada para atender o mínimo de R$ 5,00.
+              </div>
+            )}
 
             <div className="space-y-2 bg-white rounded-lg p-4">
               <div className="flex justify-between text-sm">
-                <span>Bilhetes ({qty}x):</span><span>{formatBRL(subtotal)}</span>
+                <span>Bilhetes ({adjustedQty}x):</span><span>{formatBRL(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>Taxa institucional:</span><span>{formatBRL(institutionalFee)}</span>
+                <span>Taxa institucional:</span><span>{formatBRL(fee)}</span>
               </div>
               <hr className="my-2 border-gray-200" />
               <div className="flex justify-between font-bold text-lg text-emerald-700">
@@ -318,11 +327,11 @@ export default function GanhaveisDetail() {
             </div>
 
             <button
-              onClick={() => navigate(toConfirm(raffle.id, qty))}
+              onClick={() => navigate(toConfirm(raffle.id, adjustedQty))}
               disabled={!isActive}
               className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Comprar {qty} bilhetes
+              Comprar {adjustedQty} bilhetes
             </button>
 
             {/* Share section */}

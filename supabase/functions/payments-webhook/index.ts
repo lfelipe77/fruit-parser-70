@@ -38,11 +38,11 @@ async function confirmAndLog(
   rawPayload: unknown
 ) {
   // 1) Find payments_pending by provider_payment_id or other identifier
-  const { data: pendingPayments } = await supabase
-    .from("payments_pending")
-    .select("reservation_id, amount, ui_state")
-    .eq("asaas_payment_id", providerPaymentId)
-    .limit(1);
+    const { data: pendingPayments } = await supabase
+      .from("payments_pending")
+      .select("reservation_id, amount, ui_state")
+      .eq("asaas_payment_id", providerPaymentId)
+      .limit(1);
 
   if (!pendingPayments?.length) {
     console.warn(`No pending payment found for provider_payment_id: ${providerPaymentId}`);
@@ -68,6 +68,8 @@ async function confirmAndLog(
         // Include fee info for audit
         institutional_fee: uiState.institutional_fee || 2.00,
         charge_total: uiState.charge_total,
+        qty: uiState.qty,
+        unit_price: uiState.unit_price,
         subtotal_only: subtotalOnly
       }
     }, {
