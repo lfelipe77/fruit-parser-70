@@ -37,25 +37,25 @@ serve(async (req) => {
       });
     }
 
-    // Fees
+    // Fees - R$2 institutional fee charged to buyer but NOT counted towards raffle progress
     let fee_fixed = 0;
     let fee_pct = 0;
     let fee_amount = 0;
 
     if (provider === "asaas") {
-      fee_fixed = 2.0;   // R$2,00 per purchase
+      fee_fixed = 2.0;   // R$2,00 per purchase (institutional fee)
     }
     // Stripe: keep 0; your Stripe pricing is charged to you, not buyer, unless you choose to add it.
 
-    const total_amount = amount + fee_fixed + fee_amount;
+    const charge_total = amount + fee_fixed + fee_amount; // what buyer pays
+    const subtotal = amount; // tickets only (what counts toward raffle progress)
 
-    // TODO: Create real checkout with provider SDK/API and get:
-    // - provider_payment_id
-    // - redirect_url
+    // TODO: Create real checkout with provider SDK/API
+    // IMPORTANT: Use value = charge_total (subtotal + institutional fee)
     const provider_payment_id = `${provider}_${crypto.randomUUID()}`;
     const redirect_url = `https://example.com/checkout/${provider_payment_id}`;
 
-    console.log(`Creating checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, amount=${amount}, fees=${fee_fixed}, total=${total_amount}`);
+    console.log(`Creating checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal}, fee=${fee_fixed}, charge_total=${charge_total}`);
 
     return new Response(JSON.stringify({
       provider,
@@ -64,8 +64,9 @@ serve(async (req) => {
       fee_fixed,
       fee_pct,
       fee_amount,
-      amount,        // base ticket revenue
-      total_amount,  // buyer pays this
+      amount: subtotal,      // base ticket revenue (excludes institutional fee)
+      charge_total,          // buyer pays this (includes institutional fee)
+      total_amount: charge_total, // legacy compatibility
       raffle_id,
       qty,
       currency

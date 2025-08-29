@@ -37,20 +37,76 @@ async function confirmAndLog(
   providerPaymentId: string,
   rawPayload: unknown
 ) {
-  // 1) confirm payment via RPC (marks tx & tickets as paid)
-  const { error: rpcError } = await supabase.rpc("confirm_payment", {
-    p_provider: provider,
-    p_provider_payment_id: providerPaymentId,
-  });
-  if (rpcError) throw rpcError;
+  // 1) Find payments_pending by provider_payment_id or other identifier
+  const { data: pendingPayments } = await supabase
+    .from("payments_pending")
+    .select("reservation_id, amount, ui_state")
+    .eq("asaas_payment_id", providerPaymentId)
+    .limit(1);
 
-  // 2) store raw payload for the matching transaction (service role bypasses RLS)
-  const { error: updError } = await supabase
+  if (!pendingPayments?.length) {
+    console.warn(`No pending payment found for provider_payment_id: ${providerPaymentId}`);
+    return;
+  }
+
+  const pending = pendingPayments[0];
+  const reservationId = pending.reservation_id;
+  const subtotalOnly = pending.amount; // tickets only
+  const uiState = pending.ui_state || {};
+
+  // 2) Upsert transaction with subtotal only (excludes institutional fee)
+  const { error: txError } = await supabase
     .from("transactions")
-    .update({ raw_payload: rawPayload })
-    .eq("provider", provider)
-    .eq("provider_payment_id", providerPaymentId);
-  if (updError) console.warn("WARN: could not update raw_payload:", updError);
+    .upsert({
+      reservation_id: reservationId,
+      amount: subtotalOnly, // IMPORTANT: tickets only (used by money views)
+      status: 'paid',
+      provider: provider,
+      provider_payment_id: providerPaymentId,
+      raw_payload: {
+        ...rawPayload,
+        // Include fee info for audit
+        institutional_fee: uiState.institutional_fee || 2.00,
+        charge_total: uiState.charge_total,
+        subtotal_only: subtotalOnly
+      }
+    }, {
+      onConflict: 'reservation_id',
+      ignoreDuplicates: false
+    });
+
+  if (txError) {
+    console.error("Failed to upsert transaction:", txError);
+    throw txError;
+  }
+
+  // 3) Link tickets to this transaction and mark as paid
+  const { error: ticketError } = await supabase
+    .from("tickets")
+    .update({ 
+      status: 'paid',
+      updated_at: new Date().toISOString()
+    })
+    .eq("reservation_id", reservationId);
+
+  if (ticketError) {
+    console.warn("Failed to update tickets:", ticketError);
+  }
+
+  // 4) Update payments_pending status
+  const { error: pendingError } = await supabase
+    .from("payments_pending")
+    .update({ 
+      status: 'PAID',
+      updated_at: new Date().toISOString()
+    })
+    .eq("reservation_id", reservationId);
+
+  if (pendingError) {
+    console.warn("Failed to update payments_pending:", pendingError);
+  }
+
+  console.log(`Payment finalized: reservation=${reservationId}, subtotal=${subtotalOnly}, provider=${provider}`);
 }
 
 serve(async (req) => {

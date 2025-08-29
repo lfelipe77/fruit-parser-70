@@ -203,10 +203,10 @@ export default function ConfirmacaoPagamento() {
 
   // Numbers are initialized properly in useState, no need for qty effect since qty doesn't change
 
-  // Calculations
+  // Calculations - R$2 institutional fee charged to buyer but NOT counted towards raffle progress
   const subtotal = (raffle?.ticket_price ?? 0) * qty;
-  const fee = 2.00;
-  const total = subtotal + fee;
+  const institutionalFee = 2.00; // flat per checkout
+  const chargeTotal = subtotal + institutionalFee;
 
   // State machine initialization and server persistence
   React.useEffect(() => {
@@ -226,7 +226,7 @@ export default function ConfirmacaoPagamento() {
           raffleId,
           qty,
           unitPrice: raffle?.ticket_price || 0,
-          amount: total,
+          amount: subtotal, // IMPORTANT: tickets only (used by money views)
           numbers: selectedNumbers,
           buyerUserId: user.id,
           pageFingerprint: `confirm-${raffleId}-${Date.now()}`,
@@ -234,7 +234,10 @@ export default function ConfirmacaoPagamento() {
             cameFrom: `ganhavel/${raffleId}`,
             ts: Date.now(),
             paymentMethod,
-            formData
+            formData,
+            // Store fee info for audit and ASAAS payment
+            institutional_fee: institutionalFee,
+            charge_total: chargeTotal
           }
         };
 
@@ -281,7 +284,7 @@ export default function ConfirmacaoPagamento() {
     return () => {
       mounted = false;
     };
-  }, [user, raffleId, raffle?.ticket_price, selectedNumbers, total, qty, paymentMethod, formData]);
+  }, [user, raffleId, raffle?.ticket_price, selectedNumbers, chargeTotal, qty, paymentMethod, formData]);
 
   // Load raffle data
   React.useEffect(() => {
@@ -335,12 +338,12 @@ export default function ConfirmacaoPagamento() {
 
       setIsProcessing(true);
 
-      // 3) Inputs
+      // 3) Inputs - tickets only (excluding institutional fee)
       const now = Date.now();
       const providerRef = `mock-${id}-${now}-${Math.floor(Math.random() * 1e9)}`;
       const safeQty = Math.max(1, asNumber(qty, 1));
       const unitPrice = asNumber(raffle?.ticket_price, 0);
-      const totalPaid = +(unitPrice * safeQty).toFixed(2); // number
+      const totalPaid = +(unitPrice * safeQty).toFixed(2); // subtotal only (excludes fee)
 
       // 4) Call new RPC with customer data
       const { data: txId, error } = await (supabase as any).rpc("record_purchase_v2", {
@@ -841,12 +844,12 @@ export default function ConfirmacaoPagamento() {
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Taxa de processamento</span>
-                <span>{formatBRL(fee)}</span>
+                <span>{formatBRL(institutionalFee)}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span className="text-emerald-600">{formatBRL(total)}</span>
+                <span className="text-emerald-600">{formatBRL(chargeTotal)}</span>
               </div>
               
               <Button 
@@ -860,7 +863,7 @@ export default function ConfirmacaoPagamento() {
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                     Processando...
                   </>
-                ) : !user ? "Fazer Login para Pagar" : `Pagar ${formatBRL(total)}`}
+                ) : !user ? "Fazer Login para Pagar" : `Pagar ${formatBRL(chargeTotal)}`}
               </Button>
               
               <p className="text-xs text-muted-foreground text-center">

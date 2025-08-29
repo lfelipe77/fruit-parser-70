@@ -157,10 +157,10 @@ export default function GanhaveisDetail() {
     };
   }, [fetchData, id]);
 
-  // ---- Derived
-  const feeFixed = 2;
+  // ---- Derived - R$2 institutional fee charged to buyer but NOT counted towards raffle progress
   const subtotal = (raffle?.ticketPrice ?? 0) * qty;
-  const total = subtotal + feeFixed;
+  const institutionalFee = 2.00; // flat per checkout
+  const chargeTotal = subtotal + institutionalFee;
   const drawLabel = raffle?.drawDate ? formatDateBR(raffle.drawDate) : "—";
   const isActive = raffle?.status === "active";
 
@@ -309,11 +309,11 @@ export default function GanhaveisDetail() {
                 <span>Bilhetes ({qty}x):</span><span>{formatBRL(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm text-gray-600">
-                <span>Taxa institucional:</span><span>{formatBRL(feeFixed)}</span>
+                <span>Taxa institucional:</span><span>{formatBRL(institutionalFee)}</span>
               </div>
               <hr className="my-2 border-gray-200" />
               <div className="flex justify-between font-bold text-lg text-emerald-700">
-                <span>Total a pagar</span><span>{formatBRL(total)}</span>
+                <span>Total a pagar</span><span>{formatBRL(chargeTotal)}</span>
               </div>
             </div>
 
