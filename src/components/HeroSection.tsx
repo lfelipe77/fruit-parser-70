@@ -5,16 +5,84 @@ import { Link } from "react-router-dom";
 import { useHeroCopy } from "@/hooks/useHeroCopy";
 import { FadeText } from "@/components/FadeText";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
+
+type HomepageStats = {
+  total_raised: number;
+  total_prize_paid: number;
+  total_participants: number;
+  total_ganhaveis: number;
+  active_ganhaveis: number;
+  almost_complete_ganhaveis: number;
+  total_tickets_sold: number;
+  recent_transactions: number;
+};
 
 export default function HeroSection() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const [stats, setStats] = useState<HomepageStats | null>(null);
+  const [statsSource, setStatsSource] = useState<'cache' | 'live' | null>(null);
+  const isDebugMode = new URLSearchParams(window.location.search).has('debug');
+  
   // Auto-rotating text every 2 minutes
   const { headline, subline } = useHeroCopy({ 
     autoRotateMs: 120000, // 2 minutes
     persist: "none" 
   });
+
+  async function fetchStats() {
+    const tryCache = () => supabase.rpc('get_homepage_stats_cache');
+    const tryLive = () => supabase.rpc('get_homepage_stats');
+    
+    // attempt cache first; on error or null, fall back to live
+    let src: 'cache' | 'live' = 'cache';
+    let { data, error } = await tryCache();
+    if (error || !data || (Array.isArray(data) && data.length === 0)) { 
+      src = 'live'; 
+      ({ data, error } = await tryLive()); 
+    }
+    
+    // If data is array, take first element
+    const statsData = Array.isArray(data) ? data[0] : data;
+    return { data: statsData, error, src };
+  }
+
+  useEffect(() => {
+    fetchStats().then(({ data, error, src }) => {
+      if (data && !error) {
+        setStats(data as HomepageStats);
+        setStatsSource(src);
+        if (isDebugMode) {
+          console.info('[homepage_stats]', { src, data });
+        }
+      }
+    }).catch(console.error);
+  }, [isDebugMode]);
+
+  // Formatters
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M+`;
+    if (num >= 1000) return `${Math.floor(num / 1000)}K+`;
+    return num.toString();
+  };
+
+  const formatCurrency = (num: number) => {
+    if (num >= 1000000) return `R$ ${(num / 1000000).toFixed(1)}M+`;
+    if (num >= 1000) return `R$ ${Math.floor(num / 1000)}K+`;
+    return `R$ ${num}`;
+  };
+
+  // Use real stats or fallback to hardcoded values
+  const displayStats = {
+    prizeValue: stats ? (stats.total_prize_paid > 0 ? formatCurrency(stats.total_prize_paid) : formatCurrency(stats.total_raised)) : "R$ 8M+",
+    prizeLabel: stats ? (stats.total_prize_paid > 0 ? "Premiado" : "Arrecadado") : "Premiado",
+    participants: stats ? formatNumber(stats.total_participants) : "25K+",
+    ganhaveis: stats ? formatNumber(stats.total_ganhaveis) : "890+",
+    activeGanhaveis: stats ? stats.active_ganhaveis.toString() : "128"
+  };
   
   return (
     <section className="relative bg-gradient-hero py-12 md:py-20 lg:py-32 overflow-hidden">
