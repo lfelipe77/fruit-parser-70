@@ -34,20 +34,18 @@ export default function HeroSection() {
   });
 
   async function fetchStats() {
-    const tryCache = () => supabase.rpc('get_homepage_stats_cache');
-    const tryLive = () => supabase.rpc('get_homepage_stats');
+    const tryCache = () => supabase.from('homepage_stats_cache').select('*').limit(1).single();
+    const tryLive = () => supabase.from('homepage_stats').select('*').limit(1).single();
     
     // attempt cache first; on error or null, fall back to live
     let src: 'cache' | 'live' = 'cache';
     let { data, error } = await tryCache();
-    if (error || !data || (Array.isArray(data) && data.length === 0)) { 
+    if (error || !data) { 
       src = 'live'; 
       ({ data, error } = await tryLive()); 
     }
     
-    // If data is array, take first element
-    const statsData = Array.isArray(data) ? data[0] : data;
-    return { data: statsData, error, src };
+    return { data, error, src };
   }
 
   useEffect(() => {
