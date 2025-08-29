@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/formatters";
 import { asNumber, computeCheckout } from "@/utils/money";
-import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye } from "lucide-react";
+import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye, RefreshCw } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
@@ -80,6 +80,18 @@ function deriveInitialCombos(navState: any): string[] {
   } catch {
     return [];
   }
+  }
+
+// Safe localStorage parsing with fallback
+function safeParseLocalStorage(key: string): any {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
+  } catch {
+    // Clear invalid data and return null
+    localStorage.removeItem(key);
+    return null;
+  }
 }
 
 export default function ConfirmacaoPagamento() {
@@ -89,6 +101,8 @@ export default function ConfirmacaoPagamento() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const [isMounted, setIsMounted] = React.useState(true);
+  const [isOffline, setIsOffline] = React.useState(false);
 
   console.log("[ConfirmacaoPagamento] Hook states:", { id, userExists: !!user, authLoading });
 
@@ -100,6 +114,12 @@ export default function ConfirmacaoPagamento() {
   // Server state for persistence
   const [serverState, setServerState] = React.useState<ServerState | null>(null);
   const [stateMachineInitialized, setStateMachineInitialized] = React.useState(false);
+
+  // Track component mount status
+  React.useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   // Debug instrumentation (only when ?debug=1)
   React.useEffect(() => {
@@ -203,39 +223,57 @@ export default function ConfirmacaoPagamento() {
 
   // Numbers are initialized properly in useState, no need for qty effect since qty doesn't change
 
-  // Calculations - compute checkout with minimum validation
-  const { qty: adjustedQty, fee, subtotal, chargeTotal } = React.useMemo(() => {
-    return computeCheckout(raffle?.ticket_price ?? 0, qty);
-  }, [raffle?.ticket_price, qty]);
+  // State for checkout calculations
+  const [checkoutData, setCheckoutData] = React.useState({
+    adjustedQty: qty,
+    fee: 2.00,
+    subtotal: 0,
+    chargeTotal: 0
+  });
   
-  const qtyAdjusted = adjustedQty !== qty;
+  const qtyAdjusted = checkoutData.adjustedQty !== qty;
+
+  // Calculate checkout in useEffect instead of useMemo
+  React.useEffect(() => {
+    if (!isMounted) return;
+    
+    const computed = computeCheckout(raffle?.ticket_price ?? 0, qty);
+    setCheckoutData({
+      adjustedQty: computed.qty,
+      fee: computed.fee,
+      subtotal: computed.subtotal,
+      chargeTotal: computed.chargeTotal
+    });
+  }, [raffle?.ticket_price, qty, isMounted]);
 
   // Debug: log computed amounts and reservation
   React.useEffect(() => {
-    if (!isDebugMode()) return;
+    if (!isDebugMode() || !isMounted) return;
     try {
       logDebugInfo("ConfirmacaoPagamento:Computed", {
         reservation_id: reservationId,
-        qty: adjustedQty,
+        qty: checkoutData.adjustedQty,
         unit_price: raffle?.ticket_price || 0,
-        subtotal,
-        fee: fee,
-        total: chargeTotal
+        subtotal: checkoutData.subtotal,
+        fee: checkoutData.fee,
+        total: checkoutData.chargeTotal
       });
     } catch (_) { /* no-op */ }
-  }, [reservationId, adjustedQty, raffle?.ticket_price, subtotal, fee, chargeTotal]);
+  }, [reservationId, checkoutData, raffle?.ticket_price, isMounted]);
 
   // State machine initialization and server persistence
   React.useEffect(() => {
     let mounted = true;
 
     async function initializeStateMachine() {
-      if (!user || !raffleId || stateMachineInitialized) return;
+      if (!user || !raffleId || stateMachineInitialized || !isMounted) return;
 
       try {
+        setIsOffline(false);
+        
         // Get session for auth
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return;
+        if (!session?.access_token || !mounted) return;
 
         // Build context from current page state
         const contextData = {
@@ -243,7 +281,7 @@ export default function ConfirmacaoPagamento() {
           raffleId,
           qty,
           unitPrice: raffle?.ticket_price || 0,
-          amount: subtotal, // IMPORTANT: tickets only (used by money views)
+          amount: checkoutData.subtotal, // IMPORTANT: tickets only (used by money views)
           numbers: selectedNumbers,
           buyerUserId: user.id,
           pageFingerprint: `confirm-${raffleId}-${Date.now()}`,
@@ -253,9 +291,9 @@ export default function ConfirmacaoPagamento() {
             paymentMethod,
             formData,
             // Store fee info for audit and ASAAS payment
-            institutional_fee: fee,
-            charge_total: chargeTotal,
-            qty: adjustedQty,
+            institutional_fee: checkoutData.fee,
+            charge_total: checkoutData.chargeTotal,
+            qty: checkoutData.adjustedQty,
             unit_price: raffle?.ticket_price || 0
           }
         };
@@ -270,11 +308,16 @@ export default function ConfirmacaoPagamento() {
 
         if (upsertError) {
           console.error('Failed to upsert state:', upsertError);
+          setIsOffline(true);
           return;
         }
 
-        // Store local backup
-        localStorage.setItem(`confirm.${reservationId}`, JSON.stringify(contextData));
+        // Store local backup with safe handling
+        try {
+          localStorage.setItem(`confirm.${reservationId}`, JSON.stringify(contextData));
+        } catch {
+          // Ignore localStorage errors
+        }
 
         // Get current state from server
         const getUrl = `https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/confirm-state-get?reservationId=${reservationId}`;
@@ -285,16 +328,41 @@ export default function ConfirmacaoPagamento() {
             'Content-Type': 'application/json'
           }
         });
-        const getResult = getResponse.ok ? await getResponse.json() : null;
-        const getError = !getResponse.ok ? { message: 'Failed to fetch state' } : null;
 
-        if (!getError && getResult?.ok && mounted) {
+        if (!getResponse.ok) {
+          setIsOffline(true);
+          // Try to load from localStorage as fallback
+          const backup = safeParseLocalStorage(`confirm.${reservationId}`);
+          if (backup && mounted) {
+            console.log('Using localStorage backup due to network error');
+          }
+          return;
+        }
+
+        const getResult = await getResponse.json();
+
+        if (getResult?.ok && mounted && isMounted) {
           setServerState(getResult);
           setStateMachineInitialized(true);
+          
+          // Log network success for debug
+          if (isDebugMode()) {
+            logDebugInfo("ConfirmacaoPagamento:NetworkSuccess", {
+              reservation_id: reservationId,
+              network_call_success: true
+            });
+          }
         }
 
       } catch (error) {
         console.error('State machine initialization error:', error);
+        setIsOffline(true);
+        
+        // Try localStorage fallback
+        const backup = safeParseLocalStorage(`confirm.${reservationId}`);
+        if (backup && mounted && isMounted) {
+          console.log('Using localStorage backup due to error');
+        }
       }
     }
 
@@ -303,19 +371,21 @@ export default function ConfirmacaoPagamento() {
     return () => {
       mounted = false;
     };
-  }, [user, raffleId, raffle?.ticket_price, selectedNumbers, chargeTotal, qty, paymentMethod, formData]);
+  }, [user, raffleId, raffle?.ticket_price, selectedNumbers, checkoutData.chargeTotal, qty, paymentMethod, formData, isMounted]);
 
-  // Load raffle data
+  // Load raffle data with isMounted guard
   React.useEffect(() => {
     let mounted = true;
     const onUpdate = (e: Event) => {
-      if (!mounted) return;
+      if (!mounted || !isMounted) return;
       // Safely handle raffle updates
     };
     
     window.addEventListener('raffleUpdated', onUpdate);
     
     (async () => {
+      if (!isMounted) return;
+      
       try {
         setLoading(true);
         const { data } = await (supabase as any)
@@ -324,10 +394,15 @@ export default function ConfirmacaoPagamento() {
           .eq("id", raffleId)
           .maybeSingle();
         
-        if (!mounted) return;
+        if (!mounted || !isMounted) return;
         setRaffle((data ?? null) as RaffleRow | null);
+      } catch (error) {
+        console.error('Failed to load raffle:', error);
+        if (mounted && isMounted) {
+          setIsOffline(true);
+        }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted && isMounted) setLoading(false);
       }
     })();
     
@@ -335,7 +410,7 @@ export default function ConfirmacaoPagamento() {
       mounted = false;
       window.removeEventListener('raffleUpdated', onUpdate);
     };
-  }, [raffleId]);
+  }, [raffleId, isMounted]);
 
   // Handle form submission
   async function handlePayment() {
@@ -498,6 +573,25 @@ export default function ConfirmacaoPagamento() {
     <>
       <Navigation />
       <div className="container mx-auto p-4 max-w-4xl">
+        {/* Offline Banner */}
+        {isOffline && (
+          <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+              <span className="text-sm text-orange-800">Conectividade limitada. Alguns dados podem estar desatualizados.</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="text-orange-700 border-orange-300 hover:bg-orange-100"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Tentar novamente
+            </Button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -858,12 +952,12 @@ export default function ConfirmacaoPagamento() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span>Bilhetes ({adjustedQty}x)</span>
-                <span>{formatBRL(subtotal)}</span>
+                <span>Bilhetes ({checkoutData.adjustedQty}x)</span>
+                <span>{formatBRL(checkoutData.subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Taxa de processamento</span>
-                <span>{formatBRL(fee)}</span>
+                <span>{formatBRL(checkoutData.fee)}</span>
               </div>
               {qtyAdjusted && (
                 <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
@@ -873,7 +967,7 @@ export default function ConfirmacaoPagamento() {
               <Separator />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span className="text-emerald-600">{formatBRL(chargeTotal)}</span>
+                <span className="text-emerald-600">{formatBRL(checkoutData.chargeTotal)}</span>
               </div>
               
               <Button 
@@ -887,7 +981,7 @@ export default function ConfirmacaoPagamento() {
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                     Processando...
                   </>
-                ) : !user ? "Fazer Login para Pagar" : `Pagar ${formatBRL(chargeTotal)}`}
+                ) : !user ? "Fazer Login para Pagar" : `Pagar ${formatBRL(checkoutData.chargeTotal)}`}
               </Button>
               
               <p className="text-xs text-muted-foreground text-center">

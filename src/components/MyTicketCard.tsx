@@ -24,17 +24,16 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
 
+  // Use flattenCombos helper - flatten to depth=2, stringify, Set for dedupe
+  const flattenCombos = (blob: any): string[] => {
+    const arr = Array.isArray(blob) ? blob.flat(2) : [];
+    const stringified = arr.map(x => String(x || '')).filter(Boolean);
+    return Array.from(new Set(stringified));
+  };
+
   const combos = useMemo(() => {
     if (!row.purchased_numbers) return [];
-    
-    // Handle both array of numbers and nested array structures
-    const raw = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-    const flattened = raw.flat(2); // Flatten nested arrays from consolidated data
-    
-    return flattened
-      .map(toComboString)
-      .filter(Boolean)
-      .filter((combo, index, arr) => arr.indexOf(combo) === index); // Remove duplicates
+    return flattenCombos(row.purchased_numbers).map(toComboString).filter(Boolean);
   }, [row.purchased_numbers]);
 
   async function onShare() {
@@ -116,35 +115,49 @@ export default function MyTicketCard({ row }: { row: Row }) {
           />
         </div>
 
-        {/* Combos preview line (first 3) */}
+        {/* Combos display - show preview when collapsed, full list when expanded */}
         {combos.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {combos.slice(0, 3).map((c, i) => (
-              <span key={i} className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded">
-                {c}
-              </span>
-            ))}
-            {combos.length > 3 && (
-              <button
-                className="text-xs inline-flex items-center gap-1 text-emerald-700 hover:underline"
-                onClick={() => setOpen(v => !v)}
-              >
-                <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
-                Ver todos ({combos.length})
-              </button>
+          <div className="mt-2">
+            {!open && (
+              <div className="flex flex-wrap gap-2">
+                {combos.slice(0, 3).map((c) => (
+                  <span key={c} className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded">
+                    {c}
+                  </span>
+                ))}
+                {combos.length > 3 && (
+                  <button
+                    className="text-xs inline-flex items-center gap-1 text-emerald-700 hover:underline"
+                    onClick={() => setOpen(true)}
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                    Ver todos ({combos.length})
+                  </button>
+                )}
+              </div>
+            )}
+
+            {open && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Todos os números:</span>
+                  <button
+                    className="text-xs text-emerald-700 hover:underline"
+                    onClick={() => setOpen(false)}
+                  >
+                    Fechar
+                  </button>
+                </div>
+                <ul className="grid sm:grid-cols-2 gap-2 text-sm">
+                  {combos.map((c) => (
+                    <li key={c} className="rounded border px-2 py-1">
+                      ({c})
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
-        )}
-
-        {/* Expand list */}
-        {open && combos.length > 0 && (
-          <ul className="mt-2 grid sm:grid-cols-2 gap-2 text-sm">
-            {combos.map((c, i) => (
-              <li key={i} className="rounded border px-2 py-1">
-                ({c})
-              </li>
-            ))}
-          </ul>
         )}
 
         {/* Meta row */}
