@@ -118,7 +118,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
         {/* Combos display - show preview when collapsed, full list when expanded */}
         {combos.length > 0 && (
           <div className="mt-2">
-            {!open && (
+            {!open ? (
               <div className="flex flex-wrap gap-2">
                 {combos.slice(0, 3).map((c) => (
                   <span key={c} className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded">
@@ -135,9 +135,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
                   </button>
                 )}
               </div>
-            )}
-
-            {open && (
+            ) : (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Todos os números:</span>
