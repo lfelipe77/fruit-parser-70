@@ -5,7 +5,10 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
   const pct = Math.max(0, Math.min(100, r.progress_pct_money ?? 0));
   const moneyNow = r.amount_raised ?? 0;
   const moneyGoal = r.goal_amount ?? 0;
-  const cityState = [r.location_city, r.location_state].filter(Boolean).join(" • ");
+  // Fix location duplication - if city and state are the same, show only once
+  const cityState = r.location_city && r.location_state && r.location_city !== r.location_state 
+    ? [r.location_city, r.location_state].filter(Boolean).join(" • ")
+    : (r.location_city || r.location_state || "");
 
   return (
     <div className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
@@ -21,9 +24,7 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
       {/* Title + excerpt */}
       <div className="p-4 space-y-3">
         <h3 className="font-semibold leading-snug line-clamp-1">{String(r.title ?? '')}</h3>
-        {r.description && (
-          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{String(r.description ?? '')}</p>
-        )}
+        {/* Removed description display from card */}
 
         {/* Money line */}
         <p className="text-sm">
