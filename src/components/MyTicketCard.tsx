@@ -141,7 +141,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
           <ul className="mt-2 grid sm:grid-cols-2 gap-2 text-sm">
             {combos.map((c, i) => (
               <li key={i} className="rounded border px-2 py-1">
-                ({c}) <span className="text-xs text-gray-500">Bilhete #{i + 1}</span>
+                ({c})
               </li>
             ))}
           </ul>
