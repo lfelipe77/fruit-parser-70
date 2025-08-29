@@ -59,7 +59,7 @@ function toComboString(input: unknown): string {
 export default function PagamentoSucesso() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { rifaId } = useParams();
+  const { ganhaveisId } = useParams();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const s = location.state as PaymentSuccessData || {};
@@ -68,7 +68,7 @@ export default function PagamentoSucesso() {
     s?.selectedNumbers?.map(toComboString) ?? null
   );
 
-  const txId = s?.txId ?? searchParams.get("tx") ?? rifaId ?? undefined;
+  const txId = s?.txId ?? searchParams.get("tx") ?? ganhaveisId ?? undefined;
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -143,7 +143,7 @@ export default function PagamentoSucesso() {
   const unitPrice = asNumber(rehydrated.unitPrice, rehydrated.totalPaid ? asNumber(rehydrated.totalPaid || rehydrated.totalAmount, 0) / Math.max(1, quantity) : 0);
   const totalPaid = asNumber(rehydrated.totalPaid || rehydrated.totalAmount, unitPrice * quantity);
   const numbers = combos || rehydrated.numbers || rehydrated.selectedNumbers || [];
-  const raffleId = rehydrated.raffleId || rehydrated.rifaId || rifaId;
+  const raffleId = rehydrated.raffleId || rehydrated.rifaId || ganhaveisId;
   const paymentId = rehydrated.txId || rehydrated.paymentId || "N/A";
   const paymentDate = rehydrated.paymentDate || new Date().toISOString();
 
