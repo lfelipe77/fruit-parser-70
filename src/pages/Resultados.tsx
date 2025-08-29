@@ -67,10 +67,9 @@ export default function Resultados() {
     // Fetch latest concurso for winner filtering
     (async () => {
       const { data } = await (supabase as any)
-        .from("lottery_latest_federal")
+        .from("lottery_latest_federal_store")
         .select("concurso_number, draw_date")
-        .order("draw_date", { ascending: false })
-        .limit(1)
+        .eq("game_slug", "federal")
         .maybeSingle();
       setLatestConcurso(data?.concurso_number ?? null);
       setLatestDate(data?.draw_date ?? null);

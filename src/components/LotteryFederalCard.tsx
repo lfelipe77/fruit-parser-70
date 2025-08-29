@@ -24,10 +24,9 @@ export default function LotteryFederalCard() {
   const fetchData = async () => {
     try {
       const { data, error } = await (supabase as any)
-        .from("lottery_latest_federal")
-        .select("concurso_number, draw_date, numbers")
-        .order("draw_date", { ascending: false })
-        .limit(1)
+        .from("lottery_latest_federal_store")
+        .select("concurso_number, draw_date, numbers, updated_at")
+        .eq("game_slug", "federal")
         .maybeSingle();
       
       if (error) {

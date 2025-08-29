@@ -30,12 +30,11 @@ export default function CaixaLotterySection() {
       try {
         setLoading(true);
         
-        // Fetch latest federal lottery result using the same source as LotteryFederalCard
+        // Fetch latest federal lottery result from store
         const { data: federalData, error: federalError } = await (supabase as any)
-          .from("lottery_latest_federal")
+          .from("lottery_latest_federal_store")
           .select("concurso_number, draw_date, numbers")
-          .order("draw_date", { ascending: false })
-          .limit(1)
+          .eq("game_slug", "federal")
           .maybeSingle();
         
         if (!federalError && federalData) {

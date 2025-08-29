@@ -31,8 +31,9 @@ export default function LotteryFederalTab() {
   useEffect(() => {
     (async () => {
       const { data, error } = await (supabase as any)
-        .from("lottery_latest_federal")
+        .from("lottery_latest_federal_store")
         .select("concurso_number, draw_date, numbers")
+        .eq("game_slug", "federal")
         .maybeSingle();
 
       if (error) setErr(error.message);

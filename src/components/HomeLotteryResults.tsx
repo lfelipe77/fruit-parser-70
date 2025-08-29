@@ -22,10 +22,9 @@ export default function HomeLotteryResults() {
     const fetchLatestResult = async () => {
       try {
         const { data, error } = await (supabase as any)
-          .from("lottery_latest_federal")
+          .from("lottery_latest_federal_store")
           .select("concurso_number, draw_date, numbers")
-          .order("draw_date", { ascending: false })
-          .limit(1)
+          .eq("game_slug", "federal")
           .maybeSingle();
         
         if (error) {

@@ -33,6 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSecurityAlerts } from "@/hooks/useSecurityAlerts";
 import DrawControls from "@/components/admin/DrawControls";
 import AdminFederalStatusTile from "@/components/admin/AdminFederalStatusTile";
+import FederalLotteryManager from "@/components/admin/FederalLotteryManager";
 
 interface DashboardStats {
   rafflesCreatedToday: number;
@@ -327,9 +328,10 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
-        <section className="mt-6">
+        <section className="mt-6 space-y-6">
           <DrawControls />
           <AdminFederalStatusTile />
+          <FederalLotteryManager />
         </section>
 
         {/* Seção de Alertas de Segurança Recentes - DESTACADA */}
