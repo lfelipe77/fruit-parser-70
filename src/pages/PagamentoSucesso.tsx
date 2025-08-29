@@ -68,51 +68,72 @@ export default function PagamentoSucesso() {
     s?.selectedNumbers?.map(toComboString) ?? null
   );
 
-  const txId = s?.txId ?? searchParams.get("tx") ?? undefined;
+  const txId = s?.txId ?? searchParams.get("tx") ?? rifaId ?? undefined;
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     // If we already have combos from nav state, we're good
     if (combos && combos.length) return;
     if (!txId) return;
 
+    setIsLoading(true);
+    setHasError(false);
+
     // Fetch numbers from database using txId
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      const { data: tx, error } = await supabase
-        .from("transactions")
-        .select("id, numbers, buyer_user_id, raffle_id, amount")
-        .eq("id", txId)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching transaction:", error);
-        return;
-      }
-
-      if (tx) {
-        const raw = tx.numbers;
-        let arr: string[] = [];
-        if (Array.isArray(raw)) {
-          arr = raw as string[];
-        } else if (typeof raw === "string") {
-          try { 
-            arr = JSON.parse(raw); 
-          } catch { 
-            arr = []; 
-          }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          setHasError(true);
+          setIsLoading(false);
+          return;
         }
-        setCombos(arr.map(toComboString).filter(Boolean));
-        
-        // Also update rehydrated data
-        setRehydrated({
-          raffleId: tx.raffle_id,
-          txId: tx.id,
-          quantity: arr.length || 1,
-          totalPaid: asNumber(tx.amount, 0),
-          unitPrice: asNumber(tx.amount, 0) / Math.max(1, arr.length),
-        });
+
+        const { data: tx, error } = await supabase
+          .from("transactions")
+          .select("id, numbers, buyer_user_id, raffle_id, amount")
+          .eq("id", txId)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error fetching transaction:", error);
+          setHasError(true);
+          setIsLoading(false);
+          return;
+        }
+
+        if (tx) {
+          const raw = tx.numbers;
+          let arr: string[] = [];
+          if (Array.isArray(raw)) {
+            arr = raw as string[];
+          } else if (typeof raw === "string") {
+            try { 
+              arr = JSON.parse(raw); 
+            } catch { 
+              arr = []; 
+            }
+          }
+          setCombos(arr.map(toComboString).filter(Boolean));
+          
+          // Also update rehydrated data
+          setRehydrated({
+            raffleId: tx.raffle_id,
+            txId: tx.id,
+            quantity: arr.length || 1,
+            totalPaid: asNumber(tx.amount, 0),
+            unitPrice: asNumber(tx.amount, 0) / Math.max(1, arr.length),
+          });
+          setIsLoading(false);
+        } else {
+          setHasError(true);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error("Error fetching transaction data:", err);
+        setHasError(true);
+        setIsLoading(false);
       }
     })();
   }, [txId, combos]);
@@ -126,8 +147,70 @@ export default function PagamentoSucesso() {
   const paymentId = rehydrated.txId || rehydrated.paymentId || "N/A";
   const paymentDate = rehydrated.paymentDate || new Date().toISOString();
 
-  if (!txId) return <div className="p-6">Transação não encontrada.</div>;
-  if (!combos) return <div className="p-6">Carregando seus números…</div>;
+  // Handle different states
+  if (!txId) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-2xl font-bold mb-4">Transação não encontrada</h1>
+            <p className="text-muted-foreground mb-6">
+              Não foi possível localizar os dados desta transação. 
+              Verifique se você acessou o link correto ou tente novamente.
+            </p>
+            <Link to="/my-tickets">
+              <Button>Ver Meus Tickets</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-2xl font-bold mb-4">Erro ao carregar transação</h1>
+            <p className="text-muted-foreground mb-6">
+              Ocorreu um erro ao carregar os dados da sua transação. 
+              Tente recarregar a página ou verifique sua conexão.
+            </p>
+            <div className="space-x-4">
+              <Button onClick={() => window.location.reload()}>
+                Tentar Novamente
+              </Button>
+              <Link to="/my-tickets">
+                <Button variant="outline">Ver Meus Tickets</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (isLoading || !combos) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <Clock className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Carregando seus números...</h1>
+            <p className="text-muted-foreground">
+              Aguarde enquanto buscamos os dados da sua transação.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const paymentData = {
     rifaId: raffleId,
