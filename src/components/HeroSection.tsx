@@ -77,9 +77,10 @@ export default function HeroSection() {
   };
 
   // Use real stats or fallback to hardcoded values
+  const paid = Number(stats?.total_prize_paid ?? 0);
   const displayStats = {
-    prizeValue: stats ? (stats.total_prize_paid > 0 ? formatCurrency(stats.total_prize_paid) : formatCurrency(stats.total_raised)) : "R$ 8M+",
-    prizeLabel: stats ? (stats.total_prize_paid > 0 ? "Premiado" : "Arrecadado") : "Premiado",
+    prizeValue: stats ? formatCurrency(paid) : "R$ 8M+",
+    prizeLabel: "Premiados",
     participants: stats ? formatNumber(stats.total_participants) : "25K+",
     ganhaveis: stats ? formatNumber(stats.total_ganhaveis) : "890+",
     activeGanhaveis: stats ? stats.active_ganhaveis.toString() : "128"
@@ -184,7 +185,7 @@ export default function HeroSection() {
             {/* Debug info - only shown with ?debug=1 */}
             {isDebugMode && stats && (
               <div className="text-xs text-muted-foreground mt-2 text-center lg:text-left">
-                stats: source={statsSource}, active={stats.active_ganhaveis}, almost_complete={stats.almost_complete_ganhaveis}, recent_tx_7d={stats.recent_transactions}
+                stats: source={statsSource}, active={stats.active_ganhaveis}, almost_complete={stats.almost_complete_ganhaveis}, recent_tx_7d={stats.recent_transactions}, total_prize_paid={stats.total_prize_paid}
               </div>
             )}
           </div>
