@@ -31,7 +31,7 @@ export default function FederalLotteryManager() {
   // Manual form state
   const [concurso, setConcurso] = useState("");
   const [drawDate, setDrawDate] = useState("");
-  const [numbers, setNumbers] = useState(["", "", "", "", ""]);
+  const [manualNumbers, setManualNumbers] = useState<string[]>(Array(5).fill(''));
 
   const fetchData = async () => {
     try {
@@ -210,7 +210,7 @@ export default function FederalLotteryManager() {
         return;
       }
       
-      const validNumbers = numbers.filter(n => n.trim()).map(n => n.trim().padStart(2, '0'));
+      const validNumbers = manualNumbers.filter(n => n.trim()).map(n => n.trim().padStart(2, '0'));
       if (validNumbers.length !== 5) {
         toast({ title: 'Erro', description: 'Todos os 5 números são obrigatórios', variant: 'destructive' });
         return;
@@ -235,7 +235,7 @@ export default function FederalLotteryManager() {
       // Reset form
       setConcurso("");
       setDrawDate("");
-      setNumbers(["", "", "", "", ""]);
+      setManualNumbers(["", "", "", "", ""]);
       
       await fetchData();
     } catch (e: any) {
@@ -252,9 +252,9 @@ export default function FederalLotteryManager() {
   const handleNumberChange = (index: number, value: string) => {
     // Only allow digits, max 2 chars
     const cleaned = value.replace(/\D/g, '').slice(0, 2);
-    const newNumbers = [...numbers];
+    const newNumbers = [...manualNumbers];
     newNumbers[index] = cleaned;
-    setNumbers(newNumbers);
+    setManualNumbers(newNumbers);
   };
 
   const formatDate = (dateStr: string) => {
@@ -394,9 +394,9 @@ export default function FederalLotteryManager() {
             </div>
             
             <div className="space-y-2">
-              <Label>Números (5 pares de dígitos)</Label>
+              <Label>Números Federais (5 dezenas)</Label>
               <div className="flex gap-2">
-                {numbers.map((num, index) => (
+                {manualNumbers.map((num, index) => (
                   <Input
                     key={index}
                     value={num}
@@ -407,6 +407,9 @@ export default function FederalLotteryManager() {
                   />
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground">
+                Digite os 5 números sorteados (cada um com 2 dígitos: 00-99)
+              </p>
             </div>
             
             <div className="flex items-center justify-between">

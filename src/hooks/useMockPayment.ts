@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { nanoid } from 'nanoid';
 import { sanitizeTicketNumbers } from '@/lib/ticketSanitizer';
+import { sanitizeFivePairs } from '@/lib/clientTicketSanitizer';
 import { isFeatureEnabled } from '@/utils/featureFlags';
 
 interface MockPaymentData {
@@ -39,12 +40,8 @@ export function useMockPayment() {
         return;
       }
 
-      // Sanitize numbers if feature flag is enabled
-      const sanitizedNumbers = sanitizeTicketNumbers(
-        data.selectedNumbers, 
-        nanoid(), // temp ID for deterministic generation
-        isFeatureEnabled('ticketsEnforce5DigitPairs')
-      );
+      // Client-side sanitization to exactly 5 pairs
+      const sanitizedNumbers = sanitizeFivePairs(data.selectedNumbers);
 
       // Insert transaction
       const { data: transaction, error: txError } = await supabase

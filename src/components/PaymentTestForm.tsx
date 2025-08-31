@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Shuffle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sanitizeFivePairs, generateFiveRandomPairs } from "@/lib/clientTicketSanitizer";
 
 interface PaymentTestFormProps {
   ganhavel_id?: string;
@@ -17,6 +18,7 @@ export default function PaymentTestForm({ ganhavel_id = "test-ganhavel", amount 
   const [paymentAmount, setPaymentAmount] = useState(amount);
   const [currency] = useState("BRL");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [ticketNumbers, setTicketNumbers] = useState<string[]>(generateFiveRandomPairs());
   const { user } = useAuth();
 
   const handlePayment = async (e: React.FormEvent) => {
@@ -42,13 +44,17 @@ export default function PaymentTestForm({ ganhavel_id = "test-ganhavel", amount 
         raffle_id: ganhavel_id
       });
 
+      // Sanitize ticket numbers before sending
+      const sanitizedNumbers = sanitizeFivePairs(ticketNumbers);
+
       const { data, error } = await supabase.functions.invoke('payments-handle/create', {
         body: {
           amount: paymentAmount,
           currency,
           user_id: user.id,
           raffle_id: ganhavel_id,
-          ticket_count: Math.floor(paymentAmount / 100)
+          ticket_count: Math.floor(paymentAmount / 100),
+          selected_numbers: sanitizedNumbers
         }
       });
 
@@ -132,6 +138,43 @@ export default function PaymentTestForm({ ganhavel_id = "test-ganhavel", amount 
               disabled
               className="text-muted-foreground"
             />
+          </div>
+
+          {/* Ticket Numbers Section */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label>Números dos Bilhetes (5 dezenas)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setTicketNumbers(generateFiveRandomPairs())}
+                className="flex items-center gap-1"
+              >
+                <Shuffle className="w-3 h-3" />
+                Aleatório
+              </Button>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {ticketNumbers.map((number, index) => (
+                <Input
+                  key={index}
+                  value={number}
+                  onChange={(e) => {
+                    const newNumbers = [...ticketNumbers];
+                    const value = e.target.value.replace(/\D/g, '');
+                    newNumbers[index] = value.slice(-2).padStart(2, '0');
+                    setTicketNumbers(newNumbers);
+                  }}
+                  placeholder="00"
+                  maxLength={2}
+                  className="text-center font-mono"
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Escolha 5 dezenas (00–99). Duplicatas são permitidas.
+            </p>
           </div>
 
           <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
