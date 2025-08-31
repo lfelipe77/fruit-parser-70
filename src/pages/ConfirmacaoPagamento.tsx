@@ -165,8 +165,8 @@ export default function ConfirmacaoPagamento() {
     const numbers = [];
     for (let i = 0; i < qty; i++) {
       const combo = [];
-      for (let j = 0; j < 6; j++) {
-        const num = String(Math.floor(Math.random() * 89) + 10).padStart(2, '0');
+      for (let j = 0; j < 5; j++) {
+        const num = String(Math.floor(Math.random() * 100)).padStart(2, '0');
         combo.push(num);
       }
       numbers.push(`(${combo.join('-')})`);
@@ -200,11 +200,11 @@ export default function ConfirmacaoPagamento() {
     cpf: ''
   });
 
-  // Generate lottery combinations (6 two-digit numbers, like: (12-43-24-56-78-90))
+  // Generate lottery combinations (5 two-digit numbers, like: (12-43-24-56-78))
   const generateLotteryCombination = () => {
     const numbers = [];
-    for (let i = 0; i < 6; i++) {
-      const num = String(Math.floor(Math.random() * 89) + 10).padStart(2, '0');
+    for (let i = 0; i < 5; i++) {
+      const num = String(Math.floor(Math.random() * 100)).padStart(2, '0');
       numbers.push(num);
     }
     return `(${numbers.join('-')})`;
@@ -445,7 +445,11 @@ export default function ConfirmacaoPagamento() {
         p_raffle_id: id,
         p_qty: safeQty,
         p_unit_price: unitPrice,
-        p_numbers: selectedNumbers,    // Use the correctly formatted numbers from UI
+        p_numbers: selectedNumbers.map(combo => {
+          // Sanitize each combo to ensure exactly 5 pairs 
+          const pairs = combo.replace(/[^\d-]/g, '').split('-').filter(Boolean);
+          return pairs.slice(0, 5).map(p => p.padStart(2, '0')).join('-');
+        }),    // Use the correctly formatted numbers from UI
         p_provider_ref: providerRef,   // must be unique
         p_customer_name: formData.fullName,
         p_customer_phone: digits(formData.phone),

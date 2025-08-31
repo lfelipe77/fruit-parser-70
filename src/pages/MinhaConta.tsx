@@ -80,11 +80,11 @@ export default function MinhaConta() {
     }
   };
 
-  // Generate lottery combinations (3 pairs of two-digit numbers each, grouped in parentheses)
+  // Generate lottery combinations (5 pairs of two-digit numbers each, grouped in parentheses)
   const generateLotteryCombination = () => {
     const numbers = [];
-    for (let i = 0; i < 6; i++) {
-      const num = String(Math.floor(Math.random() * 89) + 10).padStart(2, '0');
+    for (let i = 0; i < 5; i++) {
+      const num = String(Math.floor(Math.random() * 100)).padStart(2, '0');
       numbers.push(num);
     }
     return `(${numbers.join('-')})`;
