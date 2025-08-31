@@ -13,6 +13,7 @@ export const FEATURE_FLAGS = {
   enableAdvancedFilters: true,
   enableSocialSharing: true,
   enablePaymentV2: false,
+  ticketsEnforce5DigitPairs: false, // Gate for tickets normalization
 } as const;
 
 export function isFeatureEnabled(flag: keyof typeof FEATURE_FLAGS): boolean {

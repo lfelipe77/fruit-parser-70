@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { nanoid } from 'nanoid';
+import { sanitizeTicketNumbers } from '@/lib/ticketSanitizer';
+import { isFeatureEnabled } from '@/utils/featureFlags';
 
 interface MockPaymentData {
   raffleId: string;
@@ -37,6 +39,13 @@ export function useMockPayment() {
         return;
       }
 
+      // Sanitize numbers if feature flag is enabled
+      const sanitizedNumbers = sanitizeTicketNumbers(
+        data.selectedNumbers, 
+        nanoid(), // temp ID for deterministic generation
+        isFeatureEnabled('ticketsEnforce5DigitPairs')
+      );
+
       // Insert transaction
       const { data: transaction, error: txError } = await supabase
         .from('transactions')
@@ -47,7 +56,7 @@ export function useMockPayment() {
           status: 'paid',
           provider: 'mock',
           provider_payment_id: providerRef,
-          selected_numbers: data.selectedNumbers,
+          selected_numbers: sanitizedNumbers,
           type: 'payment'
         })
         .select('id')
@@ -58,7 +67,7 @@ export function useMockPayment() {
         return;
       }
 
-      // Insert tickets
+      // Insert tickets with sanitized numbers
       const ticketsData = Array.from({ length: data.quantity }, (_, index) => ({
         raffle_id: data.raffleId,
         user_id: user.id,
@@ -66,7 +75,8 @@ export function useMockPayment() {
         total_amount: data.unitPrice,
         status: 'paid' as const,
         transaction_id: transaction.id,
-        ticket_number: index + 1
+        ticket_number: index + 1,
+        numbers: sanitizedNumbers // Add the sanitized numbers to each ticket
       }));
 
       const { error: ticketsError } = await supabase

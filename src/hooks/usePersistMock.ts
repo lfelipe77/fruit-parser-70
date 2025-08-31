@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { sanitizeTicketNumbers } from "@/lib/ticketSanitizer";
+import { isFeatureEnabled } from "@/utils/featureFlags";
 
 export function usePersistMock(
   raffleId: string | undefined, 
@@ -19,12 +21,19 @@ export function usePersistMock(
 
     const executePurchase = async () => {
       try {
+        // Sanitize numbers if feature flag is enabled
+        const sanitizedNumbers = sanitizeTicketNumbers(
+          numbers,
+          raffleId, // use raffle ID as ticket ID for consistency 
+          isFeatureEnabled('ticketsEnforce5DigitPairs')
+        );
+
         const result = await supabase.rpc("record_mock_purchase_admin", {
           p_buyer_user_id: user.id,
           p_raffle_id: raffleId,
           p_qty: qty,
           p_unit_price: unitPrice,
-          p_numbers: numbers,
+          p_numbers: sanitizedNumbers,
           p_provider_ref: `MOCK_${raffleId}_${Date.now()}`
         });
 
