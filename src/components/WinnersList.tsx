@@ -9,10 +9,13 @@ type Row = {
   raffle_id: string | null;
   raffle_title: string | null;
   winner_public_handle: string | null;
+  user_id: string | null;
+  ticket_id: string | null;
   concurso_number: string | null;
   draw_date: string | null;
   draw_pairs: string[] | null;
   log_created_at: string | null;
+  raffle_status: string | null;
 };
 
 function dateBR(dateStr: string | null) {
@@ -39,9 +42,10 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
     queryFn: async () => {
       const q = (supabase as any)
         .from("v_federal_winners")
-        .select("*")
+        .select("raffle_id, raffle_title, winner_public_handle, user_id, ticket_id, concurso_number, draw_date, draw_pairs, log_created_at, raffle_status")
+        .order("draw_date", { ascending: false })
         .order("log_created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
       if (latestConcurso) q.eq("concurso_number", latestConcurso);
       const { data, error } = await q;
       if (error) throw error;
@@ -72,27 +76,37 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
     
     return (
       <div className="mt-3 rounded-2xl border border-gray-200 bg-white p-6 text-center">
-        <div className="text-lg font-semibold">Nenhum resultado disponível ainda.</div>
-        <div className="mt-1 text-sm opacity-70">Os resultados aparecerão aqui após os sorteios.</div>
+        <div className="text-lg font-semibold">Nenhum premiado encontrado ainda</div>
+        <div className="mt-1 text-sm opacity-70">Os ganhadores aparecerão aqui após os sorteios serem concluídos.</div>
       </div>
     );
   }
 
-  // Group by raffle_id to show one card per raffle
-  const groupedByRaffle = rows?.reduce((acc, row) => {
-    const key = row.raffle_id || 'unknown';
+  // Filter for concluded raffles and group by raffle_id + concurso
+  const concludedStatuses = ['archived', 'completed', 'finished', 'ended'];
+  const filteredRows = rows?.filter(row => 
+    row.raffle_status ? concludedStatuses.includes(row.raffle_status) : true
+  ) || [];
+
+  // Group by raffle_id + concurso to show one card per raffle per concurso
+  const groupedByRaffleConcurso = filteredRows.reduce((acc, row) => {
+    const key = `${row.raffle_id || 'unknown'}_${row.concurso_number || 'unknown'}`;
     if (!acc[key]) acc[key] = row;
     return acc;
-  }, {} as Record<string, Row>) || {};
+  }, {} as Record<string, Row>);
 
-  const uniqueRaffles = Object.values(groupedByRaffle);
+  const uniqueRaffles = Object.values(groupedByRaffleConcurso);
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {uniqueRaffles.map((r, i) => {
-        const pares = Array.isArray(r.draw_pairs) ? r.draw_pairs.join(' · ') : "-";
+        const pares = Array.isArray(r.draw_pairs) && r.draw_pairs.length > 0 
+          ? r.draw_pairs.join(' · ') 
+          : "–";
         const dataStr = dateBR(r.draw_date);
         const horaSync = timeBR(r.log_created_at);
+        const displayName = r.winner_public_handle ?? "Ganhador ****";
+        
         return (
           <div key={i} className="rounded-2xl border border-green-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
@@ -108,11 +122,30 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
                 )}
               </div>
             </div>
-            <div className="mt-1 text-sm opacity-80">{r.winner_public_handle ?? "Ganhador ****"}</div>
+            
+            {/* Winner with profile link */}
+            <div className="mt-1 text-sm opacity-80">
+              {r.user_id ? (
+                <a href={`#/perfil/${r.user_id}`} className="underline hover:opacity-80">
+                  {displayName}
+                </a>
+              ) : (
+                displayName
+              )}
+              {r.ticket_id && (
+                <a href={`#/tickets/${r.ticket_id}`} className="ml-2 underline hover:opacity-80">
+                  Ver ticket
+                </a>
+              )}
+            </div>
+            
             <div className="mt-3 text-sm">
               <div>Números: <span className="font-mono">{pares}</span></div>
-              <div>Concurso {r.concurso_number ?? "-"}{dataStr ? ` — ${dataStr}` : ""}</div>
+              <div className="text-xs opacity-70">
+                Concurso {r.concurso_number ?? "–"}{dataStr ? ` – ${dataStr}` : ""}
+              </div>
             </div>
+            
             <div className="mt-4">
               {r.raffle_id ? (
                 <a
