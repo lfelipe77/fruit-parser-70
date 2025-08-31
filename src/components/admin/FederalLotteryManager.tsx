@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Hash, Clock, Database } from "lucide-react";
 
 interface FederalStoreData {
@@ -20,6 +21,8 @@ export default function FederalLotteryManager() {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Manual form state
   const [concurso, setConcurso] = useState("");
@@ -47,13 +50,23 @@ export default function FederalLotteryManager() {
     
     const handler = () => fetchData();
     window.addEventListener("federal:refetch", handler);
-    return () => window.removeEventListener("federal:refetch", handler);
+    
+    return () => {
+      window.removeEventListener("federal:refetch", handler);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
   }, []);
 
   const syncFederalNow = async () => {
     try {
       setBusy("sync");
-      const { data, error } = await supabase.rpc('admin_federal_sync_now' as any);
+      
+      // Store current data before sync to compare after polling
+      const initialData = data;
+      
+      const { data: rpcData, error } = await supabase.rpc('admin_federal_sync_enqueue' as any);
       
       if (error) {
         toast({ 
@@ -64,15 +77,84 @@ export default function FederalLotteryManager() {
         return;
       }
 
-      toast({ title: 'Sincronizado com sucesso' });
-      await fetchData();
+      // Start polling
+      let attempts = 0;
+      const maxAttempts = 8;
+      
+      const pollData = async (): Promise<boolean> => {
+        attempts++;
+        
+        const { data: newData, error: fetchError } = await supabase
+          .from("lottery_latest_federal_store")
+          .select("concurso_number, draw_date, numbers, updated_at")
+          .eq("game_slug", "federal")
+          .maybeSingle();
+          
+        if (fetchError || !newData) {
+          return false;
+        }
+
+        // Check if data changed
+        const concursoChanged = newData.concurso_number !== initialData?.concurso_number;
+        const dateAdvanced = initialData && new Date(newData.draw_date) > new Date(initialData.draw_date);
+        const updatedAndNumbersDiffer = initialData && 
+          new Date(newData.updated_at) > new Date(initialData.updated_at) &&
+          JSON.stringify(newData.numbers) !== JSON.stringify(initialData.numbers);
+
+        if (concursoChanged || dateAdvanced || updatedAndNumbersDiffer) {
+          setData(newData);
+          toast({ 
+            title: 'Sincronizado', 
+            description: `Concurso ${newData.concurso_number} - ${formatDate(newData.draw_date)}` 
+          });
+          
+          // Invalidate queries
+          queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
+          queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
+          queryClient.invalidateQueries({ queryKey: ['admin_latest_federal_status'] });
+          
+          return true;
+        }
+
+        return false;
+      };
+
+      // Poll every 5s for max 8 tries (~40s)
+      const startPolling = () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+        }
+        
+        pollingRef.current = setInterval(async () => {
+          const success = await pollData();
+          
+          if (success || attempts >= maxAttempts) {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+            
+            if (!success && attempts >= maxAttempts) {
+              toast({
+                title: 'Aviso',
+                description: 'A API pode estar lenta — tente novamente ou use o preenchimento manual.',
+                variant: 'default'
+              });
+            }
+            
+            setBusy(null);
+          }
+        }, 5000);
+      };
+
+      startPolling();
+      
     } catch (e: any) {
       toast({ 
         title: 'Erro ao sincronizar', 
         description: e?.message || String(e), 
         variant: 'destructive' 
       });
-    } finally {
       setBusy(null);
     }
   };
