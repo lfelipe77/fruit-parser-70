@@ -1,11 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export type CompletedRaffle = {
+  id: string;
+  title: string;
+  image_url: string | null;
+  goal_amount: number;
+  amount_raised: number;
+  progress_pct_money: number;
+  participants_count: number;
+  draw_date: string | null;
+  last_paid_at: string | null;
+};
+
 export function useCompletedUnpickedRaffles() {
   return useQuery({
     queryKey: ['completed_unpicked'],
-    queryFn: async () => {
-      // 1) Get completed raffles that are 100% funded
+    queryFn: async (): Promise<CompletedRaffle[]> => {
+      // 1) "Completed" by your current logic: active + 100%
       const { data: raffles, error: e1 } = await (supabase as any)
         .from('raffles_public_money_ext')
         .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,last_paid_at')
@@ -15,20 +27,21 @@ export function useCompletedUnpickedRaffles() {
       
       if (e1) throw e1;
 
-      // 2) Get winners to exclude raffles that already have winners
+      // 2) All winners (only need raffle_id)
       const { data: winners, error: e2 } = await (supabase as any)
         .from('v_federal_winners')
         .select('raffle_id');
       
       if (e2) throw e2;
 
-      // 3) Create a Set of raffle IDs that already have winners
+      // Debug logging
+      console.debug('completed candidates', raffles?.length, raffles);
+      console.debug('winners (raffle_ids)', winners?.length, winners?.map((w: any) => w.raffle_id));
+
       const winnerIds = new Set((winners ?? []).map((w: any) => w.raffle_id));
-      
-      // 4) Filter out raffles that already have winners
       const unpicked = (raffles ?? []).filter((r: any) => !winnerIds.has(r.id));
       
-      // 5) Optional: Add date guard - only show raffles funded before latest draw
+      // Optional: Add date guard - only show raffles funded before latest draw
       const { data: latest } = await supabase
         .from('lottery_latest_federal_store')
         .select('draw_date')
@@ -37,12 +50,15 @@ export function useCompletedUnpickedRaffles() {
         .maybeSingle();
 
       if (latest?.draw_date) {
-        return unpicked.filter((r: any) => {
+        const filtered = unpicked.filter((r: any) => {
           if (!r.last_paid_at) return true; // include if no last_paid_at date
           return new Date(r.last_paid_at) <= new Date(latest.draw_date);
         });
+        console.debug('after date filter', filtered?.length, filtered);
+        return filtered;
       }
 
+      console.debug('final unpicked', unpicked?.length, unpicked);
       return unpicked;
     },
     refetchOnWindowFocus: true,
