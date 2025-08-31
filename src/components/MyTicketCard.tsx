@@ -33,7 +33,16 @@ export default function MyTicketCard({ row }: { row: Row }) {
 
   const combos = useMemo(() => {
     if (!row.purchased_numbers) return [];
-    return flattenCombos(row.purchased_numbers).map(toComboString).filter(Boolean);
+    const flattened = flattenCombos(row.purchased_numbers);
+    
+    // Process each combo to ensure exactly 5 pairs
+    return flattened.map(combo => {
+      const processed = toComboString(combo);
+      const parts = processed.split('-').filter(Boolean);
+      // Ensure exactly 5 pairs (pad with 00 if needed, truncate if too many)
+      while (parts.length < 5) parts.push('00');
+      return parts.slice(0, 5).join('-');
+    }).filter(Boolean);
   }, [row.purchased_numbers]);
 
   async function onShare() {

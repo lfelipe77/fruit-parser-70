@@ -7,12 +7,22 @@ export const shortDateTime = (iso?: string) =>
 
 export function toComboString(input: unknown): string {
   try {
-    if (typeof input === "string") return input.replace(/[^\d-]/g, "");
+    if (typeof input === "string") {
+      const cleaned = input.replace(/[^\d-]/g, "");
+      const parts = cleaned.split('-').filter(Boolean);
+      // Limit to exactly 5 pairs for lottery display
+      return parts.slice(0, 5).join("-");
+    }
     if (Array.isArray(input)) {
       const flat = (input as unknown[]).flat(2).map(x => String(x).replace(/[^\d]/g, ""));
-      return flat.filter(Boolean).join("-");
+      const filtered = flat.filter(Boolean);
+      // Limit to exactly 5 pairs for lottery display
+      return filtered.slice(0, 5).join("-");
     }
-    return String(input ?? "").replace(/[^\d-]/g, "");
+    const cleaned = String(input ?? "").replace(/[^\d-]/g, "");
+    const parts = cleaned.split('-').filter(Boolean);
+    // Limit to exactly 5 pairs for lottery display
+    return parts.slice(0, 5).join("-");
   } catch {
     return "";
   }
