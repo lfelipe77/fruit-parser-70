@@ -12,6 +12,7 @@ import LotteryFederalTab from "@/components/LotteryFederalTab";
 import LotteryFederalCard from "@/components/LotteryFederalCard";
 import WinnersList from "@/components/WinnersList";
 import { nextFederalDrawDate, dateBR } from "@/utils/nextFederalDraw";
+import { useCompletedUnpickedRaffles } from "@/hooks/useCompletedUnpickedRaffles";
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
@@ -72,23 +73,8 @@ export default function Resultados() {
     refetchInterval: 30000,
   });
 
-  // Complete raffles data
-  const { data: completeRaffles, isLoading: completeLoading } = useQuery({
-    queryKey: ['complete_raffles'],
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from('raffles_public_money_ext')
-        .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date')
-        .eq('status', 'active')
-        .eq('progress_pct_money', 100)
-        .order('draw_date', { ascending: true })
-        .limit(10);
-      if (error) throw error;
-      return data || [];
-    },
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
-  });
+  // Complete raffles data - using new hook that excludes raffles with winners
+  const { data: completeRaffles, isLoading: completeLoading } = useCompletedUnpickedRaffles();
 
   // Almost complete raffles data
   const { data: almostCompleteRaffles, isLoading: almostLoading } = useQuery({

@@ -116,6 +116,7 @@ export default function FederalLotteryManager() {
           queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
           queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
           queryClient.invalidateQueries({ queryKey: ['admin_latest_federal_status'] });
+          queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
           
           return true;
         }
@@ -182,6 +183,7 @@ export default function FederalLotteryManager() {
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
       queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
+      queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
       
       await fetchData();
     } catch (e: any) {
@@ -231,6 +233,12 @@ export default function FederalLotteryManager() {
       
       const response = data as { ok?: boolean; concurso?: string } | null;
       toast({ title: 'Salvo', description: `Concurso ${response?.concurso || concurso} salvo manualmente` });
+      
+      // Invalidate queries after manual save
+      queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
+      queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
+      queryClient.invalidateQueries({ queryKey: ['admin_latest_federal_status'] });
+      queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
       
       // Reset form
       setConcurso("");
