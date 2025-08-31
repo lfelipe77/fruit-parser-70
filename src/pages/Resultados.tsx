@@ -12,6 +12,10 @@ import LotteryFederalTab from "@/components/LotteryFederalTab";
 import LotteryFederalCard from "@/components/LotteryFederalCard";
 import WinnersList from "@/components/WinnersList";
 import { nextFederalDrawDate, dateBR } from "@/utils/nextFederalDraw";
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 interface LotteryResult {
   id: string;
@@ -287,7 +291,7 @@ export default function Resultados() {
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Data Limite:</span>
                             <span className="font-medium">
-                              {new Date(draw.draw_date).toLocaleDateString('pt-BR')}
+                              {dayjs(draw.draw_date, 'YYYY-MM-DD').format('DD/MM/YYYY')}
                             </span>
                           </div>
                         )}

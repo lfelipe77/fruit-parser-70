@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 type LotteryResult = {
   concurso_number: string | null;
@@ -14,10 +18,7 @@ type LotteryResult = {
 // Format date in Brazilian format
 function dateBR(iso: string | null) {
   if (!iso) return "";
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-  const d = new Date(iso!);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR");
+  return dayjs(iso, 'YYYY-MM-DD').format('DD/MM/YYYY');
 }
 
 export default function CaixaLotterySection() {

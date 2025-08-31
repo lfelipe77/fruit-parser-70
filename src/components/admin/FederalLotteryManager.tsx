@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Hash, Clock, Database } from "lucide-react";
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 interface FederalStoreData {
   concurso_number: string;
@@ -250,7 +254,7 @@ export default function FederalLotteryManager() {
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString('pt-BR');
+      return dayjs(dateStr, 'YYYY-MM-DD').format('DD/MM/YYYY');
     } catch {
       return dateStr;
     }
@@ -267,14 +271,14 @@ export default function FederalLotteryManager() {
   const isStale = () => {
     if (!data?.updated_at || !data?.draw_date) return false;
     
-    const now = new Date();
-    const drawDate = new Date(data.draw_date);
-    const dayOfWeek = drawDate.getDay(); // 0=Sunday, 3=Wednesday, 6=Saturday
+    const now = dayjs();
+    const drawDate = dayjs(data.draw_date, 'YYYY-MM-DD');
+    const dayOfWeek = drawDate.day(); // 0=Sunday, 3=Wednesday, 6=Saturday
     
     // Check if it's after 20:40 on Wednesday (3) or Saturday (6)
-    if ((dayOfWeek === 3 || dayOfWeek === 6) && now.getHours() >= 20 && now.getMinutes() >= 40) {
-      const today = now.toISOString().split('T')[0];
-      const drawDateStr = drawDate.toISOString().split('T')[0];
+    if ((dayOfWeek === 3 || dayOfWeek === 6) && now.hour() >= 20 && now.minute() >= 40) {
+      const today = now.format('YYYY-MM-DD');
+      const drawDateStr = drawDate.format('YYYY-MM-DD');
       return drawDateStr < today;
     }
     

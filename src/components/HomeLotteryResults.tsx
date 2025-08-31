@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 type LotteryResult = {
   concurso_number: string | null;
@@ -9,8 +13,7 @@ type LotteryResult = {
 
 function formatDateBR(dateStr: string | null) {
   if (!dateStr) return "";
-  const date = new Date(dateStr);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("pt-BR");
+  return dayjs(dateStr, 'YYYY-MM-DD').format('DD/MM/YYYY');
 }
 
 export default function HomeLotteryResults() {
