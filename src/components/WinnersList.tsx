@@ -15,7 +15,6 @@ type Row = {
   draw_date: string | null;
   draw_pairs: string[] | null;
   log_created_at: string | null;
-  raffle_status: string | null;
 };
 
 function dateBR(dateStr: string | null) {
@@ -42,7 +41,7 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
     queryFn: async () => {
       const q = (supabase as any)
         .from("v_federal_winners")
-        .select("raffle_id, raffle_title, winner_public_handle, user_id, ticket_id, concurso_number, draw_date, draw_pairs, log_created_at, raffle_status")
+        .select("raffle_id, raffle_title, winner_public_handle, user_id, ticket_id, concurso_number, draw_date, draw_pairs, log_created_at")
         .order("draw_date", { ascending: false })
         .order("log_created_at", { ascending: false })
         .limit(50);
@@ -82,14 +81,8 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
     );
   }
 
-  // Filter for concluded raffles and group by raffle_id + concurso
-  const concludedStatuses = ['archived', 'completed', 'finished', 'ended'];
-  const filteredRows = rows?.filter(row => 
-    row.raffle_status ? concludedStatuses.includes(row.raffle_status) : true
-  ) || [];
-
   // Group by raffle_id + concurso to show one card per raffle per concurso
-  const groupedByRaffleConcurso = filteredRows.reduce((acc, row) => {
+  const groupedByRaffleConcurso = rows?.reduce((acc, row) => {
     const key = `${row.raffle_id || 'unknown'}_${row.concurso_number || 'unknown'}`;
     if (!acc[key]) acc[key] = row;
     return acc;
