@@ -178,6 +178,11 @@ export default function FederalLotteryManager() {
       }
 
       toast({ title: 'Vencedor calculado com sucesso' });
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
+      queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
+      
       await fetchData();
     } catch (e: any) {
       toast({ 

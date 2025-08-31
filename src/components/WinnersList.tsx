@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 type Row = {
   raffle_id: string | null;
@@ -11,12 +15,9 @@ type Row = {
   log_created_at: string | null;
 };
 
-function dateBR(iso: string | null) {
-  if (!iso) return "";
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-  const d = new Date(iso!);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR");
+function dateBR(dateStr: string | null) {
+  if (!dateStr) return "";
+  return dayjs(dateStr, 'YYYY-MM-DD').format('DD/MM/YYYY');
 }
 
 function timeBR(iso: string | null) {
@@ -33,12 +34,9 @@ function timeBR(iso: string | null) {
 }
 
 export default function WinnersList({ latestConcurso, latestDate }: { latestConcurso?: string | null; latestDate?: string | null }) {
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
+  const { data: rows, isLoading: loading, error } = useQuery({
+    queryKey: ['v_federal_winners', latestConcurso],
+    queryFn: async () => {
       const q = (supabase as any)
         .from("v_federal_winners")
         .select("*")
@@ -46,23 +44,14 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
         .limit(20);
       if (latestConcurso) q.eq("concurso_number", latestConcurso);
       const { data, error } = await q;
-      if (error) setErr(error.message);
-      setRows((data as Row[]) ?? []);
-      setLoading(false);
-    };
+      if (error) throw error;
+      return (data as Row[]) ?? [];
+    },
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+  });
 
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    function onRefetch() { 
-      setRows(null); 
-      setLoading(true);
-      setErr(null);
-    }
-    window.addEventListener("federal:refetch", onRefetch);
-    return () => window.removeEventListener("federal:refetch", onRefetch);
-  }, []);
+  const err = error?.message;
 
   if (loading) return <div className="text-sm opacity-70">Carregando ganhadores…</div>;
   if (err) return <div className="text-sm text-red-600">Erro: {err}</div>;
@@ -89,10 +78,19 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
     );
   }
 
+  // Group by raffle_id to show one card per raffle
+  const groupedByRaffle = rows?.reduce((acc, row) => {
+    const key = row.raffle_id || 'unknown';
+    if (!acc[key]) acc[key] = row;
+    return acc;
+  }, {} as Record<string, Row>) || {};
+
+  const uniqueRaffles = Object.values(groupedByRaffle);
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {rows.map((r, i) => {
-        const pares = Array.isArray(r.draw_pairs) ? r.draw_pairs.join(" ") : "-";
+      {uniqueRaffles.map((r, i) => {
+        const pares = Array.isArray(r.draw_pairs) ? r.draw_pairs.join(' · ') : "-";
         const dataStr = dateBR(r.draw_date);
         const horaSync = timeBR(r.log_created_at);
         return (

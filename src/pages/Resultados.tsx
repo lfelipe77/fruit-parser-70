@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Calendar, Users, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { timeAgo, formatCurrency } from "@/types/raffles";
 import LotteryFederalTab from "@/components/LotteryFederalTab";
@@ -57,99 +57,44 @@ interface AlmostCompleteRaffle extends CompleteRaffle {
 
 
 export default function Resultados() {
-  const [recentResults, setRecentResults] = useState<LotteryResult[]>([]);
-  const [completeRaffles, setCompleteRaffles] = useState<CompleteRaffle[]>([]);
-  const [almostCompleteRaffles, setAlmostCompleteRaffles] = useState<AlmostCompleteRaffle[]>([]);
-  const [federalDraws, setFederalDraws] = useState<FederalDraw[]>([]);
-  const [latestConcurso, setLatestConcurso] = useState<string | null>(null);
-  const [latestDate, setLatestDate] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchResultsData();
-    
-    // Fetch latest concurso for winner filtering
-    (async () => {
+  // Latest federal store data with refetch options
+  const { data: latestFederal } = useQuery({
+    queryKey: ['lottery_latest_federal_store'],
+    queryFn: async () => {
       const { data } = await (supabase as any)
         .from("lottery_latest_federal_store")
         .select("concurso_number, draw_date")
         .eq("game_slug", "federal")
         .maybeSingle();
-      setLatestConcurso(data?.concurso_number ?? null);
-      setLatestDate(data?.draw_date ?? null);
-    })();
-    
-    // Real-time updates
-    const onUpdated = () => fetchResultsData();
-    window.addEventListener("raffleUpdated", onUpdated as any);
-    const interval = setInterval(fetchResultsData, 30000);
-    
-    return () => {
-      window.removeEventListener("raffleUpdated", onUpdated as any);
-      clearInterval(interval);
-    };
-  }, []);
+      return data;
+    },
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+  });
 
-  const fetchResultsData = async () => {
-    try {
-      // Fetch completed raffles with lottery results
-      const { data: results, error: resultsError } = await (supabase as any)
-        .from('lottery_results')
-        .select(`
-          id,
-          ganhavel_id,
-          winning_ticket_id,
-          lottery_draw_numbers,
-          result_date,
-          verified,
-          raffles_public_money_ext!inner(
-            title,
-            goal_amount,
-            image_url
-          ),
-          user_profiles(full_name)
-        `)
-        .eq('verified', true)
-        .order('result_date', { ascending: false })
-        .limit(10);
-
-      if (resultsError) {
-        console.error('Error fetching results:', resultsError);
-      } else {
-        const formattedResults: LotteryResult[] = (results || []).map((r: any) => ({
-          id: r.id,
-          ganhavel_id: r.ganhavel_id,
-          winning_ticket_id: r.winning_ticket_id,
-          lottery_draw_numbers: r.lottery_draw_numbers,
-          result_date: r.result_date,
-          verified: r.verified,
-          raffle_title: r.raffles_public_money_ext?.title || 'Título não encontrado',
-          raffle_goal_amount: r.raffles_public_money_ext?.goal_amount || 0,
-          raffle_image_url: r.raffles_public_money_ext?.image_url,
-          winner_name: r.user_profiles?.full_name ? 
-            `${r.user_profiles.full_name.split(' ')[0]} ${r.user_profiles.full_name.split(' ')[1]?.[0]}. ****` :
-            'Ganhador ****'
-        }));
-        setRecentResults(formattedResults);
-      }
-
-      // Fetch complete raffles (100% funded, awaiting draw)
-      const { data: completeData, error: completeError } = await (supabase as any)
+  // Complete raffles data
+  const { data: completeRaffles, isLoading: completeLoading } = useQuery({
+    queryKey: ['complete_raffles'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
         .from('raffles_public_money_ext')
         .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date')
         .eq('status', 'active')
         .eq('progress_pct_money', 100)
         .order('draw_date', { ascending: true })
         .limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+  });
 
-      if (completeError) {
-        console.error('Error fetching complete raffles:', completeError);
-      } else {
-        setCompleteRaffles(completeData || []);
-      }
-
-      // Fetch almost complete raffles (80%+ funded)
-      const { data: almostData, error: almostError } = await (supabase as any)
+  // Almost complete raffles data
+  const { data: almostCompleteRaffles, isLoading: almostLoading } = useQuery({
+    queryKey: ['almost_complete_raffles'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
         .from('raffles_public_money_ext')
         .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price')
         .eq('status', 'active')
@@ -157,32 +102,17 @@ export default function Resultados() {
         .lt('progress_pct_money', 100)
         .order('progress_pct_money', { ascending: false })
         .limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+  });
 
-      if (almostError) {
-        console.error('Error fetching almost complete raffles:', almostError);
-      } else {
-        setAlmostCompleteRaffles(almostData || []);
-      }
+  const latestConcurso = latestFederal?.concurso_number ?? null;
+  const latestDate = latestFederal?.draw_date ?? null;
+  const loading = completeLoading || almostLoading;
 
-      // Fetch federal draws from CAIXA
-      const { data: federalData, error: federalError } = await (supabase as any)
-        .from('federal_draws')
-        .select('id,concurso_number,draw_date,first_prize,prizes,source_url,created_at')
-        .order('draw_date', { ascending: false })
-        .limit(10);
-
-      if (federalError) {
-        console.error('Error fetching federal draws:', federalError);
-      } else {
-        setFederalDraws(federalData || []);
-      }
-
-    } catch (error) {
-      console.error('Error fetching results data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
