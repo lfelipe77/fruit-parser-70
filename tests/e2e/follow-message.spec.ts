@@ -20,12 +20,9 @@ test.describe('Follow + Messages smoke', () => {
 
     // Helpers to read counts
     async function readCounts() {
-      // looks for "X seguidores" and "Y seguindo"
-      const seguidores = await page.getByText(/seguidores/i).innerText();
-      const seguindo = await page.getByText(/seguindo/i).innerText();
-      const segNum = parseInt(seguidores.replace(/\D+/g, ''), 10) || 0;
-      const sgNum  = parseInt(seguindo.replace(/\D+/g, ''), 10) || 0;
-      return { followers: segNum, following: sgNum };
+      const followers = parseInt(await page.getByTestId('followers').innerText(), 10) || 0;
+      const following = parseInt(await page.getByTestId('following').innerText(), 10) || 0;
+      return { followers, following };
     }
 
     const before = await readCounts();
@@ -56,13 +53,13 @@ test.describe('Follow + Messages smoke', () => {
 
     // 4) Test messaging (if message functionality exists)
     // Note: This test assumes a messaging interface exists in the UI
-    const messageBtn = page.getByRole('button', { name: /enviar mensagem|mensagem|conversa/i });
+    const messageBtn = page.getByTestId('message-button');
     
     if (await messageBtn.isVisible().catch(() => false)) {
       await messageBtn.click();
 
       // Wait for message input to appear (could be modal, sidebar, or new page)
-      const messageInput = page.locator('input[placeholder*="mensagem"], textarea[placeholder*="mensagem"], input[placeholder*="message"], textarea[placeholder*="message"]').first();
+      const messageInput = page.getByTestId('message-input');
       
       if (await messageInput.isVisible({ timeout: 3000 }).catch(() => false)) {
         const testMessage = `E2E test message ${Date.now()}`;

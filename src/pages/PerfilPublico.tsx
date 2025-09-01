@@ -475,12 +475,12 @@ export default function PerfilPublico() {
                    <div className="flex gap-6 mb-4">
                      <div className="flex items-center gap-1">
                        <Users className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold">{counts.followers_count}</span>
+                       <span className="font-bold" data-testid="followers">{counts.followers_count}</span>
                        <span className="text-muted-foreground">seguidores</span>
                      </div>
                      <div className="flex items-center gap-1">
                        <Eye className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold">{counts.following_count}</span>
+                       <span className="font-bold" data-testid="following">{counts.following_count}</span>
                        <span className="text-muted-foreground">seguindo</span>
                      </div>
                    </div>

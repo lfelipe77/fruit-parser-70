@@ -7,7 +7,12 @@ export function MessageButton({ targetUserId }: { targetUserId: string }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <button onClick={open} disabled={loading} className="px-3 py-2 rounded-lg border">
+      <button 
+        onClick={open} 
+        disabled={loading} 
+        className="px-3 py-2 rounded-lg border"
+        data-testid="message-button"
+      >
         {conversationId ? 'Abrir conversa' : 'Enviar mensagem'}
       </button>
 
@@ -33,6 +38,7 @@ export function MessageButton({ targetUserId }: { targetUserId: string }) {
               placeholder="Sua mensagem…"
               className="w-full border rounded-md px-2 py-1"
               maxLength={5000}
+              data-testid="message-input"
             />
           </form>
         </div>

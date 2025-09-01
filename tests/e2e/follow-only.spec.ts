@@ -19,8 +19,7 @@ test.describe('Follow functionality', () => {
     // Helper to read follower count
     async function readFollowerCount() {
       try {
-        const seguidoresText = await page.getByText(/\d+\s*seguidores/i).innerText();
-        return parseInt(seguidoresText.replace(/\D+/g, ''), 10) || 0;
+        return parseInt(await page.getByTestId('followers').innerText(), 10) || 0;
       } catch {
         return 0;
       }
