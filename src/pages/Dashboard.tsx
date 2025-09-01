@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserAvatar } from "@/components/UserAvatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMyProfile } from "@/hooks/useMyProfile";
 import { LogOut, User, CreditCard, Trophy, History } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -214,13 +214,12 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                   <div className="flex items-center gap-4">
-                    <UserAvatar
-                      avatarUrl={profile?.avatar_url}
-                      updatedAt={profile?.updated_at}
-                      alt={profile?.full_name || profile?.username || 'user'}
-                      size="lg"
-                      fallbackText={profile?.full_name?.charAt(0).toUpperCase() || 'U'}
-                    />
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={profile?.avatar_url || ''} />
+                      <AvatarFallback>
+                        {profile?.full_name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
                    <div>
                      <p className="font-medium">
                        {profile?.full_name || user.user_metadata?.full_name || 'Usuário'}

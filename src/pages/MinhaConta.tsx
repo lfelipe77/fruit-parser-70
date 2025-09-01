@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserAvatar } from "@/components/UserAvatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
@@ -263,13 +263,12 @@ export default function MinhaConta() {
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row items-center gap-6">
                  <div className="relative">
-                   <UserAvatar
-                     avatarUrl={user.avatar}
-                     updatedAt={user.updated_at}
-                     alt={user.name}
-                     size="xl"
-                     fallbackText={user.name.charAt(0).toUpperCase()}
-                   />
+                   <Avatar className="w-24 h-24">
+                     <AvatarImage src={user.avatar} />
+                     <AvatarFallback className="text-2xl">
+                       {user.name.charAt(0).toUpperCase()}
+                     </AvatarFallback>
+                   </Avatar>
                   <Button 
                     variant="ghost" 
                     size="sm" 

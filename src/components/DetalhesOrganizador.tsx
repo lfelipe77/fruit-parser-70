@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserAvatar } from "@/components/UserAvatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -57,13 +57,12 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
       <CardContent className="space-y-6">
         {/* Profile Section */}
         <div className="flex items-start gap-4">
-          <UserAvatar 
-            avatarUrl={organizer.avatar}
-            updatedAt={organizer.updated_at}
-            alt={organizer.name}
-            size="lg"
-            fallbackText={organizer.name.charAt(0).toUpperCase()}
-          />
+          <Avatar className="w-16 h-16">
+            <AvatarImage src={organizer.avatar} />
+            <AvatarFallback className="text-lg">
+              {organizer.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
           
           <div className="flex-1">
             <Link to={`/perfil/${organizer.username}`} className="block hover:opacity-80 transition-opacity">
