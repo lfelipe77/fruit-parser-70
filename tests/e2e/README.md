@@ -1,44 +1,61 @@
-# E2E tests (Playwright)
+# Ganhavel E2E Smoke Tests
+
+Fast end-to-end tests to catch critical regressions in the raffle system.
 
 ## Setup
-First, add these scripts to your `package.json`:
-```json
-"scripts": {
-  "test:e2e": "playwright test",
-  "test:e2e:ui": "playwright test --ui", 
-  "test:e2e:headed": "playwright test --headed"
-}
+
+1. Copy environment variables:
+```bash
+cp .env.example .env.local
 ```
 
-## Environment Variables
-- `PLAYWRIGHT_BASE_URL` (default `http://localhost:5173`)
-- `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` → an existing test user with password
-- `E2E_TARGET_PROFILE_URL` → e.g. `/#/perfil/gabiarmua` (or the profile UUID route)
+2. Fill in your test configuration in `.env.local`:
+```bash
+# Required
+PLAYWRIGHT_BASE_URL=http://localhost:5173
+E2E_USER_EMAIL="test@example.com"
+E2E_USER_PASSWORD="secret123"
 
-## Run
-- `pnpm dlx playwright install` (first time)
-- `PLAYWRIGHT_BASE_URL=http://localhost:5173 E2E_USER_EMAIL=... E2E_USER_PASSWORD=... E2E_TARGET_PROFILE_URL="/#/perfil/..." pnpm test:e2e`
-- For UI mode: `pnpm test:e2e:ui`
+# Expected counts
+E2E_MY_USER_PROFILE_URL="/#/perfil/me"
+E2E_EXPECT_LAUNCHED_COUNT="9"
 
-## Selectors to verify match your app:
+# Optional
+E2E_PUBLIC_PROFILE_URL="/#/perfil/<slug-or-id>"
+E2E_KNOWN_PROGRESS_ID="f2fd1d10-050e-4435-a215-5e0377697fba"
+```
 
-- If your login route is not `/#/login`, update `loginUI` accordingly.
-- If your login form labels differ, adjust the `getByLabel/getByRole` queries.
-- If the message button text differs, update the regex `/enviar mensagem|abrir conversa/i`.
-- If counts are rendered differently, adjust the `readCounts()` parsing.
-
-Fix any TypeScript or ESLint warnings introduced by these files.
-
-## How to run locally
-1) Create or use a test user with a password (not OAuth) and pick a profile URL to target.  
-2) Run:
+3. Install Playwright:
 ```bash
 pnpm dlx playwright install
-PLAYWRIGHT_BASE_URL=http://localhost:5173 \
-E2E_USER_EMAIL="test@example.com" \
-E2E_USER_PASSWORD="secret123" \
-E2E_TARGET_PROFILE_URL="/#/perfil/gabiarmua" \
-pnpm test:e2e
 ```
 
-If anything fails (e.g., a selector doesn't match your UI text), tell me which step and I'll tailor the selectors to your exact components.
+## Running Tests
+
+```bash
+# Headless mode
+pnpm test:e2e:smoke
+
+# Headed mode (see browser)
+pnpm test:e2e:headed
+
+# Specific test
+pnpm test:e2e:headed tests/e2e/smoke.raffles.spec.ts
+```
+
+## What These Tests Catch
+
+- **Exact count verification**: Your launched raffles shows exactly the expected count (no duplication/leakage)
+- **Progress bar functionality**: At least one raffle has >0% progress (data merge working)
+- **Buy button state**: Buttons are enabled for active raffles
+- **No API errors**: No 400/500 responses during the flow
+- **No !inner joins**: Ensures we don't use problematic joins that cause 400 errors
+- **Cross-page consistency**: Homepage vs profile progress matching
+
+## Test Structure
+
+- `helpers/auth.ts` - Login automation
+- `smoke.raffles.spec.ts` - Main smoke tests
+  - MyLaunched page verification
+  - Public profile verification  
+  - Progress parity check

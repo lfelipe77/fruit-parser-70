@@ -65,7 +65,7 @@ export default function ProjectCard({
 
   return (
     <Link to={`/ganhavel/${ganhaveisId}`} className="block">
-      <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in">
+      <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" data-testid="raffle-card">
       <div className="relative overflow-hidden rounded-t-lg">
         <img
           src={image}
@@ -100,7 +100,7 @@ export default function ProjectCard({
             <span className="font-medium">R$ {(raised * 1000).toLocaleString('pt-BR')}</span>
             <span className="text-muted-foreground">de R$ {(goal * 1000).toLocaleString('pt-BR')}</span>
           </div>
-          <Progress value={percentage} className="h-2" />
+          <Progress value={percentage} className="h-2" data-testid="raffle-progress" />
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{percentage}% arrecadado</span>
             <span>{backers} participantes</span>
@@ -120,7 +120,7 @@ export default function ProjectCard({
             </span>
           )}
         </div>
-        <Button variant={isCompleted ? "success" : "default"} size="sm">
+        <Button variant={isCompleted ? "success" : "default"} size="sm" data-testid="buy-button" disabled={!canBuy}>
           {isCompleted ? "Ver Resultado" : canBuy ? "Comprar Bilhete" : "Ver Detalhes"}
         </Button>
       </CardFooter>

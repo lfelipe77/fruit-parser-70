@@ -161,7 +161,7 @@ export default function MyLaunchedPage() {
       {!loading && raffles.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {raffles.map((raffle) => (
-            <Card key={raffle.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={raffle.id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid="raffle-card">
               {raffle.image_url && (
                 <div className="aspect-video overflow-hidden">
                   <img
