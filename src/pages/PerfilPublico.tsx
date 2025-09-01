@@ -378,7 +378,7 @@ export default function PerfilPublico() {
               <div className="flex flex-col md:flex-row items-start gap-6">
                 <div className="flex flex-col items-center">
                   <Avatar className="w-24 h-24 mb-4">
-                    <AvatarImage src={user.avatar} />
+                    <AvatarImage src={user.avatar} data-testid="profile-avatar" />
                     <AvatarFallback className="text-2xl">
                       {user.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
