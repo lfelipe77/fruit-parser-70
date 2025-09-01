@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFollow } from '@/hooks/useFollow';
+import { supabase } from '@/lib/supabase';
 
 type Props = {
   profileUserId: string;    // id of the profile being viewed
@@ -9,6 +10,20 @@ type Props = {
 
 export default function FollowButton({ profileUserId, compact, onChange }: Props) {
   const { loading, following, onToggle } = useFollow(profileUserId);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      setCurrentUserId(auth?.user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
+
+  // Hide button if viewing own profile
+  if (currentUserId === profileUserId) {
+    return null;
+  }
 
   const handleClick = async () => {
     await onToggle();

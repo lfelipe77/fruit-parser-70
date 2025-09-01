@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { isFollowing, toggleFollow, getUserFollowCounts } from '@/lib/follows';
 import { supabase } from '@/lib/supabase';
 
@@ -8,6 +9,7 @@ export function useFollow(profileUserId: string) {
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
   const [counts, setCounts] = useState<Counts>({ followers_count: 0, following_count: 0 });
+  const queryClient = useQueryClient();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -37,10 +39,15 @@ export function useFollow(profileUserId: string) {
         followers_count: result.following ? prev.followers_count + 1 : Math.max(prev.followers_count - 1, 0),
         following_count: prev.following_count,
       }));
+
+      // Invalidate TanStack Query caches
+      queryClient.invalidateQueries({ queryKey: ['followers', profileUserId] });
+      queryClient.invalidateQueries({ queryKey: ['following', profileUserId] });
+      queryClient.invalidateQueries({ queryKey: ['counts', profileUserId] });
     } finally {
       setLoading(false);
     }
-  }, [profileUserId]);
+  }, [profileUserId, queryClient]);
 
   return { loading, following, counts, refresh, onToggle };
 }

@@ -426,7 +426,7 @@ const GanhaveisDetailModal = ({ ganhavel, open, onOpenChange }: any) => {
                   
                   <div className="space-y-2">
                     <Label>Nova Mensagem</Label>
-                    <Textarea placeholder="Digite sua mensagem..." />
+                    <Textarea placeholder="Digite sua mensagem..." maxLength={5000} />
                     <Button size="sm">
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Enviar Mensagem

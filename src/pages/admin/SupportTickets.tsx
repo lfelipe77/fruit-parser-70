@@ -467,6 +467,7 @@ export default function SupportTickets() {
                                         value={newResponse}
                                         onChange={(e) => setNewResponse(e.target.value)}
                                         placeholder="Digite sua resposta aqui..."
+                                        maxLength={5000}
                                         rows={4}
                                       />
                                     </div>
