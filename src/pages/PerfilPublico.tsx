@@ -117,10 +117,13 @@ export default function PerfilPublico() {
           console.debug('[PerfilPublico] authUserId=', authUserId, 'profileUserId=', profileUserId, 'isOwner=', isOwner, 'slug=', profile?.username);
         }
         
-        // Fetch ganhaveis lancados (from raffles table)
+        // Fetch ganhaveis lancados (join raffles with raffles_public_money_ext for progress data)
         const { data: lancados, error: lancadosError } = await supabase
           .from('raffles')
-          .select('id, title, status, image_url, goal_amount, created_at, user_id')
+          .select(`
+            id, title, status, image_url, goal_amount, created_at, user_id,
+            raffles_public_money_ext!inner(amount_raised, progress_pct_money)
+          `)
           .eq('user_id', profile.id)
           .in('status', ['active', 'completed'])
           .order('created_at', { ascending: false })
@@ -133,7 +136,13 @@ export default function PerfilPublico() {
         if (lancadosError) {
           console.error('Error fetching launched ganhaveis:', lancadosError);
         } else {
-          setGanhaveisLancados(lancados || []);
+          // Transform the joined data to flatten the progress info
+          const transformedLancados = (lancados || []).map(item => ({
+            ...item,
+            amount_raised: item.raffles_public_money_ext?.[0]?.amount_raised || 0,
+            progress_pct_money: item.raffles_public_money_ext?.[0]?.progress_pct_money || 0
+          }));
+          setGanhaveisLancados(transformedLancados);
         }
 
         // Fetch ganhaveis participados (only if viewer is owner)
@@ -311,14 +320,15 @@ export default function PerfilPublico() {
     description: g.title, // Use title as description since raffles doesn't have description
     image: g.image_url || '/placeholder.svg',
     goal: g.goal_amount || 0,
-    raised: 0, // Would need to calculate from transactions
+    raised: g.amount_raised || 0, // Now we have actual raised amount from the view
     daysLeft: 0, // Calculate based on draw_date if available
     category: 'Diversos',
     backers: 0, // Would need to calculate from transactions
     status: g.status === 'active' ? 'Em andamento' : g.status === 'completed' ? 'Finalizada' : 'Pendente',
     location: 'Online',
     raffleId: g.id, // Use proper raffle ID
-    raffleStatus: g.status // Raw status for ProjectCard
+    raffleStatus: g.status, // Raw status for ProjectCard
+    progress_pct_money: g.progress_pct_money || 0 // Add progress percentage
   })).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left
     if (a.status === "Em andamento" && b.status === "Finalizada") return -1;
