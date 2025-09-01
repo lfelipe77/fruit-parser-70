@@ -20,15 +20,20 @@ type RaffleWithProgress = {
 };
 
 async function fetchMyLaunched(userId: string) {
+  console.log('[MyLaunched] fetchMyLaunched userId:', userId);
+  
   // 1) Fetch this user's raffles (ids and basic fields)
   const { data: base, error: baseErr } = await supabase
     .from('raffles')
     .select('id,title,status,goal_amount,image_url,created_at,user_id')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
+  
+  console.log('[MyLaunched] base query result:', { base, baseErr });
   if (baseErr) throw baseErr;
 
   const ids = (base ?? []).map((r: any) => r.id);
+  console.log('[MyLaunched] raffle ids for this user:', ids);
   if (!ids.length) return [] as RaffleWithProgress[];
 
   // 2) Enrich with money/progress from public view
@@ -36,14 +41,19 @@ async function fetchMyLaunched(userId: string) {
     .from('raffles_public_money_ext')
     .select('id,amount_raised,progress_pct_money')
     .in('id', ids);
+    
+  console.log('[MyLaunched] money query result:', { money, moneyErr });
   if (moneyErr) throw moneyErr;
 
   const moneyMap = Object.fromEntries((money ?? []).map((m: any) => [m.id, m]));
-  return (base ?? []).map((item: any) => ({
+  const result = (base ?? []).map((item: any) => ({
     ...item,
     amount_raised: moneyMap[item.id]?.amount_raised ?? 0,
     progress_pct_money: moneyMap[item.id]?.progress_pct_money ?? 0,
   })) as RaffleWithProgress[];
+  
+  console.log('[MyLaunched] final result:', result);
+  return result;
 }
 
 
