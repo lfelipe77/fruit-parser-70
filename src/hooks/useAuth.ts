@@ -134,7 +134,7 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const redirectUrl = `${window.location.origin}/#/auth-callback`;
       
       const { error } = await withTimeout(
         supabase.auth.signUp({

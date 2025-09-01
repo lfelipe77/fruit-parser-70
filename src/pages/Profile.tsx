@@ -13,12 +13,14 @@ import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck } from 'luci
 import { Link, useNavigate } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { fileToDataUrl } from '@/lib/cropImage';
+import { useProfileSave } from '@/hooks/useProfileSave';
 
 export default function Profile() {
   const { profile, loading, updateProfile } = useMyProfile();
   const { session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { save: saveProfile, saving: savingProfile, error: saveError } = useProfileSave();
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
@@ -32,6 +34,7 @@ export default function Profile() {
   const [pendingFileExt, setPendingFileExt] = useState<string>("webp");
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   // Initialize form data when profile loads
   useEffect(() => {
@@ -54,7 +57,7 @@ export default function Profile() {
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !profile) return;
+    if (!file) return;
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
@@ -189,25 +192,32 @@ export default function Profile() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      const { error } = await updateProfile(formData);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Perfil atualizado',
-        description: 'Suas informações foram salvas com sucesso.',
+      const result = await saveProfile({
+        updates: formData,
+        avatarFile: avatarFile
       });
+
+      if (result) {
+        // Update local profile state with new data
+        await updateProfile(result);
+        
+        toast({
+          title: 'Perfil atualizado',
+          description: 'Suas informações e avatar foram salvos com sucesso.',
+        });
+        
+        // Clear avatar file state after successful save
+        setAvatarFile(null);
+        setCroppedBlob(null);
+      }
     } catch (error) {
       console.error('Error saving profile:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao salvar perfil.',
+        description: saveError || 'Erro ao salvar perfil.',
         variant: 'destructive',
       });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -385,9 +395,20 @@ export default function Profile() {
             </div>
           </div>
 
-            <Button onClick={handleSave} disabled={saving} className="w-full">
-              {saving ? 'Salvando...' : 'Salvar Alterações'}
+            <Button onClick={handleSave} disabled={savingProfile} className="w-full">
+              {savingProfile ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
+            
+            {/* Show preview of cropped avatar if available */}
+            {croppedBlob && (
+              <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+                <p className="text-sm text-muted-foreground mb-2">Avatar pronto para salvar:</p>
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src={URL.createObjectURL(croppedBlob)} />
+                  <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
+                </Avatar>
+              </div>
+            )}
           </CardContent>
         </Card>
         </div>
@@ -400,18 +421,10 @@ export default function Profile() {
           setCropOpen(false);
           setCroppedBlob(null);
         }}
-        onCropped={async (blob) => {
+        onCropped={(blob) => {
           setCroppedBlob(blob);
-          setSavingAvatar(true);
-          try {
-            await uploadCroppedBlob(blob);
-            setCropOpen(false);
-            setCroppedBlob(null);
-          } catch (error) {
-            console.error("[avatar] save error", error);
-          } finally {
-            setSavingAvatar(false);
-          }
+          setAvatarFile(new File([blob], 'avatar.webp', { type: 'image/webp' }));
+          setCropOpen(false);
         }}
       />
     </div>
