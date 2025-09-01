@@ -117,32 +117,41 @@ export default function PerfilPublico() {
           console.debug('[PerfilPublico] authUserId=', authUserId, 'profileUserId=', profileUserId, 'isOwner=', isOwner, 'slug=', profile?.username);
         }
         
-        // Fetch ganhaveis lancados (use left join to get all raffles even if not in money view)
-        const { data: lancados, error: lancadosError } = await supabase
+        // Fetch ganhaveis lancados (two-step: raffles then enrich with money view)
+        const { data: lancadosBase, error: lancadosError } = await supabase
           .from('raffles')
-          .select(`
-            id, title, status, image_url, goal_amount, created_at, user_id,
-            raffles_public_money_ext(amount_raised, progress_pct_money)
-          `)
+          .select('id, title, status, image_url, goal_amount, created_at, user_id')
           .eq('user_id', profile.id)
           .in('status', ['active', 'completed'])
           .order('created_at', { ascending: false })
           .limit(30);
 
-        if (import.meta.env.DEV && lancados?.some(r => r.user_id !== profileUserId)) {
-          console.error('⚠️ Escopo quebrado em Lançados (profile)', lancados);
+        if (import.meta.env.DEV && lancadosBase?.some((r: any) => r.user_id !== profileUserId)) {
+          console.error('⚠️ Escopo quebrado em Lançados (profile)', lancadosBase);
         }
           
         if (lancadosError) {
           console.error('Error fetching launched ganhaveis:', lancadosError);
         } else {
-          // Transform the joined data to flatten the progress info
-          const transformedLancados = (lancados || []).map(item => ({
-            ...item,
-            amount_raised: item.raffles_public_money_ext?.[0]?.amount_raised || 0,
-            progress_pct_money: item.raffles_public_money_ext?.[0]?.progress_pct_money || 0
-          }));
-          setGanhaveisLancados(transformedLancados);
+          const base = (lancadosBase || []) as any[];
+          const ids = base.map(r => r.id);
+          let merged = base;
+          if (ids.length) {
+            const { data: moneyRows, error: moneyErr } = await supabase
+              .from('raffles_public_money_ext')
+              .select('id,amount_raised,progress_pct_money')
+              .in('id', ids);
+            if (moneyErr) {
+              console.error('[PerfilPublico] money view error', moneyErr);
+            }
+            const moneyMap = Object.fromEntries((moneyRows ?? []).map((m: any) => [m.id, m]));
+            merged = base.map((item: any) => ({
+              ...item,
+              amount_raised: moneyMap[item.id]?.amount_raised ?? 0,
+              progress_pct_money: moneyMap[item.id]?.progress_pct_money ?? 0,
+            }));
+          }
+          setGanhaveisLancados(merged);
         }
 
         // Fetch ganhaveis participados (only if viewer is owner)

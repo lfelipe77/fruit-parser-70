@@ -20,28 +20,32 @@ type RaffleWithProgress = {
 };
 
 async function fetchMyLaunched(userId: string) {
-  const { data, error } = await supabase
+  // 1) Fetch this user's raffles (ids and basic fields)
+  const { data: base, error: baseErr } = await supabase
     .from('raffles')
-    .select(`
-      id,
-      title,
-      status,
-      goal_amount,
-      image_url,
-      created_at,
-      user_id,
-      raffles_public_money_ext!inner(amount_raised, progress_pct_money)
-    `)
+    .select('id,title,status,goal_amount,image_url,created_at,user_id')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
-  if (error) throw error;
-  
-  return (data ?? []).map(item => ({
+  if (baseErr) throw baseErr;
+
+  const ids = (base ?? []).map((r: any) => r.id);
+  if (!ids.length) return [] as RaffleWithProgress[];
+
+  // 2) Enrich with money/progress from public view
+  const { data: money, error: moneyErr } = await supabase
+    .from('raffles_public_money_ext')
+    .select('id,amount_raised,progress_pct_money')
+    .in('id', ids);
+  if (moneyErr) throw moneyErr;
+
+  const moneyMap = Object.fromEntries((money ?? []).map((m: any) => [m.id, m]));
+  return (base ?? []).map((item: any) => ({
     ...item,
-    amount_raised: item.raffles_public_money_ext?.[0]?.amount_raised || 0,
-    progress_pct_money: item.raffles_public_money_ext?.[0]?.progress_pct_money || 0
+    amount_raised: moneyMap[item.id]?.amount_raised ?? 0,
+    progress_pct_money: moneyMap[item.id]?.progress_pct_money ?? 0,
   })) as RaffleWithProgress[];
 }
+
 
 export default function MyLaunchedPage() {
   const { user } = useAuth();
