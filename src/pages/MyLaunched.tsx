@@ -7,21 +7,46 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Home, Trophy, Plus, Gift, Users, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-interface MyRaffle {
+type RaffleWithProgress = {
   id: string;
-  title: string;
-  status: string;
-  goal_amount: number;
-  amount_raised: number;
-  progress_pct_money: number;
-  created_at: string;
+  title: string | null;
+  status: string | null;
+  goal_amount: number | null;
   image_url: string | null;
+  created_at: string;
+  user_id: string;                 // present in the view
+  amount_raised: number | null;    // from view
+  progress_pct_money: number | null; // from view
+};
+
+async function fetchMyLaunched(userId: string) {
+  const { data, error } = await supabase
+    .from('raffles')
+    .select(`
+      id,
+      title,
+      status,
+      goal_amount,
+      image_url,
+      created_at,
+      user_id,
+      raffles_public_money_ext!inner(amount_raised, progress_pct_money)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  
+  return (data ?? []).map(item => ({
+    ...item,
+    amount_raised: item.raffles_public_money_ext?.[0]?.amount_raised || 0,
+    progress_pct_money: item.raffles_public_money_ext?.[0]?.progress_pct_money || 0
+  })) as RaffleWithProgress[];
 }
 
 export default function MyLaunchedPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [raffles, setRaffles] = useState<MyRaffle[]>([]);
+  const [raffles, setRaffles] = useState<RaffleWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,45 +56,18 @@ export default function MyLaunchedPage() {
     (async () => {
       setLoading(true);
       
-      // Query user's own raffles from progress view
       try {
-        const { data, error } = await (supabase as any)
-          .from('raffles_public_money_ext')
-          .select('id,title,status,goal_amount,image_url,created_at,amount_raised,progress_pct_money')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error("[MyLaunched] fetch error", error);
-          // Fallback to direct table query (no progress)
-          const { data: fallbackData } = await supabase
-            .from('raffles')
-            .select('id,title,status,goal_amount,created_at,image_url')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(50);
-
-          if (mounted) {
-            const rows = (fallbackData || []).map((item: any) => ({
-              id: item.id,
-              title: item.title,
-              status: item.status,
-              goal_amount: item.goal_amount,
-              amount_raised: 0,
-              progress_pct_money: 0,
-              created_at: item.created_at,
-              image_url: item.image_url as string | null,
-            })) as MyRaffle[];
-            setRaffles(rows);
-            setLoading(false);
-          }
-        } else if (mounted) {
-          setRaffles((data ?? []) as MyRaffle[]);
+        const data = await fetchMyLaunched(user.id);
+        if (mounted) {
+          setRaffles(data);
           setLoading(false);
         }
-      } catch (err) {
-        console.error("[MyLaunched] unexpected error", err);
-        if (mounted) setLoading(false);
+      } catch (error) {
+        console.error("[MyLaunched] fetch error", error);
+        if (mounted) {
+          setRaffles([]);
+          setLoading(false);
+        }
       }
     })();
     return () => { mounted = false; };
@@ -90,14 +88,18 @@ export default function MyLaunchedPage() {
     });
   };
 
-  function ProgressBar({ progress }: { progress: number }) {
-    const pct = Math.max(0, Math.min(progress ?? 0, 100));
+  function ProgressBar({ value }: { value?: number | null }) {
+    const pct = Math.max(0, Math.min(Number(value ?? 0), 100));
     return (
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full bg-gray-200/70 rounded-full h-2">
         <div
-          className="bg-emerald-500 h-2 rounded-full"
+          className="h-2 rounded-full bg-emerald-500"
           style={{ width: `${pct}%` }}
           data-testid="raffle-progress"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          role="progressbar"
         />
       </div>
     );
@@ -194,7 +196,7 @@ export default function MyLaunchedPage() {
                 <div className="aspect-video overflow-hidden">
                   <img
                     src={raffle.image_url}
-                    alt={raffle.title}
+                    alt={raffle.title || 'Raffle image'}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -203,12 +205,12 @@ export default function MyLaunchedPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="line-clamp-2">{raffle.title}</CardTitle>
+                    <CardTitle className="line-clamp-2">{raffle.title || 'Untitled'}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      Status: {raffle.status}
+                      Status: {raffle.status || 'Unknown'}
                     </CardDescription>
                   </div>
-                  {getStatusBadge(raffle.status)}
+                  {getStatusBadge(raffle.status || 'unknown')}
                 </div>
               </CardHeader>
               
@@ -229,9 +231,11 @@ export default function MyLaunchedPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Arrecadado: {formatCurrency(raffle.amount_raised || 0)}</span>
-                        <span className="font-medium" data-testid="progress-pct">{raffle.progress_pct_money ?? 0}%</span>
+                        <span className="font-medium tabular-nums" data-testid={`progress-pct-${raffle.id}`}>
+                          {(raffle.progress_pct_money ?? 0)}%
+                        </span>
                       </div>
-                      <ProgressBar progress={raffle.progress_pct_money ?? 0} />
+                      <ProgressBar value={raffle.progress_pct_money} />
                     </div>
                   </div>
                   
