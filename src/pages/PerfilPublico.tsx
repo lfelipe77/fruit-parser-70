@@ -30,9 +30,13 @@ import {
 import Navigation from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectCard";
 import VideoModal from "@/components/VideoModal";
+import FollowButton from '@/components/FollowButton';
+import { useFollow } from '@/hooks/useFollow';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function PerfilPublico() {
   const { username } = useParams();
+  const { user: currentUser } = useAuth();
   const [showAllGanhaveis, setShowAllGanhaveis] = useState(false);
   const [showAllGanhaveisParticipados, setShowAllGanhaveisParticipados] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -42,6 +46,11 @@ export default function PerfilPublico() {
   const [ganhaveisLancados, setGanhaveisLancados] = useState<any[]>([]);
   const [ganhaveisParticipados, setGanhaveisParticipados] = useState<any[]>([]);
   const [loadingGanhaveis, setLoadingGanhaveis] = useState(true);
+  
+  // Get follow data for this profile
+  const profileUserId = profile?.id;
+  const { counts } = useFollow(profileUserId || '');
+  const isMe = currentUser?.id === profileUserId;
   
   useEffect(() => {
     const fetchProfile = async () => {
@@ -376,24 +385,9 @@ export default function PerfilPublico() {
                   </Avatar>
                   
                   <div className="flex flex-col gap-3">
-                    <Button 
-                      variant={isFollowing ? "secondary" : "hero"} 
-                      size="sm"
-                      onClick={() => setIsFollowing(!isFollowing)}
-                      className="w-full"
-                    >
-                      {isFollowing ? (
-                        <>
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          Seguindo
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Seguir
-                        </>
-                      )}
-                    </Button>
+                    {!isMe && profileUserId && (
+                      <FollowButton profileUserId={profileUserId} />
+                    )}
                     
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1">
@@ -481,12 +475,12 @@ export default function PerfilPublico() {
                    <div className="flex gap-6 mb-4">
                      <div className="flex items-center gap-1">
                        <Users className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold">{user.seguidores.toLocaleString()}</span>
+                       <span className="font-bold">{counts.followers_count}</span>
                        <span className="text-muted-foreground">seguidores</span>
                      </div>
                      <div className="flex items-center gap-1">
                        <Eye className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold">{user.seguindo}</span>
+                       <span className="font-bold">{counts.following_count}</span>
                        <span className="text-muted-foreground">seguindo</span>
                      </div>
                    </div>

@@ -246,6 +246,7 @@ export default function GanhaveisDetail() {
           <div className="mt-8 hidden md:block">
             <DetalhesOrganizador 
               organizer={{
+                id: organizerData?.id || "",
                 name: organizerData?.full_name || organizerData?.username || "Organizador",
                 username: organizerData?.username || "user",
                 bio: organizerData?.bio || "Organizador experiente na plataforma.",
@@ -407,6 +408,7 @@ export default function GanhaveisDetail() {
       <div className="mt-8 md:hidden">
         <DetalhesOrganizador 
           organizer={{
+            id: organizerData?.id || "",
             name: organizerData?.full_name || organizerData?.username || "Organizador",
             username: organizerData?.username || "user",
             bio: organizerData?.bio || "Organizador experiente na plataforma.",

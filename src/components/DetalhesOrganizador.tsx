@@ -19,9 +19,13 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ShareButton from "./ShareButton";
+import FollowButton from '@/components/FollowButton';
+import { useFollow } from '@/hooks/useFollow';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DetalhesOrganizadorProps {
   organizer: {
+    id: string;
     name: string;
     username: string;
     bio?: string;
@@ -46,6 +50,9 @@ interface DetalhesOrganizadorProps {
 }
 
 export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorProps) {
+  const { user: currentUser } = useAuth();
+  const { counts } = useFollow(organizer.id);
+  const isMe = currentUser?.id === organizer.id;
   return (
     <Card>
       <CardHeader>
@@ -182,10 +189,9 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-4 border-t">
-          <Button variant="hero" size="sm">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Seguir
-          </Button>
+          {!isMe && (
+            <FollowButton profileUserId={organizer.id} compact />
+          )}
           
           <Button variant="outline" size="sm" className="flex-1">
             <MessageCircle className="h-4 w-4 mr-2" />
