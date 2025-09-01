@@ -16,7 +16,7 @@ import { fileToDataUrl } from '@/lib/cropImage';
 import { useProfileSave } from '@/hooks/useProfileSave';
 
 export default function Profile() {
-  const { profile, loading, updateProfile } = useMyProfile();
+  const { profile, loading, updateProfile, refreshProfile, invalidateQueries } = useMyProfile();
   const { session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -87,109 +87,6 @@ export default function Profile() {
     }
   };
 
-  const uploadCroppedBlob = async (blob: Blob) => {
-    const uid = session?.user?.id;
-    if (!uid) {
-      console.error("[avatar upload] missing session.user.id");
-      toast({
-        title: 'Erro',
-        description: 'Sessão expirada. Entre novamente.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    const path = `${uid}/avatar.webp`; // MUST start with UID for RLS
-
-    console.log("[avatar] starting upload", { uid, path, blobSize: blob.size });
-
-    setUploading(true);
-    try {
-      // 1) upload to Storage (overwrite)
-      const up = await supabase.storage.from("avatars").upload(path, blob, {
-        upsert: true,
-        cacheControl: "0",
-        contentType: "image/webp",
-      });
-      console.log("[avatar] storage.upload response", up);
-      if (up.error) throw up.error;
-
-      // 2) get public URL
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      console.log("[avatar] public url", pub);
-      if (!pub?.publicUrl) throw new Error("Falha ao obter URL pública");
-      const baseUrl = pub.publicUrl;
-
-      // 3) UPDATE profile
-      const upd = await supabase
-        .from("user_profiles")
-        .update({ avatar_url: baseUrl })
-        .eq("id", uid)
-        .select("id");
-      console.log("[avatar] profiles.update response", upd);
-      if (upd.error) throw upd.error;
-
-      // 4) If 0 rows updated → INSERT (requires the insert policy)
-      if (!upd.data || upd.data.length === 0) {
-        const ins = await supabase
-          .from("user_profiles")
-          .insert({ id: uid, avatar_url: baseUrl })
-          .select("id");
-        console.log("[avatar] profiles.insert response", ins);
-        if (ins.error) throw ins.error;
-      }
-
-      // 5) cache-bust locally
-      const bust = `${baseUrl}?t=${Date.now()}`;
-      await updateProfile({ avatar_url: bust });
-
-      toast({
-        title: 'Avatar atualizado',
-        description: 'Seu avatar foi atualizado com sucesso.',
-      });
-      console.log("[avatar] done");
-    } catch (e: any) {
-      console.error("[avatar upload/save] error:", e);
-      toast({
-        title: 'Erro',
-        description: e?.message || e?.error_description || "Erro ao enviar avatar.",
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // Final "Salvar" button click inside cropper modal
-  const onConfirmCroppedAvatar = async () => {
-    try {
-      if (!session?.user?.id) {
-        console.error("[avatar] no session user id at save time");
-        toast({
-          title: 'Erro',
-          description: 'Faça login novamente para salvar o avatar.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      if (!croppedBlob) {
-        toast({
-          title: 'Erro',
-          description: 'Selecione a área do recorte antes de salvar.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      setSavingAvatar(true);
-      await uploadCroppedBlob(croppedBlob);
-      // close modal only after successful upload
-      setCropOpen(false);
-      setCroppedBlob(null);
-    } catch (e) {
-      console.error("[avatar] confirm error", e);
-    } finally {
-      setSavingAvatar(false);
-    }
-  };
 
   const handleSave = async () => {
     try {
@@ -199,8 +96,12 @@ export default function Profile() {
       });
 
       if (result) {
-        // Update local profile state with new data
-        await updateProfile(result);
+        // Invalidate queries to refresh all profile data
+        invalidateQueries(['my-profile']);
+        invalidateQueries(['profiles-list']);
+        
+        // Refresh profile data
+        refreshProfile();
         
         toast({
           title: 'Perfil atualizado',
@@ -233,7 +134,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
+    <div className="container mx-auto py-8 max-w-4xl" data-testid="profile-page">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Meu Perfil</h1>
         
@@ -334,6 +235,7 @@ export default function Profile() {
                   variant="outline" 
                   disabled={uploading}
                   onClick={() => document.getElementById('avatar-upload')?.click()}
+                  data-testid="avatar-upload-button"
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   {uploading ? 'Enviando...' : 'Alterar Avatar'}
@@ -395,7 +297,7 @@ export default function Profile() {
             </div>
           </div>
 
-            <Button onClick={handleSave} disabled={savingProfile} className="w-full">
+            <Button onClick={handleSave} disabled={savingProfile} className="w-full" data-testid="save-profile">
               {savingProfile ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
             

@@ -2,6 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
+// Create a simple query cache for manual invalidation
+const queryCache = new Map();
+const invalidateQueries = (queryKey: string[]) => {
+  const key = JSON.stringify(queryKey);
+  queryCache.delete(key);
+};
+
 interface UserProfile {
   id: string;
   username?: string;
@@ -12,6 +19,7 @@ interface UserProfile {
   role?: string;
   banned?: boolean;
   total_ganhaveis?: number;
+  updated_at?: string;
 }
 
 export const useMyProfile = () => {
@@ -76,10 +84,34 @@ export const useMyProfile = () => {
     }
   };
 
+  const refreshProfile = () => {
+    invalidateQueries(['my-profile']);
+    if (user && !authLoading) {
+      const fetchProfile = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (!error && data) {
+            setProfile(data);
+          }
+        } catch (error) {
+          console.error('Error refreshing profile:', error);
+        }
+      };
+      fetchProfile();
+    }
+  };
+
   return {
     profile,
     loading: loading || authLoading,
     isAdmin,
-    updateProfile
+    updateProfile,
+    refreshProfile,
+    invalidateQueries
   };
 };

@@ -1,6 +1,20 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Validate file type and size before processing
+function validateAvatarFile(file: File | Blob): void {
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  
+  if (file.size > maxSize) {
+    throw new Error('Image too large (max 5MB)');
+  }
+  
+  if (file instanceof File && !allowedTypes.includes(file.type)) {
+    throw new Error('Invalid file type. Only PNG, JPG, and WebP are allowed');
+  }
+}
+
 export type ProfileUpdates = {
   full_name?: string | null;
   username?: string | null;
@@ -30,8 +44,10 @@ export function useProfileSave() {
 
       let avatarUrl: string | null = null;
 
-      // 1) If there is a new avatar, upload it with the correct key pattern
+      // 1) If there is a new avatar, validate and upload it
       if (avatarFile) {
+        validateAvatarFile(avatarFile);
+        
         const key = `${user.id}/avatar.webp`; // policy requires folder = user.id
         const { error: upErr } = await supabase
           .storage
