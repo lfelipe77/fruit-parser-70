@@ -32,7 +32,7 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 
 function useIsAdmin() {
   const { user, initializing } = useAuthContext();
@@ -79,7 +79,7 @@ export default function Navigation() {
   const { user } = useAuth();
   const { user: authUser, initializing } = useAuthContext();
   const [userRole, setUserRole] = useState<string>("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<{ avatar_url: string | null; updated_at: string | null } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = useIsAdmin();
 
@@ -94,7 +94,7 @@ export default function Navigation() {
       if (!authUser) {
         console.log('[Navigation] No user found, clearing role and avatar');
         setUserRole("");
-        setAvatarUrl(null);
+        setProfileData(null);
         return;
       }
       
@@ -102,7 +102,7 @@ export default function Navigation() {
         console.log('[Navigation] Fetching user profile from database...');
         const { data, error } = await supabase
           .from("user_profiles")
-          .select("role, avatar_url")
+          .select("role, avatar_url, updated_at")
           .eq("id", authUser.id)
           .maybeSingle();
           
@@ -116,7 +116,7 @@ export default function Navigation() {
         if (!data) {
           console.warn("[Navigation] User profile not found, assuming no role");
           setUserRole("");
-          setAvatarUrl(null);
+          setProfileData(null);
           return;
         }
         
@@ -124,12 +124,10 @@ export default function Navigation() {
         console.log('[Navigation] User role comparison - data.role:', data.role, 'isAdmin check result:', data.role === 'admin');
         setUserRole(data.role || "");
         
-        // Apply cache buster for avatar
-        if (data.avatar_url) {
-          setAvatarUrl(`${data.avatar_url}?t=${Date.now()}`);
-        } else {
-          setAvatarUrl(null);
-        }
+        setProfileData({
+          avatar_url: data.avatar_url,
+          updated_at: data.updated_at
+        });
       } catch (error) {
         console.error("[Navigation] Error checking user role:", error);
       }
@@ -332,12 +330,13 @@ export default function Navigation() {
               )}
               {user ? (
                 <Link to="/dashboard">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={avatarUrl || ''} />
-                    <AvatarFallback>
-                      <User className="w-4 h-4" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar 
+                    avatarUrl={profileData?.avatar_url} 
+                    updatedAt={profileData?.updated_at}
+                    alt={user?.email || 'user'}
+                    size="sm"
+                    fallbackText={user?.email?.charAt(0).toUpperCase() || 'U'}
+                  />
                 </Link>
               ) : (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">

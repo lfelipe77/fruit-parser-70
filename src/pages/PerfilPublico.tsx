@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -368,12 +368,14 @@ export default function PerfilPublico() {
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row items-start gap-6">
                 <div className="flex flex-col items-center">
-                  <Avatar className="w-24 h-24 mb-4">
-                    <AvatarImage src={user.avatar} />
-                    <AvatarFallback className="text-2xl">
-                      {user.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    avatarUrl={user.avatar}
+                    updatedAt={profile?.updated_at}
+                    alt={user.name}
+                    size="xl"
+                    fallbackText={user.name.charAt(0).toUpperCase()}
+                    className="mb-4"
+                  />
                   
                   <div className="flex flex-col gap-3">
                     <Button 
