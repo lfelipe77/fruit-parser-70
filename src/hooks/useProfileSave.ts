@@ -55,9 +55,9 @@ export function useProfileSave() {
           .upload(key, avatarFile, { upsert: true, contentType: 'image/webp' });
         if (upErr) throw upErr;
 
-        // Bucket is public per policy, so we can store the public URL
+        // Bucket is public per policy, so we can store the public URL with cache-busting
         const { data: pub } = supabase.storage.from('avatars').getPublicUrl(key);
-        avatarUrl = pub?.publicUrl ?? null;
+        avatarUrl = pub?.publicUrl ? `${pub.publicUrl}?v=${Date.now()}` : null;
       }
 
       // 2) Ensure profile row exists (harmless if it already does; trigger also creates it)

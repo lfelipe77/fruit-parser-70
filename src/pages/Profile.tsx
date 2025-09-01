@@ -34,7 +34,7 @@ export default function Profile() {
   const [pendingFileExt, setPendingFileExt] = useState<string>("webp");
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   const [savingAvatar, setSavingAvatar] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  
 
   // Initialize form data when profile loads
   useEffect(() => {
@@ -108,8 +108,7 @@ export default function Profile() {
           description: 'Suas informações foram salvas com sucesso.',
         });
         
-        // Clear avatar file state after successful save
-        setAvatarFile(null);
+        // Clear avatar state after successful save
         setCroppedBlob(null);
       }
     } catch (error) {
@@ -325,7 +324,6 @@ export default function Profile() {
         }}
         onCropped={(blob) => {
           setCroppedBlob(blob);
-          setAvatarFile(new File([blob], 'avatar.webp', { type: 'image/webp' }));
           setCropOpen(false);
         }}
       />
