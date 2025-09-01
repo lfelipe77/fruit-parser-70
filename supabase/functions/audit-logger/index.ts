@@ -20,7 +20,23 @@ Deno.serve(withCORS(async (req: Request) => {
 
     const { action, context, user_id } = payload
 
-    console.log(`Logging audit event: ${action || 'unknown'}`, { user_id, context })
+    // Sanitize and validate context to prevent JSON parsing errors
+    let sanitizedContext = {}
+    try {
+      if (context && typeof context === 'object') {
+        // Convert context to string and back to ensure it's valid JSON
+        const contextStr = JSON.stringify(context)
+        sanitizedContext = JSON.parse(contextStr)
+      } else if (typeof context === 'string') {
+        // If context is a string, try to parse it as JSON
+        sanitizedContext = JSON.parse(context)
+      }
+    } catch (contextError) {
+      console.warn('Failed to sanitize context, using empty object:', contextError)
+      sanitizedContext = { raw_context: String(context).substring(0, 1000) } // Truncate if too long
+    }
+
+    console.log(`Logging audit event: ${action || 'unknown'}`, { user_id, context: sanitizedContext })
 
     // Try to log to audit_logs table, but don't fail if it doesn't work
     try {
@@ -29,7 +45,7 @@ Deno.serve(withCORS(async (req: Request) => {
         .insert({
           user_id: user_id || null,
           action: action || 'unknown_action',
-          context: context || {}
+          context: sanitizedContext
         })
 
       if (error) {
