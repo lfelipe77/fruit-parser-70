@@ -12,9 +12,10 @@ interface MyRaffle {
   title: string;
   status: string;
   goal_amount: number;
+  amount_raised: number;
+  progress_pct_money: number;
   created_at: string;
-  image_url: string;
-  user_id: string;
+  image_url: string | null;
 }
 
 export default function MyLaunchedPage() {
@@ -30,29 +31,40 @@ export default function MyLaunchedPage() {
     (async () => {
       setLoading(true);
       
-      // Query user's own raffles - NON-NEGOTIABLE SCOPING
-      const {
-        data, error
-      } = await supabase
-        .from('raffles')
-        .select('id,title,status,goal_amount,created_at,image_url,user_id')
-        .eq('user_id', user.id)                  // REQUIRED
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Query user's own raffles with progress data
+      try {
+        const { data, error } = await supabase.rpc('get_my_raffles_with_progress', {
+          p_user_id: user.id
+        });
 
-      if (error) {
-        console.error("[MyLaunched] fetch error", error);
-      }
-      
-      // Dev guard: scream if scope ever breaks
-      if (import.meta.env.DEV && data?.some(r => r.user_id !== user.id)) {
-        console.error('⚠️ RLS/escopo quebrado: recebido row de outro usuário', data);
-      }
-      
-      if (mounted) {
-        const rows = (data || []) as MyRaffle[];
-        setRaffles(rows);
-        setLoading(false);
+        if (error) {
+          console.error("[MyLaunched] fetch error", error);
+          // Fallback to direct table query
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('raffles')
+            .select('id,title,status,goal_amount,created_at,image_url')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+          
+          if (mounted && fallbackData) {
+            const rows = fallbackData.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              status: item.status,
+              goal_amount: item.goal_amount,
+              amount_raised: 0,
+              progress_pct_money: 0,
+              created_at: item.created_at,
+              image_url: item.image_url
+            }));
+            setRaffles(rows);
+          }
+        } else if (mounted && data) {
+          setRaffles(data);
+        }
+      } catch (err) {
+        console.error("[MyLaunched] unexpected error", err);
       }
     })();
     return () => { mounted = false; };
@@ -184,7 +196,7 @@ export default function MyLaunchedPage() {
               
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 gap-3 text-sm">
                     <div className="flex items-center gap-2">
                       <Gift className="w-4 h-4 text-muted-foreground" />
                       <span>Meta: {formatCurrency(raffle.goal_amount || 0)}</span>
@@ -193,6 +205,20 @@ export default function MyLaunchedPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <span>Criado: {formatDate(raffle.created_at)}</span>
+                    </div>
+
+                    {/* Progress section */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Arrecadado: {formatCurrency(raffle.amount_raised || 0)}</span>
+                        <span className="font-medium">{raffle.progress_pct_money || 0}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(raffle.progress_pct_money || 0, 100)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                   
