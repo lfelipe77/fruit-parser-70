@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 export type BaseRaffle = {
   id: string;
@@ -17,7 +17,7 @@ export type RaffleWithProgress = BaseRaffle & {
 
 async function enrichProgress(ids: string[]) {
   if (!ids.length) return new Map<string, { amount_raised: number; progress_pct_money: number }>();
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('raffles_public_money_ext')
     .select('id,amount_raised,progress_pct_money')
     .in('id', ids);
@@ -31,12 +31,18 @@ async function enrichProgress(ids: string[]) {
 }
 
 export async function getMyLaunchedWithProgress(userId: string): Promise<RaffleWithProgress[]> {
-  const { data: base, error } = await (supabase as any)
+  console.log('[getMyLaunchedWithProgress] Starting fetch for userId:', userId);
+  
+  const { data: base, error } = await supabase
     .from('raffles')
     .select('id,user_id,title,status,goal_amount,image_url,created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(100);
+    
+  console.log('[getMyLaunchedWithProgress] Base query result:', { count: base?.length, error });
+  console.log('[getMyLaunchedWithProgress] First few items:', base?.slice(0, 3).map(r => ({ id: r.id.slice(0,8), user_id: r.user_id.slice(0,8), title: r.title })));
+  
   if (error) throw error;
   const ids = (base ?? []).map((r: BaseRaffle) => r.id);
   const pmap = await enrichProgress(ids);
