@@ -333,7 +333,7 @@ export default function Navigation() {
               {user ? (
                 <Link to="/dashboard">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={avatarUrl || ''} />
+                    <AvatarImage src={avatarUrl || ''} data-testid="nav-user-avatar" />
                     <AvatarFallback>
                       {user?.email?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>

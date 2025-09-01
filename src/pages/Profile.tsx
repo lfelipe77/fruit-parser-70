@@ -163,7 +163,7 @@ export default function Profile() {
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
               <Avatar className="w-24 h-24 mx-auto">
-                <AvatarImage src={profile?.avatar_url || ''} />
+                <AvatarImage src={profile?.avatar_url || ''} data-testid="user-avatar" />
                 <AvatarFallback>
                   <User className="w-12 h-12" />
                 </AvatarFallback>
@@ -306,7 +306,7 @@ export default function Profile() {
               <div className="mt-4 p-4 border rounded-lg bg-muted/50">
                 <p className="text-sm text-muted-foreground mb-2">Avatar pronto para salvar:</p>
                 <Avatar className="w-16 h-16">
-                  <AvatarImage src={URL.createObjectURL(croppedBlob)} />
+                  <AvatarImage src={URL.createObjectURL(croppedBlob)} data-testid="avatar-preview" />
                   <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
                 </Avatar>
               </div>
