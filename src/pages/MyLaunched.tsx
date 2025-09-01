@@ -31,24 +31,26 @@ export default function MyLaunchedPage() {
     (async () => {
       setLoading(true);
       
-      // Query user's own raffles with progress data
+      // Query user's own raffles from progress view
       try {
-        const { data, error } = await supabase.rpc('get_my_raffles_with_progress', {
-          p_user_id: user.id
-        });
+        const { data, error } = await (supabase as any)
+          .from('raffles_public_money_ext')
+          .select('id,title,status,goal_amount,image_url,created_at,amount_raised,progress_pct_money')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error("[MyLaunched] fetch error", error);
-          // Fallback to direct table query
-          const { data: fallbackData, error: fallbackError } = await supabase
+          // Fallback to direct table query (no progress)
+          const { data: fallbackData } = await supabase
             .from('raffles')
             .select('id,title,status,goal_amount,created_at,image_url')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(50);
-          
-          if (mounted && fallbackData) {
-            const rows = fallbackData.map((item: any) => ({
+
+          if (mounted) {
+            const rows = (fallbackData || []).map((item: any) => ({
               id: item.id,
               title: item.title,
               status: item.status,
@@ -56,15 +58,18 @@ export default function MyLaunchedPage() {
               amount_raised: 0,
               progress_pct_money: 0,
               created_at: item.created_at,
-              image_url: item.image_url
-            }));
+              image_url: item.image_url as string | null,
+            })) as MyRaffle[];
             setRaffles(rows);
+            setLoading(false);
           }
-        } else if (mounted && data) {
-          setRaffles(data);
+        } else if (mounted) {
+          setRaffles((data ?? []) as MyRaffle[]);
+          setLoading(false);
         }
       } catch (err) {
         console.error("[MyLaunched] unexpected error", err);
+        if (mounted) setLoading(false);
       }
     })();
     return () => { mounted = false; };
@@ -84,6 +89,19 @@ export default function MyLaunchedPage() {
       year: 'numeric'
     });
   };
+
+  function ProgressBar({ progress }: { progress: number }) {
+    const pct = Math.max(0, Math.min(progress ?? 0, 100));
+    return (
+      <div className="w-full bg-gray-200 rounded-full h-2">
+        <div
+          className="bg-emerald-500 h-2 rounded-full"
+          style={{ width: `${pct}%` }}
+          data-testid="raffle-progress"
+        />
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -211,14 +229,9 @@ export default function MyLaunchedPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Arrecadado: {formatCurrency(raffle.amount_raised || 0)}</span>
-                        <span className="font-medium">{raffle.progress_pct_money || 0}%</span>
+                        <span className="font-medium" data-testid="progress-pct">{raffle.progress_pct_money ?? 0}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(raffle.progress_pct_money || 0, 100)}%` }}
-                        />
-                      </div>
+                      <ProgressBar progress={raffle.progress_pct_money ?? 0} />
                     </div>
                   </div>
                   
