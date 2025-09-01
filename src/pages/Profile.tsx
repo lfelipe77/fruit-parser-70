@@ -195,7 +195,7 @@ export default function Profile() {
     try {
       const result = await saveProfile({
         updates: formData,
-        avatarFile: avatarFile
+        avatarFile: croppedBlob ? new File([croppedBlob], 'avatar.webp', { type: 'image/webp' }) : null
       });
 
       if (result) {
@@ -204,7 +204,7 @@ export default function Profile() {
         
         toast({
           title: 'Perfil atualizado',
-          description: 'Suas informações e avatar foram salvos com sucesso.',
+          description: 'Suas informações foram salvas com sucesso.',
         });
         
         // Clear avatar file state after successful save
