@@ -1,10 +1,11 @@
 import { supabase } from '@/lib/supabase';
+const sb = supabase as any;
 
 export async function getOrCreateConversationWith(targetUserId: string) {
   const { data: auth } = await supabase.auth.getUser();
   const me = auth?.user?.id;
   if (!me) throw new Error('Not signed in');
-  const { data, error } = await supabase.rpc('get_or_create_conversation', { user1: me, user2: targetUserId });
+  const { data, error } = await sb.rpc('get_or_create_conversation', { user1: me, user2: targetUserId });
   if (error) throw error;
   return data as string;
 }
@@ -14,14 +15,14 @@ export async function sendMessage(conversationId: string, content: string) {
   const me = auth?.user?.id;
   if (!me) throw new Error('Not signed in');
   if (!content?.trim()) return;
-  const { error } = await supabase
+  const { error } = await sb
     .from('messages')
     .insert({ conversation_id: conversationId, sender_id: me, content: content.trim() });
   if (error) throw error;
 }
 
 export async function fetchMessages(conversationId: string, limit = 100, offset = 0) {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('messages')
     .select('id,sender_id,content,created_at,read_at')
     .eq('conversation_id', conversationId)
