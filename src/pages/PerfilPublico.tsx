@@ -117,12 +117,12 @@ export default function PerfilPublico() {
           console.debug('[PerfilPublico] authUserId=', authUserId, 'profileUserId=', profileUserId, 'isOwner=', isOwner, 'slug=', profile?.username);
         }
         
-        // Fetch ganhaveis lancados (join raffles with raffles_public_money_ext for progress data)
+        // Fetch ganhaveis lancados (use left join to get all raffles even if not in money view)
         const { data: lancados, error: lancadosError } = await supabase
           .from('raffles')
           .select(`
             id, title, status, image_url, goal_amount, created_at, user_id,
-            raffles_public_money_ext!inner(amount_raised, progress_pct_money)
+            raffles_public_money_ext(amount_raised, progress_pct_money)
           `)
           .eq('user_id', profile.id)
           .in('status', ['active', 'completed'])
