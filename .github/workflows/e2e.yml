@@ -1,0 +1,25 @@
+name: E2E Tests
+on: [push, pull_request]
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with: 
+          version: 9
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: npx playwright install --with-deps
+      # Spin up your app (adjust command/port as needed)
+      - run: pnpm dev & npx wait-on http://localhost:5173
+      - run: |
+          PLAYWRIGHT_BASE_URL=http://localhost:5173 \
+          E2E_USER_EMAIL=${{ secrets.E2E_USER_EMAIL }} \
+          E2E_USER_PASSWORD=${{ secrets.E2E_USER_PASSWORD }} \
+          E2E_TARGET_PROFILE_URL='/#/perfil/${{ secrets.E2E_TARGET_PROFILE_PATH }}' \
+          pnpm test:e2e
