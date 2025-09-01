@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { MessageRow } from '@/types/db-local';
 const sb = supabase as any;
 
 export async function getOrCreateConversationWith(targetUserId: string) {
@@ -29,7 +30,7 @@ export async function fetchMessages(conversationId: string, limit = 100, offset 
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as MessageRow[];
 }
 
 export function subscribeToConversation(conversationId: string, onNew: (row: any) => void) {
