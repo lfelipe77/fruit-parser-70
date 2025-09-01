@@ -33,6 +33,7 @@ import VideoModal from "@/components/VideoModal";
 import FollowButton from '@/components/FollowButton';
 import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
+import { getPublicLaunchedWithProgress } from "@/data/raffles";
 
 export default function PerfilPublico() {
   const { username } = useParams();
@@ -117,41 +118,25 @@ export default function PerfilPublico() {
           console.debug('[PerfilPublico] authUserId=', authUserId, 'profileUserId=', profileUserId, 'isOwner=', isOwner, 'slug=', profile?.username);
         }
         
-        // Fetch ganhaveis lancados (two-step: raffles then enrich with money view)
-        const { data: lancadosBase, error: lancadosError } = await supabase
-          .from('raffles')
-          .select('id, title, status, image_url, goal_amount, created_at, user_id')
-          .eq('user_id', profile.id)
-          .in('status', ['active', 'completed'])
-          .order('created_at', { ascending: false })
-          .limit(30);
-
-        if (import.meta.env.DEV && lancadosBase?.some((r: any) => r.user_id !== profileUserId)) {
-          console.error('⚠️ Escopo quebrado em Lançados (profile)', lancadosBase);
-        }
+        // Fetch ganhaveis lancados using shared helper
+        try {
+          const lancados = await getPublicLaunchedWithProgress(profile.id);
           
-        if (lancadosError) {
-          console.error('Error fetching launched ganhaveis:', lancadosError);
-        } else {
-          const base = (lancadosBase || []) as any[];
-          const ids = base.map(r => r.id);
-          let merged = base;
-          if (ids.length) {
-            const { data: moneyRows, error: moneyErr } = await supabase
-              .from('raffles_public_money_ext')
-              .select('id,amount_raised,progress_pct_money')
-              .in('id', ids);
-            if (moneyErr) {
-              console.error('[PerfilPublico] money view error', moneyErr);
-            }
-            const moneyMap = Object.fromEntries((moneyRows ?? []).map((m: any) => [m.id, m]));
-            merged = base.map((item: any) => ({
-              ...item,
-              amount_raised: moneyMap[item.id]?.amount_raised ?? 0,
-              progress_pct_money: moneyMap[item.id]?.progress_pct_money ?? 0,
-            }));
+          if (import.meta.env.DEV && lancados?.some((r: any) => r.user_id !== profileUserId)) {
+            console.error('⚠️ Escopo quebrado em Lançados (profile)', lancados);
           }
-          setGanhaveisLancados(merged);
+          
+          setGanhaveisLancados(lancados);
+          
+          // Debug logging
+          const debug = new URLSearchParams(location.hash.split('?')[1]).get('debug') === '1';
+          if (debug) {
+            console.log('[PerfilPublico] profile uid', profile.id, 'count', lancados.length);
+            console.table(lancados.map(x => ({ id: x.id.slice(0,8), status: x.status, pct: x.progress_pct_money })));
+          }
+        } catch (lancadosError) {
+          console.error('Error fetching launched ganhaveis:', lancadosError);
+          setGanhaveisLancados([]);
         }
 
         // Fetch ganhaveis participados (only if viewer is owner)
@@ -371,7 +356,8 @@ export default function PerfilPublico() {
         ticketCount: g.ticket_count || 0,
         location: 'Online',
         raffleId: g.raffle_id || g.id, // Use raffle_id from my_tickets_ext_v6
-        raffleStatus: g.raffle_status // actual raffle status to drive CTA
+        raffleStatus: g.raffle_status, // actual raffle status to drive CTA
+        progress_pct_money: g.progress_pct_money || 0 // Add progress percentage
       };
   }).sort((a, b) => {
     // Sort by status (Em andamento first) and then by days left

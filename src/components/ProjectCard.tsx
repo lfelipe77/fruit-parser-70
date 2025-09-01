@@ -18,6 +18,8 @@ interface ProjectCardProps {
   location?: string;
   raffleId?: string; // Add this to use proper IDs
   status?: string; // Add status to determine button text
+  raffleStatus?: string; // Raw raffle status from DB
+  progress_pct_money?: number; // Progress percentage from DB
 }
 
 export default function ProjectCard({
@@ -33,8 +35,13 @@ export default function ProjectCard({
   location,
   raffleId,
   status,
+  raffleStatus,
+  progress_pct_money,
 }: ProjectCardProps) {
-  const percentage = Math.round((raised / goal) * 100);
+  // Use progress_pct_money if available, otherwise calculate from raised/goal
+  const percentage = progress_pct_money !== undefined ? 
+    Math.max(0, Math.min(100, progress_pct_money)) : 
+    Math.round((raised / goal) * 100);
   const navigate = useNavigate();
 
   // Generate a recent purchase time (randomized between 1-30 minutes ago)
@@ -51,8 +58,10 @@ export default function ProjectCard({
     if (!raffleId) console.error('[ProjectCard] Missing raffleId for:', title);
   }
 
-  const canBuy = status === 'active';
-  const isCompleted = status === 'completed' || percentage >= 100;
+  // Use raffleStatus for buy button logic, fallback to status
+  const actualStatus = raffleStatus || status;
+  const canBuy = actualStatus === 'active';
+  const isCompleted = actualStatus === 'completed' || percentage >= 100;
 
   return (
     <Link to={`/ganhavel/${ganhaveisId}`} className="block">

@@ -6,55 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Home, Trophy, Plus, Gift, Users, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
-type RaffleWithProgress = {
-  id: string;
-  title: string | null;
-  status: string | null;
-  goal_amount: number | null;
-  image_url: string | null;
-  created_at: string;
-  user_id: string;                 // present in the view
-  amount_raised: number | null;    // from view
-  progress_pct_money: number | null; // from view
-};
-
-async function fetchMyLaunched(userId: string) {
-  console.log('[MyLaunched] fetchMyLaunched userId:', userId);
-  
-  // 1) Fetch this user's raffles (ids and basic fields)
-  const { data: base, error: baseErr } = await supabase
-    .from('raffles')
-    .select('id,title,status,goal_amount,image_url,created_at,user_id')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  
-  console.log('[MyLaunched] base query result:', { base, baseErr });
-  if (baseErr) throw baseErr;
-
-  const ids = (base ?? []).map((r: any) => r.id);
-  console.log('[MyLaunched] raffle ids for this user:', ids);
-  if (!ids.length) return [] as RaffleWithProgress[];
-
-  // 2) Enrich with money/progress from public view
-  const { data: money, error: moneyErr } = await supabase
-    .from('raffles_public_money_ext')
-    .select('id,amount_raised,progress_pct_money')
-    .in('id', ids);
-    
-  console.log('[MyLaunched] money query result:', { money, moneyErr });
-  if (moneyErr) throw moneyErr;
-
-  const moneyMap = Object.fromEntries((money ?? []).map((m: any) => [m.id, m]));
-  const result = (base ?? []).map((item: any) => ({
-    ...item,
-    amount_raised: moneyMap[item.id]?.amount_raised ?? 0,
-    progress_pct_money: moneyMap[item.id]?.progress_pct_money ?? 0,
-  })) as RaffleWithProgress[];
-  
-  console.log('[MyLaunched] final result:', result);
-  return result;
-}
+import { getMyLaunchedWithProgress, type RaffleWithProgress } from "@/data/raffles";
 
 
 export default function MyLaunchedPage() {
@@ -71,10 +23,17 @@ export default function MyLaunchedPage() {
       setLoading(true);
       
       try {
-        const data = await fetchMyLaunched(user.id);
+        const data = await getMyLaunchedWithProgress(user.id);
         if (mounted) {
           setRaffles(data);
           setLoading(false);
+        }
+        
+        // Debug logging
+        const debug = new URLSearchParams(location.hash.split('?')[1]).get('debug') === '1';
+        if (debug) {
+          console.log('[MyLaunched] uid', user.id, 'count', data.length);
+          console.table(data.map(x => ({ id: x.id.slice(0,8), status: x.status, pct: x.progress_pct_money })));
         }
       } catch (error) {
         console.error("[MyLaunched] fetch error", error);
@@ -105,15 +64,12 @@ export default function MyLaunchedPage() {
   function ProgressBar({ value }: { value?: number | null }) {
     const pct = Math.max(0, Math.min(Number(value ?? 0), 100));
     return (
-      <div className="w-full bg-gray-200/70 rounded-full h-2">
+      <div className="w-full h-2 rounded-full bg-gray-200/60">
         <div
+          role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+          data-testid="raffle-progress"
           className="h-2 rounded-full bg-emerald-500"
           style={{ width: `${pct}%` }}
-          data-testid="raffle-progress"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          role="progressbar"
         />
       </div>
     );
@@ -253,20 +209,23 @@ export default function MyLaunchedPage() {
                     </div>
                   </div>
                   
-                  <div className="pt-2 border-t">
-                    <div className="flex gap-2">
-                      <Button className="flex-1" asChild>
-                        <Link to={`/ganhavel/${raffle.id}`}>
-                          Ver Ganhável
-                        </Link>
-                      </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/gerenciar-ganhavel/${raffle.id}`}>
-                          Gerenciar
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
+                   <div className="pt-2 border-t">
+                     <div className="flex gap-2">
+                       <Button 
+                         className="flex-1" 
+                         asChild
+                       >
+                         <Link to={`/ganhavel/${raffle.id}`}>
+                           Ver Ganhável
+                         </Link>
+                       </Button>
+                       <Button variant="outline" size="sm" asChild>
+                         <Link to={`/gerenciar-ganhavel/${raffle.id}`}>
+                           Gerenciar
+                         </Link>
+                       </Button>
+                     </div>
+                   </div>
                 </div>
               </CardContent>
             </Card>
