@@ -16,7 +16,12 @@ export default function MyLaunchedPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('[MyLaunched] No user yet, waiting...');
+      return;
+    }
+    
+    console.log('[MyLaunched] User found:', user.id);
     
     let mounted = true;
     (async () => {
