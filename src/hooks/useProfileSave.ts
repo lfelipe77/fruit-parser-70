@@ -61,24 +61,23 @@ export function useProfileSave() {
       }
 
       // 2) Ensure profile row exists (harmless if it already does; trigger also creates it)
-      try {
-        await supabase.from('user_profiles').insert({ id: user.id });
-      } catch {
-        // Profile already exists, continue
-      }
+      // Profile row will be created via upsert below
 
       // 3) Build final update payload
-      const payload: Record<string, any> = {
+      // Build clean payload (strip undefined values)
+      const base: Record<string, any> = {
         ...updates,
         ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
         updated_at: new Date().toISOString(),
       };
+      const payload = Object.fromEntries(
+        Object.entries(base).filter(([, v]) => v !== undefined)
+      );
 
       // 4) Persist
       const { data, error: dbErr } = await supabase
         .from('user_profiles')
-        .update(payload)
-        .eq('id', user.id)
+        .upsert({ id: user.id, ...payload }, { onConflict: 'id' })
         .select()
         .maybeSingle();
 
