@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useMyProfile } from "@/hooks/useMyProfile";
+import { useMyProfile } from "@/hooks/useUnifiedProfile";
 import { LogOut, User, CreditCard, Trophy, History } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";

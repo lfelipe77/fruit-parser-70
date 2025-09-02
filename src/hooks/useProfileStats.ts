@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type Stats = {
   launched: number;     // Ganháveis lançados por este usuário
@@ -125,7 +126,9 @@ export function useProfileStats(userId?: string | null) {
 
 // Convenience hooks for common use cases
 export function useMyProfileStats() {
-  return useProfileStats(); // Will use current user
+  // Get current user ID from auth context
+  const { user } = useAuth();
+  return useProfileStats(user?.id);
 }
 
 export function usePublicProfileStats(userId: string) {
