@@ -1,21 +1,56 @@
 import { brl, timeAgo, RaffleCardInfo } from "@/types/raffles";
 import { Link } from "react-router-dom";
 
-export function RaffleCard({ r }: { r: RaffleCardInfo }) {
-  const pct = Math.max(0, Math.min(100, r.progress_pct_money ?? 0));
-  const moneyNow = r.amount_raised ?? 0;
-  const moneyGoal = r.goal_amount ?? 0;
+type RaffleCardProps = {
+  r?: RaffleCardInfo;
+  raffle?: {
+    id: string;
+    title?: string | null;
+    image_url?: string | null;
+    status?: string | null;
+    amount_raised?: number | null;
+    progress_pct_money?: number | null;
+    participants_count?: number | null;
+    last_paid_at?: string | null;
+    location_city?: string | null;
+    location_state?: string | null;
+    goal_amount?: number | null;
+  };
+  showBuy?: boolean;
+  onView?: () => void;
+};
+
+export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProps) {
+  // Use either r or raffle prop for backward compatibility
+  const data = r || raffle;
+  if (!data) return null;
+
+  const pct = Math.max(0, Math.min(100, data.progress_pct_money ?? 0));
+  const moneyNow = data.amount_raised ?? 0;
+  const moneyGoal = data.goal_amount ?? 0;
   // Fix location duplication - if city and state are the same, show only once
-  const cityState = r.location_city && r.location_state && r.location_city !== r.location_state 
-    ? [r.location_city, r.location_state].filter(Boolean).join(" • ")
-    : (r.location_city || r.location_state || "");
+  const cityState = data.location_city && data.location_state && data.location_city !== data.location_state 
+    ? [data.location_city, data.location_state].filter(Boolean).join(" • ")
+    : (data.location_city || data.location_state || "");
+
+  const handleView = () => {
+    if (onView) return onView();
+  };
+
+  const handleCardClick = () => {
+    if (onView) handleView();
+  };
 
   return (
-    <div className="group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+    <div 
+      data-testid={`raffle-card-${data.id}`}
+      className={`group block overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow ${onView ? 'cursor-pointer' : ''}`}
+      onClick={onView ? handleCardClick : undefined}
+    >
       {/* Image */}
       <div className="h-44 w-full overflow-hidden rounded-lg">
-        {r.image_url ? (
-          <img src={r.image_url} alt={r.title} className="h-full w-full object-cover" loading="lazy" />
+        {data.image_url ? (
+          <img src={data.image_url} alt={data.title} className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="h-full w-full bg-muted" />
         )}
@@ -23,7 +58,7 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
 
       {/* Title + excerpt */}
       <div className="p-4 space-y-3">
-        <h3 className="font-semibold leading-snug line-clamp-1">{String(r.title ?? '')}</h3>
+        <h3 className="font-semibold leading-snug line-clamp-1">{String(data.title ?? '')}</h3>
         {/* Removed description display from card */}
 
         {/* Money line */}
@@ -33,23 +68,52 @@ export function RaffleCard({ r }: { r: RaffleCardInfo }) {
 
         {/* Green progress bar (server truth) */}
         <div className="h-2 rounded bg-muted overflow-hidden">
-          <div className="h-2 bg-green-500" style={{ width: `${pct}%` }} />
+          <div 
+            data-testid="raffle-progress"
+            className="h-2 bg-green-500" 
+            style={{ width: `${pct}%` }}
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          />
         </div>
-        <p className="text-xs">{pct}% arrecadado</p>
+        <p className="text-xs" data-testid={`progress-pct-${data.id}`}>{pct}% arrecadado</p>
 
         {/* Participants + last sale */}
         <div className="text-xs text-muted-foreground space-y-1">
-          <div>{Number(r.participants_count ?? 0)} participantes</div>
+          <div>{Number(data.participants_count ?? 0)} participantes</div>
           <div className="flex justify-between items-center">
-            <span>{r.last_paid_at ? `Última venda: ${timeAgo(r.last_paid_at)}` : "Sem vendas ainda"}</span>
+            <span>{data.last_paid_at ? `Última venda: ${timeAgo(data.last_paid_at)}` : "Sem vendas ainda"}</span>
             {cityState && <span className="text-primary font-medium">{cityState}</span>}
           </div>
         </div>
 
         {/* CTA */}
-        <Link to={`/ganhavel/${r.id}`} className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-          Comprar Bilhete
-        </Link>
+        {onView ? (
+          <button
+            data-testid="view-button"
+            onClick={(e) => { e.stopPropagation(); handleView(); }}
+            className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Ver Ganhável
+          </button>
+        ) : showBuy ? (
+          <Link 
+            to={`/ganhavel/${data.id}`} 
+            className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Comprar Bilhete
+          </Link>
+        ) : (
+          <Link 
+            data-testid="view-button"
+            to={`/ganhavel/${data.id}`} 
+            className="block w-full rounded-xl bg-secondary px-4 py-3 text-center text-sm font-medium text-secondary-foreground hover:bg-secondary/90 transition-colors"
+          >
+            Ver Ganhável
+          </Link>
+        )}
       </div>
     </div>
   );
