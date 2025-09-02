@@ -472,8 +472,15 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                   <p className="text-sm text-muted-foreground mb-3">
                     Entre em contato conosco se tiver dúvidas sobre sua compra.
                   </p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Falar com Suporte
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    asChild
+                  >
+                    <a href="mailto:suporte@ganhavel.com">
+                      Falar com Suporte
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
