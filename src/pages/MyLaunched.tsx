@@ -35,7 +35,7 @@ export default function MyLaunched() {
         <h1 className="text-lg font-semibold">Ganháveis que Lancei</h1>
         <div className="flex gap-2">
           <a className="px-3 py-1.5 rounded-md border" href="/#/">Início</a>
-          <a className="px-3 py-1.5 rounded-md border" href="/#/create">Criar Novo</a>
+          <a className="px-3 py-1.5 rounded-md border" href="/#/lance-seu-ganhavel">Criar Novo</a>
           <a className="px-3 py-1.5 rounded-md border" href="/#/dashboard">Dashboard</a>
         </div>
       </div>
