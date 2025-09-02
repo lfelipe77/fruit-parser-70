@@ -75,7 +75,7 @@ import MyLaunched from '@/pages/MyLaunched';
 import AdminRaffles from '@/pages/admin/AdminRaffles';
 import AdminPayouts from '@/pages/AdminPayouts';
 import LastPathKeeper from '@/components/LastPathKeeper';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/providers/AuthProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { DebugBanner } from '@/components/DebugBanner';
 import DiagnosticsPage from '@/pages/DiagnosticsPage';
@@ -143,7 +143,7 @@ function VisitLogger() {
 
 // App component with non-blocking rendering
 const AppContent = () => {
-  const { session } = useAuth();
+  const { session } = useAuthContext();
   const isAuthenticated = !!session;
 
   return (
