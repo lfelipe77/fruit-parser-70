@@ -79,25 +79,21 @@ export function useProfileSave() {
         Object.entries(base).filter(([k, v]) => allowedKeys.has(k) && v !== undefined)
       );
 
-      // 3) Persist: try UPDATE first (works with updatable views), then INSERT if missing
-      const { data: updData, error: updErr } = await supabase
+      // 3) Use UPSERT to handle both INSERT and UPDATE cases
+      const { data, error } = await supabase
         .from('user_profiles')
-        .update(payload)
-        .eq('id', user.id)
+        .upsert({ id: user.id, ...payload }, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        })
         .select()
         .maybeSingle();
 
-      if (!updErr && updData) return updData;
-
-      // If no row was updated (or table only accepts inserts), try INSERT minimal row
-      const { data: insData, error: insErr } = await supabase
-        .from('user_profiles')
-        .insert({ id: user.id, ...payload })
-        .select()
-        .maybeSingle();
-
-      if (insErr) throw insErr;
-      return insData;
+      if (error) {
+        console.error('Profile upsert error:', error);
+        throw error;
+      }
+      return data;
     } catch (e: any) {
       setError(e.message ?? 'Failed to save profile');
       throw e;
