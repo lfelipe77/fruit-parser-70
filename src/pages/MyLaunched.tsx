@@ -48,7 +48,7 @@ export default function MyLaunched() {
             key={r.id}
             raffle={r}
             showBuy={false}
-            onView={() => nav(`/raffle/${r.id}`)}
+            onView={() => nav(`/ganhavel/${r.id}`)}
           />
         ))}
       </div>
