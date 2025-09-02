@@ -15,9 +15,11 @@ import AvatarCropper from '@/components/AvatarCropper';
 import { fileToDataUrl } from '@/lib/cropImage';
 import { useProfileSave, handleAvatarSave } from '@/hooks/useProfileSave';
 import { getAvatarSrc } from '@/lib/avatarUtils';
+import { useUnifiedProfile } from '@/hooks/useUnifiedProfile';
+import ProfileErrorState from '@/components/ProfileErrorState';
 
 export default function Profile() {
-  const { profile, loading, updateProfile, refreshProfile, invalidateQueries } = useMyProfile();
+  const { profile, isLoading: loading, error, updateProfile, refreshProfile } = useUnifiedProfile();
   const { session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -97,9 +99,7 @@ export default function Profile() {
       });
 
       if (result) {
-        // Invalidate queries to refresh all profile data
-        invalidateQueries(['my-profile']);
-        invalidateQueries(['profiles-list']);
+        // Refresh profile data (invalidateQueries handled by useUnifiedProfile)
         
         // Refresh profile data
         refreshProfile();
@@ -206,7 +206,7 @@ export default function Profile() {
             
             <div className="mt-4 pt-4 border-t">
               <div className="text-center">
-                <p className="text-lg font-semibold">{profile?.total_ganhaveis || 0}</p>
+                <p className="text-lg font-semibold">{(profile as any)?.total_ganhaveis || 0}</p>
                 <p className="text-sm text-muted-foreground">Ganhaveis Criados</p>
               </div>
             </div>

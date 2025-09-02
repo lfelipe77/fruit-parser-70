@@ -34,7 +34,8 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAvatarSrc } from "@/lib/avatarUtils";
-import { useMyProfile } from "@/hooks/useMyProfile";
+import { useUnifiedProfile } from "@/hooks/useUnifiedProfile";
+import ProfileErrorState from "@/components/ProfileErrorState";
 
 function useIsAdmin() {
   const { user, initializing } = useAuthContext();
@@ -80,12 +81,48 @@ export default function Navigation() {
   const { isAdmin: legacyIsAdmin } = useAdminCheck();
   const { user } = useAuth();
   const { user: authUser, initializing } = useAuthContext();
-  const { profile } = useMyProfile();
+  const { profile, isLoading: profileLoading, error: profileError, isAdmin } = useUnifiedProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isAdmin = useIsAdmin();
 
-  // Get user role from profile hook (simplified)
-  const userRole = profile?.role || "";
+  // Get user role from profile hook (simplified) - handle both profile types
+  const userRole = (profile as any)?.role || "";
+  
+  // Legacy admin check that's still needed for some fallback cases
+  const useIsAdmin = () => {
+    const { user, initializing } = useAuthContext();
+    const [isAdminState, setIsAdminState] = useState<boolean | null>(null);
+    
+    useEffect(() => {
+      if (initializing) return;
+      
+      if (!user) {
+        setIsAdminState(false);
+        return;
+      }
+      
+      const checkAdmin = async () => {
+        try {
+          const { data } = await supabase
+            .from("user_profiles")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
+          
+          const adminStatus = ((data?.role ?? "") as string).toLowerCase() === "admin";
+          setIsAdminState(adminStatus);
+        } catch (error) {
+          console.error('[useIsAdmin] Error:', error);
+          setIsAdminState(false);
+        }
+      };
+      
+      checkAdmin();
+    }, [user, initializing]);
+    
+    return isAdminState;
+  };
+  
+  const legacyIsAdminResult = useIsAdmin();
 
   const lotteryDraws = [
     { id: 'br', flag: '🇧🇷', name: 'Mega-Sena', date: '10/08', time: '20:00' },
@@ -100,7 +137,7 @@ export default function Navigation() {
   console.log('[Navigation] Current user:', user?.id);
   console.log('[Navigation] Current userRole:', userRole);
   console.log('[Navigation] legacyIsAdmin hook result:', legacyIsAdmin);
-  console.log('[Navigation] useIsAdmin hook result:', isAdmin);
+  console.log('[Navigation] useUnifiedProfile isAdmin result:', isAdmin);
   console.log('[Navigation] Admin dropdown visible:', userRole === "admin");
   console.log('[Navigation] Direct admin link visible:', isAdmin === true);
   
@@ -238,7 +275,7 @@ export default function Navigation() {
                     <Button 
                       variant="ghost" 
                       className="flex items-center gap-2"
-                      onClick={() => console.log('[Navigation] Legacy admin dropdown clicked, userRole:', userRole, 'isAdmin:', legacyIsAdmin)}
+                      onClick={() => console.log('[Navigation] Legacy admin dropdown clicked, userRole:', userRole, 'isAdmin:', legacyIsAdminResult)}
                     >
                       <Shield className="h-4 w-4" />
                       Admin (Legacy)
@@ -280,14 +317,22 @@ export default function Navigation() {
                 </DropdownMenu>
               )}
               {user ? (
-                <Link to="/dashboard">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={getAvatarSrc(profile, user?.id)} data-testid="profile-avatar" />
-                    <AvatarFallback>
-                      {user?.email?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
+                profileLoading ? (
+                  <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+                ) : profileError ? (
+                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <User className="w-4 h-4 text-destructive" />
+                  </div>
+                ) : (
+                  <Link to="/dashboard">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={getAvatarSrc(profile, user?.id)} data-testid="profile-avatar" />
+                      <AvatarFallback>
+                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
+                )
               ) : (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
                   <Link to="/login">
