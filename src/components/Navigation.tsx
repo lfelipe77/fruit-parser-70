@@ -246,12 +246,13 @@ export default function Navigation() {
                 </SheetContent>
               </Sheet>
 
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
+              {/* Search and Heart buttons hidden for now */}
+              {/* <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <Search className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" className="hidden sm:flex">
                 <Heart className="w-4 h-4" />
-              </Button>
+              </Button> */}
               <NotificationCenter />
               <LanguageSelector />
               
