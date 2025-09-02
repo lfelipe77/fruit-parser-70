@@ -334,7 +334,7 @@ export default function Dashboard() {
                   carros, motos, dinheiro e muito mais!
                 </p>
                 <Button asChild>
-                  <Link to="/raffles">Explorar Ganhaveis</Link>
+                  <Link to="/descobrir">Explorar Ganhaveis</Link>
                 </Button>
               </CardContent>
             </Card>

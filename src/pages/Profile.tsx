@@ -152,7 +152,7 @@ export default function Profile() {
               Ver Perfil Público
             </Link>
           </Button>
-          <Button variant="outline" onClick={() => navigate('/raffles')}>
+          <Button variant="outline" onClick={() => navigate('/descobrir')}>
             <Search className="w-4 h-4 mr-2" />
             Explorar Ganhaveis
           </Button>

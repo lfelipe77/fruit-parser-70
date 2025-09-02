@@ -200,7 +200,7 @@ export default function Raffles() {
                   </div>
                   
                   <Button className="w-full" asChild>
-                    <Link to={`/raffles/${raffle.id}`}>
+                    <Link to={`/ganhavel/${raffle.id}`}>
                       Ver Ganhavel
                     </Link>
                   </Button>
