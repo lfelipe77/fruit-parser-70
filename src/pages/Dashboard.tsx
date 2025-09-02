@@ -260,7 +260,7 @@ export default function Dashboard() {
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
               role="button"
-              onClick={() => navigate('/my-launched?tab=active')}
+              onClick={() => navigate('/my-launched')}
             >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
