@@ -79,15 +79,35 @@ export function useProfileSave() {
         Object.entries(base).filter(([k, v]) => allowedKeys.has(k) && v !== undefined)
       );
 
-      // 3) Use UPSERT to handle both INSERT and UPDATE cases
-      const { data, error } = await supabase
+      // 3) Safe upsert approach: Check if profile exists first
+      const { data: existingProfile } = await supabase
         .from('user_profiles')
-        .upsert({ id: user.id, ...payload }, { 
-          onConflict: 'id',
-          ignoreDuplicates: false 
-        })
-        .select()
+        .select('id')
+        .eq('id', user.id)
         .maybeSingle();
+
+      let data, error;
+      
+      if (existingProfile) {
+        // Profile exists, update it
+        const result = await supabase
+          .from('user_profiles')
+          .update(payload)
+          .eq('id', user.id)
+          .select()
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      } else {
+        // Profile doesn't exist, insert it
+        const result = await supabase
+          .from('user_profiles')
+          .insert({ id: user.id, ...payload })
+          .select()
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) {
         console.error('Profile upsert error:', error);
