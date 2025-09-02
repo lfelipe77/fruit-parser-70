@@ -11,10 +11,13 @@ import {
   Twitter,
   Linkedin,
   MapPin,
-  Calendar
+  Calendar,
+  Award,
+  Trophy
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ShareButton from "./ShareButton";
+import { useProfileStatsSafe } from "@/hooks/useProfileStatsSafe";
 
 interface DetalhesOrganizadorProps {
   organizer: {
@@ -24,8 +27,6 @@ interface DetalhesOrganizadorProps {
     bio?: string;
     location?: string;
     memberSince: string;
-    totalGanhaveisLancados: number;
-    totalGanhaveisParticipados: number;
     avatar: string;
     updated_at?: string;
     website?: string;
@@ -39,6 +40,8 @@ interface DetalhesOrganizadorProps {
 }
 
 export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorProps) {
+  const { stats, loading } = useProfileStatsSafe(organizer.id, false);
+
   return (
     <Card>
       <CardHeader>
@@ -132,17 +135,33 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <Plus className="h-4 w-4 text-blue-500" />
-              <span className="text-xl font-bold text-primary">{organizer.totalGanhaveisLancados}</span>
+              <span className="text-lg font-bold text-primary">{loading ? '—' : stats.launched}</span>
             </div>
-            <div className="text-xs text-muted-foreground">Ganhaveis Lançados</div>
+            <div className="text-xs text-muted-foreground">Lançados</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Trophy className="h-4 w-4 text-green-500" />
+              <span className="text-lg font-bold text-primary">{loading ? '—' : stats.completed}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">Completos</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Award className="h-4 w-4 text-yellow-500" />
+              <span className="text-lg font-bold text-primary">{loading ? '—' : stats.awarded}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">Premiados</div>
           </div>
           
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <Heart className="h-4 w-4 text-red-500" />
-              <span className="text-xl font-bold text-primary">{organizer.totalGanhaveisParticipados}</span>
+              <span className="text-lg font-bold text-primary">—</span>
             </div>
-            <div className="text-xs text-muted-foreground">Ganhaveis Participados</div>
+            <div className="text-xs text-muted-foreground">Participou</div>
           </div>
         </div>
 

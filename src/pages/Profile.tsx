@@ -9,12 +9,13 @@ import { useMyProfile } from '@/hooks/useMyProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, User, ExternalLink, Plus, Heart, Home } from 'lucide-react';
+import { Upload, User, ExternalLink, Plus, Heart, Home, Award, Trophy } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { fileToDataUrl } from '@/lib/cropImage';
 import { useProfileSave, handleAvatarSave } from '@/hooks/useProfileSave';
 import { getAvatarSrc } from '@/lib/avatarUtils';
+import { useProfileStatsSafe } from '@/hooks/useProfileStatsSafe';
 
 export default function Profile() {
   const { profile, loading, updateProfile, refreshProfile, invalidateQueries } = useMyProfile();
@@ -22,6 +23,7 @@ export default function Profile() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { save: saveProfile, saving: savingProfile, error: saveError } = useProfileSave();
+  const { stats, loading: statsLoading } = useProfileStatsSafe(profile?.id || '', true);
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
@@ -187,16 +189,30 @@ export default function Profile() {
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <Plus className="h-4 w-4 text-blue-500" />
-                  <span className="text-2xl font-bold text-primary">0</span>
+                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.launched}</span>
                 </div>
-                <div className="text-sm text-muted-foreground">Ganhaveis Lançados</div>
+                <div className="text-xs text-muted-foreground">Lançados</div>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Trophy className="h-4 w-4 text-green-500" />
+                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.completed}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Completos</div>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Award className="h-4 w-4 text-yellow-500" />
+                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.awarded}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Premiados</div>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <Heart className="h-4 w-4 text-red-500" />
-                  <span className="text-2xl font-bold text-primary">0</span>
+                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : (stats.participated !== null ? stats.participated : '—')}</span>
                 </div>
-                <div className="text-sm text-muted-foreground">Ganhaveis Participou</div>
+                <div className="text-xs text-muted-foreground">Participou</div>
               </div>
             </div>
           </CardContent>

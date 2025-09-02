@@ -18,15 +18,20 @@ import {
   Linkedin,
   MapPin,
   Calendar,
-  Play
+  Play,
+  Award,
+  Trophy
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectCard";
 import VideoModal from "@/components/VideoModal";
 import { getPublicLaunchedWithProgress } from "@/data/raffles";
+import { useProfileStatsSafe } from "@/hooks/useProfileStatsSafe";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function PerfilPublico() {
   const { username } = useParams();
+  const { user: currentUser } = useAuth();
   const [showAllGanhaveis, setShowAllGanhaveis] = useState(false);
   const [showAllGanhaveisParticipados, setShowAllGanhaveisParticipados] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -35,6 +40,10 @@ export default function PerfilPublico() {
   const [ganhaveisLancados, setGanhaveisLancados] = useState<any[]>([]);
   const [ganhaveisParticipados, setGanhaveisParticipados] = useState<any[]>([]);
   const [loadingGanhaveis, setLoadingGanhaveis] = useState(true);
+  
+  // Check if this is the current user's own profile
+  const isSelf = currentUser?.id === profile?.id;
+  const { stats, loading: statsLoading } = useProfileStatsSafe(profile?.id || '', isSelf);
   
   useEffect(() => {
     const fetchProfile = async () => {
@@ -439,21 +448,35 @@ export default function PerfilPublico() {
                     )}
                   </div>
                   
-                   {/* Stats */}
-                   <div className="grid grid-cols-2 gap-4">
+                    {/* Stats Grid - 4 columns */}
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Plus className="h-4 w-4 text-blue-500" />
-                          <span className="text-2xl font-bold text-primary">{displayGanhaveisLancados.length}</span>
+                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.launched}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">Ganhaveis Lançados</div>
+                        <div className="text-xs text-muted-foreground">Lançados</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Trophy className="h-4 w-4 text-green-500" />
+                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.completed}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">Completos</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Award className="h-4 w-4 text-yellow-500" />
+                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.awarded}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">Premiados</div>
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Heart className="h-4 w-4 text-red-500" />
-                          <span className="text-2xl font-bold text-primary">{user.totalGanhaveisParticipados}</span>
+                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : (stats.participated !== null ? stats.participated : '—')}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">Ganhaveis Participou</div>
+                        <div className="text-xs text-muted-foreground">Participou</div>
                       </div>
                    </div>
                 </div>
