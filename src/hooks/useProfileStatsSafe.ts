@@ -105,12 +105,19 @@ export function useProfileStatsSafe(userId: string, isSelf: boolean = false) {
           });
         }
 
-        setStats({
+        const finalStats = {
           launched,
           completed,
           awarded,
           participated
-        });
+        };
+
+        // Dev logging to verify stats are working
+        if (import.meta.env.DEV) {
+          console.log('[useProfileStatsSafe] Stats loaded:', finalStats, 'for user:', userId);
+        }
+
+        setStats(finalStats);
 
       } catch (error) {
         console.warn('[useProfileStatsSafe] Error fetching stats:', error);
