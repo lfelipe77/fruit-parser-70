@@ -16,10 +16,12 @@ import { fileToDataUrl } from '@/lib/cropImage';
 import { useProfileSave, handleAvatarSave } from '@/hooks/useProfileSave';
 import { getAvatarSrc } from '@/lib/avatarUtils';
 import { useUnifiedProfile } from '@/hooks/useUnifiedProfile';
+import { useProfileStats } from '@/hooks/useProfileStats';
 import ProfileErrorState from '@/components/ProfileErrorState';
 
 export default function Profile() {
   const { profile, isLoading: loading, error, updateProfile, refreshProfile } = useUnifiedProfile();
+  const { data: stats, isLoading: statsLoading } = useProfileStats(profile?.id);
   const { session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -205,9 +207,19 @@ export default function Profile() {
             </div>
             
             <div className="mt-4 pt-4 border-t">
-              <div className="text-center">
-                <p className="text-lg font-semibold">{(profile as any)?.total_ganhaveis || 0}</p>
-                <p className="text-sm text-muted-foreground">Ganhaveis Criados</p>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <p className="text-lg font-semibold">
+                    {statsLoading ? '...' : stats?.launched || 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Ganhaveis Criados</p>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold">
+                    {statsLoading ? '...' : stats?.participated || 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Participações</p>
+                </div>
               </div>
             </div>
           </CardContent>
