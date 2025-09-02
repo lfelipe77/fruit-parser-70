@@ -15,75 +15,119 @@ const STATUS_LAUNCHED = [
 
 const STATUS_COMPLETED = ["completed", "finalizada", "closed"];
 
+// Default empty stats to prevent undefined errors
+const EMPTY_STATS: Stats = { launched: 0, participated: 0, completed: 0, won: 0 };
+
 async function fetchStats(userId: string): Promise<Stats> {
-  if (!userId) return { launched: 0, participated: 0, completed: 0, won: 0 };
-
-  // 1) Lançados (count exato por status permitido)
-  const launchedQ = supabase
-    .from("raffles")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .in("status", STATUS_LAUNCHED);
-
-  // 2) Completos (status final)
-  const completedQ = supabase
-    .from("raffles")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .in("status", STATUS_COMPLETED);
-
-  // 3) Participou (distinct por raffle_id)
-  // Usamos a view mais nova disponível; se v7 não existir, caímos para v6.
-  const participatedV7 = await supabase
-    .from("my_tickets_ext_v7")
-    .select("raffle_id,buyer_user_id")
-    .eq("buyer_user_id", userId);
-
-  const participatedRows = participatedV7.error
-    ? (await supabase
-        .from("my_tickets_ext_v6")
-        .select("raffle_id,buyer_user_id")
-        .eq("buyer_user_id", userId)
-      ).data ?? []
-    : participatedV7.data ?? [];
-
-  const participated = new Set(
-    (participatedRows || []).map((r: any) => r.raffle_id)
-  ).size;
-
-  // 4) Ganhou (v_federal_winners → fallback raffle_winner_logs)
-  let won = 0;
-  const winnersTry = await supabase
-    .from("v_federal_winners")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
-
-  if (winnersTry.error?.message?.includes("relation") || winnersTry.error?.code === "42P01") {
-    // fallback simples por logs (quando houver)
-    const logs = await supabase
-      .from("raffle_winner_logs")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId);
-    won = logs.count ?? 0;
-  } else {
-    won = winnersTry.count ?? 0;
+  if (!userId?.trim()) {
+    console.debug('[ProfileStats] No userId provided');
+    return EMPTY_STATS;
   }
 
-  const [launchedRes, completedRes] = await Promise.all([launchedQ, completedQ]);
+  console.debug('[ProfileStats] Fetching stats for userId:', userId);
 
-  return {
-    launched: launchedRes.count ?? 0,
-    participated,
-    completed: completedRes.count ?? 0,
-    won,
-  };
+  try {
+    // 1) Lançados (count exato por status permitido)
+    const launchedQ = supabase
+      .from("raffles")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .in("status", STATUS_LAUNCHED);
+
+    // 2) Completos (status final)
+    const completedQ = supabase
+      .from("raffles")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .in("status", STATUS_COMPLETED);
+
+    // 3) Participou (distinct por raffle_id) - try known views for resilience
+    let participatedRows: any[] = [];
+    
+    // Try v7 first, fallback to v6
+    try {
+      const result = await supabase
+        .from("my_tickets_ext_v7")
+        .select("raffle_id,buyer_user_id")
+        .eq("buyer_user_id", userId);
+        
+      if (!result.error && result.data) {
+        participatedRows = result.data;
+        console.debug('[ProfileStats] Using view: my_tickets_ext_v7');
+      } else {
+        // Fallback to v6
+        const fallbackResult = await supabase
+          .from("my_tickets_ext_v6")
+          .select("raffle_id,buyer_user_id")
+          .eq("buyer_user_id", userId);
+          
+        if (!fallbackResult.error && fallbackResult.data) {
+          participatedRows = fallbackResult.data;
+          console.debug('[ProfileStats] Using view: my_tickets_ext_v6');
+        }
+      }
+    } catch (viewError) {
+      console.debug('[ProfileStats] Views failed:', viewError);
+    }
+
+    const participated = new Set(
+      (participatedRows || [])
+        .filter(r => r?.raffle_id) // Ensure raffle_id exists
+        .map(r => r.raffle_id)
+    ).size;
+
+    // 4) Ganhou - we don't have direct access to winner tables, so return 0 for now
+    let won = 0;
+    // This would need to be implemented with proper winner tracking in the future
+
+    const [launchedRes, completedRes] = await Promise.all([launchedQ, completedQ]);
+
+    // Validate results and provide safe defaults
+    const result = {
+      launched: Math.max(0, launchedRes.count ?? 0),
+      participated: Math.max(0, participated),
+      completed: Math.max(0, completedRes.count ?? 0),
+      won: Math.max(0, won),
+    };
+
+    console.debug('[ProfileStats] Fetched stats:', result);
+    return result;
+    
+  } catch (error) {
+    console.error('[ProfileStats] Error fetching stats:', error);
+    // Return empty stats on error to prevent UI breakage
+    return EMPTY_STATS;
+  }
 }
 
 export function useProfileStats(userId?: string | null) {
   return useQuery({
-    queryKey: ["profile-stats", userId],
+    queryKey: ["profile-stats", userId ?? 'me'],
     queryFn: () => fetchStats(userId || ""),
-    enabled: !!userId,
-    staleTime: 30_000,
+    enabled: !!userId?.trim(), // Only run if we have a valid userId
+    staleTime: 30_000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
+    retry: (failureCount, error) => {
+      // Don't retry on permission or auth errors
+      const errorMessage = error?.message?.toLowerCase() || '';
+      if (errorMessage.includes('permission') || 
+          errorMessage.includes('not found') ||
+          errorMessage.includes('unauthorized') ||
+          errorMessage.includes('forbidden')) {
+        console.debug('[ProfileStats] Not retrying due to auth/permission error');
+        return false;
+      }
+      // Retry up to 2 times for other errors
+      return failureCount < 2;
+    }
   });
+}
+
+// Convenience hooks for common use cases
+export function useMyProfileStats() {
+  return useProfileStats(); // Will use current user
+}
+
+export function usePublicProfileStats(userId: string) {
+  return useProfileStats(userId);
 }

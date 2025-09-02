@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProfileStats } from "@/hooks/useProfileStats";
-import { StatPill } from "@/components/StatPill";
+import { ProfileStats } from "@/components/ProfileStats";
 
 interface DetalhesOrganizadorProps {
   organizer: {
@@ -22,7 +22,7 @@ interface DetalhesOrganizadorProps {
 }
 
 export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorProps) {
-  const { data: stats, isLoading } = useProfileStats(organizer?.id);
+  const { data: stats, isLoading, error, refetch } = useProfileStats(organizer?.id);
   return (
     <Card>
       <CardHeader>
@@ -72,11 +72,13 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 py-4 border-t">
-          <StatPill value={isLoading ? "—" : (stats?.launched ?? 0)} label="Ganháveis Lançados" />
-          <StatPill value={isLoading ? "—" : (stats?.participated ?? 0)} label="Ganháveis Participou" />
-          <StatPill value={isLoading ? "—" : (stats?.completed ?? 0)} label="Ganháveis Completos" />
-          <StatPill value={isLoading ? "—" : (stats?.won ?? 0)} label="Ganhou" />
+        <div className="py-4 border-t">
+          <ProfileStats 
+            stats={stats}
+            isLoading={isLoading}
+            error={error}
+            onRetry={refetch}
+          />
         </div>
 
         {/* Action Buttons */}
