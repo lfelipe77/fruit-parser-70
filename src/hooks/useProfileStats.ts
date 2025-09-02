@@ -14,23 +14,45 @@ const EMPTY_STATS: ProfileStats = { launched: 0, participating: 0, completed_fin
 
 async function fetchStats(userId: string | null): Promise<ProfileStats> {
   try {
-    const { data, error } = await (supabase as any)
-      .rpc('get_profile_stats', { target_user_id: userId ?? null });
+    const uid = userId || null;
+    if (!uid) {
+      console.debug('[ProfileStats] No user ID provided');
+      return EMPTY_STATS;
+    }
 
-    if (error) throw error;
+    // Get launched count (active + completed raffles)
+    const { count: launchedCount, error: launchedError } = await supabase
+      .from('raffles')
+      .select('id', { count: 'exact', head: true })
+      .eq('organizer_id', uid)
+      .in('status', ['active', 'completed']);
+
+    if (launchedError) {
+      console.error('[ProfileStats] Error fetching launched count:', launchedError);
+    }
+
+    // Get participating count (transactions with status 'paid') 
+    const { count: participatingCount, error: participatingError } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', uid)
+      .eq('status', 'paid');
+
+    if (participatingError) {
+      console.error('[ProfileStats] Error fetching participating count:', participatingError);
+    }
 
     const result: ProfileStats = {
-      launched: Number((data as any)?.launched ?? 0),
-      participating: Number((data as any)?.participating ?? 0),
-      completed_financed: Number((data as any)?.completed_financed ?? 0),
-      wins: Number((data as any)?.wins ?? 0),
+      launched: launchedCount ?? 0,
+      participating: participatingCount ?? 0,
+      completed_financed: 0, // For now, until we fix the RPC
+      wins: 0, // For now, until we have winner tracking
     };
 
-    console.debug('[ProfileStats] rpc', result);
+    console.debug('[ProfileStats] manual fetch', result);
     return result;
   } catch (error) {
     console.error('[ProfileStats] Error fetching stats:', error);
-    // Return empty stats on error to prevent UI breakage
     return EMPTY_STATS;
   }
 }
