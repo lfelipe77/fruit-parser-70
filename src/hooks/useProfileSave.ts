@@ -79,41 +79,45 @@ export function useProfileSave() {
         Object.entries(base).filter(([k, v]) => allowedKeys.has(k) && v !== undefined)
       );
 
-      // 3) Safe upsert approach: Check if profile exists first
-      const { data: existingProfile } = await supabase
+      // 3) Resilient cascade write: UPDATE -> INSERT -> UPSERT fallback
+      // Try UPDATE first (if row exists and RLS allows it)
+      const upd = await supabase
         .from('user_profiles')
-        .select('id')
+        .update(payload)
         .eq('id', user.id)
+        .select()
         .maybeSingle();
-
-      let data, error;
-      
-      if (existingProfile) {
-        // Profile exists, update it
-        const result = await supabase
-          .from('user_profiles')
-          .update(payload)
-          .eq('id', user.id)
-          .select()
-          .maybeSingle();
-        data = result.data;
-        error = result.error;
-      } else {
-        // Profile doesn't exist, insert it
-        const result = await supabase
-          .from('user_profiles')
-          .insert({ id: user.id, ...payload })
-          .select()
-          .maybeSingle();
-        data = result.data;
-        error = result.error;
+      if (!upd.error && upd.data) {
+        return upd.data;
+      }
+      if (upd.error) {
+        console.warn('[useProfileSave] UPDATE failed, will try INSERT:', upd.error);
       }
 
-      if (error) {
-        console.error('Profile upsert error:', error);
-        throw error;
+      // Then try INSERT (if row doesn't exist)
+      const ins = await supabase
+        .from('user_profiles')
+        .insert({ id: user.id, ...payload })
+        .select()
+        .maybeSingle();
+      if (!ins.error && ins.data) {
+        return ins.data;
       }
-      return data;
+      if (ins.error) {
+        console.warn('[useProfileSave] INSERT failed, will try UPSERT fallback:', ins.error);
+      }
+
+      // Fallback: UPSERT on conflict id
+      const ups = await supabase
+        .from('user_profiles')
+        .upsert({ id: user.id, ...payload }, { onConflict: 'id' })
+        .select()
+        .maybeSingle();
+      if (ups.error) {
+        console.error('Profile upsert error:', ups.error);
+        throw ups.error;
+      }
+      return ups.data;
     } catch (e: any) {
       setError(e.message ?? 'Failed to save profile');
       throw e;
