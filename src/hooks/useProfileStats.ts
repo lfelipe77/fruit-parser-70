@@ -32,7 +32,7 @@ async function fetchStats(userId: string): Promise<ProfileStats> {
       wins: 0,
     };
 
-    console.debug('[ProfileStats] Mock result for userId:', userId, result);
+    console.debug('[ProfileStats] rpc', result);
     return result;
     
   } catch (error) {
