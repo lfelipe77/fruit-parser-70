@@ -8,9 +8,11 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicProfile } from "@/types/public-views";
 import { 
+  Trophy, 
   Heart, 
+  MessageCircle,
   Share2,
-  Plus,
+  Star,
   Globe,
   Instagram,
   Facebook,
@@ -18,22 +20,27 @@ import {
   Linkedin,
   MapPin,
   Calendar,
+  UserPlus,
+  UserCheck,
+  Users,
   Play,
-  Award,
-  Trophy
+  Bell,
+  Eye
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectCard";
 import VideoModal from "@/components/VideoModal";
+import FollowButton from '@/components/FollowButton';
+import { useFollow } from '@/hooks/useFollow';
+import { useAuth } from '@/hooks/useAuth';
 import { getPublicLaunchedWithProgress } from "@/data/raffles";
-import { useProfileStatsSafe } from "@/hooks/useProfileStatsSafe";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function PerfilPublico() {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
   const [showAllGanhaveis, setShowAllGanhaveis] = useState(false);
   const [showAllGanhaveisParticipados, setShowAllGanhaveisParticipados] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +48,10 @@ export default function PerfilPublico() {
   const [ganhaveisParticipados, setGanhaveisParticipados] = useState<any[]>([]);
   const [loadingGanhaveis, setLoadingGanhaveis] = useState(true);
   
-  // Check if this is the current user's own profile
-  const isSelf = currentUser?.id === profile?.id;
-  const { stats, loading: statsLoading } = useProfileStatsSafe(profile?.id || '', isSelf);
+  // Get follow data for this profile
+  const profileUserId = profile?.id;
+  const { counts } = useFollow(profileUserId || '');
+  const isMe = currentUser?.id === profileUserId;
   
   useEffect(() => {
     const fetchProfile = async () => {
@@ -246,6 +254,11 @@ export default function PerfilPublico() {
     memberSince: dateBR(profile.created_at ?? profile.joined_at ?? null),
     totalGanhaveisLancados: ganhaveisLancados.length,
     totalGanhaveisParticipados: ganhaveisParticipados.length,
+    ganhaveisCompletos: ganhaveisLancados.filter(g => g.status === 'completed' || g.status === 'finalizada').length,
+    avaliacaoMedia: profile.rating || 0,
+    totalAvaliacoes: 0,
+    seguidores: 0,
+    seguindo: 0,
     avatar: profile.avatar_url || '',
     website: profile.website_url || '',
     videoApresentacao: '',
@@ -263,6 +276,11 @@ export default function PerfilPublico() {
     memberSince: "",
     totalGanhaveisLancados: 0,
     totalGanhaveisParticipados: 0,
+    ganhaveisCompletos: 0,
+    avaliacaoMedia: 0,
+    totalAvaliacoes: 0,
+    seguidores: 0,
+    seguindo: 0,
     avatar: '',
     website: '',
     videoApresentacao: '',
@@ -372,9 +390,19 @@ export default function PerfilPublico() {
                   </Avatar>
                   
                   <div className="flex flex-col gap-3">
-                    <Button variant="outline" size="sm">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+                    {!isMe && profileUserId && (
+                      <FollowButton profileUserId={profileUserId} />
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Mensagem
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                     
                     {user.videoApresentacao && (
                       <Button 
@@ -448,36 +476,41 @@ export default function PerfilPublico() {
                     )}
                   </div>
                   
-                    {/* Stats Grid - 4 columns */}
-                    <div className="grid grid-cols-2 gap-4">
+                   {/* Followers/Following Stats */}
+                   <div className="flex gap-6 mb-4">
+                     <div className="flex items-center gap-1">
+                       <Users className="h-4 w-4 text-muted-foreground" />
+                       <span className="font-bold" data-testid="followers">{counts.followers_count}</span>
+                       <span className="text-muted-foreground">seguidores</span>
+                     </div>
+                     <div className="flex items-center gap-1">
+                       <Eye className="h-4 w-4 text-muted-foreground" />
+                       <span className="font-bold" data-testid="following">{counts.following_count}</span>
+                       <span className="text-muted-foreground">seguindo</span>
+                     </div>
+                   </div>
+
+                   {/* Stats */}
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <Plus className="h-4 w-4 text-blue-500" />
-                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.launched}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">Lançados</div>
+                        <div className="text-2xl font-bold text-primary">{displayGanhaveisLancados.length}</div>
+                        <div className="text-sm text-muted-foreground">Ganhaveis Lançados</div>
                       </div>
                       <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <Trophy className="h-4 w-4 text-green-500" />
-                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.completed}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">Completos</div>
+                        <div className="text-2xl font-bold text-primary">{user.ganhaveisCompletos}</div>
+                        <div className="text-sm text-muted-foreground">Ganhaveis Completos</div>
                       </div>
                       <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <Award className="h-4 w-4 text-yellow-500" />
-                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.awarded}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">Premiados</div>
+                        <div className="text-2xl font-bold text-primary">{user.totalGanhaveisParticipados}</div>
+                        <div className="text-sm text-muted-foreground">Ganhaveis Participou</div>
                       </div>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <Heart className="h-4 w-4 text-red-500" />
-                          <span className="text-xl font-bold text-primary">{statsLoading ? '—' : (stats.participated !== null ? stats.participated : '—')}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">Participou</div>
-                      </div>
+                     <div className="text-center">
+                       <div className="flex items-center justify-center gap-1">
+                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                         <span className="text-2xl font-bold text-primary">{user.avaliacaoMedia}</span>
+                       </div>
+                       <div className="text-sm text-muted-foreground">{user.totalAvaliacoes} avaliações</div>
+                     </div>
                    </div>
                 </div>
               </div>
@@ -525,32 +558,30 @@ export default function PerfilPublico() {
                              daysLeft={ganhavel.daysLeft}
                              category={ganhavel.category}
                              backers={ganhavel.backers}
-                             status={ganhavel.status}
                              location={ganhavel.location}
                              raffleId={ganhavel.raffleId}
-                             raffleStatus={ganhavel.raffleStatus}
-                             progress_pct_money={ganhavel.progress_pct_money}
+                             status={ganhavel.raffleStatus}
                            />
-                         ))}
-                       </div>
-
+                        ))}
+                      </div>
+                       
                        {displayGanhaveisLancados.length > 6 && (
                          <div className="text-center mt-6">
-                           <Button
-                             variant="outline"
+                           <Button 
+                             variant="outline" 
                              onClick={() => setShowAllGanhaveis(!showAllGanhaveis)}
                            >
-                             {showAllGanhaveis ? 'Ver Menos' : `Ver Todos (${displayGanhaveisLancados.length})`}
+                             {showAllGanhaveis ? 'Ver menos' : 'Ver mais'}
                            </Button>
                          </div>
                        )}
                      </>
                    ) : (
-                     <div className="text-center py-12">
-                       <p className="text-muted-foreground">Nenhum ganhavel lançado ainda.</p>
+                     <div className="text-center py-8">
+                       <p className="text-muted-foreground">Nenhum ganhável lançado ainda.</p>
                      </div>
                    )}
-                 </CardContent>
+                </CardContent>
               </Card>
             </TabsContent>
 
@@ -560,75 +591,83 @@ export default function PerfilPublico() {
                 <CardHeader>
                   <CardTitle>Ganhaveis que {user.name} Participou</CardTitle>
                   <CardDescription>
-                    Ganhaveis em que este usuário comprou tickets
+                    Ganhaveis onde este usuário comprou bilhetes
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {loadingGanhaveis ? (
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {[...Array(4)].map((_, i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-48 bg-muted rounded mb-4"></div>
-                          <div className="h-4 bg-muted rounded mb-2"></div>
-                          <div className="h-4 bg-muted rounded w-3/4"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : displayedGanhaveisParticipados.length > 0 ? (
-                    <>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        {displayedGanhaveisParticipados.map((ganhavel, index) => (
-                          <ProjectCard
-                            key={index}
-                            title={ganhavel.title}
-                            description={ganhavel.description}
-                            image={ganhavel.image}
-                            goal={ganhavel.goal}
-                            raised={ganhavel.raised}
-                            daysLeft={ganhavel.daysLeft}
-                            category={ganhavel.category}
-                            backers={ganhavel.backers}
-                            status={ganhavel.status}
-                            location={ganhavel.location}
-                            raffleId={ganhavel.raffleId}
-                            raffleStatus={ganhavel.raffleStatus}
-                            progress_pct_money={ganhavel.progress_pct_money}
-                          />
-                        ))}
-                      </div>
-
-                      {displayGanhaveisParticipados.length > 6 && (
-                        <div className="text-center mt-6">
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
-                          >
-                            {showAllGanhaveisParticipados ? 'Ver Menos' : `Ver Todos (${displayGanhaveisParticipados.length})`}
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-12">
-                      <p className="text-muted-foreground">Nenhuma participação em ganhaveis ainda.</p>
-                    </div>
-                  )}
+                 <CardContent>
+                   {loadingGanhaveis ? (
+                     <div className="grid md:grid-cols-2 gap-6">
+                       {[...Array(4)].map((_, i) => (
+                         <div key={i} className="animate-pulse">
+                           <div className="h-48 bg-muted rounded mb-4"></div>
+                           <div className="h-4 bg-muted rounded mb-2"></div>
+                           <div className="h-4 bg-muted rounded w-3/4"></div>
+                         </div>
+                       ))}
+                     </div>
+                   ) : ganhaveisParticipados.some(g => g.isOwner) ? (
+                     <>
+                       {displayedGanhaveisParticipados.length > 0 ? (
+                         <>
+                           <div className="grid md:grid-cols-2 gap-6">
+                             {displayedGanhaveisParticipados.map((ganhavel, index) => (
+                              <div key={index} className="relative">
+                                 <ProjectCard
+                                   title={ganhavel.title}
+                                   description={ganhavel.description}
+                                   image={ganhavel.image}
+                                   goal={ganhavel.goal}
+                                   raised={ganhavel.raised}
+                                   daysLeft={ganhavel.daysLeft}
+                                   category={ganhavel.category}
+                                   backers={ganhavel.backers}
+                                   location={ganhavel.location}
+                                   raffleId={ganhavel.raffleId}
+                                   status={ganhavel.raffleStatus}
+                                 />
+                                <Badge className="absolute top-2 right-2 bg-background/90">
+                                  {ganhavel.ticketCount} bilhetes
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                           
+                           {displayGanhaveisParticipados.length > 6 && (
+                             <div className="text-center mt-6">
+                               <Button 
+                                 variant="outline" 
+                                 onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
+                               >
+                                 {showAllGanhaveisParticipados ? 'Ver menos' : 'Ver mais'}
+                               </Button>
+                             </div>
+                           )}
+                         </>
+                       ) : (
+                         <div className="text-center py-8">
+                           <p className="text-muted-foreground">Nenhuma participação ainda.</p>
+                         </div>
+                       )}
+                     </>
+                   ) : (
+                     <div className="text-center py-8">
+                       <p className="text-muted-foreground">Participações são privadas.</p>
+                     </div>
+                   )}
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
-
-          {/* Video Modal */}
-          {user.videoApresentacao && (
-            <VideoModal
-              isOpen={showVideoModal}
-              onClose={() => setShowVideoModal(false)}
-              videoUrl={user.videoApresentacao}
-              userName={user.name}
-            />
-          )}
         </div>
       </div>
+      
+      {/* Video Modal */}
+      <VideoModal
+        isOpen={showVideoModal}
+        onClose={() => setShowVideoModal(false)}
+        videoUrl={user.videoApresentacao}
+        userName={user.name}
+      />
     </div>
   );
 }

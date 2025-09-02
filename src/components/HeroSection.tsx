@@ -80,7 +80,7 @@ export default function HeroSection() {
   const paid = Number(stats?.total_prize_paid ?? 0);
   const displayStats = {
     prizeValue: stats ? formatCurrency(paid) : "R$ 8M+",
-    prizeLabel: "Prêmios Distribuídos",
+    prizeLabel: "Premiados",
     participants: stats ? formatNumber(stats.total_participants) : "25K+",
     ganhaveis: stats ? formatNumber(stats.total_ganhaveis) : "890+",
     activeGanhaveis: stats ? stats.active_ganhaveis.toString() : "128"

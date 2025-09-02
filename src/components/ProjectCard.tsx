@@ -48,10 +48,14 @@ export default function ProjectCard({
   const minutesAgo = Math.floor(Math.random() * 30) + 1;
   const lastPurchaseText = `${minutesAgo}min`;
 
-  // ALWAYS use raffleId - no fallback to slug generation
-  if (!raffleId) {
-    console.error('[ProjectCard] Missing raffleId for:', title);
-    return <div>Card Error: Missing ID</div>;
+  // Use provided raffleId or fallback to legacy slug generation
+  const ganhaveisId = raffleId || title.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '-');
+
+  // Dev safety checks
+  if (import.meta.env.DEV) {
+    if (!raffleId) console.error('[ProjectCard] Missing raffleId for:', title);
   }
 
   // Use raffleStatus for buy button logic, fallback to status
@@ -60,7 +64,7 @@ export default function ProjectCard({
   const isCompleted = actualStatus === 'completed' || percentage >= 100;
 
   return (
-    <Link to={`/ganhavel/${raffleId}`} className="block">
+    <Link to={`/ganhavel/${ganhaveisId}`} className="block">
       <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" data-testid="raffle-card">
       <div className="relative overflow-hidden rounded-t-lg">
         <img

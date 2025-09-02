@@ -9,13 +9,12 @@ import { useMyProfile } from '@/hooks/useMyProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, User, ExternalLink, Plus, Heart, Home, Award, Trophy } from 'lucide-react';
+import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck, Home } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { fileToDataUrl } from '@/lib/cropImage';
 import { useProfileSave, handleAvatarSave } from '@/hooks/useProfileSave';
 import { getAvatarSrc } from '@/lib/avatarUtils';
-import { useProfileStatsSafe } from '@/hooks/useProfileStatsSafe';
 
 export default function Profile() {
   const { profile, loading, updateProfile, refreshProfile, invalidateQueries } = useMyProfile();
@@ -23,7 +22,6 @@ export default function Profile() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { save: saveProfile, saving: savingProfile, error: saveError } = useProfileSave();
-  const { stats, loading: statsLoading } = useProfileStatsSafe(profile?.id || '', true);
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
@@ -152,6 +150,10 @@ export default function Profile() {
               Ver Perfil Público
             </Link>
           </Button>
+          <Button variant="outline" onClick={() => navigate('/raffles')}>
+            <Search className="w-4 h-4 mr-2" />
+            Explorar Ganhaveis
+          </Button>
           <Button onClick={() => navigate('/lance-seu-ganhavel')}>
             <Plus className="w-4 h-4 mr-2" />
             Lançar Ganhavel
@@ -185,34 +187,27 @@ export default function Profile() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Plus className="h-4 w-4 text-blue-500" />
-                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.launched}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">Lançados</div>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                  <Users className="w-3 h-3" />
+                  Seguidores
+                </p>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Trophy className="h-4 w-4 text-green-500" />
-                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.completed}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">Completos</div>
+              <div>
+                <p className="text-2xl font-bold">0</p>
+                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                  <UserCheck className="w-3 h-3" />
+                  Seguindo
+                </p>
               </div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t">
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Award className="h-4 w-4 text-yellow-500" />
-                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : stats.awarded}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">Premiados</div>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Heart className="h-4 w-4 text-red-500" />
-                  <span className="text-xl font-bold text-primary">{statsLoading ? '—' : (stats.participated !== null ? stats.participated : '—')}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">Participou</div>
+                <p className="text-lg font-semibold">{profile?.total_ganhaveis || 0}</p>
+                <p className="text-sm text-muted-foreground">Ganhaveis Criados</p>
               </div>
             </div>
           </CardContent>
