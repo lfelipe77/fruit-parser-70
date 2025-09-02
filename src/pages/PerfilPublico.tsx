@@ -132,25 +132,23 @@ export default function PerfilPublico() {
           setGanhaveisLancados([]);
         }
 
-        // Fetch ganhaveis participados (only if viewer is owner)
+        // Fetch ganhaveis participados (public data)
         let participados: any[] = [];
         let participadosError: any = null;
 
-        if (isOwner) {
-          const { data, error } = await supabase
-            .from('my_tickets_ext_v6')
-            .select('raffle_id,raffle_title,raffle_image_url,goal_amount,amount_raised,progress_pct_money,draw_date,ticket_count,purchased_numbers,tx_status,buyer_user_id')
-            .eq('buyer_user_id', authUserId)
-            .order('purchase_date', { ascending: false })
-            .limit(200);
+        const { data, error } = await supabase
+          .from('my_tickets_ext_v6')
+          .select('raffle_id,raffle_title,raffle_image_url,goal_amount,amount_raised,progress_pct_money,draw_date,ticket_count,purchased_numbers,tx_status,buyer_user_id')
+          .eq('buyer_user_id', profileUserId)
+          .order('purchase_date', { ascending: false })
+          .limit(200);
 
-          participados = data ?? [];
-          participadosError = error;
+        participados = data ?? [];
+        participadosError = error;
 
-          if (import.meta.env.DEV) {
-            if (!data) console.warn('[PerfilPublico] participados empty or null', error);
-            if (participados.some(r => !r.raffle_id)) console.error('Participou row missing raffle_id', participados);
-          }
+        if (import.meta.env.DEV) {
+          if (!data) console.warn('[PerfilPublico] participados empty or null', error);
+          if (participados.some(r => !r.raffle_id)) console.error('Participou row missing raffle_id', participados);
         }
           
         if (participadosError) {
@@ -178,7 +176,6 @@ export default function PerfilPublico() {
                 draw_date: row.draw_date,
                 ticket_count: row.ticket_count || 0,
                 purchased_numbers: Array.isArray(row.purchased_numbers) ? [...row.purchased_numbers] : [],
-                isOwner,
               });
             }
           }
@@ -535,7 +532,7 @@ export default function PerfilPublico() {
                          </div>
                        ))}
                      </div>
-                   ) : ganhaveisParticipados.some(g => g.isOwner) ? (
+                   ) : displayedGanhaveisParticipados.length > 0 ? (
                      <>
                        {displayedGanhaveisParticipados.length > 0 ? (
                          <>
