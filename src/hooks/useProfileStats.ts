@@ -20,16 +20,34 @@ async function fetchStats(userId: string | null): Promise<ProfileStats> {
       return EMPTY_STATS;
     }
 
-    // Get launched count (active + completed raffles)
-    const { count: launchedCount, error: launchedError } = await supabase
+    console.debug('[ProfileStats] Fetching stats for user:', uid);
+
+    // Get launched count - try both organizer_id and user_id columns
+    let launchedCount = 0;
+    
+    // First try organizer_id
+    const { count: launchedCountOrganizer, error: launchedError1 } = await supabase
       .from('raffles')
       .select('id', { count: 'exact', head: true })
       .eq('organizer_id', uid)
       .in('status', ['active', 'completed']);
 
-    if (launchedError) {
-      console.error('[ProfileStats] Error fetching launched count:', launchedError);
+    // Then try user_id
+    const { count: launchedCountUser, error: launchedError2 } = await supabase
+      .from('raffles')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', uid)
+      .in('status', ['active', 'completed']);
+
+    if (launchedError1) {
+      console.error('[ProfileStats] Error fetching launched count (organizer_id):', launchedError1);
     }
+    if (launchedError2) {
+      console.error('[ProfileStats] Error fetching launched count (user_id):', launchedError2);
+    }
+
+    launchedCount = Math.max(launchedCountOrganizer ?? 0, launchedCountUser ?? 0);
+    console.debug('[ProfileStats] Launched counts - organizer_id:', launchedCountOrganizer, 'user_id:', launchedCountUser, 'final:', launchedCount);
 
     // Get participating count (transactions with status 'paid') 
     const { count: participatingCount, error: participatingError } = await supabase
@@ -43,13 +61,13 @@ async function fetchStats(userId: string | null): Promise<ProfileStats> {
     }
 
     const result: ProfileStats = {
-      launched: launchedCount ?? 0,
+      launched: launchedCount,
       participating: participatingCount ?? 0,
       completed_financed: 0, // For now, until we fix the RPC
       wins: 0, // For now, until we have winner tracking
     };
 
-    console.debug('[ProfileStats] manual fetch', result);
+    console.debug('[ProfileStats] final result:', result);
     return result;
   } catch (error) {
     console.error('[ProfileStats] Error fetching stats:', error);
