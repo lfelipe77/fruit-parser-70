@@ -26,7 +26,7 @@ import VideoModal from "@/components/VideoModal";
 import { useAuth } from '@/hooks/useAuth';
 import { getPublicLaunchedWithProgress } from "@/data/raffles";
 import { useProfileStats } from "@/hooks/useProfileStats";
-import { StatPill } from "@/components/StatPill";
+import { ProfileStats } from "@/components/ProfileStats";
 
 export default function PerfilPublico() {
   const { username } = useParams();
@@ -432,13 +432,50 @@ export default function PerfilPublico() {
                     </div>
                   </div>
 
-                  {/* Estatísticas (4 cards) */}
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    <StatPill value={statsLoading ? "—" : (stats?.launched ?? 0)} label="Ganháveis Lançados" />
-                    <StatPill value={statsLoading ? "—" : (stats?.participated ?? 0)} label="Ganháveis Participou" />
-                    <StatPill value={statsLoading ? "—" : (stats?.completed ?? 0)} label="Ganháveis Completos" />
-                    <StatPill value={statsLoading ? "—" : (stats?.won ?? 0)} label="Ganhou" />
-                  </div>
+                  {/* Estatísticas */}
+                  <ProfileStats 
+                    stats={stats}
+                    isLoading={statsLoading}
+                    error={null}
+                  />
+
+                  {/* Redes Sociais */}
+                  {(user.socialLinks.instagram || user.socialLinks.facebook || user.socialLinks.twitter || user.website) && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {user.website && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={user.website} target="_blank" rel="noopener noreferrer">
+                            <Globe className="h-4 w-4 mr-1" />
+                            Site
+                          </a>
+                        </Button>
+                      )}
+                      {user.socialLinks.instagram && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={`https://instagram.com/${user.socialLinks.instagram}`} target="_blank" rel="noopener noreferrer">
+                            <Instagram className="h-4 w-4 mr-1" />
+                            Instagram
+                          </a>
+                        </Button>
+                      )}
+                      {user.socialLinks.facebook && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={`https://facebook.com/${user.socialLinks.facebook}`} target="_blank" rel="noopener noreferrer">
+                            <Facebook className="h-4 w-4 mr-1" />
+                            Facebook
+                          </a>
+                        </Button>
+                      )}
+                      {user.socialLinks.twitter && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={`https://twitter.com/${user.socialLinks.twitter}`} target="_blank" rel="noopener noreferrer">
+                            <Twitter className="h-4 w-4 mr-1" />
+                            Twitter
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
