@@ -4,12 +4,19 @@ Fast end-to-end tests to catch critical regressions in the raffle system.
 
 ## Setup
 
-1. Copy environment variables:
+### A) Using pnpm (recommended)
+
+1. Install Playwright browsers:
+```bash
+pnpm dlx playwright install
+```
+
+2. Copy environment variables:
 ```bash
 cp .env.example .env.local
 ```
 
-2. Fill in your test configuration in `.env.local`:
+3. Fill in your test configuration in `.env.local`:
 ```bash
 # Required
 PLAYWRIGHT_BASE_URL=http://localhost:5173
@@ -25,22 +32,47 @@ E2E_PUBLIC_PROFILE_URL="/#/perfil/<slug-or-id>"
 E2E_KNOWN_PROGRESS_ID="f2fd1d10-050e-4435-a215-5e0377697fba"
 ```
 
-3. Install Playwright:
+### B) Using npm
+
+1. Install Playwright browsers:
 ```bash
-pnpm dlx playwright install
+npx playwright install
 ```
+
+2. Follow steps 2-3 from above
 
 ## Running Tests
 
+### Using pnpm (recommended)
+
 ```bash
-# Headless mode
+# Smoke suite (headless)
 pnpm test:e2e:smoke
 
 # Headed mode (see browser)
 pnpm test:e2e:headed
 
+# Full smoke suite with environment variables (macOS/Linux)
+PLAYWRIGHT_BASE_URL=http://localhost:5173 \
+E2E_USER_EMAIL="test@example.com" \
+E2E_USER_PASSWORD="secret123" \
+E2E_MY_USER_PROFILE_URL="/#/perfil/me" \
+E2E_EXPECT_LAUNCHED_COUNT="9" \
+pnpm test:e2e:headed
+
+# Windows (PowerShell)
+$env:PLAYWRIGHT_BASE_URL="http://localhost:5173"; $env:E2E_USER_EMAIL="test@example.com"; $env:E2E_USER_PASSWORD="secret123"; $env:E2E_MY_USER_PROFILE_URL="/#/perfil/me"; $env:E2E_EXPECT_LAUNCHED_COUNT="9"; pnpm test:e2e:headed
+
 # Specific test
 pnpm test:e2e:headed tests/e2e/smoke.raffles.spec.ts
+```
+
+### Using npm
+
+```bash
+# Replace pnpm with npm in any of the above commands
+npm run test:e2e:smoke
+npm run test:e2e:headed
 ```
 
 ## What These Tests Catch
