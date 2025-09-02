@@ -9,7 +9,7 @@ import { useMyProfile } from '@/hooks/useMyProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck, Home } from 'lucide-react';
+import { Upload, User, ExternalLink, Plus, Heart, Home } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { fileToDataUrl } from '@/lib/cropImage';
@@ -150,10 +150,6 @@ export default function Profile() {
               Ver Perfil Público
             </Link>
           </Button>
-          <Button variant="outline" onClick={() => navigate('/raffles')}>
-            <Search className="w-4 h-4 mr-2" />
-            Explorar Ganhaveis
-          </Button>
           <Button onClick={() => navigate('/lance-seu-ganhavel')}>
             <Plus className="w-4 h-4 mr-2" />
             Lançar Ganhavel
@@ -187,27 +183,20 @@ export default function Profile() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                  <Users className="w-3 h-3" />
-                  Seguidores
-                </p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                  <UserCheck className="w-3 h-3" />
-                  Seguindo
-                </p>
-              </div>
-            </div>
-            
-            <div className="mt-4 pt-4 border-t">
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div className="text-center">
-                <p className="text-lg font-semibold">{profile?.total_ganhaveis || 0}</p>
-                <p className="text-sm text-muted-foreground">Ganhaveis Criados</p>
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Plus className="h-4 w-4 text-blue-500" />
+                  <span className="text-2xl font-bold text-primary">0</span>
+                </div>
+                <div className="text-sm text-muted-foreground">Ganhaveis Lançados</div>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Heart className="h-4 w-4 text-red-500" />
+                  <span className="text-2xl font-bold text-primary">0</span>
+                </div>
+                <div className="text-sm text-muted-foreground">Ganhaveis Participou</div>
               </div>
             </div>
           </CardContent>

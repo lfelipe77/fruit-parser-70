@@ -502,30 +502,32 @@ export default function PerfilPublico() {
                              daysLeft={ganhavel.daysLeft}
                              category={ganhavel.category}
                              backers={ganhavel.backers}
+                             status={ganhavel.status}
                              location={ganhavel.location}
                              raffleId={ganhavel.raffleId}
-                             status={ganhavel.raffleStatus}
+                             raffleStatus={ganhavel.raffleStatus}
+                             progress_pct_money={ganhavel.progress_pct_money}
                            />
-                        ))}
-                      </div>
-                       
+                         ))}
+                       </div>
+
                        {displayGanhaveisLancados.length > 6 && (
                          <div className="text-center mt-6">
-                           <Button 
-                             variant="outline" 
+                           <Button
+                             variant="outline"
                              onClick={() => setShowAllGanhaveis(!showAllGanhaveis)}
                            >
-                             {showAllGanhaveis ? 'Ver menos' : 'Ver mais'}
+                             {showAllGanhaveis ? 'Ver Menos' : `Ver Todos (${displayGanhaveisLancados.length})`}
                            </Button>
                          </div>
                        )}
                      </>
                    ) : (
-                     <div className="text-center py-8">
-                       <p className="text-muted-foreground">Nenhum ganhável lançado ainda.</p>
+                     <div className="text-center py-12">
+                       <p className="text-muted-foreground">Nenhum ganhavel lançado ainda.</p>
                      </div>
                    )}
-                </CardContent>
+                 </CardContent>
               </Card>
             </TabsContent>
 
@@ -535,83 +537,75 @@ export default function PerfilPublico() {
                 <CardHeader>
                   <CardTitle>Ganhaveis que {user.name} Participou</CardTitle>
                   <CardDescription>
-                    Ganhaveis onde este usuário comprou bilhetes
+                    Ganhaveis em que este usuário comprou tickets
                   </CardDescription>
                 </CardHeader>
-                 <CardContent>
-                   {loadingGanhaveis ? (
-                     <div className="grid md:grid-cols-2 gap-6">
-                       {[...Array(4)].map((_, i) => (
-                         <div key={i} className="animate-pulse">
-                           <div className="h-48 bg-muted rounded mb-4"></div>
-                           <div className="h-4 bg-muted rounded mb-2"></div>
-                           <div className="h-4 bg-muted rounded w-3/4"></div>
-                         </div>
-                       ))}
-                     </div>
-                   ) : ganhaveisParticipados.some(g => g.isOwner) ? (
-                     <>
-                       {displayedGanhaveisParticipados.length > 0 ? (
-                         <>
-                           <div className="grid md:grid-cols-2 gap-6">
-                             {displayedGanhaveisParticipados.map((ganhavel, index) => (
-                              <div key={index} className="relative">
-                                 <ProjectCard
-                                   title={ganhavel.title}
-                                   description={ganhavel.description}
-                                   image={ganhavel.image}
-                                   goal={ganhavel.goal}
-                                   raised={ganhavel.raised}
-                                   daysLeft={ganhavel.daysLeft}
-                                   category={ganhavel.category}
-                                   backers={ganhavel.backers}
-                                   location={ganhavel.location}
-                                   raffleId={ganhavel.raffleId}
-                                   status={ganhavel.raffleStatus}
-                                 />
-                                <Badge className="absolute top-2 right-2 bg-background/90">
-                                  {ganhavel.ticketCount} bilhetes
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                           
-                           {displayGanhaveisParticipados.length > 6 && (
-                             <div className="text-center mt-6">
-                               <Button 
-                                 variant="outline" 
-                                 onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
-                               >
-                                 {showAllGanhaveisParticipados ? 'Ver menos' : 'Ver mais'}
-                               </Button>
-                             </div>
-                           )}
-                         </>
-                       ) : (
-                         <div className="text-center py-8">
-                           <p className="text-muted-foreground">Nenhuma participação ainda.</p>
-                         </div>
-                       )}
-                     </>
-                   ) : (
-                     <div className="text-center py-8">
-                       <p className="text-muted-foreground">Participações são privadas.</p>
-                     </div>
-                   )}
+                <CardContent>
+                  {loadingGanhaveis ? (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="h-48 bg-muted rounded mb-4"></div>
+                          <div className="h-4 bg-muted rounded mb-2"></div>
+                          <div className="h-4 bg-muted rounded w-3/4"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : displayedGanhaveisParticipados.length > 0 ? (
+                    <>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {displayedGanhaveisParticipados.map((ganhavel, index) => (
+                          <ProjectCard
+                            key={index}
+                            title={ganhavel.title}
+                            description={ganhavel.description}
+                            image={ganhavel.image}
+                            goal={ganhavel.goal}
+                            raised={ganhavel.raised}
+                            daysLeft={ganhavel.daysLeft}
+                            category={ganhavel.category}
+                            backers={ganhavel.backers}
+                            status={ganhavel.status}
+                            location={ganhavel.location}
+                            raffleId={ganhavel.raffleId}
+                            raffleStatus={ganhavel.raffleStatus}
+                            progress_pct_money={ganhavel.progress_pct_money}
+                          />
+                        ))}
+                      </div>
+
+                      {displayGanhaveisParticipados.length > 6 && (
+                        <div className="text-center mt-6">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowAllGanhaveisParticipados(!showAllGanhaveisParticipados)}
+                          >
+                            {showAllGanhaveisParticipados ? 'Ver Menos' : `Ver Todos (${displayGanhaveisParticipados.length})`}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">Nenhuma participação em ganhaveis ainda.</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Video Modal */}
+          {user.videoApresentacao && (
+            <VideoModal
+              isOpen={showVideoModal}
+              onClose={() => setShowVideoModal(false)}
+              videoUrl={user.videoApresentacao}
+              userName={user.name}
+            />
+          )}
         </div>
       </div>
-      
-      {/* Video Modal */}
-      <VideoModal
-        isOpen={showVideoModal}
-        onClose={() => setShowVideoModal(false)}
-        videoUrl={user.videoApresentacao}
-        userName={user.name}
-      />
     </div>
   );
 }
