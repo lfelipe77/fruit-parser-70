@@ -60,29 +60,44 @@ export function useProfileSave() {
         avatarUrl = pub?.publicUrl ? `${pub.publicUrl}?v=${Date.now()}` : null;
       }
 
-      // 2) Ensure profile row exists (harmless if it already does; trigger also creates it)
-      // Profile row will be created via upsert below
+      // 2) Build final update payload (only allow known columns)
+      const allowedKeys = new Set([
+        'full_name',
+        'username',
+        'bio',
+        'location',
+        'instagram',
+        'website_url',
+        'avatar_url',
+      ]);
 
-      // 3) Build final update payload
-      // Build clean payload (strip undefined values)
       const base: Record<string, any> = {
         ...updates,
         ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
-        updated_at: new Date().toISOString(),
       };
       const payload = Object.fromEntries(
-        Object.entries(base).filter(([, v]) => v !== undefined)
+        Object.entries(base).filter(([k, v]) => allowedKeys.has(k) && v !== undefined)
       );
 
-      // 4) Persist
-      const { data, error: dbErr } = await supabase
+      // 3) Persist: try UPDATE first (works with updatable views), then INSERT if missing
+      const { data: updData, error: updErr } = await supabase
         .from('user_profiles')
-        .upsert({ id: user.id, ...payload }, { onConflict: 'id' })
+        .update(payload)
+        .eq('id', user.id)
         .select()
         .maybeSingle();
 
-      if (dbErr) throw dbErr;
-      return data;
+      if (!updErr && updData) return updData;
+
+      // If no row was updated (or table only accepts inserts), try INSERT minimal row
+      const { data: insData, error: insErr } = await supabase
+        .from('user_profiles')
+        .insert({ id: user.id, ...payload })
+        .select()
+        .maybeSingle();
+
+      if (insErr) throw insErr;
+      return insData;
     } catch (e: any) {
       setError(e.message ?? 'Failed to save profile');
       throw e;
