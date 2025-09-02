@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 type ProfileStatsData = {
   launched: number;
   participated: number;
-  completed: number;
+  completed?: number; // Optional - hidden behind feature flag
   won: number;
 };
 
@@ -57,12 +57,13 @@ export function ProfileStats({ stats, isLoading, error, onRetry }: ProfileStatsP
       icon: Target,
       color: 'text-green-600',
     },
-    {
+    // Only show completed if the value is provided (feature flag controlled)
+    ...(typeof stats?.completed === 'number' ? [{
       label: 'Completos',
-      value: stats?.completed || 0,
+      value: stats.completed,
       icon: CheckCircle,
       color: 'text-purple-600',
-    },
+    }] : []),
     {
       label: 'Ganhei',
       value: stats?.won || 0,

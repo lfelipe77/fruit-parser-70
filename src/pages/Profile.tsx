@@ -194,7 +194,7 @@ export default function Profile() {
               stats={{
                 launched: stats?.launched ?? 0,
                 participated: stats?.participating ?? 0,
-                completed: stats?.completed_financed ?? 0,
+                // completed: omitted temporarily (feature flag controlled)
                 won: stats?.wins ?? 0,
               }}
               isLoading={statsLoading}
