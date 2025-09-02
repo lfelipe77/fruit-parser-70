@@ -114,7 +114,13 @@ export function useProfileStatsSafe(userId: string, isSelf: boolean = false) {
 
         // Dev logging to verify stats are working
         if (import.meta.env.DEV) {
-          console.log('[useProfileStatsSafe] Stats loaded:', finalStats, 'for user:', userId);
+          console.log('[useProfileStatsSafe] Stats loaded:', finalStats, 'for user:', userId, 'isSelf:', isSelf);
+          console.log('[useProfileStatsSafe] Query results:', {
+            launched: queries[0].status === 'fulfilled' ? queries[0].value : 'failed',
+            completed: queries[1].status === 'fulfilled' ? queries[1].value : 'failed', 
+            awarded: queries[2].status === 'fulfilled' ? `${queries[2].value?.data?.length || 0} winners` : 'failed',
+            participated: queries[3].status === 'fulfilled' ? queries[3].value : 'skipped/failed'
+          });
         }
 
         setStats(finalStats);
