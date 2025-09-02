@@ -73,6 +73,7 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
 
         {/* Stats Grid */}
         <div className="py-4 border-t">
+          {(console.debug('[ProfileStats] rpc', stats), null)}
           <ProfileStats 
             stats={{
               launched: stats?.launched ?? 0,

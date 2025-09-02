@@ -433,6 +433,7 @@ export default function PerfilPublico() {
                   </div>
 
                   {/* Estatísticas */}
+                  {(console.debug('[ProfileStats] rpc', stats), null)}
                   <ProfileStats 
                     stats={{
                       launched: stats?.launched ?? 0,

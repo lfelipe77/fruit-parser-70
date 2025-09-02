@@ -189,6 +189,7 @@ export default function Profile() {
             )}
           </CardHeader>
           <CardContent>
+            {(console.debug('[ProfileStats] rpc', stats), null)}
             <ProfileStats 
               stats={{
                 launched: stats?.launched ?? 0,

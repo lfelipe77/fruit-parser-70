@@ -12,29 +12,22 @@ export type ProfileStats = {
 // Default empty stats to prevent undefined errors
 const EMPTY_STATS: ProfileStats = { launched: 0, participating: 0, completed_financed: 0, wins: 0 };
 
-async function fetchStats(userId: string): Promise<ProfileStats> {
-  if (!userId?.trim()) {
-    console.debug('[ProfileStats] No userId provided');
-    return EMPTY_STATS;
-  }
-
-  console.debug('[ProfileStats] Fetching stats for userId:', userId);
-
+async function fetchStats(userId: string | null): Promise<ProfileStats> {
   try {
-    // TODO: Replace with actual RPC call when get_profile_stats is created
-    // For now, return mock data with the expected structure
-    console.warn('[ProfileStats] Using mock data - RPC get_profile_stats needs to be created');
-    
-    const result = {
-      launched: 0,
-      participating: 0,
-      completed_financed: 0,
-      wins: 0,
+    const { data, error } = await (supabase as any)
+      .rpc('get_profile_stats', { target_user_id: userId ?? null });
+
+    if (error) throw error;
+
+    const result: ProfileStats = {
+      launched: Number((data as any)?.launched ?? 0),
+      participating: Number((data as any)?.participating ?? 0),
+      completed_financed: Number((data as any)?.completed_financed ?? 0),
+      wins: Number((data as any)?.wins ?? 0),
     };
 
     console.debug('[ProfileStats] rpc', result);
     return result;
-    
   } catch (error) {
     console.error('[ProfileStats] Error fetching stats:', error);
     // Return empty stats on error to prevent UI breakage
@@ -45,13 +38,13 @@ async function fetchStats(userId: string): Promise<ProfileStats> {
 export function useProfileStats(userId?: string | null) {
   return useQuery({
     queryKey: ['profileStats', userId ?? 'me'],
-    queryFn: () => fetchStats(userId || ""),
-    enabled: !!userId?.trim(), // Only run if we have a valid userId
+    queryFn: () => fetchStats(userId ?? null),
+    enabled: true, // Allow null to represent current user on RPC
     staleTime: 30_000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes cache
     retry: (failureCount, error) => {
       // Don't retry on permission or auth errors
-      const errorMessage = error?.message?.toLowerCase() || '';
+      const errorMessage = (error as any)?.message?.toLowerCase?.() || '';
       if (errorMessage.includes('permission') || 
           errorMessage.includes('not found') ||
           errorMessage.includes('unauthorized') ||
