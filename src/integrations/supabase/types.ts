@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      _tickets_numbers_backup: {
+        Row: {
+          backed_up_at: string
+          numbers_backup: Json | null
+          ticket_id: string
+        }
+        Insert: {
+          backed_up_at?: string
+          numbers_backup?: Json | null
+          ticket_id: string
+        }
+        Update: {
+          backed_up_at?: string
+          numbers_backup?: Json | null
+          ticket_id?: string
+        }
+        Relationships: []
+      }
       action_logs: {
         Row: {
           action: string
@@ -48,6 +66,13 @@ export type Database = {
             foreignKeyName: "action_logs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -59,6 +84,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      asaas_webhook_logs: {
+        Row: {
+          event: string | null
+          id: number
+          raw: Json
+          received_at: string | null
+        }
+        Insert: {
+          event?: string | null
+          id?: number
+          raw: Json
+          received_at?: string | null
+        }
+        Update: {
+          event?: string | null
+          id?: number
+          raw?: Json
+          received_at?: string | null
+        }
+        Relationships: []
       }
       audit_logs: {
         Row: {
@@ -83,6 +129,210 @@ export type Database = {
           created_at?: string | null
           id?: string
           payload?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_transactions_dupes: {
+        Row: {
+          amount: number | null
+          archived_at: string | null
+          buyer_user_id: string | null
+          created_at: string | null
+          customer_cpf: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          due_date: string | null
+          fee_amount: number | null
+          fee_fixed: number | null
+          fee_pct: number | null
+          id: string
+          numbers: Json
+          payment_id: string | null
+          payment_provider: string | null
+          payment_reference: string | null
+          provider: string | null
+          provider_payment_id: string | null
+          provider_ref: string | null
+          raffle_id: string
+          reason: string | null
+          received_at: string | null
+          reservation_id: string | null
+          selected_numbers: string[] | null
+          source: string | null
+          status: string | null
+          ticket_numbers: Json | null
+          total_amount_computed: number | null
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          archived_at?: string | null
+          buyer_user_id?: string | null
+          created_at?: string | null
+          customer_cpf?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          due_date?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_pct?: number | null
+          id?: string
+          numbers?: Json
+          payment_id?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          provider_ref?: string | null
+          raffle_id: string
+          reason?: string | null
+          received_at?: string | null
+          reservation_id?: string | null
+          selected_numbers?: string[] | null
+          source?: string | null
+          status?: string | null
+          ticket_numbers?: Json | null
+          total_amount_computed?: number | null
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          archived_at?: string | null
+          buyer_user_id?: string | null
+          created_at?: string | null
+          customer_cpf?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          due_date?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_pct?: number | null
+          id?: string
+          numbers?: Json
+          payment_id?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          provider_ref?: string | null
+          raffle_id?: string
+          reason?: string | null
+          received_at?: string | null
+          reservation_id?: string | null
+          selected_numbers?: string[] | null
+          source?: string | null
+          status?: string | null
+          ticket_numbers?: Json | null
+          total_amount_computed?: number | null
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      audit_transactions_dupes_log: {
+        Row: {
+          amount: number | null
+          archived_at: string | null
+          buyer_user_id: string | null
+          created_at: string | null
+          customer_cpf: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          due_date: string | null
+          fee_amount: number | null
+          fee_fixed: number | null
+          fee_pct: number | null
+          id: string | null
+          numbers: Json | null
+          payment_id: string | null
+          payment_provider: string | null
+          payment_reference: string | null
+          provider: string | null
+          provider_payment_id: string | null
+          provider_ref: string | null
+          raffle_id: string | null
+          reason: string | null
+          received_at: string | null
+          reservation_id: string | null
+          selected_numbers: string[] | null
+          source: string | null
+          status: string | null
+          ticket_numbers: Json | null
+          total_amount_computed: number | null
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          archived_at?: string | null
+          buyer_user_id?: string | null
+          created_at?: string | null
+          customer_cpf?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          due_date?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_pct?: number | null
+          id?: string | null
+          numbers?: Json | null
+          payment_id?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          provider_ref?: string | null
+          raffle_id?: string | null
+          reason?: string | null
+          received_at?: string | null
+          reservation_id?: string | null
+          selected_numbers?: string[] | null
+          source?: string | null
+          status?: string | null
+          ticket_numbers?: Json | null
+          total_amount_computed?: number | null
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          archived_at?: string | null
+          buyer_user_id?: string | null
+          created_at?: string | null
+          customer_cpf?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          due_date?: string | null
+          fee_amount?: number | null
+          fee_fixed?: number | null
+          fee_pct?: number | null
+          id?: string | null
+          numbers?: Json | null
+          payment_id?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          provider_ref?: string | null
+          raffle_id?: string | null
+          reason?: string | null
+          received_at?: string | null
+          reservation_id?: string | null
+          selected_numbers?: string[] | null
+          source?: string | null
+          status?: string | null
+          ticket_numbers?: Json | null
+          total_amount_computed?: number | null
+          type?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -191,6 +441,30 @@ export type Database = {
           nome?: string
           slug?: string
           sort_order?: number | null
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          participant_a: string
+          participant_b: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_a: string
+          participant_b: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_a?: string
+          participant_b?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -352,6 +626,13 @@ export type Database = {
             foreignKeyName: "ganhaveis_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ganhaveis_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -443,6 +724,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_follower_stats"
             referencedColumns: ["id"]
           },
           {
@@ -647,6 +935,110 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          message: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          message: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          message?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments_pending: {
+        Row: {
+          amount: number
+          asaas_payment_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          pix_qr_code_id: string | null
+          reservation_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          asaas_payment_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          pix_qr_code_id?: string | null
+          reservation_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          asaas_payment_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          pix_qr_code_id?: string | null
+          reservation_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments_verified: {
         Row: {
           amount: number
@@ -687,6 +1079,13 @@ export type Database = {
             columns: ["buyer_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_buyer_user_id_fkey"
+            columns: ["buyer_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_follower_stats"
             referencedColumns: ["id"]
           },
           {
@@ -893,13 +1292,32 @@ export type Database = {
         }
         Relationships: []
       }
+      raffle_counters: {
+        Row: {
+          next_number: number
+          raffle_id: string
+        }
+        Insert: {
+          next_number?: number
+          raffle_id: string
+        }
+        Update: {
+          next_number?: number
+          raffle_id?: string
+        }
+        Relationships: []
+      }
       raffle_winner_logs: {
         Row: {
           concurso_number: string
           created_at: string | null
           draw_date: string
+          error: string | null
           fetched_url: string | null
           game_slug: string
+          header_authorized: boolean | null
+          header_present: boolean | null
+          http_status: number | null
           id: string
           meta: Json | null
           numbers: string[]
@@ -908,7 +1326,9 @@ export type Database = {
           provider: string
           raffle_id: string | null
           request_id: string | null
+          status: string | null
           ticket_id: string | null
+          updated_at: string | null
           user_id: string | null
           winners: Json | null
           winning_key: string
@@ -918,8 +1338,12 @@ export type Database = {
           concurso_number: string
           created_at?: string | null
           draw_date: string
+          error?: string | null
           fetched_url?: string | null
           game_slug: string
+          header_authorized?: boolean | null
+          header_present?: boolean | null
+          http_status?: number | null
           id?: string
           meta?: Json | null
           numbers?: string[]
@@ -928,7 +1352,9 @@ export type Database = {
           provider: string
           raffle_id?: string | null
           request_id?: string | null
+          status?: string | null
           ticket_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
           winners?: Json | null
           winning_key: string
@@ -938,8 +1364,12 @@ export type Database = {
           concurso_number?: string
           created_at?: string | null
           draw_date?: string
+          error?: string | null
           fetched_url?: string | null
           game_slug?: string
+          header_authorized?: boolean | null
+          header_present?: boolean | null
+          http_status?: number | null
           id?: string
           meta?: Json | null
           numbers?: string[]
@@ -948,7 +1378,9 @@ export type Database = {
           provider?: string
           raffle_id?: string | null
           request_id?: string | null
+          status?: string | null
           ticket_id?: string | null
+          updated_at?: string | null
           user_id?: string | null
           winners?: Json | null
           winning_key?: string
@@ -1109,6 +1541,7 @@ export type Database = {
           prize_value: number | null
           product_name: string | null
           product_value: number | null
+          published: boolean | null
           slug: string | null
           state: string | null
           state_uf: string | null
@@ -1150,6 +1583,7 @@ export type Database = {
           prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
+          published?: boolean | null
           slug?: string | null
           state?: string | null
           state_uf?: string | null
@@ -1191,6 +1625,7 @@ export type Database = {
           prize_value?: number | null
           product_name?: string | null
           product_value?: number | null
+          published?: boolean | null
           slug?: string | null
           state?: string | null
           state_uf?: string | null
@@ -1303,6 +1738,13 @@ export type Database = {
             foreignKeyName: "raffles_owner_user_id_fkey"
             columns: ["owner_user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1380,6 +1822,13 @@ export type Database = {
             foreignKeyName: "raffles_winner_user_id_fkey"
             columns: ["winner_user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -1416,6 +1865,67 @@ export type Database = {
           identifier?: string
           ip_address?: string | null
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      reservation_audit_cache: {
+        Row: {
+          all_paid: boolean
+          any_paid: boolean
+          buyer_user_id: string
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string
+          reservation_id: string
+          ticket_count: number
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+          updated_at: string | null
+        }
+        Insert: {
+          all_paid: boolean
+          any_paid: boolean
+          buyer_user_id: string
+          first_ticket_at?: string | null
+          last_provider?: string | null
+          last_provider_payment_id?: string | null
+          last_ticket_at?: string | null
+          last_tx_amount?: number | null
+          last_tx_at?: string | null
+          last_tx_status?: string | null
+          raffle_id: string
+          reservation_id: string
+          ticket_count: number
+          ticket_numbers?: number[] | null
+          ticket_statuses?:
+            | Database["public"]["Enums"]["ticket_status"][]
+            | null
+          updated_at?: string | null
+        }
+        Update: {
+          all_paid?: boolean
+          any_paid?: boolean
+          buyer_user_id?: string
+          first_ticket_at?: string | null
+          last_provider?: string | null
+          last_provider_payment_id?: string | null
+          last_ticket_at?: string | null
+          last_tx_amount?: number | null
+          last_tx_at?: string | null
+          last_tx_status?: string | null
+          raffle_id?: string
+          reservation_id?: string
+          ticket_count?: number
+          ticket_numbers?: number[] | null
+          ticket_statuses?:
+            | Database["public"]["Enums"]["ticket_status"][]
+            | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1595,6 +2105,7 @@ export type Database = {
           total_amount: number | null
           transaction_id: string | null
           unit_price: number | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -1618,6 +2129,7 @@ export type Database = {
           total_amount?: number | null
           transaction_id?: string | null
           unit_price?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -1641,9 +2153,59 @@ export type Database = {
           total_amount?: number | null
           transaction_id?: string | null
           unit_price?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v2"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v3"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v5"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v6"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_paid_flat"
+            referencedColumns: ["src_id"]
+          },
           {
             foreignKeyName: "tickets_ganhavel_id_fkey"
             columns: ["ganhavel_id"]
@@ -1761,6 +2323,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_follower_stats"
             referencedColumns: ["id"]
           },
           {
@@ -1941,6 +2510,13 @@ export type Database = {
             foreignKeyName: "transactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2058,6 +2634,13 @@ export type Database = {
             foreignKeyName: "transactions_raffle_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2069,6 +2652,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
       }
       user_profiles: {
         Row: {
@@ -2085,6 +2689,8 @@ export type Database = {
           rating: number | null
           role: string | null
           social_links: Json | null
+          tax_id: string | null
+          tax_kind: string | null
           telegram: string | null
           tiktok: string | null
           total_ganhaveis: number | null
@@ -2109,6 +2715,8 @@ export type Database = {
           rating?: number | null
           role?: string | null
           social_links?: Json | null
+          tax_id?: string | null
+          tax_kind?: string | null
           telegram?: string | null
           tiktok?: string | null
           total_ganhaveis?: number | null
@@ -2133,6 +2741,8 @@ export type Database = {
           rating?: number | null
           role?: string | null
           social_links?: Json | null
+          tax_id?: string | null
+          tax_kind?: string | null
           telegram?: string | null
           tiktok?: string | null
           total_ganhaveis?: number | null
@@ -2170,6 +2780,13 @@ export type Database = {
             foreignKeyName: "user_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -2184,6 +2801,25 @@ export type Database = {
       }
     }
     Views: {
+      _paid_status: {
+        Row: {
+          s: string | null
+        }
+        Relationships: []
+      }
+      admin_latest_federal_status: {
+        Row: {
+          concurso_number: string | null
+          draw_date: string | null
+          last_header_authorized: boolean | null
+          last_header_present: boolean | null
+          last_log_at: string | null
+          last_pick_ok: boolean | null
+          last_status: string | null
+          latest_store_updated_at: string | null
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           id: string | null
@@ -2273,11 +2909,50 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_stats: {
+        Row: {
+          active_ganhaveis: number | null
+          almost_complete_ganhaveis: number | null
+          recent_transactions: number | null
+          total_ganhaveis: number | null
+          total_participants: number | null
+          total_prize_paid: number | null
+          total_raised: number | null
+          total_tickets_sold: number | null
+        }
+        Relationships: []
+      }
+      homepage_stats_cache: {
+        Row: {
+          active_ganhaveis: number | null
+          almost_complete_ganhaveis: number | null
+          recent_transactions: number | null
+          total_ganhaveis: number | null
+          total_participants: number | null
+          total_prize_paid: number | null
+          total_raised: number | null
+          total_tickets_sold: number | null
+        }
+        Relationships: []
+      }
       lottery_latest_federal: {
         Row: {
           concurso_number: string | null
           draw_date: string | null
-          numbers: Json | null
+          game_slug: string | null
+          numbers: string[] | null
+        }
+        Insert: {
+          concurso_number?: string | null
+          draw_date?: string | null
+          game_slug?: string | null
+          numbers?: string[] | null
+        }
+        Update: {
+          concurso_number?: string | null
+          draw_date?: string | null
+          game_slug?: string | null
+          numbers?: string[] | null
         }
         Relationships: []
       }
@@ -2400,6 +3075,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_follower_stats"
             referencedColumns: ["id"]
           },
           {
@@ -2830,6 +3512,82 @@ export type Database = {
           },
         ]
       }
+      my_tickets_ext_v7: {
+        Row: {
+          amount_raised: number | null
+          buyer_user_id: string | null
+          draw_date: string | null
+          goal_amount: number | null
+          progress_pct_money: number | null
+          purchase_date: string | null
+          purchased_numbers: Json | null
+          raffle_id: string | null
+          raffle_image_url: string | null
+          raffle_title: string | null
+          ticket_count: number | null
+          transaction_id: string | null
+          tx_status: string | null
+          value: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+        ]
+      }
       paid_statuses: {
         Row: {
           s: string | null
@@ -2890,6 +3648,13 @@ export type Database = {
             columns: ["buyer_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_buyer_user_id_fkey"
+            columns: ["buyer_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_follower_stats"
             referencedColumns: ["id"]
           },
           {
@@ -3188,6 +3953,13 @@ export type Database = {
             foreignKeyName: "raffles_owner_user_id_fkey"
             columns: ["owner_user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -3203,6 +3975,13 @@ export type Database = {
             columns: ["winner_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_follower_stats"
             referencedColumns: ["id"]
           },
           {
@@ -3482,6 +4261,13 @@ export type Database = {
             foreignKeyName: "raffles_owner_user_id_fkey"
             columns: ["owner_user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -3524,6 +4310,13 @@ export type Database = {
             foreignKeyName: "raffles_winner_user_id_fkey"
             columns: ["winner_user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -3535,6 +4328,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reservation_audit_v1: {
+        Row: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
+        Relationships: []
+      }
+      reservation_by_user_v1: {
+        Row: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
+        Relationships: []
+      }
+      reservation_tickets_v1: {
+        Row: {
+          buyer_user_id: string | null
+          is_paid: boolean | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_created_at: string | null
+          ticket_number: number | null
+          ticket_status: Database["public"]["Enums"]["ticket_status"] | null
+          tx_amount: number | null
+          tx_created_at: string | null
+          tx_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+        ]
+      }
+      reservation_unpaid_v1: {
+        Row: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
+        Relationships: []
       }
       subcategories_public: {
         Row: {
@@ -3690,6 +4617,16 @@ export type Database = {
           },
         ]
       }
+      user_follower_stats: {
+        Row: {
+          followers_count: number | null
+          following_count: number | null
+          full_name: string | null
+          id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
       user_profiles_public: {
         Row: {
           avatar_url: string | null
@@ -3738,6 +4675,25 @@ export type Database = {
           website_url?: string | null
           whatsapp?: string | null
           youtube?: string | null
+        }
+        Relationships: []
+      }
+      v_federal_winners: {
+        Row: {
+          concurso_number: string | null
+          draw_date: string | null
+          draw_pairs: string[] | null
+          fetched_url: string | null
+          log_created_at: string | null
+          provider: string | null
+          raffle_id: string | null
+          raffle_title: string | null
+          ticket_created_at: string | null
+          ticket_id: string | null
+          ticket_numbers_json: Json | null
+          user_id: string | null
+          winner_full_name_raw: string | null
+          winner_public_handle: string | null
         }
         Relationships: []
       }
@@ -3912,6 +4868,13 @@ export type Database = {
             foreignKeyName: "tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -3955,6 +4918,13 @@ export type Database = {
             foreignKeyName: "tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "user_follower_stats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
@@ -3976,6 +4946,26 @@ export type Database = {
       admin_delete_subcategory: {
         Args: { p_id: string }
         Returns: undefined
+      }
+      admin_federal_pick_now: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_federal_set_latest: {
+        Args: { p_concurso: string; p_draw_date: string; p_numbers: string[] }
+        Returns: Json
+      }
+      admin_federal_sync_enqueue: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_federal_sync_now: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_pick_all_completed_federal: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       admin_ping: {
         Args: Record<PropertyKey, never>
@@ -4002,9 +4992,21 @@ export type Database = {
         }
         Returns: string
       }
+      allocate_numbers: {
+        Args: { p_qty: number; p_raffle_id: string }
+        Returns: number[]
+      }
       anonymize_ip: {
         Args: { ip_address: string }
         Returns: string
+      }
+      approve_raffle: {
+        Args: { p_raffle_id: string }
+        Returns: Json
+      }
+      archive_latest_federal: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       bytea_to_text: {
         Args: { data: string }
@@ -4066,6 +5068,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      console_federal_set_latest: {
+        Args: { p_concurso: string; p_draw_date: string; p_numbers: string[] }
+        Returns: Json
+      }
       create_raffle: {
         Args: {
           p_category_id: number
@@ -4123,9 +5129,47 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      finalize_paid_purchase: {
+        Args: {
+          p_asaas_payment_id?: string
+          p_customer_cpf?: string
+          p_customer_name?: string
+          p_customer_phone?: string
+          p_reservation_id: string
+        }
+        Returns: Json
+      }
       finalize_payout: {
         Args: { p_raffle_id: string }
         Returns: string
+      }
+      find_ticket_by_number: {
+        Args: { p_raffle_id: string; p_ticket_number: number }
+        Returns: {
+          purchased_at: string
+          reservation_id: string
+          status: string
+          ticket_id: string
+          transaction_id: string
+          user_id: string
+        }[]
+      }
+      generate_deterministic_pair: {
+        Args: { p_position: number; p_ticket_id: string }
+        Returns: string
+      }
+      get_admin_latest_federal_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          concurso_number: string
+          draw_date: string
+          last_header_authorized: boolean
+          last_header_present: boolean
+          last_log_at: string
+          last_pick_ok: boolean
+          last_status: string
+          latest_store_updated_at: string
+        }[]
       }
       get_admin_logs: {
         Args: Record<PropertyKey, never> | { p_limit?: number }
@@ -4173,6 +5217,30 @@ export type Database = {
           created_at: string
           id: string
         }[]
+      }
+      get_or_create_conversation: {
+        Args: { user1: string; user2: string }
+        Returns: string
+      }
+      get_reservation_audit: {
+        Args: { p_reservation_id: string }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }
       }
       hello_secure: {
         Args: Record<PropertyKey, never>
@@ -4237,6 +5305,22 @@ export type Database = {
         Args: { uid: string }
         Returns: boolean
       }
+      is_ticket_numbers_valid: {
+        Args: { in_numbers: Json }
+        Returns: boolean
+      }
+      is_valid_cnpj: {
+        Args: { raw: string }
+        Returns: boolean
+      }
+      is_valid_cpf: {
+        Args: { raw: string }
+        Returns: boolean
+      }
+      is_valid_cpf_or_cnpj: {
+        Args: { raw: string }
+        Returns: boolean
+      }
       job_assign_next_draw: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -4248,6 +5332,103 @@ export type Database = {
       job_mark_funded: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      list_reservations_audit: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
+      }
+      list_reservations_by_me: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
+      }
+      list_reservations_by_user_admin: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+          p_user_id: string
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
+      }
+      list_reservations_unpaid: {
+        Args: {
+          p_cursor_last_ticket_at?: string
+          p_cursor_reservation_id?: string
+          p_limit?: number
+        }
+        Returns: {
+          all_paid: boolean | null
+          any_paid: boolean | null
+          buyer_user_id: string | null
+          first_ticket_at: string | null
+          last_provider: string | null
+          last_provider_payment_id: string | null
+          last_ticket_at: string | null
+          last_tx_amount: number | null
+          last_tx_at: string | null
+          last_tx_status: string | null
+          raffle_id: string | null
+          reservation_id: string | null
+          ticket_count: number | null
+          ticket_numbers: number[] | null
+          ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
+        }[]
       }
       log_audit_event: {
         Args:
@@ -4297,6 +5478,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_transaction_webhook: {
+        Args: {
+          p_amount: number
+          p_provider: string
+          p_provider_payment_id: string
+          p_reservation_id: string
+        }
+        Returns: undefined
+      }
       log_user_action: {
         Args: { p_action: string; p_payload: Json; p_user_id: string }
         Returns: undefined
@@ -4317,9 +5507,45 @@ export type Database = {
         Args: { p_raffle_id: string }
         Returns: undefined
       }
+      normalize_tx_status: {
+        Args: { s: string }
+        Returns: string
+      }
+      only_digits: {
+        Args: { v: string }
+        Returns: string
+      }
       pick_winners_from_latest_federal: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      purchase_preview_by_reservation: {
+        Args: { p_reservation_id: string }
+        Returns: {
+          buyer_user_id: string
+          numbers: Json
+          qty: number
+          raffle_id: string
+          reservation_id: string
+          status: string
+          total_amount: number
+        }[]
+      }
+      purchase_summary_by_reservation: {
+        Args: { p_reservation_id: string }
+        Returns: {
+          amount: number
+          buyer_user_id: string
+          created_at: string
+          numbers: Json
+          provider: string
+          provider_payment_id: string
+          qty: number
+          raffle_id: string
+          reservation_id: string
+          status: string
+          transaction_id: string
+        }[]
       }
       purge_old_audit_logs: {
         Args: Record<PropertyKey, never>
@@ -4333,6 +5559,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      push_notification: {
+        Args: {
+          p_data?: Json
+          p_message: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       raffle_ticket_aggregate: {
         Args: { p_raffle_id: string }
         Returns: {
@@ -4340,6 +5576,28 @@ export type Database = {
           paid_tickets: number
           participants_count: number
         }[]
+      }
+      raffle_ticket_counts: {
+        Args: { p_raffle_id: string }
+        Returns: {
+          qty: number
+          status: string
+        }[]
+      }
+      raffle_tickets_paid: {
+        Args: { p_raffle_id: string }
+        Returns: {
+          purchased_at: string
+          reservation_id: string
+          ticket_id: string
+          ticket_number: number
+          transaction_id: string
+          user_id: string
+        }[]
+      }
+      rebuild_reservation_audit_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       record_mock_purchase: {
         Args: {
@@ -4377,6 +5635,14 @@ export type Database = {
         }
         Returns: string
       }
+      refresh_homepage_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_user_follower_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       request_password_reset: {
         Args: { user_email: string }
         Returns: string
@@ -4401,6 +5667,14 @@ export type Database = {
       }
       sanitize_audit_context: {
         Args: { input_context: Json }
+        Returns: Json
+      }
+      sanitize_ticket_numbers: {
+        Args: {
+          enforce_validation?: boolean
+          input_numbers: Json
+          p_ticket_id: string
+        }
         Returns: Json
       }
       search_audit_logs: {
@@ -4440,6 +5714,10 @@ export type Database = {
         Args: { data: string }
         Returns: string
       }
+      ticket_tail5_key: {
+        Args: { pairs: string[] }
+        Returns: string
+      }
       tickets_by_reservation: {
         Args: { p_reservation: string }
         Returns: {
@@ -4463,11 +5741,16 @@ export type Database = {
           total_amount: number | null
           transaction_id: string | null
           unit_price: number | null
+          updated_at: string
           user_id: string | null
         }[]
       }
       update_user_role: {
         Args: { new_role: string; user_id: string }
+        Returns: undefined
+      }
+      upsert_reservation_audit: {
+        Args: { p_reservation_id: string }
         Returns: undefined
       }
       upsert_verified_payment: {
