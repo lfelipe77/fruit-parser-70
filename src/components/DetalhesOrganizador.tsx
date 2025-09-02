@@ -74,7 +74,12 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
         {/* Stats Grid */}
         <div className="py-4 border-t">
           <ProfileStats 
-            stats={stats}
+            stats={{
+              launched: stats?.launched ?? 0,
+              participated: stats?.participating ?? 0,
+              completed: stats?.completed_financed ?? 0,
+              won: stats?.wins ?? 0,
+            }}
             isLoading={isLoading}
             error={error}
             onRetry={refetch}

@@ -434,7 +434,12 @@ export default function PerfilPublico() {
 
                   {/* Estatísticas */}
                   <ProfileStats 
-                    stats={stats}
+                    stats={{
+                      launched: stats?.launched ?? 0,
+                      participated: stats?.participating ?? 0,
+                      completed: stats?.completed_financed ?? 0,
+                      won: stats?.wins ?? 0,
+                    }}
                     isLoading={statsLoading}
                     error={null}
                   />

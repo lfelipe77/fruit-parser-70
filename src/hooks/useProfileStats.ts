@@ -2,24 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-type Stats = {
-  launched: number;     // Ganháveis lançados por este usuário
-  participated: number; // Ganháveis que este usuário participou (distintos)
-  completed: number;    // Ganháveis do usuário com status finalizado
-  won: number;          // Quantas vezes este usuário ganhou
+export type ProfileStats = {
+  launched: number;
+  participating: number;
+  completed_financed: number; // Regra A (>=100%)
+  wins: number;
 };
 
-const STATUS_LAUNCHED = [
-  "active", "completed", "finalizada",
-  "paused", "pending_draw", "scheduled"
-];
-
-const STATUS_COMPLETED = ["completed", "finalizada", "closed"];
-
 // Default empty stats to prevent undefined errors
-const EMPTY_STATS: Stats = { launched: 0, participated: 0, completed: 0, won: 0 };
+const EMPTY_STATS: ProfileStats = { launched: 0, participating: 0, completed_financed: 0, wins: 0 };
 
-async function fetchStats(userId: string): Promise<Stats> {
+async function fetchStats(userId: string): Promise<ProfileStats> {
   if (!userId?.trim()) {
     console.debug('[ProfileStats] No userId provided');
     return EMPTY_STATS;
@@ -28,70 +21,18 @@ async function fetchStats(userId: string): Promise<Stats> {
   console.debug('[ProfileStats] Fetching stats for userId:', userId);
 
   try {
-    // 1) Lançados (count exato por status permitido)
-    const launchedQ = supabase
-      .from("raffles")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("status", STATUS_LAUNCHED);
-
-    // 2) Completos (status final)
-    const completedQ = supabase
-      .from("raffles")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("status", STATUS_COMPLETED);
-
-    // 3) Participou (distinct por raffle_id) - try known views for resilience
-    let participatedRows: any[] = [];
+    // TODO: Replace with actual RPC call when get_profile_stats is created
+    // For now, return mock data with the expected structure
+    console.warn('[ProfileStats] Using mock data - RPC get_profile_stats needs to be created');
     
-    // Try v7 first, fallback to v6
-    try {
-      const result = await supabase
-        .from("my_tickets_ext_v7")
-        .select("raffle_id,buyer_user_id")
-        .eq("buyer_user_id", userId);
-        
-      if (!result.error && result.data) {
-        participatedRows = result.data;
-        console.debug('[ProfileStats] Using view: my_tickets_ext_v7');
-      } else {
-        // Fallback to v6
-        const fallbackResult = await supabase
-          .from("my_tickets_ext_v6")
-          .select("raffle_id,buyer_user_id")
-          .eq("buyer_user_id", userId);
-          
-        if (!fallbackResult.error && fallbackResult.data) {
-          participatedRows = fallbackResult.data;
-          console.debug('[ProfileStats] Using view: my_tickets_ext_v6');
-        }
-      }
-    } catch (viewError) {
-      console.debug('[ProfileStats] Views failed:', viewError);
-    }
-
-    const participated = new Set(
-      (participatedRows || [])
-        .filter(r => r?.raffle_id) // Ensure raffle_id exists
-        .map(r => r.raffle_id)
-    ).size;
-
-    // 4) Ganhou - we don't have direct access to winner tables, so return 0 for now
-    let won = 0;
-    // This would need to be implemented with proper winner tracking in the future
-
-    const [launchedRes, completedRes] = await Promise.all([launchedQ, completedQ]);
-
-    // Validate results and provide safe defaults
     const result = {
-      launched: Math.max(0, launchedRes.count ?? 0),
-      participated: Math.max(0, participated),
-      completed: Math.max(0, completedRes.count ?? 0),
-      won: Math.max(0, won),
+      launched: 0,
+      participating: 0,
+      completed_financed: 0,
+      wins: 0,
     };
 
-    console.debug('[ProfileStats] Fetched stats:', result);
+    console.debug('[ProfileStats] Mock result for userId:', userId, result);
     return result;
     
   } catch (error) {
@@ -103,7 +44,7 @@ async function fetchStats(userId: string): Promise<Stats> {
 
 export function useProfileStats(userId?: string | null) {
   return useQuery({
-    queryKey: ["profile-stats", userId ?? 'me'],
+    queryKey: ['profileStats', userId ?? 'me'],
     queryFn: () => fetchStats(userId || ""),
     enabled: !!userId?.trim(), // Only run if we have a valid userId
     staleTime: 30_000, // 30 seconds
