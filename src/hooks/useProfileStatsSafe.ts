@@ -40,12 +40,12 @@ export function useProfileStatsSafe(userId: string, isSelf: boolean = false) {
             .select('id', { count: 'exact', head: true })
             .eq('organizer_id', userId),
 
-          // b) completed: raffles at 100% progress (we'll filter out winners in processing)
+          // b) completed: raffles where status = 'completed' or 'closed' (no progress_pct_money field)
           supabase
             .from('raffles')
             .select('id', { count: 'exact', head: true })
             .eq('organizer_id', userId)
-            .gte('progress_pct_money', 100),
+            .in('status', ['completed', 'closed']),
 
           // c) awarded: get all winners to count later
           supabase
@@ -65,7 +65,7 @@ export function useProfileStatsSafe(userId: string, isSelf: boolean = false) {
         const launched = queries[0].status === 'fulfilled' ? 
           Math.max(0, queries[0].value.count || 0) : 0;
 
-        // For completed, we get the count but will need to fetch user's raffles to filter out winners
+        // For completed, we get the count directly (already filtered by status)
         const completedRaw = queries[1].status === 'fulfilled' ? 
           Math.max(0, queries[1].value.count || 0) : 0;
 
