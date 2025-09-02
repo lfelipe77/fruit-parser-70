@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { safeSelect, clampProgress, safeProgressFetch } from '@/lib/safeSelect';
 
 export type BaseRaffle = {
   id: string;
@@ -17,10 +18,10 @@ export type RaffleWithProgress = BaseRaffle & {
 
 async function enrichProgress(ids: string[]) {
   if (!ids.length) return new Map<string, { amount_raised: number; progress_pct_money: number }>();
-  const { data, error } = await supabase
-    .from('raffles_public_money_ext')
-    .select('id,amount_raised,progress_pct_money')
-    .in('id', ids);
+  const { data, error } = await safeSelect(
+    supabase.from('raffles_public_money_ext'),
+    'id,amount_raised,progress_pct_money'
+  ).in('id', ids);
   if (error) throw error;
   return new Map<string, { amount_raised: number; progress_pct_money: number }>(
     (data ?? []).map((r: any) => [r.id, {
@@ -36,28 +37,31 @@ export async function getLaunchedWithProgress(
   statuses?: string[] | null,
   limit = 100
 ): Promise<RaffleWithProgress[]> {
-  let q = supabase
-    .from('raffles')
-    .select('id,user_id,title,status,goal_amount,image_url,created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  return safeProgressFetch(async () => {
+    let q = safeSelect(
+      supabase.from('raffles'),
+      'id,user_id,title,status,goal_amount,image_url,created_at'
+    )
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-  if (statuses && statuses.length) {
-    q = q.in('status', statuses);
-  }
+    if (statuses && statuses.length) {
+      q = q.in('status', statuses);
+    }
 
-  const { data: base, error } = await q;
-  if (error) throw error;
+    const { data: base, error } = await q;
+    if (error) throw error;
 
-  const ids = (base ?? []).map((r: BaseRaffle) => r.id);
-  const pmap = await enrichProgress(ids);
+    const ids = (base ?? []).map((r: any) => r.id);
+    const pmap = await enrichProgress(ids);
 
-  return (base ?? []).map((r: BaseRaffle) => ({
-    ...r,
-    amount_raised: pmap.get(r.id)?.amount_raised ?? 0,
-    progress_pct_money: Math.max(0, Math.min(100, pmap.get(r.id)?.progress_pct_money ?? 0)),
-  }));
+    return (base ?? []).map((r: any) => ({
+      ...r,
+      amount_raised: pmap.get(r.id)?.amount_raised ?? 0,
+      progress_pct_money: clampProgress(pmap.get(r.id)?.progress_pct_money),
+    }));
+  }, []);
 }
 
 /** keep the old names as thin wrappers (backcompat) */
