@@ -1,15 +1,19 @@
 import React, { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
 import { getCroppedBlobFromImage } from "@/lib/cropImage";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Loader2 } from "lucide-react";
 
 type Props = {
   src: string;                  // data URL to crop
   open: boolean;
   onClose: () => void;
   onCropped: (blob: Blob) => void; // returns webp blob
+  isProcessing?: boolean;       // external processing state
 };
 
-export default function AvatarCropper({ src, open, onClose, onCropped }: Props) {
+export default function AvatarCropper({ src, open, onClose, onCropped, isProcessing = false }: Props) {
   const [crop, setCrop] = useState<{x:number;y:number}>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [areaPixels, setAreaPixels] = useState<{width:number;height:number;x:number;y:number} | null>(null);
@@ -63,16 +67,22 @@ export default function AvatarCropper({ src, open, onClose, onCropped }: Props) 
             className="w-48"
           />
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-3 py-1.5 rounded bg-muted text-muted-foreground hover:bg-muted/80">
+            <Button variant="outline" onClick={onClose} disabled={busy || isProcessing}>
               Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={busy}
-              className="px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={busy || isProcessing}
             >
-              {busy ? "Gerando…" : "Salvar"}
-            </button>
+              {busy || isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isProcessing ? 'Processing...' : 'Gerando...'}
+                </>
+              ) : (
+                'Salvar'
+              )}
+            </Button>
           </div>
         </div>
       </div>
