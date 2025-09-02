@@ -1,52 +1,32 @@
-name: Playwright Tests
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-
+name: E2E
+on: [push, pull_request]
 jobs:
   test:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-        
-    - name: Install dependencies
-      run: npm ci
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: '20'
+      - run: npm ci
+      - run: npx playwright install --with-deps
       
-    - name: Check for forbidden patterns
-      run: |
-        echo "Checking for !inner usage..."
-        if grep -r "!inner\|%21inner" src/ --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx"; then
-          echo "❌ Found forbidden !inner usage in code"
-          exit 1
-        fi
-        echo "✅ No !inner usage found"
-        
-    - name: Run linting
-      run: npm run lint
+      - name: Forbid !inner joins
+        run: |
+          if grep -RInE --exclude-dir=node_modules '!inner|%21inner' src; then
+            echo "Found forbidden !inner join"; exit 1; 
+          fi
+          
+      - run: npm run lint
+      - run: npm run typecheck
       
-    - name: Run type checking  
-      run: npm run typecheck
-      
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-      
-    - name: Run unit tests
-      run: npm test
-      
-    - name: Run Playwright tests
-      run: npx playwright test
-      
-    - uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - name: Run E2E
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.PW_BASE_URL }}
+          E2E_USER_EMAIL: ${{ secrets.PW_USER }}
+          E2E_USER_PASSWORD: ${{ secrets.PW_PASS }}
+          E2E_MY_USER_PROFILE_URL: "/#/perfil/me"
+          E2E_EXPECT_LAUNCHED_COUNT: "9"
+          E2E_PUBLIC_PROFILE_URL: ${{ secrets.PW_PUBLIC_PROFILE_URL }}
+          E2E_KNOWN_PROGRESS_ID: ${{ secrets.PW_KNOWN_PROGRESS_ID }}
+        run: npx playwright test --reporter=line

@@ -35,12 +35,9 @@ test.describe('Raffles Smoke Tests', () => {
     await expect(page.getByText('Criar Novo')).toBeVisible();
     await expect(page.getByText('Dashboard')).toBeVisible();
     
-    // If there are raffles, check no archived status
-    const statusTexts = await page.locator('text=/Status:\\s*\\w+/').allInnerTexts();
-    for (const statusText of statusTexts) {
-      expect(statusText.toLowerCase()).not.toContain('archived');
-      expect(statusText.toLowerCase()).not.toContain('arquivado');
-    }
+    // Assert no archived shows there (we filter active+completed)
+    const statuses = await page.locator('[data-testid^="raffle-card-"] >> text=Status:').allInnerTexts();
+    expect(statuses.every(s => /Status:\s*(active|completed)/i.test(s))).toBeTruthy();
   });
 
   test('raffle cards have view buttons and no buy on /my-launched', async ({ page }) => {

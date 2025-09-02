@@ -1,22 +1,15 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-
-// Runtime guard to prevent !inner usage in select queries
-export function safeSelect<T>(
-  client: ReturnType<SupabaseClient['from']>,
-  columns: string
-) {
-  if (columns.includes('!inner') || columns.includes('%21inner')) {
-    throw new Error(
-      `Forbidden: !inner joins are not allowed in select queries. Column spec: ${columns}`
-    );
+// src/lib/sbSafe.ts
+export function safeSelect(sel: string) {
+  if (/!inner|%21inner/i.test(sel)) {
+    throw new Error('Forbidden join: !inner — use two-step fetch and merge by id');
   }
-  return client.select(columns);
+  return sel;
 }
 
 // Progress clamping utility
-export function clampProgress(value: unknown): number {
-  const num = Number(value ?? 0);
-  return Math.max(0, Math.min(100, isNaN(num) ? 0 : num));
+function clampPct(n: any) {
+  const x = Number(n ?? 0);
+  return Math.max(0, Math.min(100, Number.isFinite(x) ? x : 0));
 }
 
 // Safe progress fetch with error handling
@@ -31,3 +24,5 @@ export async function safeProgressFetch<T>(
     return fallback;
   }
 }
+
+export { clampPct };
