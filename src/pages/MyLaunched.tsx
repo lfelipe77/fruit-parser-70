@@ -25,7 +25,9 @@ function ProgressBar({ value }: { value?: number | null }) {
 }
 
 export default function MyLaunched() {
-  const [tab, setTab] = useState<'active'|'completed'|'draft'|'archived'|'all'>('active');
+  const params = new URLSearchParams(location.hash.split('?')[1] || location.search);
+  const initialTab = (params.get('tab') as any) || 'active';
+  const [tab, setTab] = useState<'active'|'completed'|'draft'|'archived'|'all'>(initialTab);
   const [rows, setRows] = useState<RaffleWithProgress[]>([]);
   const [loading, setLoading] = useState(false);
 
