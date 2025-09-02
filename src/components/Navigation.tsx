@@ -33,6 +33,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthContext } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarSrc } from "@/lib/avatarUtils";
+import { useMyProfile } from "@/hooks/useMyProfile";
 
 function useIsAdmin() {
   const { user, initializing } = useAuthContext();
@@ -78,65 +80,12 @@ export default function Navigation() {
   const { isAdmin: legacyIsAdmin } = useAdminCheck();
   const { user } = useAuth();
   const { user: authUser, initializing } = useAuthContext();
-  const [userRole, setUserRole] = useState<string>("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { profile } = useMyProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = useIsAdmin();
 
-  // Verificar role do usuário e avatar
-  useEffect(() => {
-    const checkUserRole = async () => {
-      if (initializing) {
-        // Don't clear role/avatar while initializing
-        return;
-      }
-      
-      if (!authUser) {
-        console.log('[Navigation] No user found, clearing role and avatar');
-        setUserRole("");
-        setAvatarUrl(null);
-        return;
-      }
-      
-      try {
-        console.log('[Navigation] Fetching user profile from database...');
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .select("role, avatar_url")
-          .eq("id", authUser.id)
-          .maybeSingle();
-          
-        console.log('[Navigation] User profile query result:', { data, error, userId: authUser.id });
-          
-        if (error) {
-          console.error("[Navigation] Error checking user role:", error);
-          return;
-        }
-        
-        if (!data) {
-          console.warn("[Navigation] User profile not found, assuming no role");
-          setUserRole("");
-          setAvatarUrl(null);
-          return;
-        }
-        
-        console.log('[Navigation] Setting user role:', data.role);
-        console.log('[Navigation] User role comparison - data.role:', data.role, 'isAdmin check result:', data.role === 'admin');
-        setUserRole(data.role || "");
-        
-        // Apply cache buster for avatar
-        if (data.avatar_url) {
-          setAvatarUrl(`${data.avatar_url}?t=${Date.now()}`);
-        } else {
-          setAvatarUrl(null);
-        }
-      } catch (error) {
-        console.error("[Navigation] Error checking user role:", error);
-      }
-    };
-
-    checkUserRole();
-  }, [authUser, initializing]);
+  // Get user role from profile hook (simplified)
+  const userRole = profile?.role || "";
 
   const lotteryDraws = [
     { id: 'br', flag: '🇧🇷', name: 'Mega-Sena', date: '10/08', time: '20:00' },
@@ -333,7 +282,7 @@ export default function Navigation() {
               {user ? (
                 <Link to="/dashboard">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={avatarUrl || ''} data-testid="profile-avatar" />
+                    <AvatarImage src={getAvatarSrc(profile, user?.id)} data-testid="profile-avatar" />
                     <AvatarFallback>
                       {user?.email?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
