@@ -9,7 +9,7 @@ import { useMyProfile } from '@/hooks/useMyProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck } from 'lucide-react';
+import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck, Home } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { fileToDataUrl } from '@/lib/cropImage';
@@ -139,6 +139,10 @@ export default function Profile() {
         
         {/* Call to Action Buttons */}
         <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate('/')}>
+            <Home className="w-4 h-4 mr-2" />
+            Início
+          </Button>
           <Button variant="outline" asChild>
             <Link to={`/perfil/${profile?.username || profile?.id}`} className="flex items-center gap-2">
               <ExternalLink className="w-4 h-4" />
