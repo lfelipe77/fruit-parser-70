@@ -8,11 +8,9 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicProfile } from "@/types/public-views";
 import { 
-  Trophy, 
   Heart, 
-  MessageCircle,
   Share2,
-  Star,
+  Plus,
   Globe,
   Instagram,
   Facebook,
@@ -20,38 +18,23 @@ import {
   Linkedin,
   MapPin,
   Calendar,
-  UserPlus,
-  UserCheck,
-  Users,
-  Play,
-  Bell,
-  Eye
+  Play
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectCard";
 import VideoModal from "@/components/VideoModal";
-import FollowButton from '@/components/FollowButton';
-import { useFollow } from '@/hooks/useFollow';
-import { useAuth } from '@/hooks/useAuth';
 import { getPublicLaunchedWithProgress } from "@/data/raffles";
 
 export default function PerfilPublico() {
   const { username } = useParams();
-  const { user: currentUser } = useAuth();
   const [showAllGanhaveis, setShowAllGanhaveis] = useState(false);
   const [showAllGanhaveisParticipados, setShowAllGanhaveisParticipados] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ganhaveisLancados, setGanhaveisLancados] = useState<any[]>([]);
   const [ganhaveisParticipados, setGanhaveisParticipados] = useState<any[]>([]);
   const [loadingGanhaveis, setLoadingGanhaveis] = useState(true);
-  
-  // Get follow data for this profile
-  const profileUserId = profile?.id;
-  const { counts } = useFollow(profileUserId || '');
-  const isMe = currentUser?.id === profileUserId;
   
   useEffect(() => {
     const fetchProfile = async () => {
@@ -254,11 +237,6 @@ export default function PerfilPublico() {
     memberSince: dateBR(profile.created_at ?? profile.joined_at ?? null),
     totalGanhaveisLancados: ganhaveisLancados.length,
     totalGanhaveisParticipados: ganhaveisParticipados.length,
-    ganhaveisCompletos: ganhaveisLancados.filter(g => g.status === 'completed' || g.status === 'finalizada').length,
-    avaliacaoMedia: profile.rating || 0,
-    totalAvaliacoes: 0,
-    seguidores: 0,
-    seguindo: 0,
     avatar: profile.avatar_url || '',
     website: profile.website_url || '',
     videoApresentacao: '',
@@ -276,11 +254,6 @@ export default function PerfilPublico() {
     memberSince: "",
     totalGanhaveisLancados: 0,
     totalGanhaveisParticipados: 0,
-    ganhaveisCompletos: 0,
-    avaliacaoMedia: 0,
-    totalAvaliacoes: 0,
-    seguidores: 0,
-    seguindo: 0,
     avatar: '',
     website: '',
     videoApresentacao: '',
@@ -390,19 +363,9 @@ export default function PerfilPublico() {
                   </Avatar>
                   
                   <div className="flex flex-col gap-3">
-                    {!isMe && profileUserId && (
-                      <FollowButton profileUserId={profileUserId} />
-                    )}
-                    
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Mensagem
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="h-4 w-4" />
+                    </Button>
                     
                     {user.videoApresentacao && (
                       <Button 
@@ -476,41 +439,22 @@ export default function PerfilPublico() {
                     )}
                   </div>
                   
-                   {/* Followers/Following Stats */}
-                   <div className="flex gap-6 mb-4">
-                     <div className="flex items-center gap-1">
-                       <Users className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold" data-testid="followers">{counts.followers_count}</span>
-                       <span className="text-muted-foreground">seguidores</span>
-                     </div>
-                     <div className="flex items-center gap-1">
-                       <Eye className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold" data-testid="following">{counts.following_count}</span>
-                       <span className="text-muted-foreground">seguindo</span>
-                     </div>
-                   </div>
-
                    {/* Stats */}
-                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                   <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">{displayGanhaveisLancados.length}</div>
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Plus className="h-4 w-4 text-blue-500" />
+                          <span className="text-2xl font-bold text-primary">{displayGanhaveisLancados.length}</span>
+                        </div>
                         <div className="text-sm text-muted-foreground">Ganhaveis Lançados</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">{user.ganhaveisCompletos}</div>
-                        <div className="text-sm text-muted-foreground">Ganhaveis Completos</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">{user.totalGanhaveisParticipados}</div>
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Heart className="h-4 w-4 text-red-500" />
+                          <span className="text-2xl font-bold text-primary">{user.totalGanhaveisParticipados}</span>
+                        </div>
                         <div className="text-sm text-muted-foreground">Ganhaveis Participou</div>
                       </div>
-                     <div className="text-center">
-                       <div className="flex items-center justify-center gap-1">
-                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                         <span className="text-2xl font-bold text-primary">{user.avaliacaoMedia}</span>
-                       </div>
-                       <div className="text-sm text-muted-foreground">{user.totalAvaliacoes} avaliações</div>
-                     </div>
                    </div>
                 </div>
               </div>

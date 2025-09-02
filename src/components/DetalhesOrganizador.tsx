@@ -3,25 +3,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  Star, 
-  Trophy, 
   Heart, 
   Plus, 
-  MessageCircle,
   Globe,
   Instagram,
   Facebook,
   Twitter,
   Linkedin,
   MapPin,
-  Calendar,
-  UserPlus
+  Calendar
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ShareButton from "./ShareButton";
-import FollowButton from '@/components/FollowButton';
-import { useFollow } from '@/hooks/useFollow';
-import { useAuth } from '@/hooks/useAuth';
 
 interface DetalhesOrganizadorProps {
   organizer: {
@@ -32,11 +25,7 @@ interface DetalhesOrganizadorProps {
     location?: string;
     memberSince: string;
     totalGanhaveisLancados: number;
-    ganhaveisCompletos: number;
     totalGanhaveisParticipados: number;
-    ganhaveisGanhos: number;
-    avaliacaoMedia: number;
-    totalAvaliacoes: number;
     avatar: string;
     updated_at?: string;
     website?: string;
@@ -50,9 +39,6 @@ interface DetalhesOrganizadorProps {
 }
 
 export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorProps) {
-  const { user: currentUser } = useAuth();
-  const { counts } = useFollow(organizer.id);
-  const isMe = currentUser?.id === organizer.id;
   return (
     <Card>
       <CardHeader>
@@ -145,26 +131,10 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
         <div className="grid grid-cols-2 gap-4 py-4 border-t">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-xl font-bold text-primary">{organizer.avaliacaoMedia}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">{organizer.totalAvaliacoes} avaliações</div>
-          </div>
-          
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
               <Plus className="h-4 w-4 text-blue-500" />
               <span className="text-xl font-bold text-primary">{organizer.totalGanhaveisLancados}</span>
             </div>
             <div className="text-xs text-muted-foreground">Ganhaveis Lançados</div>
-          </div>
-          
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Trophy className="h-4 w-4 text-green-500" />
-              <span className="text-xl font-bold text-primary">{organizer.ganhaveisCompletos}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">Ganhaveis Completos</div>
           </div>
           
           <div className="text-center">
@@ -176,29 +146,9 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
           </div>
         </div>
 
-        {/* Additional Stats Row */}
-        <div className="grid grid-cols-1 gap-4 py-4 border-t">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Trophy className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-xl font-bold text-primary">{organizer.ganhaveisGanhos}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">Ganhou {organizer.ganhaveisGanhos} Vezes</div>
-          </div>
-        </div>
-
         {/* Action Buttons */}
         <div className="flex gap-2 pt-4 border-t">
-          {!isMe && (
-            <FollowButton profileUserId={organizer.id} compact />
-          )}
-          
-          <Button variant="outline" size="sm" className="flex-1">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Enviar Mensagem
-          </Button>
-          
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="flex-1">
             <Link to={`/perfil/${organizer.username}`}>
               Ver Perfil
             </Link>
