@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/providers/AuthProvider';
 
 export interface Notification {
   id: string;
@@ -14,7 +15,7 @@ export interface Notification {
 }
 
 export function useNotifications() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading, error } = useQuery({
@@ -82,7 +83,6 @@ export function useNotifications() {
   });
 
   // Real-time subscription for new notifications
-  const { useEffect } = require('react');
   
   useEffect(() => {
     if (!user) return;
