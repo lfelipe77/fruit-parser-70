@@ -8,32 +8,25 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicProfile } from "@/types/public-views";
 import { 
-  Trophy, 
-  Heart, 
-  MessageCircle,
-  Share2,
-  Star,
+  MapPin,
+  Calendar,
+  Play,
+  Eye,
   Globe,
   Instagram,
   Facebook,
   Twitter,
   Linkedin,
-  MapPin,
-  Calendar,
-  UserPlus,
-  UserCheck,
   Users,
-  Play,
-  Bell,
-  Eye
+  Star
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import ProjectCard from "@/components/ProjectCard";
 import VideoModal from "@/components/VideoModal";
-import FollowButton from '@/components/FollowButton';
-import { useFollow } from '@/hooks/useFollow';
 import { useAuth } from '@/hooks/useAuth';
 import { getPublicLaunchedWithProgress } from "@/data/raffles";
+import { useProfileStats } from "@/hooks/useProfileStats";
+import { StatPill } from "@/components/StatPill";
 
 export default function PerfilPublico() {
   const { username } = useParams();
@@ -48,9 +41,9 @@ export default function PerfilPublico() {
   const [ganhaveisParticipados, setGanhaveisParticipados] = useState<any[]>([]);
   const [loadingGanhaveis, setLoadingGanhaveis] = useState(true);
   
-  // Get follow data for this profile
+  // Get stats for this profile
   const profileUserId = profile?.id;
-  const { counts } = useFollow(profileUserId || '');
+  const { data: stats, isLoading: statsLoading } = useProfileStats(profileUserId);
   const isMe = currentUser?.id === profileUserId;
   
   useEffect(() => {
@@ -390,18 +383,23 @@ export default function PerfilPublico() {
                   </Avatar>
                   
                   <div className="flex flex-col gap-3">
-                    {!isMe && profileUserId && (
-                      <FollowButton profileUserId={profileUserId} />
-                    )}
-                    
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Mensagem
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Share2 className="h-4 w-4" />
-                      </Button>
+                      <a
+                        href={`/#/perfil/${profile?.username ?? profileUserId}`}
+                        className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50 flex-1 text-center"
+                      >
+                        Ver Perfil
+                      </a>
+                      <button
+                        type="button"
+                        className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
+                        onClick={() => {
+                          const url = window.location.href;
+                          navigator.clipboard?.writeText?.(url);
+                        }}
+                      >
+                        Compartilhar
+                      </button>
                     </div>
                     
                     {user.videoApresentacao && (
@@ -437,81 +435,13 @@ export default function PerfilPublico() {
                     </div>
                   </div>
 
-                  {/* Social Links */}
-                  <div className="flex gap-3 mb-4">
-                    {user.website && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={user.website} target="_blank" rel="noopener noreferrer">
-                          <Globe className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                    {user.socialLinks.instagram && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={`https://instagram.com/${user.socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
-                          <Instagram className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                    {user.socialLinks.facebook && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={`https://facebook.com/${user.socialLinks.facebook}`} target="_blank" rel="noopener noreferrer">
-                          <Facebook className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                    {user.socialLinks.twitter && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={`https://twitter.com/${user.socialLinks.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
-                          <Twitter className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                    {user.socialLinks.linkedin && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={`https://linkedin.com/in/${user.socialLinks.linkedin}`} target="_blank" rel="noopener noreferrer">
-                          <Linkedin className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
+                  {/* Estatísticas (4 cards) */}
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <StatPill value={statsLoading ? "—" : (stats?.launched ?? 0)} label="Ganháveis Lançados" />
+                    <StatPill value={statsLoading ? "—" : (stats?.participated ?? 0)} label="Ganháveis Participou" />
+                    <StatPill value={statsLoading ? "—" : (stats?.completed ?? 0)} label="Ganháveis Completos" />
+                    <StatPill value={statsLoading ? "—" : (stats?.won ?? 0)} label="Ganhou" />
                   </div>
-                  
-                   {/* Followers/Following Stats */}
-                   <div className="flex gap-6 mb-4">
-                     <div className="flex items-center gap-1">
-                       <Users className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold" data-testid="followers">{counts.followers_count}</span>
-                       <span className="text-muted-foreground">seguidores</span>
-                     </div>
-                     <div className="flex items-center gap-1">
-                       <Eye className="h-4 w-4 text-muted-foreground" />
-                       <span className="font-bold" data-testid="following">{counts.following_count}</span>
-                       <span className="text-muted-foreground">seguindo</span>
-                     </div>
-                   </div>
-
-                   {/* Stats */}
-                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">{displayGanhaveisLancados.length}</div>
-                        <div className="text-sm text-muted-foreground">Ganhaveis Lançados</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">{user.ganhaveisCompletos}</div>
-                        <div className="text-sm text-muted-foreground">Ganhaveis Completos</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">{user.totalGanhaveisParticipados}</div>
-                        <div className="text-sm text-muted-foreground">Ganhaveis Participou</div>
-                      </div>
-                     <div className="text-center">
-                       <div className="flex items-center justify-center gap-1">
-                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                         <span className="text-2xl font-bold text-primary">{user.avaliacaoMedia}</span>
-                       </div>
-                       <div className="text-sm text-muted-foreground">{user.totalAvaliacoes} avaliações</div>
-                     </div>
-                   </div>
                 </div>
               </div>
             </CardContent>

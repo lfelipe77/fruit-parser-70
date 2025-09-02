@@ -1,27 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { 
-  Star, 
-  Trophy, 
-  Heart, 
-  Plus, 
-  MessageCircle,
-  Globe,
-  Instagram,
-  Facebook,
-  Twitter,
-  Linkedin,
   MapPin,
-  Calendar,
-  UserPlus
+  Calendar
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import ShareButton from "./ShareButton";
-import FollowButton from '@/components/FollowButton';
-import { useFollow } from '@/hooks/useFollow';
-import { useAuth } from '@/hooks/useAuth';
+import { useProfileStats } from "@/hooks/useProfileStats";
+import { StatPill } from "@/components/StatPill";
 
 interface DetalhesOrganizadorProps {
   organizer: {
@@ -31,28 +17,12 @@ interface DetalhesOrganizadorProps {
     bio?: string;
     location?: string;
     memberSince: string;
-    totalGanhaveisLancados: number;
-    ganhaveisCompletos: number;
-    totalGanhaveisParticipados: number;
-    ganhaveisGanhos: number;
-    avaliacaoMedia: number;
-    totalAvaliacoes: number;
     avatar: string;
-    updated_at?: string;
-    website?: string;
-    socialLinks?: {
-      instagram?: string;
-      facebook?: string;
-      twitter?: string;
-      linkedin?: string;
-    };
   };
 }
 
 export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorProps) {
-  const { user: currentUser } = useAuth();
-  const { counts } = useFollow(organizer.id);
-  const isMe = currentUser?.id === organizer.id;
+  const { data: stats, isLoading } = useProfileStats(organizer?.id);
   return (
     <Card>
       <CardHeader>
@@ -98,117 +68,35 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
               </div>
             </div>
 
-            {/* Social Links */}
-            {organizer.socialLinks && (
-              <div className="flex gap-2 mb-3">
-                {organizer.website && (
-                  <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
-                    <a href={organizer.website} target="_blank" rel="noopener noreferrer">
-                      <Globe className="h-3 w-3" />
-                    </a>
-                  </Button>
-                )}
-                {organizer.socialLinks.instagram && (
-                  <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
-                    <a href={`https://instagram.com/${organizer.socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
-                      <Instagram className="h-3 w-3" />
-                    </a>
-                  </Button>
-                )}
-                {organizer.socialLinks.facebook && (
-                  <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
-                    <a href={`https://facebook.com/${organizer.socialLinks.facebook}`} target="_blank" rel="noopener noreferrer">
-                      <Facebook className="h-3 w-3" />
-                    </a>
-                  </Button>
-                )}
-                {organizer.socialLinks.twitter && (
-                  <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
-                    <a href={`https://twitter.com/${organizer.socialLinks.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
-                      <Twitter className="h-3 w-3" />
-                    </a>
-                  </Button>
-                )}
-                {organizer.socialLinks.linkedin && (
-                  <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
-                    <a href={`https://linkedin.com/in/${organizer.socialLinks.linkedin}`} target="_blank" rel="noopener noreferrer">
-                      <Linkedin className="h-3 w-3" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 py-4 border-t">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-xl font-bold text-primary">{organizer.avaliacaoMedia}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">{organizer.totalAvaliacoes} avaliações</div>
-          </div>
-          
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Plus className="h-4 w-4 text-blue-500" />
-              <span className="text-xl font-bold text-primary">{organizer.totalGanhaveisLancados}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">Ganhaveis Lançados</div>
-          </div>
-          
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Trophy className="h-4 w-4 text-green-500" />
-              <span className="text-xl font-bold text-primary">{organizer.ganhaveisCompletos}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">Ganhaveis Completos</div>
-          </div>
-          
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Heart className="h-4 w-4 text-red-500" />
-              <span className="text-xl font-bold text-primary">{organizer.totalGanhaveisParticipados}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">Ganhaveis Participados</div>
-          </div>
-        </div>
-
-        {/* Additional Stats Row */}
-        <div className="grid grid-cols-1 gap-4 py-4 border-t">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Trophy className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-xl font-bold text-primary">{organizer.ganhaveisGanhos}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">Ganhou {organizer.ganhaveisGanhos} Vezes</div>
-          </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 py-4 border-t">
+          <StatPill value={isLoading ? "—" : (stats?.launched ?? 0)} label="Ganháveis Lançados" />
+          <StatPill value={isLoading ? "—" : (stats?.participated ?? 0)} label="Ganháveis Participou" />
+          <StatPill value={isLoading ? "—" : (stats?.completed ?? 0)} label="Ganháveis Completos" />
+          <StatPill value={isLoading ? "—" : (stats?.won ?? 0)} label="Ganhou" />
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-4 border-t">
-          {!isMe && (
-            <FollowButton profileUserId={organizer.id} compact />
-          )}
-          
-          <Button variant="outline" size="sm" className="flex-1">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Enviar Mensagem
-          </Button>
-          
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/perfil/${organizer.username}`}>
-              Ver Perfil
-            </Link>
-          </Button>
-          
-          <ShareButton 
-            url={`${window.location.origin}/perfil/${organizer.username}`}
-            title={`Confira o perfil de ${organizer.name} na Ganhavel!`}
-            description={organizer.bio || `${organizer.name} - Organizador de ganhaveis na Ganhavel`}
-          />
+          <a
+            href={`/#/perfil/${organizer?.username ?? organizer?.id}`}
+            className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50 flex-1 text-center"
+          >
+            Ver Perfil
+          </a>
+          <button
+            type="button"
+            className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
+            onClick={() => {
+              const url = window.location.origin + `/#/perfil/${organizer?.username ?? organizer?.id}`;
+              navigator.clipboard?.writeText?.(url);
+            }}
+          >
+            Compartilhar
+          </button>
         </div>
       </CardContent>
     </Card>
