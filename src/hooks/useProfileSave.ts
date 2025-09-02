@@ -1,6 +1,14 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Error formatter helper
+const fmtErr = (e: any) => JSON.stringify({
+  code: e?.code, 
+  details: e?.details, 
+  hint: e?.hint, 
+  message: e?.message
+}, null, 2);
+
 // Validate file type and size before processing
 function validateAvatarFile(file: File | Blob): void {
   const maxSize = 5 * 1024 * 1024; // 5MB
@@ -15,6 +23,118 @@ function validateAvatarFile(file: File | Blob): void {
   }
 }
 
+// Resilient avatar + profile save function
+async function saveAvatarProfileResilient(
+  supabase: any,
+  userId: string,
+  avatarUrl: string,
+  extras: Record<string, any> = {}
+) {
+  const now = new Date().toISOString();
+
+  // Build payload without undefined values
+  const base: Record<string, any> = {
+    avatar_url: avatarUrl,
+    updated_at: now,
+    ...extras,
+  };
+  const payload = Object.fromEntries(
+    Object.entries(base).filter(([, v]) => v !== undefined)
+  );
+
+  console.log('[avatar] saving profile for', userId, 'with payload:', payload);
+
+  // 1) Try UPDATE first (if row exists and RLS allows it)
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(payload)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (!error && data) {
+      console.log('[avatar] UPDATE succeeded:', data);
+      return data;
+    }
+    if (error) {
+      console.warn('[avatar] UPDATE failed → trying INSERT:', fmtErr(error));
+    }
+  } catch (e: any) {
+    console.warn('[avatar] UPDATE exception → trying INSERT:', fmtErr(e));
+  }
+
+  // 2) Try INSERT (if row doesn't exist)
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .insert({ id: userId, ...payload })
+      .select()
+      .single();
+
+    if (!error && data) {
+      console.log('[avatar] INSERT succeeded:', data);
+      return data;
+    }
+    if (error) {
+      console.warn('[avatar] INSERT failed → trying UPSERT:', fmtErr(error));
+    }
+  } catch (e: any) {
+    console.warn('[avatar] INSERT exception → trying UPSERT:', fmtErr(e));
+  }
+
+  // 3) Fallback: UPSERT
+  const { data: upsertData, error: upsertErr } = await supabase
+    .from('user_profiles')
+    .upsert({ id: userId, ...payload }, { onConflict: 'id' })
+    .select()
+    .single();
+
+  if (upsertErr) {
+    console.error('[avatar] UPSERT failed:', fmtErr(upsertErr));
+    throw upsertErr;
+  }
+  
+  console.log('[avatar] UPSERT succeeded:', upsertData);
+  return upsertData;
+}
+
+// Drop-in handler for avatar upload and save
+export async function handleAvatarSave(
+  fileBlob: Blob, 
+  setState?: (updater: (s: any) => any) => void
+) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("No authenticated user");
+  const userId = user.id;
+
+  console.log("[avatar] uploading to", `${userId}/avatar.webp`, fileBlob.type, fileBlob.size);
+
+  // 1) Upload to public bucket, replacing existing file
+  const filePath = `${userId}/avatar.webp`;
+  const up = await supabase.storage.from("avatars")
+    .upload(filePath, fileBlob, { upsert: true, contentType: "image/webp" });
+  if (up.error) {
+    console.error('[avatar] Upload failed:', fmtErr(up.error));
+    throw up.error;
+  }
+
+  // 2) Public URL + cache bust
+  const { data: pub } = supabase.storage.from("avatars").getPublicUrl(filePath);
+  const avatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
+  console.log("[avatar] publicUrl", avatarUrl);
+
+  // 3) Resilient save (UPDATE → INSERT → UPSERT)
+  const row = await saveAvatarProfileResilient(supabase, userId, avatarUrl);
+
+  // 4) Instant UI swap (ensure all avatar components read from this state)
+  if (setState) {
+    setState((s: any) => ({ ...s, avatar_url: avatarUrl }));
+  }
+  
+  return row;
+}
+
 export type ProfileUpdates = {
   full_name?: string | null;
   username?: string | null;
@@ -22,12 +142,11 @@ export type ProfileUpdates = {
   location?: string | null;
   instagram?: string | null;
   website_url?: string | null;
-  // add other optional fields your form supports
 };
 
 type SaveArgs = {
   updates: ProfileUpdates;
-  avatarFile?: Blob | File | null; // optional; pass only when changed
+  avatarFile?: Blob | File | null;
 };
 
 export function useProfileSave() {
@@ -48,27 +167,20 @@ export function useProfileSave() {
       if (avatarFile) {
         validateAvatarFile(avatarFile);
         
-        const key = `${user.id}/avatar.webp`; // policy requires folder = user.id
+        const key = `${user.id}/avatar.webp`;
         const { error: upErr } = await supabase
           .storage
           .from('avatars')
           .upload(key, avatarFile, { upsert: true, contentType: 'image/webp' });
         if (upErr) throw upErr;
 
-        // Bucket is public per policy, so we can store the public URL with cache-busting
         const { data: pub } = supabase.storage.from('avatars').getPublicUrl(key);
         avatarUrl = pub?.publicUrl ? `${pub.publicUrl}?v=${Date.now()}` : null;
       }
 
-      // 2) Build final update payload (only allow known columns)
+      // 2) Build final update payload
       const allowedKeys = new Set([
-        'full_name',
-        'username',
-        'bio',
-        'location',
-        'instagram',
-        'website_url',
-        'avatar_url',
+        'full_name', 'username', 'bio', 'location', 'instagram', 'website_url', 'avatar_url'
       ]);
 
       const base: Record<string, any> = {
@@ -79,74 +191,10 @@ export function useProfileSave() {
         Object.entries(base).filter(([k, v]) => allowedKeys.has(k) && v !== undefined)
       );
 
-      // 3) Resilient cascade write with detailed logging
-      console.log('[useProfileSave] Starting profile save for user:', user.id);
-      console.log('[useProfileSave] Payload:', payload);
-
-      // Try UPDATE first (if row exists and RLS allows it)
-      console.log('[useProfileSave] Attempting UPDATE...');
-      const upd = await supabase
-        .from('user_profiles')
-        .update(payload)
-        .eq('id', user.id)
-        .select()
-        .maybeSingle();
-      
-      if (!upd.error && upd.data) {
-        console.log('[useProfileSave] UPDATE succeeded:', upd.data);
-        return upd.data;
-      }
-      if (upd.error) {
-        console.warn('[useProfileSave] UPDATE failed:', {
-          code: upd.error.code,
-          message: upd.error.message,
-          details: upd.error.details,
-          hint: upd.error.hint
-        });
-      }
-
-      // Then try INSERT (if row doesn't exist)
-      console.log('[useProfileSave] Attempting INSERT...');
-      const ins = await supabase
-        .from('user_profiles')
-        .insert({ id: user.id, ...payload })
-        .select()
-        .maybeSingle();
-      
-      if (!ins.error && ins.data) {
-        console.log('[useProfileSave] INSERT succeeded:', ins.data);
-        return ins.data;
-      }
-      if (ins.error) {
-        console.warn('[useProfileSave] INSERT failed:', {
-          code: ins.error.code,
-          message: ins.error.message,
-          details: ins.error.details,
-          hint: ins.error.hint
-        });
-      }
-
-      // Fallback: UPSERT on conflict id
-      console.log('[useProfileSave] Attempting UPSERT fallback...');
-      const ups = await supabase
-        .from('user_profiles')
-        .upsert({ id: user.id, ...payload }, { onConflict: 'id' })
-        .select()
-        .maybeSingle();
-      
-      if (ups.error) {
-        console.error('[useProfileSave] UPSERT failed:', {
-          code: ups.error.code,
-          message: ups.error.message,
-          details: ups.error.details,
-          hint: ups.error.hint
-        });
-        throw ups.error;
-      }
-      
-      console.log('[useProfileSave] UPSERT succeeded:', ups.data);
-      return ups.data;
+      // 3) Use resilient save function
+      return await saveAvatarProfileResilient(supabase, user.id, avatarUrl || '', payload);
     } catch (e: any) {
+      console.error('[useProfileSave] Error:', fmtErr(e));
       setError(e.message ?? 'Failed to save profile');
       throw e;
     } finally {

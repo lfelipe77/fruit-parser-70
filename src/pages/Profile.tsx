@@ -13,7 +13,8 @@ import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck, Home } from
 import { Link, useNavigate } from 'react-router-dom';
 import AvatarCropper from '@/components/AvatarCropper';
 import { fileToDataUrl } from '@/lib/cropImage';
-import { useProfileSave } from '@/hooks/useProfileSave';
+import { useProfileSave, handleAvatarSave } from '@/hooks/useProfileSave';
+import { getAvatarSrc } from '@/lib/avatarUtils';
 
 export default function Profile() {
   const { profile, loading, updateProfile, refreshProfile, invalidateQueries } = useMyProfile();
@@ -166,7 +167,7 @@ export default function Profile() {
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
               <Avatar className="w-24 h-24 mx-auto">
-                <AvatarImage src={profile?.avatar_url || ''} data-testid="user-avatar" />
+                <AvatarImage src={getAvatarSrc(profile, profile?.id)} data-testid="profile-avatar" />
                 <AvatarFallback>
                   <User className="w-12 h-12" />
                 </AvatarFallback>
@@ -227,7 +228,7 @@ export default function Profile() {
               <Label>Avatar do Perfil</Label>
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
-                  <AvatarImage src={profile?.avatar_url || ''} />
+                  <AvatarImage src={getAvatarSrc(profile, profile?.id)} />
                   <AvatarFallback>
                     <User className="w-6 h-6" />
                   </AvatarFallback>
@@ -326,9 +327,29 @@ export default function Profile() {
           setCropOpen(false);
           setCroppedBlob(null);
         }}
-        onCropped={(blob) => {
-          setCroppedBlob(blob);
-          setCropOpen(false);
+        onCropped={async (blob) => {
+          try {
+            setSavingAvatar(true);
+            // Use drop-in handler for immediate upload and save
+            await handleAvatarSave(blob, (updater) => {
+              setFormData(updater);
+            });
+            await refreshProfile();
+            setCropOpen(false);
+            toast({
+              title: 'Avatar atualizado',
+              description: 'Seu avatar foi atualizado com sucesso.',
+            });
+          } catch (error: any) {
+            console.error('Avatar save error:', error);
+            toast({
+              title: 'Erro',
+              description: error.message || 'Erro ao atualizar avatar.',
+              variant: 'destructive',
+            });
+          } finally {
+            setSavingAvatar(false);
+          }
         }}
       />
     </div>

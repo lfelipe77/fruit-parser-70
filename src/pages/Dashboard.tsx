@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getAvatarSrc } from '@/lib/avatarUtils';
 import DebugDashboardPanel from '@/components/DebugDashboardPanel';
 interface DashboardStats {
   totalTickets: number;
@@ -215,7 +216,7 @@ export default function Dashboard() {
               <CardContent>
                   <div className="flex items-center gap-4">
                     <Avatar className="w-16 h-16">
-                      <AvatarImage src={profile?.avatar_url || ''} />
+                      <AvatarImage src={getAvatarSrc(profile, profile?.id)} />
                       <AvatarFallback>
                         {profile?.full_name?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
