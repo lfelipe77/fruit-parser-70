@@ -1,241 +1,109 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Home, Trophy, Plus, Gift, Users, Clock } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { getMyLaunchedWithProgress, type RaffleWithProgress } from "@/data/raffles";
+import React, { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { getLaunchedWithProgress, RaffleWithProgress } from '@/data/raffles';
 
+const TABS = [
+  { key: 'active',     label: 'Ativos',      statuses: ['active'] },
+  { key: 'completed',  label: 'Completos',   statuses: ['completed'] },
+  { key: 'draft',      label: 'Rascunhos',   statuses: ['draft'] },
+  { key: 'archived',   label: 'Arquivados',  statuses: ['archived'] },
+  { key: 'all',        label: 'Todos',       statuses: null as string[] | null },
+];
 
-export default function MyLaunchedPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [raffles, setRaffles] = useState<RaffleWithProgress[]>([]);
-  const [loading, setLoading] = useState(true);
+function ProgressBar({ value }: { value?: number | null }) {
+  const pct = Math.max(0, Math.min(Number(value ?? 0), 100));
+  return (
+    <div className="w-full h-2 rounded-full bg-gray-200/60">
+      <div
+        role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+        data-testid="raffle-progress"
+        className="h-2 rounded-full bg-emerald-500"
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+export default function MyLaunched() {
+  const [tab, setTab] = useState<'active'|'completed'|'draft'|'archived'|'all'>('active');
+  const [rows, setRows] = useState<RaffleWithProgress[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      console.log('[MyLaunched] No user yet, waiting...');
-      return;
-    }
-    
-    console.log('[MyLaunched] User found:', user.id);
-    
-    let mounted = true;
+    let cancelled = false;
     (async () => {
       setLoading(true);
-      
-      try {
-        const data = await getMyLaunchedWithProgress(user.id);
-        if (mounted) {
-          setRaffles(data);
-          setLoading(false);
-        }
-        
-        // Debug logging
-        const debug = new URLSearchParams(location.hash.split('?')[1]).get('debug') === '1';
-        if (debug) {
-          console.log('[MyLaunched] uid', user.id, 'count', data.length);
-          console.table(data.map(x => ({ id: x.id.slice(0,8), status: x.status, pct: x.progress_pct_money })));
-        }
-      } catch (error) {
-        console.error("[MyLaunched] fetch error", error);
-        if (mounted) {
-          setRaffles([]);
-          setLoading(false);
-        }
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth?.user?.id;
+      if (!uid) { 
+        setRows([]); 
+        setLoading(false); 
+        return; 
+      }
+
+      const statuses = TABS.find(t => t.key === tab)?.statuses ?? null;
+      const list = await getLaunchedWithProgress(uid, statuses);
+      if (!cancelled) setRows(list);
+      setLoading(false);
+
+      const debug = new URLSearchParams(location.hash.split('?')[1]).get('debug') === '1';
+      if (debug) {
+        console.log('[MyLaunched]', { uid, tab, count: list.length });
+        console.table(list.slice(0, 15).map(x => ({
+          id: x.id.slice(0,8), status: x.status, pct: x.progress_pct_money
+        })));
       }
     })();
-    return () => { mounted = false; };
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [tab]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(amount / 100);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  function ProgressBar({ value }: { value?: number | null }) {
-    const pct = Math.max(0, Math.min(Number(value ?? 0), 100));
-    return (
-      <div className="w-full h-2 rounded-full bg-gray-200/60">
-        <div
-          role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
-          data-testid="raffle-progress"
-          className="h-2 rounded-full bg-emerald-500"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    );
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="default">Ativo</Badge>;
-      case 'completed':
-        return <Badge variant="secondary">Finalizado</Badge>;
-      case 'pending':
-        return <Badge variant="outline">Pendente</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  if (!user) {
-    return (
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6">
-        <div className="text-center text-gray-600 py-16">
-          Faça login para ver seus ganhaveis.
-        </div>
-      </div>
-    );
-  }
+  const buttons = useMemo(() => TABS.map(t => (
+    <button
+      key={t.key}
+      data-testid={`tab-${t.key}`}
+      className={`px-3 py-1 rounded-full border ${tab === t.key ? 'bg-emerald-50 border-emerald-400' : 'border-gray-300'}`}
+      onClick={() => setTab(t.key as any)}
+    >
+      {t.label}
+    </button>
+  )), [tab]);
 
   return (
-    <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/dashboard" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Voltar
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-bold">Ganháveis que Lancei</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/" className="flex items-center gap-2">
-              <Home className="h-4 w-4" />
-              Início
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/lance-seu-ganhavel" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Criar Novo
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/dashboard" className="flex items-center gap-2">
-              <Trophy className="h-4 w-4" />
-              Dashboard
-            </Link>
-          </Button>
-        </div>
+    <div className="mx-auto max-w-6xl px-3 py-4">
+      <div className="mb-3 flex gap-2 flex-wrap">{buttons}</div>
+
+      {loading && <div className="text-sm opacity-70">Carregando…</div>}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {rows.map(r => {
+          const canBuy = r.status === 'active';
+          return (
+            <div key={r.id} data-testid="raffle-card" className="rounded-lg border p-3">
+              <img src={r.image_url ?? ''} alt={r.title ?? 'Ganhável'} className="w-full h-40 object-cover rounded-md mb-2" />
+              <div className="text-sm font-medium line-clamp-1">{r.title}</div>
+              <div className="text-xs opacity-60 mb-2">Status: {r.status ?? '—'}</div>
+              <ProgressBar value={r.progress_pct_money} />
+              <div className="text-xs tabular-nums mt-1" data-testid={`progress-pct-${r.id}`}>
+                {(r.progress_pct_money ?? 0)}%
+              </div>
+              <div className="mt-2 flex gap-2">
+                <a className="px-2 py-1 rounded-md border" href={`/#/raffle/${r.id}`}>Ver Ganhável</a>
+                <button
+                  data-testid="buy-button"
+                  className="px-2 py-1 rounded-md border"
+                  disabled={!canBuy}
+                  title={!canBuy ? `Indisponível (status: ${r.status})` : undefined}
+                >
+                  Comprar
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {loading && (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl bg-gray-100 animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {!loading && (raffles.length === 0 || !raffles) && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Gift className="w-16 h-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Nenhum ganhável lançado ainda</h3>
-            <p className="text-muted-foreground text-center mb-6">
-              Você ainda não lançou nenhum ganhável. Comece agora e crie sua primeira campanha!
-            </p>
-            <Button asChild>
-              <Link to="/lance-seu-ganhavel" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Lançar Meu Primeiro Ganhável
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {!loading && raffles.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {raffles.map((raffle) => (
-            <Card key={raffle.id} className="overflow-hidden hover:shadow-lg transition-shadow" data-testid="raffle-card">
-              {raffle.image_url && (
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={raffle.image_url}
-                    alt={raffle.title || 'Raffle image'}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="line-clamp-2">{raffle.title || 'Untitled'}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      Status: {raffle.status || 'Unknown'}
-                    </CardDescription>
-                  </div>
-                  {getStatusBadge(raffle.status || 'unknown')}
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-muted-foreground" />
-                      <span>Meta: {formatCurrency(raffle.goal_amount || 0)}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span>Criado: {formatDate(raffle.created_at)}</span>
-                    </div>
-
-                    {/* Progress section */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Arrecadado: {formatCurrency(raffle.amount_raised || 0)}</span>
-                        <span className="font-medium tabular-nums" data-testid={`progress-pct-${raffle.id}`}>
-                          {(raffle.progress_pct_money ?? 0)}%
-                        </span>
-                      </div>
-                      <ProgressBar value={raffle.progress_pct_money} />
-                    </div>
-                  </div>
-                  
-                   <div className="pt-2 border-t">
-                     <div className="flex gap-2">
-                       <Button 
-                         className="flex-1" 
-                         asChild
-                       >
-                         <Link to={`/ganhavel/${raffle.id}`}>
-                           Ver Ganhável
-                         </Link>
-                       </Button>
-                       <Button variant="outline" size="sm" asChild>
-                         <Link to={`/gerenciar-ganhavel/${raffle.id}`}>
-                           Gerenciar
-                         </Link>
-                       </Button>
-                     </div>
-                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {!loading && rows.length === 0 && (
+        <div className="opacity-70 text-sm mt-6">Nenhum ganhável para "{TABS.find(t=>t.key===tab)?.label}".</div>
       )}
     </div>
   );
