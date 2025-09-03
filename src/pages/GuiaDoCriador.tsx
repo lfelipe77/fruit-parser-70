@@ -300,8 +300,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Eletrônicos, livros, utensílios</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → associados.amazon.com.br
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://associados.amazon.com.br" target="_blank" rel="noopener noreferrer">
+                      → associados.amazon.com.br
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -318,8 +320,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Produtos virais, LEDs, gadgets</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → portals.aliexpress.com
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://portals.aliexpress.com" target="_blank" rel="noopener noreferrer">
+                      → portals.aliexpress.com
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -336,8 +340,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Beleza, casa criativa, acessórios</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → affiliate.shopee.com.br
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://affiliate.shopee.com.br" target="_blank" rel="noopener noreferrer">
+                      → affiliate.shopee.com.br
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -354,8 +360,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Roupas, bolsas, maquiagem</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → affiliate.shein.com
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://affiliate.shein.com" target="_blank" rel="noopener noreferrer">
+                      → affiliate.shein.com
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -372,8 +380,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Celulares, games, eletros</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → parceiromagalu.com.br
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://parceiromagalu.com.br" target="_blank" rel="noopener noreferrer">
+                      → parceiromagalu.com.br
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -390,8 +400,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Hospedagens e experiências</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → booking.com/affiliate-program
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://booking.com/affiliate-program" target="_blank" rel="noopener noreferrer">
+                      → booking.com/affiliate-program
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -408,8 +420,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Produtos virais + vídeos</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → Pelo app TikTok ("Afiliados")
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://www.tiktok.com/business/pt" target="_blank" rel="noopener noreferrer">
+                      → Pelo app TikTok ("Afiliados")
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -426,8 +440,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">Cursos e e-books</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → hotmart.com | eduzz.com
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://hotmart.com" target="_blank" rel="noopener noreferrer">
+                      → hotmart.com | eduzz.com
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
@@ -444,8 +460,10 @@ export default function GuiaDoCriador() {
                       <p className="text-sm text-muted-foreground">TVs, eletros, brinquedos</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full" size="sm">
-                    → lomadee.com
+                  <Button variant="outline" className="w-full" size="sm" asChild>
+                    <a href="https://lomadee.com" target="_blank" rel="noopener noreferrer">
+                      → lomadee.com
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
