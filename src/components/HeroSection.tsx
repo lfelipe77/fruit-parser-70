@@ -34,12 +34,13 @@ export default function HeroSection() {
   });
 
   async function fetchStats(): Promise<{ src: 'cache'|'live', data: HomeStats|null }> {
-    const cache = await supabase
-      .from('homepage_stats_cache' as any)   // use `as any` to avoid TS type generation issues for views
-      .select('*')
-      .limit(1)
-      .single();
-    if (!cache.error && cache.data) return { src: 'cache', data: cache.data as unknown as HomeStats };
+    // Skip cache temporarily due to stale data after nuclear reset
+    // const cache = await supabase
+    //   .from('homepage_stats_cache' as any)   // use `as any` to avoid TS type generation issues for views
+    //   .select('*')
+    //   .limit(1)
+    //   .single();
+    // if (!cache.error && cache.data) return { src: 'cache', data: cache.data as unknown as HomeStats };
 
     const live = await supabase
       .from('homepage_stats' as any)
