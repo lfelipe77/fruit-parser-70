@@ -130,8 +130,9 @@ export default function ConfirmacaoPagamento() {
     logDebugInfo("ConfirmacaoPagamento:Mount", {
       edgeBaseUrl: supabaseUrl,
       endpoints: [
-        `${supabaseUrl}/functions/v1/record_purchase_v2`,
-        `${supabaseUrl}/functions/v1/record_mock_purchase_admin`,
+        `${supabaseUrl}/functions/v1/create-checkout`,
+        `${supabaseUrl}/functions/v1/confirm-state-upsert`,
+        `${supabaseUrl}/functions/v1/confirm-state-get`,
       ],
       headers: {
         "Content-Type": "present",
@@ -414,7 +415,15 @@ export default function ConfirmacaoPagamento() {
 
   // Handle form submission
   async function handlePayment() {
+    // Double-submit guard
+    if (isProcessing) {
+      console.log("[payment] Already processing, ignoring duplicate submit");
+      return;
+    }
+
     try {
+      setIsProcessing(true);
+
       // 1) Validate form first
       if (!validateForm()) {
         toast.error("Por favor, corrija os erros no formulário");
@@ -430,31 +439,55 @@ export default function ConfirmacaoPagamento() {
         return;
       }
 
-      setIsProcessing(true);
-
       // 3) Inputs - tickets only (excluding institutional fee)
-      const now = Date.now();
-      const providerRef = `mock-${id}-${now}-${Math.floor(Math.random() * 1e9)}`;
       const safeQty = Math.max(1, asNumber(qty, 1));
       const unitPrice = asNumber(raffle?.ticket_price, 0);
       const totalPaid = +(unitPrice * safeQty).toFixed(2); // subtotal only (excludes fee)
 
+      const payloadData = {
+        provider: 'asaas',
+        method: 'pix',
+        reservation_id: reservationId,
+        raffle_id: id,
+        qty: safeQty,
+        amount: unitPrice * safeQty,
+        currency: 'BRL',
+        buyer: {
+          fullName: formData.fullName,
+          phone: digits(formData.phone),
+          cpf: digits(formData.cpf)
+        }
+      };
+
+      // Log before invoke
+      console.log("[payment] Calling create-checkout", {
+        reservationId,
+        raffleId: id,
+        qty: safeQty,
+        amount: payloadData.amount,
+        expectedUrl: "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/create-checkout"
+      });
+
       // 4) Call create-checkout with Asaas PIX
       const { data: checkoutData, error } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          provider: 'asaas',
-          method: 'pix',
-          reservation_id: reservationId,
-          raffle_id: id,
-          qty: safeQty,
-          amount: unitPrice * safeQty,
-          currency: 'BRL',
-          buyer: {
-            fullName: formData.fullName,
-            phone: digits(formData.phone),
-            cpf: digits(formData.cpf)
-          }
-        }
+        body: payloadData
+      });
+
+      // Log response
+      if (error) {
+        console.error("[payment] create-checkout error", {
+          error,
+          reservationId,
+          message: error.message
+        });
+        toast.error("Pagamento falhou. Tente novamente.");
+        return;
+      }
+
+      console.log("[payment] create-checkout success", {
+        reservationId,
+        responseKeys: checkoutData ? Object.keys(checkoutData) : [],
+        hasPaymentId: !!checkoutData?.asaas_payment_id
       });
 
       // Debug: Log checkout response structure (only when ?debug=1)
@@ -468,17 +501,7 @@ export default function ConfirmacaoPagamento() {
         });
       }
 
-      if (error) {
-        console.error("[payment] checkout error", {
-          code: (error as any)?.code,
-          message: (error as any)?.message,
-          details: (error as any)?.details,
-        });
-        toast.error("Pagamento falhou. Tente novamente.");
-        return;
-      }
-
-      // 4) Refresh cards + redirect to success
+      // 5) Refresh cards + redirect to success
       window.dispatchEvent(new CustomEvent("raffleUpdated"));
       navigate(`/ganhavel/${id}/pagamento-sucesso`, {
         replace: true,
@@ -492,7 +515,11 @@ export default function ConfirmacaoPagamento() {
         },
       });
     } catch (e: any) {
-      console.error("[payment] unexpected", e);
+      console.error("[payment] unexpected error", {
+        error: e,
+        message: e.message,
+        reservationId
+      });
       toast.error("Pagamento falhou. Tente novamente.");
     } finally {
       setIsProcessing(false);
