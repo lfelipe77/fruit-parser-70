@@ -439,41 +439,40 @@ export default function ConfirmacaoPagamento() {
       const unitPrice = asNumber(raffle?.ticket_price, 0);
       const totalPaid = +(unitPrice * safeQty).toFixed(2); // subtotal only (excludes fee)
 
-      // 4) Call new RPC with customer data
-      const { data: txId, error } = await (supabase as any).rpc("record_purchase_v2", {
-        p_buyer_user_id: session.user.id,
-        p_raffle_id: id,
-        p_qty: safeQty,
-        p_unit_price: unitPrice,
-        p_numbers: selectedNumbers.map(combo => {
-          // Sanitize each combo to ensure exactly 5 pairs 
-          const pairs = combo.replace(/[^\d-]/g, '').split('-').filter(Boolean);
-          return pairs.slice(0, 5).map(p => p.padStart(2, '0')).join('-');
-        }),    // Use the correctly formatted numbers from UI
-        p_provider_ref: providerRef,   // must be unique
-        p_customer_name: formData.fullName,
-        p_customer_phone: digits(formData.phone),
-        p_customer_cpf: digits(formData.cpf),
+      // 4) Call create-checkout with Asaas PIX
+      const { data: checkoutData, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          provider: 'asaas',
+          method: 'pix',
+          reservation_id: reservationId,
+          raffle_id: id,
+          qty: safeQty,
+          amount: unitPrice * safeQty,
+          currency: 'BRL',
+          buyer: {
+            fullName: formData.fullName,
+            phone: digits(formData.phone),
+            cpf: digits(formData.cpf)
+          }
+        }
       });
 
-      // Debug: Log RPC response structure (only when ?debug=1)
+      // Debug: Log checkout response structure (only when ?debug=1)
       if (isDebugMode()) {
-        logDebugInfo("ConfirmacaoPagamento:RPCResponse", {
-          function: "record_purchase_v2",
+        logDebugInfo("ConfirmacaoPagamento:CheckoutResponse", {
+          function: "create-checkout",
           success: !error,
-          responseKeys: txId ? ["txId"] : [],
+          responseKeys: checkoutData ? Object.keys(checkoutData) : [],
           errorPresent: !!error,
-          maskedTxId: txId ? "****" + String(txId).slice(-4) : null
+          maskedPaymentId: checkoutData?.asaas_payment_id ? "****" + String(checkoutData.asaas_payment_id).slice(-4) : null
         });
       }
 
       if (error) {
-        console.error("[payment] rpc error", {
+        console.error("[payment] checkout error", {
           code: (error as any)?.code,
           message: (error as any)?.message,
           details: (error as any)?.details,
-          hint: (error as any)?.hint,
-          constraint: (error as any)?.constraint,
         });
         toast.error("Pagamento falhou. Tente novamente.");
         return;
@@ -485,7 +484,7 @@ export default function ConfirmacaoPagamento() {
         replace: true,
         state: {
           raffleId: id,
-          txId,                         // uuid returned by RPC
+          txId: checkoutData?.asaas_payment_id,  // payment ID from checkout
           quantity: safeQty,            // number
           unitPrice,                    // number
           totalPaid,                    // number
