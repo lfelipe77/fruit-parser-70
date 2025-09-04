@@ -1,3 +1,4 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -6,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
-async function handler(req: Request): Promise<Response> {
+serve(async (req: Request): Promise<Response> => {
   try {
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
@@ -133,4 +134,4 @@ async function handler(req: Request): Promise<Response> {
   }
 }
 
-export default handler;
+});
