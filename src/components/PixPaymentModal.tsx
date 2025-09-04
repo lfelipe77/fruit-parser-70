@@ -51,12 +51,15 @@ export default function PixPaymentModal({
     }
   };
 
-  // Poll payment status
+  // Poll payment status with fallback
   useEffect(() => {
     if (!isOpen || !paymentData.provider_payment_id) return;
 
+    let pollCount = 0;
+
     const pollInterval = setInterval(async () => {
       try {
+        pollCount++;
         console.log(`[PIX Poll] Checking payment status for ${paymentData.provider_payment_id}`);
         
         const { data, error } = await supabase
@@ -81,6 +84,27 @@ export default function PixPaymentModal({
             amount: paymentData.amount,
             reservationId: paymentData.reservation_id
           });
+          return;
+        }
+
+        // Every 3rd poll (~9s), use fallback to check Asaas directly
+        if (pollCount % 3 === 0 && !data) {
+          console.log(`[PIX Poll] Fallback check via payment-status function`);
+          try {
+            const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('payment-status', {
+              body: {
+                provider: 'asaas',
+                payment_id: paymentData.provider_payment_id
+              }
+            });
+
+            if (!fallbackError && fallbackData?.status) {
+              console.log(`[PIX Poll] Fallback status: ${fallbackData.status}`);
+              // The function updates the DB if paid, so next regular poll will find it
+            }
+          } catch (fallbackErr) {
+            console.warn('[PIX Poll] Fallback check failed:', fallbackErr);
+          }
         }
       } catch (error) {
         console.warn("Payment polling unexpected error:", error);
