@@ -479,18 +479,26 @@ export default function ConfirmacaoPagamento() {
 
       // Log response
       if (error) {
-        const resp = (error as any)?.context?.response;
-        console.error("[payment] FAIL status", resp?.status);
-        if (resp) {
-          try {
-            const errorBody = await resp.text();
-            console.error("[payment] body", errorBody);
-          } catch (e) {
-            console.error("[payment] body read error", e);
-          }
-        } else {
-          console.error("[payment] message", error.message);
-        }
+        const r = error?.context?.response;
+        console.error('[payment] invoke error:', error.message);
+        if (r) console.error('[payment] body:', await r.text());
+        else console.error('[payment] no response in error.context');
+        
+        // dev-only fallback fetch (so we *always* see status/body)
+        try {
+          const url = `https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/create-checkout`;
+          const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type':'application/json',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndocXhwdXlqeG9pdWZ6aHZxbmVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYyODMsImV4cCI6MjA2OTc0MjI4M30.lXLlvJkB48KSUsroImqkZSjNLpQjg7Pe_bYH5h6ztjo`
+            },
+            body: JSON.stringify(payloadData)
+          });
+          const text = await resp.text();
+          console.log('[payment] fetch status', resp.status, 'body:', text);
+        } catch {}
+        
         toast.error("Pagamento falhou. Tente novamente.");
         return;
       }

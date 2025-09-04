@@ -29,7 +29,22 @@ serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return json(400, { error: "Invalid JSON body" }); }
 
-  const { provider, method, raffle_id, qty, amount, currency, reservation_id } = body ?? {};
+  const { provider, method, raffle_id, qty, amount, currency, reservation_id, debug, dryRun } = body ?? {};
+  
+  // DEBUG: env presence (no secret values leaked)
+  if (debug === true) {
+    const has = (k: string) => Boolean(Deno.env.get(k));
+    return new Response(JSON.stringify({
+      ok: true,
+      debug: {
+        has_ASAAS_API_KEY: has("ASAAS_API_KEY"),
+        has_ASAAS_DEFAULT_CUSTOMER_ID: has("ASAAS_DEFAULT_CUSTOMER_ID"),
+        has_SB_URL: has("SB_URL"),
+        has_SB_SERVICE_ROLE_KEY: has("SB_SERVICE_ROLE_KEY"),
+        maintenance: Deno.env.get("MAINTENANCE") === "true",
+      }
+    }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders }});
+  }
   if (!provider || !raffle_id || !qty || typeof amount !== "number" || !currency) {
     return json(400, { error: "Missing fields", required: ["provider", "raffle_id", "qty", "amount:number", "currency"] });
   }
@@ -60,8 +75,29 @@ serve(async (req) => {
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
       const CUSTOMER_ID = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID");
-      if (!API_KEY || !CUSTOMER_ID) return json(500, { error: "Asaas env vars not set" });
+      if (!API_KEY || !CUSTOMER_ID) return json(500, { error: "Asaas env vars not set (ASAAS_API_KEY / ASAAS_DEFAULT_CUSTOMER_ID)" });
       if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
+
+      // DRY RUN: show payload without calling Asaas
+      if (dryRun === true) {
+        const subtotal = Number(amount ?? 0);
+        const value = Number(subtotal.toFixed(2));
+        const dueDate = new Date().toISOString().slice(0,10);
+
+        const asaasPayload = {
+          customer: CUSTOMER_ID ?? null,
+          billingType: "PIX",
+          value,
+          dueDate,
+          externalReference: reservation_id ?? null,
+          description: "Ganhavel - Compra de rifa",
+        };
+
+        return new Response(JSON.stringify({ ok: true, dryRun: true, request: asaasPayload }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders }
+        });
+      }
 
       // Reuse if already created for this reservation
       if (sb) {
@@ -75,29 +111,45 @@ serve(async (req) => {
 
       if (!provider_payment_id) {
         const value = Number(subtotal.toFixed(2));
+        const dueDate = new Date().toISOString().slice(0,10);
+        const asaasPayload = {
+          customer: CUSTOMER_ID,
+          billingType: "PIX",
+          value,
+          dueDate,
+          externalReference: reservation_id,
+          description: "Ganhavel - Compra de rifa",
+        };
+
+        const TRACE_ID = crypto.randomUUID();
+        console.log("[asaas] TRACE", TRACE_ID, "payload", asaasPayload);
+
         const res = await fetch(`${ASAAS_API}/payments`, {
           method: "POST",
           headers: {
             accept: "application/json",
             "content-type": "application/json",
             access_token: API_KEY,
+            "X-Debug-Trace-Id": TRACE_ID,
             "User-Agent": "Ganhavel/1.0 (create-checkout)",
           },
-          body: JSON.stringify({
-            customer: CUSTOMER_ID,            // fixed Felipe
-            billingType: "PIX",
-            value,                            // "10.00"
-            dueDate: new Date().toISOString().slice(0,10),
-            externalReference: reservation_id, // glue
-            description: "Ganhavel - Compra de rifa",
-          }),
+          body: JSON.stringify(asaasPayload),
         });
+
+        const raw = await res.text();
         if (!res.ok) {
-          const txt = await res.text();
-          console.error("Asaas /payments error:", txt);
-          return json(502, { error: "Asaas create payment failed", details: safeParse(txt) });
+          let details; try { details = JSON.parse(raw); } catch { details = { raw }; }
+          console.error("[asaas] TRACE", TRACE_ID, "error", { status: res.status, details });
+
+          return json(502, {
+            error: "Asaas create payment failed",
+            status: res.status,
+            trace_id: TRACE_ID,
+            request: asaasPayload,
+            details
+          });
         }
-        const created = await res.json();
+        const created = JSON.parse(raw);
         provider_payment_id = created?.id ?? null;
         redirect_url = created?.invoiceUrl ?? null;
         if (!provider_payment_id) return json(502, { error: "Asaas returned no payment id", raw: created });
