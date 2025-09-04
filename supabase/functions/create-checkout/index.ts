@@ -74,27 +74,12 @@ serve(async (req) => {
 
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
-      // Resolve customer id: ENV first, then app_config when available
-      const envCus = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID") || "";
-      let customerId = envCus;
-
       if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
 
-      // Optional lookup from app_config if env is empty
-      if (!customerId && sb) {
-        const { data } = await sb
-          .from("app_config")
-          .select("value")
-          .eq("key", "asaas_default_customer")
-          .maybeSingle();
-        // deno-lint-ignore no-explicit-any
-        customerId = (data as any)?.value?.id ?? "";
-      }
-
-      // Validate customer format
+      const customerId = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID") || "";
       if (!/^cus_/.test(customerId)) {
         console.error("[create-checkout] INVALID customerId:", customerId);
-        return json(500, { error: "Invalid Asaas customer id. Expected 'cus_...'.", using: customerId });
+        return json(500, { error: "Invalid Asaas customer id. Expected 'cus_...'", using: customerId });
       }
       console.log("[create-checkout] using_customer:", customerId);
 
