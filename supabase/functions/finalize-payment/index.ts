@@ -90,79 +90,175 @@ serve(async (req) => {
 
     console.log(`[finalize-payment] Payment verified as PAID: ${paymentRow.amount}`);
 
-    // 4) Check idempotency - has this payment already been processed?
-    const { data: existingTransaction } = await sbService
-      .from("transactions")
-      .select("id, status")
-      .eq("reservation_id", reservationId)
-      .eq("provider_payment_id", asaasPaymentId)
+    // 4) Idempotency guard via payments_applied
+    const { data: applied, error: appliedErr } = await sbService
+      .from("payments_applied")
+      .select("payment_id")
+      .eq("payment_id", asaasPaymentId)
       .maybeSingle();
 
-    if (existingTransaction) {
-      console.log(`[finalize-payment] Payment already processed: ${existingTransaction.id}`);
-      return new Response(JSON.stringify({ 
-        ok: true, 
-        already_processed: true,
-        transaction_id: existingTransaction.id
-      }), { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      });
-    }
-
-    // 5) Call the existing finalize_paid_purchase RPC (creates tickets, transaction, updates counters)
-    console.log("[finalize-payment] Calling finalize_paid_purchase RPC");
-    
-    const { data: finalizeResult, error: finalizeError } = await sbService.rpc('finalize_paid_purchase', {
-      p_reservation_id: reservationId,
-      p_asaas_payment_id: asaasPaymentId,
-      p_customer_name: customerName,
-      p_customer_phone: customerPhone,
-      p_customer_cpf: customerCpf
-    });
-
-    if (finalizeError) {
-      console.error("[finalize-payment] RPC finalization error:", finalizeError);
-      
-      // Check if it's already finalized (idempotent behavior from RPC)
-      if (finalizeError.message?.includes('already_finalized') || finalizeError.message?.includes('already processed')) {
-        return new Response(JSON.stringify({
-          ok: true,
-          already_finalized: true,
-          reservation_id: reservationId
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-
-      // Log the error for debugging
+    if (appliedErr) {
+      console.warn("[finalize-payment] payments_applied read failed:", appliedErr);
       try {
-        await sbService.from("audit_logs").insert({
-          user_id: user.id,
-          action: "finalize_payment_error",
-          context: {
-            reservation_id: reservationId,
-            asaas_payment_id: asaasPaymentId,
-            error: finalizeError.message,
-            error_code: finalizeError.code
-          }
+        await sbService.from("finalize_logs").insert({
+          reservation_id: reservationId,
+          payment_id: asaasPaymentId,
+          step: "guard_check",
+          ok: false,
+          message: "payments_applied read failed",
+          meta: { error: String(appliedErr) }
         });
-      } catch (logError) {
-        console.warn("[finalize-payment] Failed to log error:", logError);
-      }
-
-      return new Response(JSON.stringify({ 
-        ok: false, 
-        reason: "finalization_failed",
-        error: finalizeError.message 
-      }), {
-        status: 500,
+      } catch {}
+      return new Response(JSON.stringify({ ok: false, reason: "guard_failed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    console.log(`[finalize-payment] Successfully finalized:`, finalizeResult);
+    if (applied) {
+      console.log(`[finalize-payment] Already finalized by payments_applied guard for reservation ${reservationId}`);
+      return new Response(JSON.stringify({ ok: true, already_finalized: true, reservation_id: reservationId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
-    // 6) Log successful finalization
+    // 5) Mint tickets if none exist yet (post-payment flow) and finalize
+    // 5a) Load purchase to validate ownership and get raffle/qty/price
+    const { data: purchase, error: purchaseErr } = await sbService
+      .from("purchases")
+      .select("id, user_id, raffle_id, quantity, unit_price, amount")
+      .eq("id", reservationId)
+      .maybeSingle();
+
+    if (purchaseErr || !purchase) {
+      console.error("[finalize-payment] Purchase not found:", purchaseErr);
+      return new Response(JSON.stringify({ ok: false, reason: "reservation_not_found" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    if (purchase.user_id !== user.id) {
+      console.error("[finalize-payment] Reservation not owned by user", { user: user.id, owner: purchase.user_id });
+      return new Response(JSON.stringify({ ok: false, reason: "reservation_not_owned" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
+    // 5b) Check if any tickets exist for this reservation
+    const { count: existingCount, error: countErr } = await sbService
+      .from("tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("reservation_id", reservationId);
+
+    if (countErr) {
+      console.warn("[finalize-payment] Ticket count failed:", countErr);
+      try {
+        await sbService.from("finalize_logs").insert({
+          reservation_id: reservationId,
+          payment_id: asaasPaymentId,
+          step: "tickets_count",
+          ok: false,
+          message: "count failed",
+          meta: { error: String(countErr) }
+        });
+      } catch {}
+    }
+
+    if (!existingCount || existingCount === 0) {
+      const qty = Number(purchase.quantity || 0);
+      if (qty <= 0) {
+        console.error("[finalize-payment] Invalid quantity on purchase", { qty });
+        return new Response(JSON.stringify({ ok: false, reason: "invalid_quantity" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        });
+      }
+
+      const payload = Array.from({ length: qty }).map(() => ({
+        raffle_id: purchase.raffle_id,
+        reservation_id: reservationId,
+        user_id: purchase.user_id,
+        status: "paid" as const,
+        unit_price: purchase.unit_price,
+      }));
+
+      const { error: insertErr } = await sbService.from("tickets").insert(payload);
+      if (insertErr) {
+        console.error("[finalize-payment] Ticket mint failed:", insertErr);
+        try {
+          await sbService.from("finalize_logs").insert({
+            reservation_id: reservationId,
+            payment_id: asaasPaymentId,
+            step: "tickets_mint",
+            ok: false,
+            message: "insert failed",
+            meta: { error: String(insertErr) }
+          });
+        } catch {}
+        return new Response(JSON.stringify({ ok: false, reason: "ticket_mint_failed" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      try {
+        await sbService.from("finalize_logs").insert({
+          reservation_id: reservationId,
+          payment_id: asaasPaymentId,
+          step: "tickets_minted",
+          ok: true,
+          message: `minted ${qty} tickets`,
+          meta: { raffle_id: purchase.raffle_id }
+        });
+      } catch {}
+    } else {
+      try {
+        await sbService.from("finalize_logs").insert({
+          reservation_id: reservationId,
+          payment_id: asaasPaymentId,
+          step: "tickets_exist",
+          ok: true,
+          message: `existing tickets: ${existingCount}`,
+        });
+      } catch {}
+    }
+
+    // 6) Mark applied (idempotency record) LAST
+    let appliedInsertError: unknown = null;
+    try {
+      const { error: aErr } = await sbService.from("payments_applied").insert({
+        payment_id: asaasPaymentId,
+        reservation_id: reservationId,
+        user_id: purchase.user_id,
+        applied_at: new Date().toISOString(),
+      });
+      if (aErr) appliedInsertError = aErr;
+    } catch (e) {
+      appliedInsertError = e;
+    }
+
+    if (appliedInsertError) {
+      // If conflict (already inserted), consider done
+      const msg = String(appliedInsertError);
+      const isConflict = msg.includes("duplicate key") || msg.includes("already exists") || msg.includes("23505");
+      try {
+        await sbService.from("finalize_logs").insert({
+          reservation_id: reservationId,
+          payment_id: asaasPaymentId,
+          step: "applied_insert",
+          ok: isConflict,
+          message: isConflict ? "conflict-ok" : "insert failed",
+          meta: { error: msg }
+        });
+      } catch {}
+      if (!isConflict) {
+        return new Response(JSON.stringify({ ok: false, reason: "applied_insert_failed" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    // 7) Success
     try {
       await sbService.from("audit_logs").insert({
         user_id: user.id,
@@ -170,18 +266,16 @@ serve(async (req) => {
         context: {
           reservation_id: reservationId,
           asaas_payment_id: asaasPaymentId,
-          result: finalizeResult
+          tickets_created: !existingCount || existingCount === 0,
         }
       });
-    } catch (logError) {
-      console.warn("[finalize-payment] Failed to log success:", logError);
-    }
+    } catch {}
 
     return new Response(JSON.stringify({
       ok: true,
       finalized: true,
-      result: finalizeResult,
-      reservation_id: reservationId
+      reservation_id: reservationId,
+      tickets_created: !existingCount || existingCount === 0
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
