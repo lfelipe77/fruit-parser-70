@@ -162,6 +162,7 @@ export default function RaffleDetail() {
           qty,
           amount: totalAmount,
           currency: "BRL",
+          reservation_id: crypto.randomUUID(),
         }),
       });
       if (!res.ok) {

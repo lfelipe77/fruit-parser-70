@@ -163,26 +163,24 @@ serve(async (req) => {
 
       // Persist minimal snapshot + link (no transactions writes)
       if (sb && isUuid(reservation_id)) {
+        // Set expires_at to 30 minutes from now
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+        
         const pendingUpsert = {
           reservation_id,
           asaas_payment_id: provider_payment_id,
           amount: subtotal,
           status: "PENDING",
+          expires_at: expiresAt,
           updated_at: new Date().toISOString(),
         };
         const { error: upErr } = await sb.from("payments_pending")
           .upsert(pendingUpsert, { onConflict: "reservation_id" });
         if (upErr) console.warn("[create-checkout] payments_pending upsert error:", upErr);
 
-        const linkUpsert = {
-          purchase_id: reservation_id,
-          asaas_payment_id: provider_payment_id,
-          status: "pending",
-          updated_at: new Date().toISOString(),
-        };
-        const { error: linkErr } = await sb.from("purchase_payments")
-          .upsert(linkUpsert, { onConflict: "purchase_id" });
-        if (linkErr) console.warn("[create-checkout] purchase_payments upsert error:", linkErr);
+        // Skip purchase_payments upsert as it has FK constraint issues
+        // Focus on payments_pending which is the main tracking table
+        console.log("[create-checkout] Skipping purchase_payments upsert to avoid FK constraint violation");
       } else if (!isUuid(reservation_id)) {
         console.warn("[create-checkout] Skipping DB upserts: reservation_id is not a UUID");
       } else {

@@ -520,19 +520,20 @@ export default function ConfirmacaoPagamento() {
         });
       }
 
-      // 5) Refresh cards + redirect to success
-      window.dispatchEvent(new CustomEvent("raffleUpdated"));
-      navigate(`/ganhavel/${id}/pagamento-sucesso`, {
-        replace: true,
-        state: {
-          raffleId: id,
-          txId: checkoutData?.asaas_payment_id,  // payment ID from checkout
-          quantity: safeQty,            // number
-          unitPrice,                    // number
-          totalPaid,                    // number
-          selectedNumbers: selectedNumbers.map(toComboString), // ensure strings
-        },
+      // 5) Validate we got a redirect URL and redirect to Asaas
+      if (!checkoutData?.redirect_url) {
+        console.error("[payment] No redirect_url in checkout response:", checkoutData);
+        toast.error("Erro na criação do pagamento. Tente novamente.");
+        return;
+      }
+
+      console.log("[payment] Redirecting to Asaas:", {
+        redirect_url: checkoutData.redirect_url,
+        payment_id: checkoutData.provider_payment_id
       });
+
+      // Redirect to Asaas for payment completion
+      window.location.href = checkoutData.redirect_url;
     } catch (e: any) {
       console.error("[payment] unexpected error", {
         error: e,
