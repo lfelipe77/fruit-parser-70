@@ -29,6 +29,21 @@ serve(async (req) => {
     "";
   const auth_ok = !EXPECTED_TOKEN || (incomingToken.trim() === EXPECTED_TOKEN);
 
+  // Strict token mode (optional): if token mismatch, log and return 200 without DB writes
+  if (EXPECTED_TOKEN && !auth_ok) {
+    try {
+      await sb.from("asaas_webhook_logs").insert({
+        event: body?.payment?.status ?? body?.event ?? "unknown",
+        raw: { ...(body ?? {}), meta: { auth_ok: false, reason: "token_mismatch" } },
+        received_at: new Date().toISOString(),
+      });
+    } catch {}
+    return new Response(JSON.stringify({ ok: true, auth_ok: false }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  }
+
   // 1) Log (best-effort)
   try {
     await sb.from("asaas_webhook_logs").insert({
