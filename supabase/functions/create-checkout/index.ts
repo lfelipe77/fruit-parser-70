@@ -71,7 +71,8 @@ serve(async (req) => {
   try {
     let provider_payment_id: string | null = null;
     let redirect_url: string | null = null;
-    let pixData: any = null;
+    let pix_qr_code: string | undefined;
+    let pix_copy_paste: string | undefined;
 
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
@@ -164,8 +165,6 @@ serve(async (req) => {
       }
 
       // Always fetch PIX QR data after payment creation
-      let pix_qr_code: string | undefined;
-      let pix_copy_paste: string | undefined;
 
       if (provider_payment_id) {
         const qrRes = await fetch(`${ASAAS_API}/payments/${provider_payment_id}/pixQrCode`, {
