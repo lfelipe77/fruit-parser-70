@@ -13,7 +13,8 @@ import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye, RefreshCw } f
 import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
+import PixPaymentModal from "@/components/PixPaymentModal";
 import { isDebugMode, logDebugInfo } from "@/utils/envDebug";
 import { nanoid } from "nanoid";
 
@@ -184,6 +185,8 @@ export default function ConfirmacaoPagamento() {
   const [loading, setLoading] = React.useState(true);
   const [paymentMethod, setPaymentMethod] = React.useState<'pix' | 'card' | 'bank'>('pix');
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [showPixModal, setShowPixModal] = React.useState(false);
+  const [pixPaymentData, setPixPaymentData] = React.useState<any>(null);
   const [showAllNumbers, setShowAllNumbers] = React.useState(false);
   
   // Form data
@@ -430,7 +433,11 @@ export default function ConfirmacaoPagamento() {
 
       // 1) Validate form first
       if (!validateForm()) {
-        toast.error("Por favor, corrija os erros no formulário");
+        toast({
+          title: "Formulário inválido",
+          description: "Por favor, corrija os erros no formulário",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -499,7 +506,11 @@ export default function ConfirmacaoPagamento() {
           console.log('[payment] fetch status', resp.status, 'body:', text);
         } catch {}
         
-        toast.error("Pagamento falhou. Tente novamente.");
+        toast({
+          title: "Erro no pagamento",
+          description: "Pagamento falhou. Tente novamente.",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -520,27 +531,60 @@ export default function ConfirmacaoPagamento() {
         });
       }
 
-      // 5) Validate we got a redirect URL and redirect to Asaas
-      if (!checkoutData?.redirect_url) {
-        console.error("[payment] No redirect_url in checkout response:", checkoutData);
-        toast.error("Erro na criação do pagamento. Tente novamente.");
+      // 5) Show PIX modal for embedded payment
+      if (!checkoutData?.provider_payment_id) {
+        console.error("[payment] No payment ID in checkout response:", checkoutData);
+        toast({
+          title: "Erro na criação do pagamento",
+          description: "Tente novamente.",
+          variant: "destructive"
+        });
         return;
       }
 
-      console.log("[payment] Redirecting to Asaas:", {
-        redirect_url: checkoutData.redirect_url,
-        payment_id: checkoutData.provider_payment_id
-      });
+      // Check if we have PIX data for embedded payment
+      if (checkoutData.pix_qr_code || checkoutData.pix_copy_paste) {
+        console.log("[payment] Opening PIX modal:", {
+          payment_id: checkoutData.provider_payment_id,
+          amount: checkoutData.charge_total,
+          has_qr: !!checkoutData.pix_qr_code,
+          has_copy_paste: !!checkoutData.pix_copy_paste
+        });
 
-      // Redirect to Asaas for payment completion
-      window.location.href = checkoutData.redirect_url;
+        setPixPaymentData({
+          provider_payment_id: checkoutData.provider_payment_id,
+          amount: checkoutData.charge_total,
+          pix_qr_code: checkoutData.pix_qr_code,
+          pix_copy_paste: checkoutData.pix_copy_paste,
+          reservation_id: reservationId,
+          raffle_id: id,
+          qty: safeQty
+        });
+        setShowPixModal(true);
+      } else {
+        // Fallback to redirect if no PIX data
+        console.warn("[payment] No PIX data, falling back to redirect");
+        if (checkoutData.redirect_url) {
+          window.location.href = checkoutData.redirect_url;
+        } else {
+          toast({
+            title: "Erro no pagamento",
+            description: "Dados PIX não encontrados. Tente novamente.",
+            variant: "destructive"
+          });
+        }
+      }
     } catch (e: any) {
       console.error("[payment] unexpected error", {
         error: e,
         message: e.message,
         reservationId
       });
-      toast.error("Pagamento falhou. Tente novamente.");
+      toast({
+        title: "Erro no pagamento",
+        description: "Pagamento falhou. Tente novamente.",
+        variant: "destructive"
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -1054,6 +1098,32 @@ export default function ConfirmacaoPagamento() {
         </div>
       </div>
       </div>
+
+      {/* PIX Payment Modal */}
+      {showPixModal && pixPaymentData && (
+        <PixPaymentModal
+          isOpen={showPixModal}
+          onClose={() => setShowPixModal(false)}
+          onSuccess={(transactionData) => {
+            console.log('[payment] PIX payment successful:', transactionData);
+            setShowPixModal(false);
+            
+            // Navigate to success page
+            navigate(`/ganhavel/${id}/pagamento-sucesso`, {
+              replace: true,
+              state: {
+                raffleId: id,
+                txId: transactionData.transactionId,
+                quantity: qty,
+                unitPrice: raffle?.ticket_price,
+                totalPaid: pixPaymentData.amount,
+                selectedNumbers: selectedNumbers.map(toComboString),
+              },
+            });
+          }}
+          paymentData={pixPaymentData}
+        />
+      )}
     </>
   );
 }

@@ -157,8 +157,30 @@ serve(async (req) => {
         }
         const created = JSON.parse(raw);
         provider_payment_id = created?.id ?? null;
-        redirect_url = created?.invoiceUrl ?? null;
         if (!provider_payment_id) return json(502, { error: "Asaas returned no payment id", raw: created });
+
+        // Fetch PIX QR code data for embedded payment
+        let pixData = null;
+        try {
+          const pixRes = await fetch(`${ASAAS_API}/payments/${provider_payment_id}/pixQrCode`, {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              access_token: API_KEY,
+              "User-Agent": "Ganhavel/1.0 (pix-qr)",
+            },
+          });
+
+          if (pixRes.ok) {
+            const pixRaw = await pixRes.text();
+            pixData = JSON.parse(pixRaw);
+            console.log("[asaas] PIX QR code fetched successfully for payment:", provider_payment_id);
+          } else {
+            console.warn("[asaas] Failed to fetch PIX QR code:", pixRes.status, await pixRes.text());
+          }
+        } catch (pixError) {
+          console.error("[asaas] Error fetching PIX QR code:", pixError);
+        }
       }
 
       // Persist minimal snapshot + link (no transactions writes)
@@ -210,6 +232,10 @@ serve(async (req) => {
       raffle_id,
       qty,
       currency,
+      // PIX-specific data for embedded payment
+      pix_qr_code: pixData?.qrCode,
+      pix_copy_paste: pixData?.payload,
+      pix_expires_date: pixData?.expirationDate,
     });
   } catch (e) {
     console.error("Create checkout error:", e);
