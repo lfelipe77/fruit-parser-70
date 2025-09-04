@@ -248,7 +248,7 @@ export default function LanceSeuGanhavel() {
       const grossGoal = Math.round((netGoal * (1 + PROVIDER_GOAL_FEE_PCT)) * 100) / 100;
 
       const payload = {
-        user_id: session.user.id,
+        organizer_id: session.user.id,
         title: title.trim(),
         description: description.trim() || null,
         image_url: imageUrlPublic,
