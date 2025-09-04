@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.asaas-backfill-pending]
 verify_jwt = false
+
+[functions.payments-webhook]
+verify_jwt = false

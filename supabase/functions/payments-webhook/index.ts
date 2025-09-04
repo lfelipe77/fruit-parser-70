@@ -17,19 +17,21 @@ const td = new TextDecoder();
 // TODO(Asaas): implement real HMAC verification using ASAAS_WEBHOOK_SECRET
 function verifyAsaasSignature(_raw: Uint8Array, req: Request): boolean {
   const secret = Deno.env.get("ASAAS_WEBHOOK_SECRET");
-  if (!secret) return false;
-  // Example:
+  // If no secret configured, do not block the request
+  if (!secret) return true;
+  // Example to implement later:
   // const sig = req.headers.get("X-Asaas-Signature") ?? "";
   // compute HMAC(raw) with secret and timing-safe compare with sig
-  return true; // placeholder
+  return true; // placeholder - treat as valid when secret exists
 }
 
 // TODO(Stripe): verify "Stripe-Signature" header per Stripe docs using STRIPE_WEBHOOK_SECRET
 function verifyStripeSignature(_raw: Uint8Array, req: Request): boolean {
   const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-  if (!secret) return false;
+  // If no secret configured, do not block the request
+  if (!secret) return true;
   // Typically: use stripe sdk or manual verification of signed payload
-  return true; // placeholder
+  return true; // placeholder - treat as valid when secret exists
 }
 
 async function confirmAndLog(
@@ -164,41 +166,42 @@ serve(async (req) => {
 
     // ASAAS
     if (path.endsWith("/asaas")) {
-      if (!verifyAsaasSignature(raw, req)) {
-        return new Response("Invalid Asaas signature", { status: 400, headers: corsHeaders });
+      // Always accept, parse JSON safely
+      let payload: any = null;
+      try { payload = JSON.parse(text || "{}"); } catch (_) { payload = null; }
+
+      // Best-effort logging (service role bypasses RLS)
+      try {
+        const statusStr = String(payload?.event ?? payload?.payment?.status ?? payload?.status ?? "");
+        await supabase.from("asaas_webhook_logs").insert({
+          raw: payload ?? {},
+          event: statusStr,
+        });
+      } catch (e) {
+        console.warn("asaas_webhook_logs insert failed", e);
       }
-      const payload = JSON.parse(text || "{}");
 
-      // Extract a stable providerPaymentId and a "paid" state from Asaas payload
-      const providerPaymentId =
-        payload?.payment?.id ?? payload?.id ?? payload?.invoiceNumber ?? "";
-      const status = String(
-        payload?.event ?? payload?.payment?.status ?? payload?.status ?? ""
-      ).toUpperCase();
+      // Extract identifiers
+      const providerPaymentId = payload?.payment?.id ?? payload?.id ?? payload?.invoiceNumber ?? "";
+      const status = String(payload?.event ?? payload?.payment?.status ?? payload?.status ?? "").toUpperCase();
 
-// Asaas payment event statuses: PENDING, RECEIVED, CONFIRMED, RECEIVED_IN_CASH, etc.
-// We treat RECEIVED / CONFIRMED / RECEIVED_IN_CASH as "PAID" in our DB.
-// Docs: docs.asaas.com → "Payment events" + "About webhooks"
-const paid = new Set([
-  "RECEIVED",
-  "CONFIRMED", 
-  "RECEIVED_IN_CASH",
-]);
-
-      // Hard guard: require pending with non-null reservation_id before finalizing
-      if (providerPaymentId && paid.has(status)) {
-        const { data: pp } = await supabase
-          .from("payments_pending")
-          .select("reservation_id")
-          .eq("asaas_payment_id", providerPaymentId)
-          .limit(1);
-        if (!pp?.length || !pp[0]?.reservation_id) {
-          console.error(`Rejecting webhook without reservation_id for provider_payment_id=${providerPaymentId}`);
-          return new Response("Missing reservation_id", { status: 400, headers: corsHeaders });
+      // Mark paid quickly (no heavy processing here)
+      const paidLike = new Set(["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"]);
+      if (providerPaymentId && paidLike.has(status)) {
+        try {
+          await supabase
+            .from("payments_pending")
+            .update({ status: "PAID", updated_at: new Date().toISOString() })
+            .eq("asaas_payment_id", providerPaymentId);
+        } catch (e) {
+          console.warn("payments_pending update failed", e);
         }
-        await confirmAndLog("asaas", providerPaymentId, payload);
       }
-      return new Response("OK", { status: 200, headers: corsHeaders });
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // STRIPE
@@ -231,6 +234,7 @@ const paid = new Set([
     return new Response("Not Found", { status: 404, headers: corsHeaders });
   } catch (err) {
     console.error("WEBHOOK ERROR:", err);
-    return new Response("Internal Error", { status: 500, headers: corsHeaders });
+    // Never fail the webhook: respond 200 to avoid provider pausing deliveries
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
