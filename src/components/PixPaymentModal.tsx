@@ -87,11 +87,15 @@ export default function PixPaymentModal({
           });
           
           try {
+            const { data: sess } = await supabase.auth.getSession();
+            const jwt = sess?.session?.access_token;
+
             const { data: finalizeData, error: finalizeError } = await supabase.functions.invoke('finalize-payment', {
               body: {
-                reservationId: paymentData.reservation_id,
-                asaasPaymentId: paymentData.provider_payment_id
-              }
+                reservation_id: paymentData.reservation_id,
+                asaas_payment_id: paymentData.provider_payment_id
+              },
+              headers: jwt ? { Authorization: `Bearer ${jwt}` } : {}
             });
 
             console.log('[PIX Poll] Function response:', { finalizeData, finalizeError });

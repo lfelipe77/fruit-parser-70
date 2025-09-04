@@ -15,6 +15,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
+// Unified OK helper to always return 200 with JSON
+const ok = (obj: unknown) =>
+  new Response(JSON.stringify(obj), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 200,
+  });
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -31,24 +38,22 @@ serve(async (req) => {
     
     if (authError || !user) {
       console.error("[finalize-payment] Authentication failed:", authError?.message);
-      return new Response(JSON.stringify({ ok: false, reason: "unauthorized" }), { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 401 
-      });
+      return ok({ ok: false, reason: "unauthorized" });
     }
 
     console.log(`[finalize-payment] User authenticated: ${user.id}`);
 
-    // 2) Parse request body
-    const body = await req.json();
-    const { reservationId, asaasPaymentId, customerName, customerPhone, customerCpf } = body;
+    // 2) Parse request body (support snake_case and camelCase)
+    const body = await req.json().catch(() => null);
+    const reservationId = body?.reservation_id ?? body?.reservationId;
+    const asaasPaymentId = body?.asaas_payment_id ?? body?.asaasPaymentId;
+    const customerName = body?.customer_name ?? body?.customerName ?? null;
+    const customerPhone = body?.customer_phone ?? body?.customerPhone ?? null;
+    const customerCpf = body?.customer_cpf ?? body?.customerCpf ?? null;
     
     if (!reservationId || !asaasPaymentId) {
       console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId });
-      return new Response(JSON.stringify({ ok: false, reason: "bad_request" }), { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 400 
-      });
+      return ok({ ok: false, reason: "bad_request_fields" });
     }
 
     console.log(`[finalize-payment] Processing reservation: ${reservationId}, payment: ${asaasPaymentId}`);
@@ -62,18 +67,12 @@ serve(async (req) => {
 
     if (payErr) {
       console.error("[finalize-payment] Payment query error:", payErr);
-      return new Response(JSON.stringify({ ok: false, reason: "payment_error" }), { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 500 
-      });
+      return ok({ ok: false, reason: "payment_error" });
     }
 
     if (!paymentRow || paymentRow.status !== "PAID") {
       console.error("[finalize-payment] Payment not paid:", { status: paymentRow?.status });
-      return new Response(JSON.stringify({ ok: false, reason: "not_paid", status: paymentRow?.status }), { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 400 
-      });
+      return ok({ ok: false, reason: "not_paid", status: paymentRow?.status });
     }
 
     // Verify reservation matches payment
@@ -82,18 +81,15 @@ serve(async (req) => {
         paymentReservation: paymentRow.reservation_id, 
         requestReservation: reservationId 
       });
-      return new Response(JSON.stringify({ ok: false, reason: "reservation_mismatch" }), { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 400 
-      });
+      return ok({ ok: false, reason: "reservation_mismatch" });
     }
 
     console.log(`[finalize-payment] Payment verified as PAID: ${paymentRow.amount}`);
 
-    // 4) Idempotency guard via payments_applied
+    // 4) Idempotency guard via payments_applied + tickets existence
     const { data: applied, error: appliedErr } = await sbService
       .from("payments_applied")
-      .select("payment_id")
+      .select("payment_id, reservation_id")
       .eq("payment_id", asaasPaymentId)
       .maybeSingle();
 
@@ -109,16 +105,24 @@ serve(async (req) => {
           meta: { error: String(appliedErr) }
         });
       } catch {}
-      return new Response(JSON.stringify({ ok: false, reason: "guard_failed" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return ok({ ok: false, reason: "guard_failed" });
     }
 
-    if (applied) {
-      console.log(`[finalize-payment] Already finalized by payments_applied guard for reservation ${reservationId}`);
-      return new Response(JSON.stringify({ ok: true, already_finalized: true, reservation_id: reservationId }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+    // Count tickets for this reservation
+    const { count: tCount, error: tErr } = await sbService
+      .from("tickets")
+      .select("id", { head: true, count: "exact" })
+      .eq("reservation_id", reservationId);
+
+    if (tErr) {
+      console.warn("[finalize-payment] ticket count for guard failed:", tErr);
+    }
+
+    const hasTickets = (tCount ?? 0) > 0;
+
+    if (applied && hasTickets) {
+      console.log(`[finalize-payment] Already finalized (guard+tickets) for reservation ${reservationId}`);
+      return ok({ ok: true, already_finalized: true, reservation_id: reservationId });
     }
 
     // 5) Mint tickets if none exist yet (post-payment flow) and finalize
@@ -131,18 +135,12 @@ serve(async (req) => {
 
     if (reservationErr || !reservation) {
       console.error("[finalize-payment] Reservation not found:", reservationErr);
-      return new Response(JSON.stringify({ ok: false, reason: "reservation_not_found" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
+      return ok({ ok: false, reason: "reservation_not_found" });
     }
 
     if (reservation.user_id !== user.id) {
       console.error("[finalize-payment] Reservation not owned by user", { user: user.id, owner: reservation.user_id });
-      return new Response(JSON.stringify({ ok: false, reason: "reservation_not_owned" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 403,
-      });
+      return ok({ ok: false, reason: "reservation_not_owned" });
     }
 
     // 5b) Check if any tickets exist for this reservation
@@ -169,10 +167,7 @@ serve(async (req) => {
       const qty = Number(reservation.quantity || 0);
       if (qty <= 0) {
         console.error("[finalize-payment] Invalid quantity on reservation", { qty });
-        return new Response(JSON.stringify({ ok: false, reason: "invalid_quantity" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        });
+        return ok({ ok: false, reason: "invalid_quantity" });
       }
 
       const payload = Array.from({ length: qty }).map(() => ({
@@ -196,9 +191,7 @@ serve(async (req) => {
             meta: { error: String(insertErr) }
           });
         } catch {}
-        return new Response(JSON.stringify({ ok: false, reason: "ticket_mint_failed" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+        return ok({ ok: false, reason: "ticket_mint_failed" });
       }
 
       try {
@@ -297,12 +290,9 @@ serve(async (req) => {
       console.warn("[finalize-payment] Failed to log exception:", logError);
     }
 
-    return new Response(JSON.stringify({ 
+    return ok({ 
       ok: false, 
       reason: "internal_error" 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
 });
