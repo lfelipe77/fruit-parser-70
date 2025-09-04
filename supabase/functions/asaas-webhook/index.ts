@@ -40,22 +40,41 @@ serve(async (req) => {
     console.warn("Failed to log webhook:", e);
   }
 
-  // 2) Flip DB if paid-like (best-effort)
+  // 2) Flip DB if paid-like (best-effort + visible errors)
   try {
     const status = body?.payment?.status;
     const id = body?.payment?.id;
+
     const paidLike = ["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(status);
     if (paidLike && id) {
-      await sb.from("payments_pending").upsert({
-        asaas_payment_id: id,
-        status: "PAID",
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "asaas_payment_id" });
-      
-      console.log(`Updated payment ${id} to PAID status`);
+      // Try UPDATE first
+      const { data: upd, error: updErr } = await sb
+        .from("payments_pending")
+        .update({ status: "PAID", updated_at: new Date().toISOString() })
+        .eq("asaas_payment_id", id)
+        .select("asaas_payment_id"); // returns [] when no row
+
+      const updatedCount = Array.isArray(upd) ? upd.length : 0;
+
+      // If no row was updated, INSERT (idempotent end-state)
+      if (!updErr && updatedCount === 0) {
+        const { error: insErr } = await sb.from("payments_pending").insert({
+          asaas_payment_id: id,
+          status: "PAID",
+          updated_at: new Date().toISOString(),
+        });
+        if (insErr) throw insErr;
+      }
     }
   } catch (e) {
-    console.warn("Failed to update payment status:", e);
+    // Log handler error into webhook logs (won't block 200)
+    try {
+      await sb.from("asaas_webhook_logs").insert({
+        event: body?.payment?.status ?? body?.event ?? "unknown",
+        raw: { ...(body ?? {}), meta: { handler_error: String(e) } },
+        received_at: new Date().toISOString(),
+      });
+    } catch {}
   }
 
   // 3) Always 200 fast
