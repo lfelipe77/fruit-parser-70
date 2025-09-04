@@ -176,11 +176,9 @@ serve(async (req) => {
 
       // Typical Asaas paid-like signals
       const paid = new Set([
-        "PAYMENT_CONFIRMED",
-        "CONFIRMED",
         "RECEIVED",
+        "CONFIRMED", 
         "RECEIVED_IN_CASH",
-        "PAID",
       ]);
 
       // Hard guard: require pending with non-null reservation_id before finalizing

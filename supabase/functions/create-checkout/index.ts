@@ -177,9 +177,10 @@ serve(async (req) => {
           // Debug: Log the exact structure returned by Asaas
           console.log("[asaas] PIX QR response structure:", JSON.stringify(qr, null, 2));
           
-          // Keep robust key picking: Asaas may vary names
-          pix_qr_code    = qr?.encodedImage || qr?.image || qr?.qrCode || undefined;
-          pix_copy_paste = qr?.payload      || qr?.copyPaste || undefined;
+          // Use payload string for QR code (not encodedImage)
+          const pixString = qr?.payload || "";
+          pix_qr_code = pixString;
+          pix_copy_paste = pixString;
           
           console.log("[asaas] PIX data extracted:", { 
             pix_qr_code: pix_qr_code ? "present" : "missing", 
