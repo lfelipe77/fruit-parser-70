@@ -17,6 +17,8 @@ function json(status: number, body: any) {
   });
 }
 
+const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
@@ -48,23 +50,20 @@ serve(async (req) => {
 
   // Environment variables
   const API_KEY = Deno.env.get("ASAAS_API_KEY");
-  const CUSTOMER_ID = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID");
   const SB_URL = Deno.env.get("SB_URL");
+  const CUSTOMER_ID = "cus_000132351463";
 
   if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
-  if (!CUSTOMER_ID) return json(500, { error: "Missing ASAAS_DEFAULT_CUSTOMER_ID (cus_...)" });
   if (!SB_URL || !SB_SERVICE_ROLE_KEY) return json(500, { error: "Missing Supabase credentials" });
 
   const sb = createClient(SB_URL, SB_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
   try {
-    // Get first N=20 rows from payments_pending where status='PENDING' AND asaas_payment_id IS NULL
+    // Get first N rows from payments_pending where asaas_payment_id IS NULL
     const { data: pendingRows, error: selectError } = await sb
       .from("payments_pending")
-      .select("reservation_id, amount, updated_at")
-      .eq("status", "PENDING")
+      .select("reservation_id, amount")
       .is("asaas_payment_id", null)
-      .order("updated_at", { ascending: true })
       .limit(limit);
 
     if (selectError) {
@@ -75,16 +74,15 @@ serve(async (req) => {
       return json(200, { processed: 0, successes: 0, failures: 0, items: [], message: "No pending payments to backfill" });
     }
 
-    const results = [];
-    let successes = 0;
-    let failures = 0;
+    const successesArr: any[] = [];
+    const failuresArr: any[] = [];
 
     for (const row of pendingRows) {
       const { reservation_id, amount } = row;
       
       try {
         // Create Asaas payment
-        const value = Number(Number(amount).toFixed(2));
+        const value = Number(Number(amount ?? 5).toFixed(2)) || 5.00;
         const dueDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
         
         const asaasPayload = {
@@ -93,7 +91,7 @@ serve(async (req) => {
           value,
           dueDate,
           externalReference: reservation_id,
-          description: "Ganhavel - Compra de rifa"
+          description: "Ganhavel - Backfill de rifa"
         };
 
         console.log(`[backfill] Creating payment for reservation ${reservation_id}, amount ${value}`);
@@ -121,13 +119,11 @@ serve(async (req) => {
           
           console.error(`[backfill] Asaas error for ${reservation_id}:`, { status: res.status, details });
           
-          results.push({
+          failuresArr.push({
             reservation_id,
-            ok: false,
             error: `Asaas API error: ${res.status}`,
             details
           });
-          failures++;
           continue;
         }
 
@@ -136,13 +132,11 @@ serve(async (req) => {
         
         if (!asaas_payment_id) {
           console.error(`[backfill] No payment ID returned for ${reservation_id}:`, created);
-          results.push({
+          failuresArr.push({
             reservation_id,
-            ok: false,
             error: "No payment ID in Asaas response",
             asaas_response: created
           });
-          failures++;
           continue;
         }
 
