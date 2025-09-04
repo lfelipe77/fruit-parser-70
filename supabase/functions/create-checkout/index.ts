@@ -174,10 +174,18 @@ serve(async (req) => {
 
         const qr = await qrRes.json().catch(() => null);
         if (qrRes.ok && qr) {
+          // Debug: Log the exact structure returned by Asaas
+          console.log("[asaas] PIX QR response structure:", JSON.stringify(qr, null, 2));
+          
           // Keep robust key picking: Asaas may vary names
           pix_qr_code    = qr?.encodedImage || qr?.image || qr?.qrCode || undefined;
           pix_copy_paste = qr?.payload      || qr?.copyPaste || undefined;
-          console.log("[asaas] PIX QR code fetched successfully for payment:", provider_payment_id);
+          
+          console.log("[asaas] PIX data extracted:", { 
+            pix_qr_code: pix_qr_code ? "present" : "missing", 
+            pix_copy_paste: pix_copy_paste ? "present" : "missing",
+            payment_id: provider_payment_id 
+          });
         } else {
           console.warn("[asaas] no pix qr data for", provider_payment_id, { status: qrRes.status, qr });
         }
