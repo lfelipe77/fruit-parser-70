@@ -108,7 +108,7 @@ export default function ConfirmacaoPagamento() {
 
   // Get query params
   const searchParams = new URLSearchParams(location.search);
-  const reservationId = searchParams.get('reservationId') || nanoid();
+  const reservationId = searchParams.get('reservationId') || crypto.randomUUID();
   const raffleId = id || searchParams.get('raffleId');
 
   // Server state for persistence

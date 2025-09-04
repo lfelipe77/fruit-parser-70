@@ -17,6 +17,8 @@ function json(status: number, body: any) {
   });
 }
 
+const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
@@ -102,7 +104,7 @@ serve(async (req) => {
       }
 
       // Persist minimal snapshot + link (no transactions writes)
-      if (sb) {
+      if (sb && isUuid(reservation_id)) {
         const pendingUpsert = {
           reservation_id,
           asaas_payment_id: provider_payment_id,
@@ -123,6 +125,8 @@ serve(async (req) => {
         const { error: linkErr } = await sb.from("purchase_payments")
           .upsert(linkUpsert, { onConflict: "purchase_id" });
         if (linkErr) console.warn("[create-checkout] purchase_payments upsert error:", linkErr);
+      } else if (!isUuid(reservation_id)) {
+        console.warn("[create-checkout] Skipping DB upserts: reservation_id is not a UUID");
       } else {
         console.warn("[create-checkout] Service client unavailable; DB upserts skipped");
       }
