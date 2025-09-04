@@ -78,13 +78,17 @@ serve(async (req) => {
       if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
 
       const customerId = "cus_000132351463"; // Static customer per business requirement
+      if (!/^cus_/.test(customerId)) {
+        console.error("[create-checkout] INVALID customerId:", customerId);
+        return json(500, { error: "Invalid Asaas customer id. Expected 'cus_...'", using: customerId });
+      }
       console.log("[create-checkout] using_customer:", customerId);
 
       if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
       // DRY RUN: show payload without calling Asaas
       if (dryRun === true) {
         const subtotal = Number(amount ?? 0);
-        const value = Number(subtotal.toFixed(2));
+        const value = Number(charge_total.toFixed(2));
         const dueDate = new Date().toISOString().slice(0,10);
 
         const asaasPayload = {
@@ -113,7 +117,7 @@ serve(async (req) => {
       }
 
       if (!provider_payment_id) {
-        const value = Number(subtotal.toFixed(2));
+        const value = Number(charge_total.toFixed(2));
         const dueDate = new Date().toISOString().slice(0,10);
         const asaasPayload = {
           customer: customerId,
@@ -156,27 +160,27 @@ serve(async (req) => {
         provider_payment_id = created?.id ?? null;
         if (!provider_payment_id) return json(502, { error: "Asaas returned no payment id", raw: created });
 
-        // Fetch PIX QR code data for embedded payment
-        let pixData = null;
-        try {
-          const pixRes = await fetch(`${ASAAS_API}/payments/${provider_payment_id}/pixQrCode`, {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-              access_token: API_KEY,
-              "User-Agent": "Ganhavel/1.0 (pix-qr)",
-            },
-          });
+        // Fetch PIX QR code data for embedded payment - ALWAYS try to get PIX data
+      }
 
-          if (pixRes.ok) {
-            const pixRaw = await pixRes.text();
-            pixData = JSON.parse(pixRaw);
-            console.log("[asaas] PIX QR code fetched successfully for payment:", provider_payment_id);
-          } else {
-            console.warn("[asaas] Failed to fetch PIX QR code:", pixRes.status, await pixRes.text());
-          }
-        } catch (pixError) {
-          console.error("[asaas] Error fetching PIX QR code:", pixError);
+      // Always fetch PIX QR data after payment creation
+      let pix_qr_code: string | undefined;
+      let pix_copy_paste: string | undefined;
+
+      if (provider_payment_id) {
+        const qrRes = await fetch(`${ASAAS_API}/payments/${provider_payment_id}/pixQrCode`, {
+          method: "GET",
+          headers: { accept: "application/json", access_token: API_KEY }
+        });
+
+        const qr = await qrRes.json().catch(() => null);
+        if (qrRes.ok && qr) {
+          // Keep robust key picking: Asaas may vary names
+          pix_qr_code    = qr?.encodedImage || qr?.image || qr?.qrCode || undefined;
+          pix_copy_paste = qr?.payload      || qr?.copyPaste || undefined;
+          console.log("[asaas] PIX QR code fetched successfully for payment:", provider_payment_id);
+        } else {
+          console.warn("[asaas] no pix qr data for", provider_payment_id, { status: qrRes.status, qr });
         }
       }
 
@@ -230,9 +234,8 @@ serve(async (req) => {
       qty,
       currency,
       // PIX-specific data for embedded payment
-      pix_qr_code: pixData?.qrCode,
-      pix_copy_paste: pixData?.payload,
-      pix_expires_date: pixData?.expirationDate,
+      pix_qr_code,
+      pix_copy_paste,
     });
   } catch (e) {
     console.error("Create checkout error:", e);

@@ -450,10 +450,10 @@ export default function ConfirmacaoPagamento() {
         return;
       }
 
-      // 3) Inputs - tickets only (excluding institutional fee)
-      const safeQty = Math.max(1, asNumber(qty, 1));
-      const unitPrice = asNumber(raffle?.ticket_price, 0);
-      const totalPaid = +(unitPrice * safeQty).toFixed(2); // subtotal only (excludes fee)
+      // 3) Inputs - tickets only (fee added server-side)
+      const unitPrice = raffle?.ticket_price ?? 0;
+      const safeQty = Math.max(1, Number(qty));
+      const subtotal = Number((unitPrice * safeQty).toFixed(2));
 
       const payloadData = {
         provider: 'asaas',
@@ -461,7 +461,7 @@ export default function ConfirmacaoPagamento() {
         reservation_id: reservationId,
         raffle_id: id,
         qty: safeQty,
-        amount: unitPrice * safeQty,
+        amount: subtotal, // tickets-only; fee added server-side
         currency: 'BRL',
         buyer: {
           fullName: formData.fullName,
@@ -543,7 +543,8 @@ export default function ConfirmacaoPagamento() {
       }
 
       // Check if we have PIX data for embedded payment
-      if (checkoutData.pix_qr_code || checkoutData.pix_copy_paste) {
+      const hasPix = !!(checkoutData.pix_qr_code || checkoutData.pix_copy_paste);
+      if (hasPix) {
         console.log("[payment] Opening PIX modal:", {
           payment_id: checkoutData.provider_payment_id,
           amount: checkoutData.charge_total,
@@ -553,7 +554,7 @@ export default function ConfirmacaoPagamento() {
 
         setPixPaymentData({
           provider_payment_id: checkoutData.provider_payment_id,
-          amount: checkoutData.charge_total,
+          amount: checkoutData.charge_total, // Display charge_total (includes fee)
           pix_qr_code: checkoutData.pix_qr_code,
           pix_copy_paste: checkoutData.pix_copy_paste,
           reservation_id: reservationId,
@@ -561,18 +562,15 @@ export default function ConfirmacaoPagamento() {
           qty: safeQty
         });
         setShowPixModal(true);
+      } else if (checkoutData.redirect_url) {
+        // Fallback to redirect
+        window.location.href = checkoutData.redirect_url;
       } else {
-        // Fallback to redirect if no PIX data
-        console.warn("[payment] No PIX data, falling back to redirect");
-        if (checkoutData.redirect_url) {
-          window.location.href = checkoutData.redirect_url;
-        } else {
-          toast({
-            title: "Erro no pagamento",
-            description: "Dados PIX não encontrados. Tente novamente.",
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Erro no pagamento",
+          description: "Dados PIX não encontrados. Tente novamente.",
+          variant: "destructive"
+        });
       }
     } catch (e: any) {
       console.error("[payment] unexpected error", {
