@@ -74,13 +74,31 @@ serve(async (req) => {
 
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
-      const CUSTOMER_ID = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID"); // must be 'cus_...'
-      
-      // REQUIRED: If missing, return 500 with clear message:
-      if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
-      if (!CUSTOMER_ID) return json(500, { error: "Missing ASAAS_DEFAULT_CUSTOMER_ID (cus_...)" });
-      if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
+      // Resolve customer id: ENV first, then app_config when available
+      const envCus = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID") || "";
+      let customerId = envCus;
 
+      if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
+
+      // Optional lookup from app_config if env is empty
+      if (!customerId && sb) {
+        const { data } = await sb
+          .from("app_config")
+          .select("value")
+          .eq("key", "asaas_default_customer")
+          .maybeSingle();
+        // deno-lint-ignore no-explicit-any
+        customerId = (data as any)?.value?.id ?? "";
+      }
+
+      // Validate customer format
+      if (!/^cus_/.test(customerId)) {
+        console.error("[create-checkout] INVALID customerId:", customerId);
+        return json(500, { error: "Invalid Asaas customer id. Expected 'cus_...'.", using: customerId });
+      }
+      console.log("[create-checkout] using_customer:", customerId);
+
+      if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
       // DRY RUN: show payload without calling Asaas
       if (dryRun === true) {
         const subtotal = Number(amount ?? 0);
@@ -88,7 +106,7 @@ serve(async (req) => {
         const dueDate = new Date().toISOString().slice(0,10);
 
         const asaasPayload = {
-          customer: CUSTOMER_ID ?? null,
+          customer: customerId,
           billingType: "PIX",
           value,
           dueDate,
@@ -116,7 +134,7 @@ serve(async (req) => {
         const value = Number(subtotal.toFixed(2));
         const dueDate = new Date().toISOString().slice(0,10);
         const asaasPayload = {
-          customer: CUSTOMER_ID,
+          customer: customerId,
           billingType: "PIX",
           value,
           dueDate,
