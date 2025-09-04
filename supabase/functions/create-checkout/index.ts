@@ -71,16 +71,13 @@ serve(async (req) => {
   try {
     let provider_payment_id: string | null = null;
     let redirect_url: string | null = null;
+    let pixData: any = null;
 
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
       if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
 
-      const customerId = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID") || "";
-      if (!/^cus_/.test(customerId)) {
-        console.error("[create-checkout] INVALID customerId:", customerId);
-        return json(500, { error: "Invalid Asaas customer id. Expected 'cus_...'", using: customerId });
-      }
+      const customerId = "cus_000132351463"; // Static customer per business requirement
       console.log("[create-checkout] using_customer:", customerId);
 
       if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
@@ -96,7 +93,7 @@ serve(async (req) => {
           value,
           dueDate,
           externalReference: reservation_id ?? null,
-          description: "Ganhavel - Compra de rifa",
+          description: "Ganhavel - Compra de bilhetes",
         };
 
         return new Response(JSON.stringify({ ok: true, dryRun: true, request: asaasPayload }), {
@@ -124,7 +121,7 @@ serve(async (req) => {
           value,
           dueDate,
           externalReference: reservation_id,
-          description: "Ganhavel - Compra de rifa",
+          description: "Ganhavel - Compra de bilhetes",
         };
 
         const TRACE_ID = crypto.randomUUID();
