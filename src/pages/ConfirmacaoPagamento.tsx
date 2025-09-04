@@ -479,11 +479,18 @@ export default function ConfirmacaoPagamento() {
 
       // Log response
       if (error) {
-        console.error("[payment] create-checkout error", {
-          error,
-          reservationId: reservationUuid,
-          message: error.message
-        });
+        const resp = (error as any)?.context?.response;
+        console.error("[payment] FAIL status", resp?.status);
+        if (resp) {
+          try {
+            const errorBody = await resp.text();
+            console.error("[payment] body", errorBody);
+          } catch (e) {
+            console.error("[payment] body read error", e);
+          }
+        } else {
+          console.error("[payment] message", error.message);
+        }
         toast.error("Pagamento falhou. Tente novamente.");
         return;
       }

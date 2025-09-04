@@ -74,7 +74,7 @@ serve(async (req) => {
       }
 
       if (!provider_payment_id) {
-        const value = subtotal.toFixed(2);
+        const value = Number(subtotal.toFixed(2));
         const res = await fetch(`${ASAAS_API}/payments`, {
           method: "POST",
           headers: {
