@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -108,7 +108,11 @@ export default function ConfirmacaoPagamento() {
 
   // Get query params
   const searchParams = new URLSearchParams(location.search);
-  const reservationId = searchParams.get('reservationId') || crypto.randomUUID();
+  const reservationUuid = useMemo(() => 
+    searchParams.get('reservationId') || crypto.randomUUID(), 
+    [searchParams]
+  );
+  const reservationId = reservationUuid;
   const raffleId = id || searchParams.get('raffleId');
 
   // Server state for persistence
@@ -461,7 +465,7 @@ export default function ConfirmacaoPagamento() {
 
       // Log before invoke
       console.log("[payment] Calling create-checkout", {
-        reservationId,
+        reservationId: reservationUuid,
         raffleId: id,
         qty: safeQty,
         amount: payloadData.amount,
@@ -477,7 +481,7 @@ export default function ConfirmacaoPagamento() {
       if (error) {
         console.error("[payment] create-checkout error", {
           error,
-          reservationId,
+          reservationId: reservationUuid,
           message: error.message
         });
         toast.error("Pagamento falhou. Tente novamente.");

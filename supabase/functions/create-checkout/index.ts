@@ -47,10 +47,10 @@ serve(async (req) => {
     });
   }
 
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-  const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const sb = (SUPABASE_URL && SERVICE_KEY)
-    ? createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } })
+  const SB_URL = Deno.env.get("SB_URL");
+  const SB_SERVICE_KEY = Deno.env.get("SB_SERVICE_ROLE_KEY");
+  const sb = (SB_URL && SB_SERVICE_KEY)
+    ? createClient(SB_URL, SB_SERVICE_KEY, { auth: { persistSession: false } })
     : null;
 
   try {
