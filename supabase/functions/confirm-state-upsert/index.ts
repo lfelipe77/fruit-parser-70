@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-export default withCORS(async (req: Request): Promise<Response> => {
+async function handler(req: Request): Promise<Response> {
   try {
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
@@ -167,4 +167,6 @@ export default withCORS(async (req: Request): Promise<Response> => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
-});
+}
+
+export default withCORS(handler);

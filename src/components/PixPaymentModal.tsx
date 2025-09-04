@@ -146,7 +146,7 @@ export default function PixPaymentModal({
             <div className="flex justify-center">
               <div className="bg-white p-4 rounded-lg">
                 <QRCodeSVG 
-                  value={paymentData.pix_qr_code} 
+                  value={paymentData.pix_copy_paste || paymentData.pix_qr_code} 
                   size={200}
                   level="M"
                 />
