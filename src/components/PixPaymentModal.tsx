@@ -57,11 +57,16 @@ export default function PixPaymentModal({
 
     const pollInterval = setInterval(async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("payments_pending")
           .select("status")
           .eq("asaas_payment_id", paymentData.provider_payment_id)
-          .single();
+          .maybeSingle();
+
+        if (error) {
+          console.warn("Payment polling error:", error.message);
+          return;
+        }
 
         if (data?.status === "PAID") {
           setIsPolling(false);
@@ -73,7 +78,7 @@ export default function PixPaymentModal({
           });
         }
       } catch (error) {
-        console.warn("Payment polling error:", error);
+        console.warn("Payment polling unexpected error:", error);
       }
     }, 3000); // Poll every 3 seconds
 
