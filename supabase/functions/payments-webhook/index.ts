@@ -139,10 +139,20 @@ async function confirmAndLog(
   console.log(`Payment finalized: reservation=${reservationId}, subtotal=${subtotalOnly}, provider=${provider}`);
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+};
+
 serve(async (req) => {
   try {
+    if (req.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+    
     if (req.method !== "POST") {
-      return new Response("Method Not Allowed", { status: 405 });
+      return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
     }
 
     const url = new URL(req.url);
@@ -153,7 +163,7 @@ serve(async (req) => {
     // ASAAS
     if (path.endsWith("/asaas")) {
       if (!verifyAsaasSignature(raw, req)) {
-        return new Response("Invalid Asaas signature", { status: 400 });
+        return new Response("Invalid Asaas signature", { status: 400, headers: corsHeaders });
       }
       const payload = JSON.parse(text || "{}");
 
@@ -182,17 +192,17 @@ serve(async (req) => {
           .limit(1);
         if (!pp?.length || !pp[0]?.reservation_id) {
           console.error(`Rejecting webhook without reservation_id for provider_payment_id=${providerPaymentId}`);
-          return new Response("Missing reservation_id", { status: 400 });
+          return new Response("Missing reservation_id", { status: 400, headers: corsHeaders });
         }
         await confirmAndLog("asaas", providerPaymentId, payload);
       }
-      return new Response("OK", { status: 200 });
+      return new Response("OK", { status: 200, headers: corsHeaders });
     }
 
     // STRIPE
     if (path.endsWith("/stripe")) {
       if (!verifyStripeSignature(raw, req)) {
-        return new Response("Invalid Stripe signature", { status: 400 });
+        return new Response("Invalid Stripe signature", { status: 400, headers: corsHeaders });
       }
       const event = JSON.parse(text || "{}");
       let providerPaymentId = "";
@@ -213,12 +223,12 @@ serve(async (req) => {
       if (providerPaymentId) {
         await confirmAndLog("stripe", providerPaymentId, event);
       }
-      return new Response("OK", { status: 200 });
+      return new Response("OK", { status: 200, headers: corsHeaders });
     }
 
-    return new Response("Not Found", { status: 404 });
+    return new Response("Not Found", { status: 404, headers: corsHeaders });
   } catch (err) {
     console.error("WEBHOOK ERROR:", err);
-    return new Response("Internal Error", { status: 500 });
+    return new Response("Internal Error", { status: 500, headers: corsHeaders });
   }
 });
