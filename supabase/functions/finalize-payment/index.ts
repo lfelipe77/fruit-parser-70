@@ -123,22 +123,22 @@ serve(async (req) => {
 
     // 5) Mint tickets if none exist yet (post-payment flow) and finalize
     // 5a) Load purchase to validate ownership and get raffle/qty/price
-    const { data: purchase, error: purchaseErr } = await sbService
-      .from("purchases")
-      .select("id, user_id, raffle_id, quantity, unit_price, amount")
+    const { data: reservation, error: reservationErr } = await sbService
+      .from("reservations")
+      .select("id, user_id, raffle_id, quantity, unit_price")
       .eq("id", reservationId)
       .maybeSingle();
 
-    if (purchaseErr || !purchase) {
-      console.error("[finalize-payment] Purchase not found:", purchaseErr);
+    if (reservationErr || !reservation) {
+      console.error("[finalize-payment] Reservation not found:", reservationErr);
       return new Response(JSON.stringify({ ok: false, reason: "reservation_not_found" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
 
-    if (purchase.user_id !== user.id) {
-      console.error("[finalize-payment] Reservation not owned by user", { user: user.id, owner: purchase.user_id });
+    if (reservation.user_id !== user.id) {
+      console.error("[finalize-payment] Reservation not owned by user", { user: user.id, owner: reservation.user_id });
       return new Response(JSON.stringify({ ok: false, reason: "reservation_not_owned" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 403,
@@ -166,9 +166,9 @@ serve(async (req) => {
     }
 
     if (!existingCount || existingCount === 0) {
-      const qty = Number(purchase.quantity || 0);
+      const qty = Number(reservation.quantity || 0);
       if (qty <= 0) {
-        console.error("[finalize-payment] Invalid quantity on purchase", { qty });
+        console.error("[finalize-payment] Invalid quantity on reservation", { qty });
         return new Response(JSON.stringify({ ok: false, reason: "invalid_quantity" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
@@ -176,11 +176,11 @@ serve(async (req) => {
       }
 
       const payload = Array.from({ length: qty }).map(() => ({
-        raffle_id: purchase.raffle_id,
+        raffle_id: reservation.raffle_id,
         reservation_id: reservationId,
-        user_id: purchase.user_id,
+        user_id: reservation.user_id,
         status: "paid" as const,
-        unit_price: purchase.unit_price,
+        unit_price: reservation.unit_price,
       }));
 
       const { error: insertErr } = await sbService.from("tickets").insert(payload);
@@ -208,7 +208,7 @@ serve(async (req) => {
           step: "tickets_minted",
           ok: true,
           message: `minted ${qty} tickets`,
-          meta: { raffle_id: purchase.raffle_id }
+          meta: { raffle_id: reservation.raffle_id }
         });
       } catch {}
     } else {
@@ -229,7 +229,7 @@ serve(async (req) => {
       const { error: aErr } = await sbService.from("payments_applied").insert({
         payment_id: asaasPaymentId,
         reservation_id: reservationId,
-        user_id: purchase.user_id,
+        user_id: reservation.user_id,
         applied_at: new Date().toISOString(),
       });
       if (aErr) appliedInsertError = aErr;
