@@ -1,219 +1,143 @@
+// deno-lint-ignore-file no-explicit-any
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
-type Provider = "asaas" | "stripe";
-type Body = {
-  provider: Provider;
-  method?: string;
-  raffle_id: string;
-  qty: number;
-  amount: number;   // base ticket revenue (qty * ticket_price)
-  currency: "BRL";
-  reservation_id?: string; // optional reservation to propagate for idempotency
-  buyer?: {
-    fullName: string;
-    phone: string;
-    cpf: string;
-  };
-};
+const ASAAS_API = "https://api.asaas.com/v3";
+
+function json(status: number, body: any) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+
+  const MAINT = Deno.env.get("MAINTENANCE") === "true";
+  if (MAINT) return json(503, { ok: false, code: "MAINTENANCE" });
+
+  let body: any;
+  try { body = await req.json(); } catch { return json(400, { error: "Invalid JSON body" }); }
+
+  const { provider, method, raffle_id, qty, amount, currency, reservation_id } = body ?? {};
+  if (!provider || !raffle_id || !qty || typeof amount !== "number" || !currency) {
+    return json(400, { error: "Missing fields", required: ["provider", "raffle_id", "qty", "amount:number", "currency"] });
   }
 
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { 
-      status: 405, 
-      headers: corsHeaders 
+  const fee_fixed = 2.0;
+  const subtotal = amount;                 // tickets-only
+  const charge_total = subtotal + fee_fixed;
+  if (subtotal < 3.0 || charge_total < 5.0) {
+    return json(400, {
+      error: "Minimum charge requirement not met",
+      minimum_subtotal: 3.0,
+      minimum_charge_total: 5.0,
+      received_subtotal: subtotal,
+      received_charge_total: charge_total,
     });
   }
 
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const sb = (SUPABASE_URL && SERVICE_KEY)
+    ? createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } })
+    : null;
+
   try {
-    const { provider, method, raffle_id, qty, amount, currency, reservation_id, buyer } = (await req.json()) as Body;
+    let provider_payment_id: string | null = null;
+    let redirect_url: string | null = null;
 
-    if (!provider || !raffle_id || !qty || !currency) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), { 
-        status: 400, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+    if (provider === "asaas" && (method ?? "pix") === "pix") {
+      const API_KEY = Deno.env.get("ASAAS_API_KEY");
+      const CUSTOMER_ID = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID");
+      if (!API_KEY || !CUSTOMER_ID) return json(500, { error: "Asaas env vars not set" });
+      if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Handle Asaas PIX payments
-    if (provider === 'asaas' && method === 'pix') {
-      if (!reservation_id) {
-        return new Response(JSON.stringify({ error: "reservation_id required for Asaas PIX" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+      // Reuse if already created for this reservation
+      if (sb) {
+        const { data: existing, error: exErr } = await sb
+          .from("payments_pending")
+          .select("reservation_id, asaas_payment_id")
+          .eq("reservation_id", reservation_id)
+          .maybeSingle();
+        if (!exErr && existing?.asaas_payment_id) provider_payment_id = existing.asaas_payment_id;
       }
 
-      // Get raffle price server-side
-      const { data: raffleData, error: raffleError } = await supabase
-        .from('raffles')
-        .select('ticket_price')
-        .eq('id', raffle_id)
-        .single();
-
-      if (raffleError || !raffleData) {
-        return new Response(JSON.stringify({ error: "Raffle not found" }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-
-      // Compute value server-side
-      const ticketPrice = parseFloat(raffleData.ticket_price || '0');
-      const value = (ticketPrice * qty).toFixed(2);
-
-      // Check for existing payment
-      const { data: existingPayment } = await supabase
-        .from('payments_pending')
-        .select('reservation_id, asaas_payment_id, ui_state')
-        .eq('reservation_id', reservation_id)
-        .single();
-
-      let asaasPaymentId = existingPayment?.asaas_payment_id;
-      let invoiceUrl = '';
-
-      if (!asaasPaymentId) {
-        // Create new Asaas payment
-        const asaasApiKey = Deno.env.get('ASAAS_API_KEY');
-        const asaasCustomerId = Deno.env.get('ASAAS_DEFAULT_CUSTOMER_ID');
-
-        if (!asaasApiKey || !asaasCustomerId) {
-          return new Response(JSON.stringify({ error: "Asaas configuration missing" }), {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-          });
-        }
-
-        const today = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
-
-        const asaasPayload = {
-          customer: asaasCustomerId,
-          billingType: "PIX",
-          value: value,
-          dueDate: today,
-          externalReference: reservation_id,
-          description: "Ganhavel - Compra de rifa"
-        };
-
-        const asaasResponse = await fetch('https://api.asaas.com/v3/payments', {
-          method: 'POST',
+      if (!provider_payment_id) {
+        const value = subtotal.toFixed(2);
+        const res = await fetch(`${ASAAS_API}/payments`, {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${asaasApiKey}`,
-            'Content-Type': 'application/json',
+            accept: "application/json",
+            "content-type": "application/json",
+            access_token: API_KEY,
+            "User-Agent": "Ganhavel/1.0 (create-checkout)",
           },
-          body: JSON.stringify(asaasPayload),
+          body: JSON.stringify({
+            customer: CUSTOMER_ID,            // fixed Felipe
+            billingType: "PIX",
+            value,                            // "10.00"
+            dueDate: new Date().toISOString().slice(0,10),
+            externalReference: reservation_id, // glue
+            description: "Ganhavel - Compra de rifa",
+          }),
         });
-
-        if (!asaasResponse.ok) {
-          const errorText = await asaasResponse.text();
-          console.error('Asaas API error:', errorText);
-          return new Response(JSON.stringify({ error: "Payment creation failed" }), {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-          });
+        if (!res.ok) {
+          const txt = await res.text();
+          console.error("Asaas /payments error:", txt);
+          return json(502, { error: "Asaas create payment failed", details: safeParse(txt) });
         }
-
-        const asaasData = await asaasResponse.json();
-        asaasPaymentId = asaasData.id;
-        invoiceUrl = asaasData.invoiceUrl || '';
-
-        // Get PIX QR Code
-        let pixData = null;
-        try {
-          const pixResponse = await fetch(`https://api.asaas.com/v3/payments/${asaasPaymentId}/pixQrCode`, {
-            headers: {
-              'Authorization': `Bearer ${asaasApiKey}`,
-            },
-          });
-
-          if (pixResponse.ok) {
-            pixData = await pixResponse.json();
-          }
-        } catch (error) {
-          console.warn('Failed to get PIX QR code:', error);
-        }
-
-        // Update payments_pending
-        const uiState = {
-          ...(existingPayment?.ui_state || {}),
-          pix: pixData
-        };
-
-        await supabase
-          .from('payments_pending')
-          .update({
-            asaas_payment_id: asaasPaymentId,
-            ui_state: uiState
-          })
-          .eq('reservation_id', reservation_id);
-
-        // Upsert purchase_payments
-        await supabase
-          .from('purchase_payments')
-          .upsert({
-            purchase_id: reservation_id,
-            provider: 'asaas',
-            provider_payment_id: asaasPaymentId,
-            status: 'pending',
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'purchase_id,provider'
-          });
-
-        console.log(`Created Asaas PIX payment: ${asaasPaymentId} for reservation: ${reservation_id}`);
-      } else {
-        console.log(`Reusing existing Asaas PIX payment: ${asaasPaymentId} for reservation: ${reservation_id}`);
+        const created = await res.json();
+        provider_payment_id = created?.id ?? null;
+        redirect_url = created?.invoiceUrl ?? null;
+        if (!provider_payment_id) return json(502, { error: "Asaas returned no payment id", raw: created });
       }
 
-      return new Response(JSON.stringify({
-        asaas_payment_id: asaasPaymentId,
-        invoiceUrl
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      // Persist minimal snapshot + link (no transactions writes)
+      if (sb) {
+        const pendingUpsert = {
+          reservation_id,
+          asaas_payment_id: provider_payment_id,
+          amount: subtotal,
+          status: "PENDING",
+          updated_at: new Date().toISOString(),
+        };
+        const { error: upErr } = await sb.from("payments_pending")
+          .upsert(pendingUpsert, { onConflict: "reservation_id" });
+        if (upErr) console.warn("[create-checkout] payments_pending upsert error:", upErr);
+
+        const linkUpsert = {
+          purchase_id: reservation_id,
+          asaas_payment_id: provider_payment_id,
+          status: "pending",
+          updated_at: new Date().toISOString(),
+        };
+        const { error: linkErr } = await sb.from("purchase_payments")
+          .upsert(linkUpsert, { onConflict: "purchase_id" });
+        if (linkErr) console.warn("[create-checkout] purchase_payments upsert error:", linkErr);
+      } else {
+        console.warn("[create-checkout] Service client unavailable; DB upserts skipped");
+      }
+    } else {
+      // mock branch for other providers
+      provider_payment_id = `${provider}_${crypto.randomUUID()}`;
+      redirect_url = `https://example.com/checkout/${provider_payment_id}`;
     }
 
-    // Fallback for other providers (original mock logic)
-    const fee_fixed = 2.0;
-    const subtotal = amount;
-    const charge_total = subtotal + fee_fixed;
-    
-    if (subtotal < 3.00 || charge_total < 5.00) {
-      return new Response(JSON.stringify({
-        error: "Minimum charge requirement not met",
-        minimum_subtotal: 3.00,
-        minimum_charge_total: 5.00,
-        received_subtotal: subtotal,
-        received_charge_total: charge_total
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+    console.log(`Checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal.toFixed(2)}, fee=${fee_fixed.toFixed(2)}, total=${charge_total.toFixed(2)}, reservation=${reservation_id || "none"}`);
 
-    const provider_payment_id = `${provider}_${crypto.randomUUID()}`;
-    const redirect_url = `https://example.com/checkout/${provider_payment_id}`;
-
-    console.log(`Creating checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal.toFixed(2)}`);
-
-    return new Response(JSON.stringify({
+    return json(200, {
+      ok: true,
       provider,
+      method: method ?? "pix",
       provider_payment_id,
       redirect_url,
       reservation_id,
@@ -225,19 +149,12 @@ serve(async (req) => {
       total_amount: charge_total,
       raffle_id,
       qty,
-      currency
-    }), { 
-      status: 200, 
-      headers: { 
-        ...corsHeaders, 
-        "Content-Type": "application/json" 
-      } 
+      currency,
     });
   } catch (e) {
     console.error("Create checkout error:", e);
-    return new Response(JSON.stringify({ error: "Internal server error" }), { 
-      status: 500, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+    return json(500, { error: "Internal Error", details: `${e?.message ?? e}` });
   }
 });
+
+function safeParse(txt: string) { try { return JSON.parse(txt); } catch { return { raw: txt }; } }
