@@ -1,6 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { withCORS } from '../_shared/cors.ts'
 
+// Supabase Edge Functions must set CORS headers explicitly.
+// Docs: supabase.com/docs/guides/functions#cors
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",

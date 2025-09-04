@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
+// Supabase Edge Functions must set CORS headers explicitly.
+// Docs: supabase.com/docs/guides/functions#cors
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -177,10 +179,11 @@ serve(async (req) => {
           // Debug: Log the exact structure returned by Asaas
           console.log("[asaas] PIX QR response structure:", JSON.stringify(qr, null, 2));
           
-          // Use payload string for QR code (not encodedImage)
-          const pixString = qr?.payload || "";
-          pix_qr_code = pixString;
-          pix_copy_paste = pixString;
+// Asaas docs: GET /v3/payments/{id}/pixQrCode → { encodedImage, payload, expirationDate }
+// We must use `payload` (string) for QR generation and copy/paste, not encodedImage.
+const pixString = qr?.payload || "";
+pix_qr_code = pixString;
+pix_copy_paste = pixString;
           
           console.log("[asaas] PIX data extracted:", { 
             pix_qr_code: pix_qr_code ? "present" : "missing", 

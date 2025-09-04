@@ -139,6 +139,8 @@ async function confirmAndLog(
   console.log(`Payment finalized: reservation=${reservationId}, subtotal=${subtotalOnly}, provider=${provider}`);
 }
 
+// Supabase Edge Functions must set CORS headers explicitly.
+// Docs: supabase.com/docs/guides/functions#cors
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -174,12 +176,14 @@ serve(async (req) => {
         payload?.event ?? payload?.payment?.status ?? payload?.status ?? ""
       ).toUpperCase();
 
-      // Typical Asaas paid-like signals
-      const paid = new Set([
-        "RECEIVED",
-        "CONFIRMED", 
-        "RECEIVED_IN_CASH",
-      ]);
+// Asaas payment event statuses: PENDING, RECEIVED, CONFIRMED, RECEIVED_IN_CASH, etc.
+// We treat RECEIVED / CONFIRMED / RECEIVED_IN_CASH as "PAID" in our DB.
+// Docs: docs.asaas.com → "Payment events" + "About webhooks"
+const paid = new Set([
+  "RECEIVED",
+  "CONFIRMED", 
+  "RECEIVED_IN_CASH",
+]);
 
       // Hard guard: require pending with non-null reservation_id before finalizing
       if (providerPaymentId && paid.has(status)) {

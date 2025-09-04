@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Supabase Edge Functions must set CORS headers explicitly.
+// Docs: supabase.com/docs/guides/functions#cors
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -42,7 +44,9 @@ serve(async (req) => {
       });
     }
 
-    const asaasResp = await fetch(`https://sandbox.asaas.com/api/v3/payments/${payment_id}`, {
+// Fallback: calls GET /v3/payments/{id} (Asaas REST API) to verify real-time status.
+// Avoids waiting on webhook lag; official guidance is still to use webhooks, not polling.
+const asaasResp = await fetch(`https://sandbox.asaas.com/api/v3/payments/${payment_id}`, {
       headers: {
         "access_token": asaasKey,
         "Content-Type": "application/json"
