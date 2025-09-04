@@ -81,6 +81,11 @@ export default function PixPaymentModal({
           clearInterval(pollInterval);
           
           // Finalize the purchase to mint tickets and update raffle data
+          console.log('[PIX Poll] Starting finalization with data:', {
+            reservationId: paymentData.reservation_id,
+            asaasPaymentId: paymentData.provider_payment_id
+          });
+          
           try {
             const { data: finalizeData, error: finalizeError } = await supabase.functions.invoke('finalize-payment', {
               body: {
@@ -89,6 +94,8 @@ export default function PixPaymentModal({
               }
             });
 
+            console.log('[PIX Poll] Function response:', { finalizeData, finalizeError });
+
             if (finalizeError) {
               console.error('[PIX Poll] Finalization failed:', finalizeError);
               // Still navigate to success even if finalization fails - webhook will handle it
@@ -96,7 +103,7 @@ export default function PixPaymentModal({
               console.log('[PIX Poll] Purchase finalized successfully:', finalizeData);
             }
           } catch (finalizeErr) {
-            console.error('[PIX Poll] Finalization error:', finalizeErr);
+            console.error('[PIX Poll] Finalization exception:', finalizeErr);
           }
 
           onSuccess({
