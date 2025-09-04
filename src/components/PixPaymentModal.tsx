@@ -57,6 +57,8 @@ export default function PixPaymentModal({
 
     const pollInterval = setInterval(async () => {
       try {
+        console.log(`[PIX Poll] Checking payment status for ${paymentData.provider_payment_id}`);
+        
         const { data, error } = await supabase
           .from("payments_pending")
           .select("status")
@@ -68,7 +70,10 @@ export default function PixPaymentModal({
           return;
         }
 
+        console.log(`[PIX Poll] Current status: ${data?.status || 'not found'}`);
+
         if (data?.status === "PAID") {
+          console.log('[PIX Poll] Payment confirmed! Navigating to success...');
           setIsPolling(false);
           clearInterval(pollInterval);
           onSuccess({
