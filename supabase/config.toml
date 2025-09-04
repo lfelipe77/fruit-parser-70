@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.confirm-state-get]
 verify_jwt = true
+
+[functions.asaas-backfill-pending]
+verify_jwt = false

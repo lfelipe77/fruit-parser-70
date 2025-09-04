@@ -74,8 +74,11 @@ serve(async (req) => {
 
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
-      const CUSTOMER_ID = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID");
-      if (!API_KEY || !CUSTOMER_ID) return json(500, { error: "Asaas env vars not set (ASAAS_API_KEY / ASAAS_DEFAULT_CUSTOMER_ID)" });
+      const CUSTOMER_ID = Deno.env.get("ASAAS_DEFAULT_CUSTOMER_ID"); // must be 'cus_...'
+      
+      // REQUIRED: If missing, return 500 with clear message:
+      if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
+      if (!CUSTOMER_ID) return json(500, { error: "Missing ASAAS_DEFAULT_CUSTOMER_ID (cus_...)" });
       if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
 
       // DRY RUN: show payload without calling Asaas
