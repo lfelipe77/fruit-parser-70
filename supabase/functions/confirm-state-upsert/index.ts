@@ -5,11 +5,18 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false }});
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+const ALLOWED = new Set([
+  "https://ganhavel.com",
+  "https://www.ganhavel.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+]);
+const cors = (origin: string | null) => ({
+  "Access-Control-Allow-Origin": origin && ALLOWED.has(origin) ? origin : "*",
+  "Vary": "Origin",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-};
+});
 
 type Body = {
   reservation_id: string;
@@ -21,16 +28,19 @@ type Body = {
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const headers = cors(req.headers.get("origin"));
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers });
+
   try {
-    const b = (await req.json()) as Body;
-    if (!b?.reservation_id || !b?.status) {
-      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ ok:false, reason:"method_not_allowed" }), { status: 405, headers });
     }
 
-    // Minimal upsert on existing columns only
+    const b = (await req.json()) as Body;
+    if (!b?.reservation_id || !b?.status) {
+      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400, headers });
+    }
+
     const { error } = await sb
       .from("payments_pending")
       .upsert({
@@ -44,9 +54,9 @@ serve(async (req) => {
       }, { onConflict: "reservation_id" });
 
     if (error) throw error;
-    return new Response(JSON.stringify({ ok:true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok:true }), { status: 200, headers });
   } catch (e: any) {
     console.error("confirm-state-upsert error:", e);
-    return new Response(JSON.stringify({ ok:false, reason:"db_error", detail:String(e?.message ?? e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok:false, reason:"db_error", detail:String(e?.message ?? e) }), { status: 500, headers });
   }
 });
