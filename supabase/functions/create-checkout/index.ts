@@ -75,7 +75,6 @@ serve(async (req) => {
     let redirect_url: string | null = null;
     let pix_qr_code: string | undefined;
     let pix_copy_paste: string | undefined;
-    let pix_qr_base64: string | undefined;
 
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
@@ -180,16 +179,11 @@ serve(async (req) => {
           // Debug: Log the exact structure returned by Asaas
           console.log("[asaas] PIX QR response structure:", JSON.stringify(qr, null, 2));
           
-          // Asaas docs: GET /v3/payments/{id}/pixQrCode → { encodedImage, payload, expirationDate }
-          // We must use `payload` (string) for QR generation and copy/paste, not encodedImage.
-          const pixString = qr?.payload || "";
-          pix_qr_code = pixString;
-          pix_copy_paste = pixString;
-
-          const base64 = qr?.encodedImage || "";
-          if (typeof base64 === "string" && base64.length > 0) {
-            pix_qr_base64 = base64;
-          }
+// Asaas docs: GET /v3/payments/{id}/pixQrCode → { encodedImage, payload, expirationDate }
+// We must use `payload` (string) for QR generation and copy/paste, not encodedImage.
+const pixString = qr?.payload || "";
+pix_qr_code = pixString;
+pix_copy_paste = pixString;
           
           console.log("[asaas] PIX data extracted:", { 
             pix_qr_code: pix_qr_code ? "present" : "missing", 
@@ -253,7 +247,6 @@ serve(async (req) => {
       // PIX-specific data for embedded payment
       pix_qr_code,
       pix_copy_paste,
-      pix_qr_base64,
     });
   } catch (e) {
     console.error("Create checkout error:", e);

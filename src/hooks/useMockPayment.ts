@@ -53,7 +53,7 @@ export function useMockPayment() {
           status: 'paid',
           provider: 'mock',
           provider_payment_id: providerRef,
-          numbers: sanitizedNumbers,
+          selected_numbers: sanitizedNumbers,
           type: 'payment'
         })
         .select('id')

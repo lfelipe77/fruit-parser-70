@@ -136,19 +136,21 @@ serve(async (req) => {
     }
 
     // 5) If no tickets exist yet, validate numbers and create ticket + transaction
-    // 5a) Validate numbers: exactly 5 pairs of two-digit strings using strict validator
-    function isTwoDigits(s: unknown): s is string {
-      return typeof s === "string" && /^\d{2}$/.test(s);
-    }
-    function validateNumbers(n: unknown): n is string[][] {
-      return Array.isArray(n) && n.length === 5 &&
-        n.every(p => Array.isArray(p) && p.length === 2 && isTwoDigits(p[0]) && isTwoDigits(p[1]));
-    }
-    if (!validateNumbers(numbers)) {
+    // 5a) Validate numbers shape: exactly 5 pairs of two-digit strings
+    const sanitize = (s: unknown) => String(s ?? '').replace(/\D/g, '').padStart(2, '0').slice(-2);
+    if (!Array.isArray(numbers) || numbers.length !== 5) {
       console.error('[finalize-payment] Invalid numbers payload shape', { numbers });
-      return ok({ ok: false, reason: "numbers_invalid_shape" });
+      return ok({ ok: false, reason: 'bad_numbers' });
     }
-    const normNumbers = numbers; // Already validated as string[][]
+    let normNumbers: string[][];
+    try {
+      normNumbers = numbers.map((pair: unknown) => {
+        if (!Array.isArray(pair) || pair.length !== 2) throw new Error('pair_invalid');
+        return [sanitize(pair[0]), sanitize(pair[1])];
+      });
+    } catch {
+      return ok({ ok: false, reason: 'bad_numbers' });
+    }
     const allNums = normNumbers.flat();
 
     // 5b) Load raffle to compute price

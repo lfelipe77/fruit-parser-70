@@ -14,7 +14,6 @@ interface PixPaymentModalProps {
     amount: number;
     pix_qr_code?: string;
     pix_copy_paste?: string;
-    pix_qr_base64?: string;
     reservation_id: string;
     raffle_id: string;
     qty: number;
@@ -216,24 +215,14 @@ export default function PixPaymentModal({
           </div>
 
           {/* QR Code */}
-          {(paymentData.pix_qr_base64 || paymentData.pix_qr_code) && (
+          {paymentData.pix_qr_code && (
             <div className="flex justify-center">
               <div className="bg-white p-4 rounded-lg">
-                {paymentData.pix_qr_base64 ? (
-                  <img
-                    src={`data:image/png;base64,${paymentData.pix_qr_base64}`}
-                    alt="QR Code PIX - pagar com Pix"
-                    width={200}
-                    height={200}
-                    loading="lazy"
-                  />
-                ) : (
-                  <QRCodeSVG 
-                    value={paymentData.pix_qr_code as string}
-                    size={200}
-                    level="M"
-                  />
-                )}
+                <QRCodeSVG 
+                  value={paymentData.pix_qr_code} 
+                  size={200}
+                  level="M"
+                />
               </div>
             </div>
           )}

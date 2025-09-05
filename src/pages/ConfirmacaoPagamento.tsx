@@ -557,7 +557,6 @@ export default function ConfirmacaoPagamento() {
           amount: checkoutData.charge_total, // Display charge_total (includes fee)
           pix_qr_code: checkoutData.pix_qr_code,
           pix_copy_paste: checkoutData.pix_copy_paste,
-          pix_qr_base64: checkoutData.pix_qr_base64,
           reservation_id: reservationId,
           raffle_id: id,
           qty: safeQty
