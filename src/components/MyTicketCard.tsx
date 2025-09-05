@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
-import { normalizeToFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
+import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
 
 type Row = {
@@ -36,7 +36,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
       : [row.purchased_numbers];            // [...]
 
     return combinationsList.map(combo => {
-      const singles = normalizeToFiveSingles(combo);
+      const singles = toFiveSingles(combo);
       return formatFiveSingles(singles);
     }).filter(Boolean);
   }, [row.purchased_numbers]);

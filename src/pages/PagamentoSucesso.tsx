@@ -18,7 +18,7 @@ import {
   Trophy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { normalizeToFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
+import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 interface PaymentSuccessData {
   raffleId?: string;
   txId?: string;
@@ -107,9 +107,9 @@ export default function PagamentoSucesso() {
           let comboStrings: string[] = [];
           try {
             if (Array.isArray(raw) && (raw as any[]).length && Array.isArray((raw as any[])[0])) {
-              comboStrings = (raw as unknown[]).map((r) => formatFiveSingles(normalizeToFiveSingles(r)));
+              comboStrings = (raw as unknown[]).map((r) => formatFiveSingles(toFiveSingles(r)));
             } else {
-              comboStrings = [formatFiveSingles(normalizeToFiveSingles(raw as unknown))];
+              comboStrings = [formatFiveSingles(toFiveSingles(raw as unknown))];
             }
           } catch { comboStrings = []; }
           setCombos(comboStrings);

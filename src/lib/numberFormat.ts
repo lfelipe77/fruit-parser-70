@@ -3,32 +3,41 @@
  * Handles various input formats and normalizes to consistent 5-pair format
  */
 
-export type FiveSingles = [string, string, string, string, string];
-
-const two = (s: string) => (s ?? '').padStart(2,'0').slice(-2);
-
-export function normalizeToFiveSingles(input: unknown): FiveSingles {
-  // 5 strings already?
-  if (Array.isArray(input) && input.length === 5 && input.every(x => typeof x === 'string')) {
-    return input.map(two) as FiveSingles;
+export function toFiveSingles(input: unknown): string[] {
+  // 5 singles: ["12","92","51","18","77"]
+  if (Array.isArray(input) && input.every(x => typeof x === 'string')) {
+    const arr = input as string[];
+    return [
+      arr[0] ?? '00',
+      arr[1] ?? '00',
+      arr[2] ?? '00',
+      arr[3] ?? '00',
+      arr[4] ?? '00',
+    ].map(s => s.padStart(2,'0'));
   }
-  
-  // string "77-20-31-96-16"
+
+  // 5 pairs: [["12","92"], ...]
+  if (Array.isArray(input) && input.every(x => Array.isArray(x))) {
+    const pairs = input as unknown[][];
+    const a = pairs.map(p => String((p?.[0] ?? '00')).padStart(2,'0'));
+    return [a[0]??'00', a[1]??'00', a[2]??'00', a[3]??'00', a[4]??'00'];
+  }
+
+  // "12-92-51-18-77"
   if (typeof input === 'string') {
-    const v = input.split(/\D+/).filter(Boolean).map(two);
-    return [two(v[0]), two(v[1]), two(v[2]), two(v[3]), two(v[4])] as FiveSingles;
+    const m = input.match(/\d{2}/g) ?? [];
+    return [
+      m[0] ?? '00', m[1] ?? '00', m[2] ?? '00', m[3] ?? '00', m[4] ?? '00',
+    ];
   }
-  
-  // legacy: [[ "77","??" ], ["20","??"], ... ] -> take first of each pair
-  if (Array.isArray(input) && input.length === 5 && input.every(x => Array.isArray(x))) {
-    const v = (input as unknown[]).map((p:any[]) => two(p?.[0]));
-    return [two(v[0]), two(v[1]), two(v[2]), two(v[3]), two(v[4])] as FiveSingles;
-  }
-  
-  // fallback
+
   return ['00','00','00','00','00'];
 }
 
-export function formatFiveSingles(v: FiveSingles) {
-  return `${v[0]}-${v[1]}-${v[2]}-${v[3]}-${v[4]}`;
-}
+export const formatFiveSingles = (a: string[]) =>
+  a.slice(0,5).map(s => s.padStart(2,'0')).join(' · ');
+
+// Legacy exports for backward compatibility
+export type FiveSingles = [string, string, string, string, string];
+export const normalizeToFiveSingles = (input: unknown): FiveSingles => 
+  toFiveSingles(input) as FiveSingles;

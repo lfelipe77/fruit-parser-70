@@ -1,4 +1,4 @@
-import { normalizeToFiveSingles, formatFiveSingles } from '@/lib/numberFormat';
+import { toFiveSingles, formatFiveSingles } from '@/lib/numberFormat';
 
 interface TicketNumbersProps {
   purchased_numbers: unknown;
@@ -15,7 +15,7 @@ export function TicketNumbers({ purchased_numbers }: TicketNumbersProps) {
   return (
     <div className="space-y-2">
       {combos.map((c, i) => {
-        const singles = normalizeToFiveSingles(c);
+        const singles = toFiveSingles(c);
         return (
           <input
             key={i}
