@@ -65,9 +65,6 @@ serve(async (req) => {
       console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId, raffleId, hasNumbers: !!numbers });
       return ok({ ok: false, reason: "bad_request_fields" });
     }
-      console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId });
-      return ok({ ok: false, reason: "bad_request_fields" });
-    }
 
     console.log(`[finalize-payment] Processing reservation: ${reservationId}, payment: ${asaasPaymentId}`);
 
@@ -252,15 +249,13 @@ serve(async (req) => {
       console.warn('[finalize-payment] ticket link failed', linkErr);
     }
 
-    // Continue to mark payments_applied below
-
     // 6) Mark applied (idempotency record) LAST
     let appliedInsertError: unknown = null;
     try {
       const { error: aErr } = await sbService.from("payments_applied").insert({
         payment_id: asaasPaymentId,
         reservation_id: reservationId,
-        user_id: reservation.user_id,
+        user_id: user.id,
         applied_at: new Date().toISOString(),
       });
       if (aErr) appliedInsertError = aErr;
@@ -283,9 +278,7 @@ serve(async (req) => {
         });
       } catch {}
       if (!isConflict) {
-        return new Response(JSON.stringify({ ok: false, reason: "applied_insert_failed" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+        return ok({ ok: false, reason: "applied_insert_failed" });
       }
     }
 

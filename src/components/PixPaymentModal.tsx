@@ -32,7 +32,9 @@ export default function PixPaymentModal({
   isOpen, 
   onClose, 
   onSuccess, 
-  paymentData 
+  paymentData,
+  numbers,
+  buyer
 }: PixPaymentModalProps) {
   const [copied, setCopied] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
