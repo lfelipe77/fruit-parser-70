@@ -1,166 +1,43 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "std/server";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
-const ALLOWED = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
-  .split(',').map(s => s.trim()).filter(Boolean);
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false }});
 
-function cors(origin: string | null) {
-  const allow = origin && (ALLOWED.length === 0 || ALLOWED.includes(origin)) ? origin : '*';
-  return {
-    'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Vary': 'Origin',
-  };
-}
+type Body = {
+  reservation_id: string;
+  asaas_payment_id?: string;
+  status: "PENDING" | "PAID" | "CANCELLED";
+  amount?: number | string;
+  expires_at?: string;
+  pix_qr_code_id?: string | null;
+};
 
-async function handler(req: Request): Promise<Response> {
-  const origin = req.headers.get('origin');
+serve(async (req) => {
   try {
-    // Handle CORS preflight requests
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { headers: cors(origin) });
+    const b = (await req.json()) as Body;
+    if (!b?.reservation_id || !b?.status) {
+      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400 });
     }
 
-    if (req.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { 'Content-Type': 'application/json', ...cors(origin) }
-      });
-    }
+    // Minimal upsert on existing columns only
+    const { error } = await sb
+      .from("payments_pending")
+      .upsert({
+        reservation_id: b.reservation_id,
+        asaas_payment_id: b.asaas_payment_id ?? null,
+        status: b.status,
+        amount: b.amount ?? null,
+        expires_at: b.expires_at ?? null,
+        pix_qr_code_id: b.pix_qr_code_id ?? null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "reservation_id" });
 
-    // Get auth token from header
-    const authorization = req.headers.get('authorization');
-    if (!authorization) {
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...cors(origin) }
-      });
-    }
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify JWT and get user
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authorization.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid authorization token' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...cors(origin) }
-      });
-    }
-
-    // Parse request body
-    const body = await req.json();
-    const {
-      reservationId,
-      raffleId,
-      amount = 0,
-      numbers = [],
-      asaasPaymentId,
-    } = body;
-
-    if (!reservationId || !raffleId) {
-      return new Response(JSON.stringify({ error: 'reservationId and raffleId are required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json', ...cors(origin) }
-      });
-    }
-
-    // Calculate expires_at (24 hours from now)
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    // Check if record exists
-    const { data: existing } = await supabase
-      .from('payments_pending')
-      .select('*')
-      .eq('reservation_id', reservationId)
-      .maybeSingle();
-
-    let result;
-
-    if (existing) {
-      // Update existing record, merging ui_state and not overwriting non-null values with null
-      const updateData: any = {
-        updated_at: new Date().toISOString()
-      };
-
-      // Only update non-null values
-      if (raffleId) updateData.raffle_id = raffleId;
-      if (amount) updateData.amount = amount;
-      if (numbers && numbers.length > 0) updateData.numbers = numbers;
-      if (typeof asaasPaymentId !== 'undefined') updateData.asaas_payment_id = asaasPaymentId;
-      
-
-
-
-      const { data: updated, error: updateError } = await supabase
-        .from('payments_pending')
-        .update(updateData)
-        .eq('reservation_id', reservationId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Update error:', updateError);
-        return new Response(JSON.stringify({ error: 'Failed to update payment state' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json', ...cors(origin) }
-        });
-      }
-
-      result = updated;
-    } else {
-      // Insert new record
-      const insertData = {
-        reservation_id: reservationId,
-        raffle_id: raffleId,
-        amount,
-        numbers,
-        status: 'PENDING',
-        expires_at: expiresAt,
-        asaas_payment_id: asaasPaymentId ?? null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { data: inserted, error: insertError } = await supabase
-        .from('payments_pending')
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Insert error:', insertError);
-        return new Response(JSON.stringify({ error: 'Failed to create payment state' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json', ...cors(origin) }
-        });
-      }
-
-      result = inserted;
-    }
-
-    return new Response(JSON.stringify({
-      ok: true,
-      pending: result
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...cors(origin) }
-    });
-
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...cors(origin) }
-    });
+    if (error) throw error;
+    return new Response(JSON.stringify({ ok:true }), { status: 200 });
+  } catch (e: any) {
+    console.error("confirm-state-upsert error:", e);
+    return new Response(JSON.stringify({ ok:false, reason:"db_error", detail:String(e?.message ?? e) }), { status: 500 });
   }
-}
-
-Deno.serve(handler);
+});
