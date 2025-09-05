@@ -1,10 +1,16 @@
 // supabase/functions/finalize-payment/index.ts
-import { serve } from "std/server";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false }});
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
+};
 
 type Body = { reservation_id?: string; asaas_payment_id?: string };
 
@@ -16,10 +22,13 @@ function toFiveSingles(anyShape: unknown): string[] {
 }
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
   try {
     const { reservation_id, asaas_payment_id } = (await req.json()) as Body;
     if (!reservation_id || !asaas_payment_id) {
-      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400 });
+      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 1) Assert PAID in payments_pending
@@ -31,7 +40,7 @@ serve(async (req) => {
       .maybeSingle();
     if (pendErr) throw pendErr;
     if (!pending || pending.status !== "PAID") {
-      return new Response(JSON.stringify({ ok:false, reason:"not_paid" }), { status: 409 });
+      return new Response(JSON.stringify({ ok:false, reason:"not_paid" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Idempotency: if tx exists, short-circuit
@@ -43,7 +52,7 @@ serve(async (req) => {
       .maybeSingle();
     if (txCheckErr) throw txCheckErr;
     if (existingTx?.id) {
-      return new Response(JSON.stringify({ ok:true, idempotent:true, transaction_id: existingTx.id }), { status: 200 });
+      return new Response(JSON.stringify({ ok:true, idempotent:true, transaction_id: existingTx.id }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 2) Canon: RESERVED tickets for this reservation
@@ -79,7 +88,7 @@ serve(async (req) => {
     }
 
     if (!raffle_id || !buyer_user_id || !numbers5) {
-      return new Response(JSON.stringify({ ok:false, reason:"canon_missing" }), { status: 500 });
+      return new Response(JSON.stringify({ ok:false, reason:"canon_missing" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // 3) UPDATE-then-INSERT into transactions (no upsert because reservation_id is not unique)
@@ -155,9 +164,9 @@ serve(async (req) => {
       if (insTkErr) throw insTkErr;
     }
 
-    return new Response(JSON.stringify({ ok:true, transaction_id: txId }), { status: 200 });
+    return new Response(JSON.stringify({ ok:true, transaction_id: txId }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     console.error("finalize-payment error:", e);
-    return new Response(JSON.stringify({ ok:false, reason:"db_error", detail: String(e?.message ?? e) }), { status: 500 });
+    return new Response(JSON.stringify({ ok:false, reason:"db_error", detail: String(e?.message ?? e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

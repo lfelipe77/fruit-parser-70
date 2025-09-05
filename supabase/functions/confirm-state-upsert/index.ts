@@ -1,9 +1,15 @@
-import { serve } from "std/server";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false }});
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST,OPTIONS",
+};
 
 type Body = {
   reservation_id: string;
@@ -15,10 +21,13 @@ type Body = {
 };
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
   try {
     const b = (await req.json()) as Body;
     if (!b?.reservation_id || !b?.status) {
-      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400 });
+      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Minimal upsert on existing columns only
@@ -35,9 +44,9 @@ serve(async (req) => {
       }, { onConflict: "reservation_id" });
 
     if (error) throw error;
-    return new Response(JSON.stringify({ ok:true }), { status: 200 });
+    return new Response(JSON.stringify({ ok:true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     console.error("confirm-state-upsert error:", e);
-    return new Response(JSON.stringify({ ok:false, reason:"db_error", detail:String(e?.message ?? e) }), { status: 500 });
+    return new Response(JSON.stringify({ ok:false, reason:"db_error", detail:String(e?.message ?? e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
