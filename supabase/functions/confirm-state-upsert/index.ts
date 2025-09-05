@@ -100,7 +100,7 @@ async function handler(req: Request): Promise<Response> {
       if (unitPrice) updateData.unit_price = unitPrice;
       if (amount) updateData.amount = amount;
       if (numbers && numbers.length > 0) updateData.numbers = numbers;
-      if (buyerUserId) updateData.buyer_user_id = buyerUserId;
+      
       if (pageFingerprint) updateData.page_fingerprint = pageFingerprint;
 
       // Merge ui_state
@@ -130,7 +130,7 @@ async function handler(req: Request): Promise<Response> {
       const insertData = {
         reservation_id: reservationId,
         raffle_id: raffleId,
-        buyer_user_id: buyerUserId || user.id,
+        
         qty,
         unit_price: unitPrice,
         amount,

@@ -88,7 +88,7 @@ serve(async (req) => {
     // 3) Verify payment is PAID using reservation_id as the canonical key
     const { data: paymentRow, error: payErr } = await sbService
       .from("payments_pending")
-      .select("status, amount, reservation_id, raffle_id, buyer_user_id, user_id, numbers, asaas_payment_id")
+      .select("status, amount, reservation_id, raffle_id, numbers, asaas_payment_id")
       .eq("reservation_id", reservationId)
       .maybeSingle();
 
@@ -111,7 +111,7 @@ serve(async (req) => {
     }
 
     const raffleIdFinal = (paymentRow as any).raffle_id ?? raffleId;
-    const buyerUserIdFinal = (paymentRow as any).buyer_user_id ?? (paymentRow as any).user_id ?? user.id;
+    const buyerUserIdFinal = user.id;
 
     console.log(`[finalize-payment] Payment verified as PAID. reservation=${reservationId} raffle=${raffleIdFinal}`);
 
