@@ -1,22 +1,30 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-};
+const ALLOWED = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
+function cors(origin: string | null) {
+  const allow = origin && (ALLOWED.length === 0 || ALLOWED.includes(origin)) ? origin : '*';
+  return {
+    'Access-Control-Allow-Origin': allow,
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  };
+}
 
 async function handler(req: Request): Promise<Response> {
+  const origin = req.headers.get('origin');
   try {
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
+      return new Response(null, { headers: cors(origin) });
     }
 
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...cors(origin) }
       });
     }
 
@@ -25,7 +33,7 @@ async function handler(req: Request): Promise<Response> {
     if (!authorization) {
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...cors(origin) }
       });
     }
 
@@ -43,7 +51,7 @@ async function handler(req: Request): Promise<Response> {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Invalid authorization token' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...cors(origin) }
       });
     }
 
@@ -64,7 +72,7 @@ async function handler(req: Request): Promise<Response> {
     if (!reservationId || !raffleId) {
       return new Response(JSON.stringify({ error: 'reservationId and raffleId are required' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...cors(origin) }
       });
     }
 
@@ -112,7 +120,7 @@ async function handler(req: Request): Promise<Response> {
         console.error('Update error:', updateError);
         return new Response(JSON.stringify({ error: 'Failed to update payment state' }), {
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json', ...cors(origin) }
         });
       }
 
@@ -145,7 +153,7 @@ async function handler(req: Request): Promise<Response> {
         console.error('Insert error:', insertError);
         return new Response(JSON.stringify({ error: 'Failed to create payment state' }), {
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json', ...cors(origin) }
         });
       }
 
@@ -157,16 +165,16 @@ async function handler(req: Request): Promise<Response> {
       pending: result
     }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...cors(origin) }
     });
 
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...cors(origin) }
     });
   }
 }
 
-export default handler;
+Deno.serve(handler);
