@@ -158,7 +158,8 @@ serve(async (req) => {
     // 5a) Normalize numbers to exactly 5 singles ("00".."99") preferring pending canonical data
     const numbers5 = toFiveSingles((paymentRow as any)?.numbers ?? rawNumbers);
     const allNums = numbers5;
-    const numbers5Pairs = numbers5.map((n) => [n, n]);
+    // Convert 5 singles to 5 pairs format: [["21","00"], ["39","00"], ...] 
+    const numbers5Pairs = numbers5.map((n) => [n, "00"]);
 
     // 5b) Load raffle to compute price
     const { data: raffleRow, error: raffleErr } = await sbService
@@ -245,7 +246,7 @@ serve(async (req) => {
         provider: 'asaas',
         provider_payment_id: asaasPaymentId,
         reservation_id: reservationId,
-        numbers: numbers5Pairs,
+        numbers: [numbers5], // Array of combos format for transactions
         amount: unitPrice,
         status: 'paid',
         customer_name: buyerName,
