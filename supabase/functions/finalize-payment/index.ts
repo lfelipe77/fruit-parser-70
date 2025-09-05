@@ -119,13 +119,13 @@ serve(async (req) => {
     }
 
     // Count tickets for this reservation
-    const { count: tCount, error: tErr } = await sbService
+    const { count: tCount, error: tCountErr } = await sbService
       .from("tickets")
       .select("id", { head: true, count: "exact" })
       .eq("reservation_id", reservationId);
 
-    if (tErr) {
-      console.warn("[finalize-payment] ticket count for guard failed:", tErr);
+    if (tCountErr) {
+      console.warn("[finalize-payment] ticket count for guard failed:", tCountErr);
     }
 
     const hasTickets = (tCount ?? 0) > 0;
@@ -136,12 +136,22 @@ serve(async (req) => {
     }
 
     // 5) If no tickets exist yet, validate numbers and create ticket + transaction
-    // 5a) Validate numbers shape: exactly 5 items of two-digit strings
-    const pairs = Array.isArray(numbers) ? numbers.map((n: any) => String(n).replace(/\D/g, '').padStart(2, '0').slice(-2)) : [];
-    if (pairs.length !== 5 || !pairs.every((p: string) => /^\d{2}$/.test(p))) {
-      console.error("[finalize-payment] Invalid numbers payload", { pairs });
-      return ok({ ok: false, reason: "bad_numbers" });
+    // 5a) Validate numbers shape: exactly 5 pairs of two-digit strings
+    const sanitize = (s: unknown) => String(s ?? '').replace(/\D/g, '').padStart(2, '0').slice(-2);
+    if (!Array.isArray(numbers) || numbers.length !== 5) {
+      console.error('[finalize-payment] Invalid numbers payload shape', { numbers });
+      return ok({ ok: false, reason: 'bad_numbers' });
     }
+    let normNumbers: string[][];
+    try {
+      normNumbers = numbers.map((pair: unknown) => {
+        if (!Array.isArray(pair) || pair.length !== 2) throw new Error('pair_invalid');
+        return [sanitize(pair[0]), sanitize(pair[1])];
+      });
+    } catch {
+      return ok({ ok: false, reason: 'bad_numbers' });
+    }
+    const allNums = normNumbers.flat();
 
     // 5b) Load raffle to compute price
     const { data: raffleRow, error: raffleErr } = await sbService
@@ -161,7 +171,7 @@ serve(async (req) => {
     let conflict = false;
     // Try RPC first if available
     try {
-      const { data: hasConflict, error: confErr } = await (sbService as any).rpc('tickets_numbers_conflict', { p_raffle_id: raffleId, p_numbers: pairs });
+      const { data: hasConflict, error: confErr } = await (sbService as any).rpc('tickets_numbers_conflict', { p_raffle_id: raffleId, p_numbers: allNums });
       if (!confErr && (hasConflict === true || hasConflict === 't')) {
         conflict = true;
       }
@@ -182,9 +192,15 @@ serve(async (req) => {
         const taken = new Set<string>();
         for (const t of existingTickets as any[]) {
           const arr = Array.isArray(t.numbers) ? t.numbers : [];
-          for (const x of arr) taken.add(String(x).padStart(2, '0').slice(-2));
+          for (const x of arr) {
+            if (Array.isArray(x)) {
+              for (const y of x) taken.add(String(y).padStart(2, '0').slice(-2));
+            } else {
+              taken.add(String(x).padStart(2, '0').slice(-2));
+            }
+          }
         }
-        conflict = pairs.some(p => taken.has(p));
+        conflict = allNums.some((p) => taken.has(p));
       }
     }
 
@@ -200,10 +216,9 @@ serve(async (req) => {
         raffle_id: raffleId,
         user_id: user.id,
         status: 'paid',
-        is_paid: true,
         qty: 5,
         unit_price: unitPrice,
-        numbers: pairs
+        numbers: normNumbers
       }])
       .select('id')
       .single();
@@ -223,12 +238,11 @@ serve(async (req) => {
         provider: 'asaas',
         provider_payment_id: asaasPaymentId,
         reservation_id: reservationId,
-        numbers: pairs,
+        numbers: normNumbers,
         amount: unitPrice,
         status: 'paid',
         customer_name: buyerName,
         customer_phone: buyerPhone,
-        customer_email: buyerEmail,
         customer_cpf: buyerCpf || null
       })
       .select('id')

@@ -1124,7 +1124,8 @@ export default function ConfirmacaoPagamento() {
             const s = toComboString(selectedNumbers?.[0] ?? "");
             const arr = s.split("-").filter(Boolean).slice(0, 5).map(n => String(n).padStart(2, "0"));
             while (arr.length < 5) arr.push("00");
-            return arr;
+            // Convert five singles into five pairs by pairing each with '00'
+            return arr.map(n => [n, "00"]);
           })()}
           buyer={{
             name: formData.fullName,

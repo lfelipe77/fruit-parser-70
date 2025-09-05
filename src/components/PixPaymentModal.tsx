@@ -18,7 +18,7 @@ interface PixPaymentModalProps {
     raffle_id: string;
     qty: number;
   };
-  numbers: string[]; // exactly 5 two-digit strings
+  numbers: string[][]; // exactly 5 pairs of two-digit strings
   buyer: {
     name?: string;
     phone?: string;
