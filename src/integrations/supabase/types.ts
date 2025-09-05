@@ -591,6 +591,39 @@ export type Database = {
         }
         Relationships: []
       }
+      finalize_logs: {
+        Row: {
+          id: number
+          message: string | null
+          meta: Json | null
+          ok: boolean | null
+          payment_id: string | null
+          reservation_id: string | null
+          step: string | null
+          ts: string
+        }
+        Insert: {
+          id?: number
+          message?: string | null
+          meta?: Json | null
+          ok?: boolean | null
+          payment_id?: string | null
+          reservation_id?: string | null
+          step?: string | null
+          ts?: string
+        }
+        Update: {
+          id?: number
+          message?: string | null
+          meta?: Json | null
+          ok?: boolean | null
+          payment_id?: string | null
+          reservation_id?: string | null
+          step?: string | null
+          ts?: string
+        }
+        Relationships: []
+      }
       ganhaveis_legacy: {
         Row: {
           affiliate_link: string | null
@@ -1107,14 +1140,38 @@ export type Database = {
         }
         Relationships: []
       }
+      payments_applied: {
+        Row: {
+          applied_at: string
+          payment_id: string
+          reservation_id: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          payment_id: string
+          reservation_id: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          payment_id?: string
+          reservation_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments_pending: {
         Row: {
           amount: number
           asaas_payment_id: string | null
+          buyer: Json | null
           created_at: string
           expires_at: string
           id: string
+          numbers: Json | null
           pix_qr_code_id: string | null
+          raffle_id: string | null
           reservation_id: string
           status: string
           updated_at: string
@@ -1122,10 +1179,13 @@ export type Database = {
         Insert: {
           amount: number
           asaas_payment_id?: string | null
+          buyer?: Json | null
           created_at?: string
           expires_at: string
           id?: string
+          numbers?: Json | null
           pix_qr_code_id?: string | null
+          raffle_id?: string | null
           reservation_id: string
           status?: string
           updated_at?: string
@@ -1133,10 +1193,13 @@ export type Database = {
         Update: {
           amount?: number
           asaas_payment_id?: string | null
+          buyer?: Json | null
           created_at?: string
           expires_at?: string
           id?: string
+          numbers?: Json | null
           pix_qr_code_id?: string | null
+          raffle_id?: string | null
           reservation_id?: string
           status?: string
           updated_at?: string
@@ -2348,6 +2411,91 @@ export type Database = {
         }
         Relationships: []
       }
+      reservation_links: {
+        Row: {
+          created_at: string | null
+          raffle_id: string
+          reservation_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          raffle_id: string
+          reservation_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          raffle_id?: string
+          reservation_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligible_completed_raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+        ]
+      }
       security_alerts: {
         Row: {
           context: Json | null
@@ -2863,16 +3011,109 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_buyer_details: {
+        Row: {
+          billing_address: Json | null
+          created_at: string | null
+          customer_cpf_enc: string | null
+          customer_cpf_hash: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          extra: Json | null
+          transaction_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          billing_address?: Json | null
+          created_at?: string | null
+          customer_cpf_enc?: string | null
+          customer_cpf_hash?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          extra?: Json | null
+          transaction_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          billing_address?: Json | null
+          created_at?: string | null
+          customer_cpf_enc?: string | null
+          customer_cpf_hash?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          extra?: Json | null
+          transaction_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_buyer_details_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: true
+            referencedRelation: "my_tickets_ext"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "transaction_buyer_details_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: true
+            referencedRelation: "my_tickets_ext_v2"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "transaction_buyer_details_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: true
+            referencedRelation: "my_tickets_ext_v3"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "transaction_buyer_details_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: true
+            referencedRelation: "my_tickets_ext_v5"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "transaction_buyer_details_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: true
+            referencedRelation: "my_tickets_ext_v6"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "transaction_buyer_details_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: true
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_buyer_details_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: true
+            referencedRelation: "transactions_paid_flat"
+            referencedColumns: ["src_id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number | null
+          billing_address: Json | null
           buyer_user_id: string | null
           created_at: string | null
           customer_cpf: string | null
+          customer_cpf_enc: string | null
+          customer_cpf_hash: string | null
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
           due_date: string | null
+          extra: Json | null
           fee_amount: number | null
           fee_fixed: number | null
           fee_pct: number | null
@@ -2897,13 +3138,17 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          billing_address?: Json | null
           buyer_user_id?: string | null
           created_at?: string | null
           customer_cpf?: string | null
+          customer_cpf_enc?: string | null
+          customer_cpf_hash?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           due_date?: string | null
+          extra?: Json | null
           fee_amount?: number | null
           fee_fixed?: number | null
           fee_pct?: number | null
@@ -2928,13 +3173,17 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          billing_address?: Json | null
           buyer_user_id?: string | null
           created_at?: string | null
           customer_cpf?: string | null
+          customer_cpf_enc?: string | null
+          customer_cpf_hash?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           due_date?: string | null
+          extra?: Json | null
           fee_amount?: number | null
           fee_fixed?: number | null
           fee_pct?: number | null
@@ -7001,6 +7250,10 @@ export type Database = {
           updated_at: string
           user_id: string | null
         }[]
+      }
+      tickets_numbers_conflict: {
+        Args: { p_numbers: Json; p_raffle_id: string }
+        Returns: boolean
       }
       update_user_role: {
         Args: { new_role: string; user_id: string }
