@@ -36,9 +36,16 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok:false, reason:"method_not_allowed" }), { status: 405, headers });
     }
 
-    const { reservation_id, asaas_payment_id } = (await req.json()) as Body;
+    const raw = await req.json().catch(() => ({}));
+    const reservation_id   = (raw as any).reservation_id   ?? (raw as any).reservationId;
+    const asaas_payment_id = (raw as any).asaas_payment_id ?? (raw as any).asaasPaymentId;
+
     if (!reservation_id || !asaas_payment_id) {
-      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400, headers });
+      return new Response(JSON.stringify({
+        ok:false,
+        reason:"bad_request",
+        detail:`Missing keys. Got keys=${Object.keys(raw as any).join(",")}. Expect reservation_id|reservationId and asaas_payment_id|asaasPaymentId`
+      }), { status: 400, headers });
     }
 
     // 1) Assert PAID in payments_pending
