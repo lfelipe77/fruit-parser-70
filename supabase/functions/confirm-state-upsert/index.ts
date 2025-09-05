@@ -101,13 +101,8 @@ async function handler(req: Request): Promise<Response> {
       if (amount) updateData.amount = amount;
       if (numbers && numbers.length > 0) updateData.numbers = numbers;
       
-      if (pageFingerprint) updateData.page_fingerprint = pageFingerprint;
 
-      // Merge ui_state
-      if (uiState && Object.keys(uiState).length > 0) {
-        const currentUiState = existing.ui_state || {};
-        updateData.ui_state = { ...currentUiState, ...uiState };
-      }
+
 
       const { data: updated, error: updateError } = await supabase
         .from('payments_pending')
@@ -137,8 +132,6 @@ async function handler(req: Request): Promise<Response> {
         numbers,
         status: 'PENDING',
         expires_at: expiresAt,
-        page_fingerprint: pageFingerprint,
-        ui_state: uiState,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
