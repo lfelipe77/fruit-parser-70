@@ -60,7 +60,7 @@ function convertToLegacyFormat(row: TicketRow): any {
     tx_status: mapStatus(row.tx_status),
     value: row.value,
     ticket_count: row.ticket_count,
-    purchased_numbers: flattenCombos(row.purchased_numbers),
+    purchased_numbers: row.purchased_numbers, // Keep original structure for MyTicketCard
     goal_amount: row.goal_amount,
     amount_raised: row.amount_raised,
     progress_pct_money: Math.min(100, Math.max(0, Number(row.progress_pct_money) || 0)),
