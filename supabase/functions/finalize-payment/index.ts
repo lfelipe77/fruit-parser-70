@@ -45,13 +45,26 @@ serve(async (req) => {
 
     // 2) Parse request body (support snake_case and camelCase)
     const body = await req.json().catch(() => null);
+
+    const onlyDigits = (s?: string) => (s || '').replace(/\D+/g, '');
+    const normCpf = (cpf?: string) => onlyDigits(cpf).padStart(11, '0').slice(-11);
+    const normPhone = (p?: string) => '+' + onlyDigits(p);
+
     const reservationId = body?.reservation_id ?? body?.reservationId;
     const asaasPaymentId = body?.asaas_payment_id ?? body?.asaasPaymentId;
-    const customerName = body?.customer_name ?? body?.customerName ?? null;
-    const customerPhone = body?.customer_phone ?? body?.customerPhone ?? null;
-    const customerCpf = body?.customer_cpf ?? body?.customerCpf ?? null;
+    const raffleId = body?.raffle_id ?? body?.raffleId;
+    const numbers = Array.isArray(body?.numbers) ? body.numbers : null;
+
+    const buyer = body?.buyer ?? {};
+    const buyerName  = (buyer?.name || '').trim().slice(0, 200) || null;
+    const buyerPhone = buyer?.phone ? normPhone(buyer.phone) : null;
+    const buyerEmail = buyer?.email ? String(buyer.email).trim().toLowerCase() : null;
+    const buyerCpf   = buyer?.cpf ? normCpf(buyer.cpf) : null;
     
-    if (!reservationId || !asaasPaymentId) {
+    if (!reservationId || !asaasPaymentId || !raffleId || !numbers) {
+      console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId, raffleId, hasNumbers: !!numbers });
+      return ok({ ok: false, reason: "bad_request_fields" });
+    }
       console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId });
       return ok({ ok: false, reason: "bad_request_fields" });
     }
@@ -125,96 +138,121 @@ serve(async (req) => {
       return ok({ ok: true, already_finalized: true, reservation_id: reservationId });
     }
 
-    // 5) Mint tickets if none exist yet (post-payment flow) and finalize
-    // 5a) Load purchase to validate ownership and get raffle/qty/price
-    const { data: reservation, error: reservationErr } = await sbService
-      .from("reservations")
-      .select("id, user_id, raffle_id, quantity, unit_price")
-      .eq("id", reservationId)
+    // 5) If no tickets exist yet, validate numbers and create ticket + transaction
+    // 5a) Validate numbers shape: exactly 5 items of two-digit strings
+    const pairs = Array.isArray(numbers) ? numbers.map((n: any) => String(n).replace(/\D/g, '').padStart(2, '0').slice(-2)) : [];
+    if (pairs.length !== 5 || !pairs.every((p: string) => /^\d{2}$/.test(p))) {
+      console.error("[finalize-payment] Invalid numbers payload", { pairs });
+      return ok({ ok: false, reason: "bad_numbers" });
+    }
+
+    // 5b) Load raffle to compute price
+    const { data: raffleRow, error: raffleErr } = await sbService
+      .from('raffles')
+      .select('id, ticket_price')
+      .eq('id', raffleId)
       .maybeSingle();
 
-    if (reservationErr || !reservation) {
-      console.error("[finalize-payment] Reservation not found:", reservationErr);
-      return ok({ ok: false, reason: "reservation_not_found" });
+    if (raffleErr || !raffleRow || typeof raffleRow.ticket_price !== 'number') {
+      console.error('[finalize-payment] Raffle not found or invalid ticket_price', raffleErr);
+      return ok({ ok: false, reason: 'raffle_not_found' });
     }
 
-    if (reservation.user_id !== user.id) {
-      console.error("[finalize-payment] Reservation not owned by user", { user: user.id, owner: reservation.user_id });
-      return ok({ ok: false, reason: "reservation_not_owned" });
-    }
+    const unitPrice = raffleRow.ticket_price;
 
-    // 5b) Check if any tickets exist for this reservation
-    const { count: existingCount, error: countErr } = await sbService
-      .from("tickets")
-      .select("id", { count: "exact", head: true })
-      .eq("reservation_id", reservationId);
-
-    if (countErr) {
-      console.warn("[finalize-payment] Ticket count failed:", countErr);
-      try {
-        await sbService.from("finalize_logs").insert({
-          reservation_id: reservationId,
-          payment_id: asaasPaymentId,
-          step: "tickets_count",
-          ok: false,
-          message: "count failed",
-          meta: { error: String(countErr) }
-        });
-      } catch {}
-    }
-
-    if (!existingCount || existingCount === 0) {
-      const qty = Number(reservation.quantity || 0);
-      if (qty <= 0) {
-        console.error("[finalize-payment] Invalid quantity on reservation", { qty });
-        return ok({ ok: false, reason: "invalid_quantity" });
+    // 5c) Conflict check - ensure numbers are still free for this raffle
+    let conflict = false;
+    // Try RPC first if available
+    try {
+      const { data: hasConflict, error: confErr } = await (sbService as any).rpc('tickets_numbers_conflict', { p_raffle_id: raffleId, p_numbers: pairs });
+      if (!confErr && (hasConflict === true || hasConflict === 't')) {
+        conflict = true;
       }
+    } catch (_) {
+      // ignore
+    }
 
-      const payload = Array.from({ length: qty }).map(() => ({
-        raffle_id: reservation.raffle_id,
+    if (!conflict) {
+      // Fallback overlap query
+      const { data: existingTickets, error: exErr } = await sbService
+        .from('tickets')
+        .select('numbers, status')
+        .eq('raffle_id', raffleId)
+        .in('status', ['paid', 'issued', 'reserved']);
+      if (exErr) {
+        console.warn('[finalize-payment] Conflict fallback query failed', exErr);
+      } else if (existingTickets) {
+        const taken = new Set<string>();
+        for (const t of existingTickets as any[]) {
+          const arr = Array.isArray(t.numbers) ? t.numbers : [];
+          for (const x of arr) taken.add(String(x).padStart(2, '0').slice(-2));
+        }
+        conflict = pairs.some(p => taken.has(p));
+      }
+    }
+
+    if (conflict) {
+      return ok({ ok: false, reason: 'numbers_conflict' });
+    }
+
+    // 5d) Insert ticket row (bundle of 5 pairs)
+    const { data: ticketIns, error: tErr } = await sbService
+      .from('tickets')
+      .insert([{
         reservation_id: reservationId,
-        user_id: reservation.user_id,
-        status: "paid" as const,
-        unit_price: reservation.unit_price,
-      }));
+        raffle_id: raffleId,
+        user_id: user.id,
+        status: 'paid',
+        is_paid: true,
+        qty: 5,
+        unit_price: unitPrice,
+        numbers: pairs
+      }])
+      .select('id')
+      .single();
 
-      const { error: insertErr } = await sbService.from("tickets").insert(payload);
-      if (insertErr) {
-        console.error("[finalize-payment] Ticket mint failed:", insertErr);
-        try {
-          await sbService.from("finalize_logs").insert({
-            reservation_id: reservationId,
-            payment_id: asaasPaymentId,
-            step: "tickets_mint",
-            ok: false,
-            message: "insert failed",
-            meta: { error: String(insertErr) }
-          });
-        } catch {}
-        return ok({ ok: false, reason: "ticket_mint_failed" });
-      }
-
-      try {
-        await sbService.from("finalize_logs").insert({
-          reservation_id: reservationId,
-          payment_id: asaasPaymentId,
-          step: "tickets_minted",
-          ok: true,
-          message: `minted ${qty} tickets`,
-          meta: { raffle_id: reservation.raffle_id }
-        });
-      } catch {}
-    } else {
-      try {
-        await sbService.from("finalize_logs").insert({
-          reservation_id: reservationId,
-          payment_id: asaasPaymentId,
-          step: "tickets_exist",
-          ok: true,
-          message: `existing tickets: ${existingCount}`,
-        });
-      } catch {}
+    if (tErr) {
+      console.error('[finalize-payment] tickets insert failed', tErr);
+      return ok({ ok: false, reason: 'tickets_insert_failed' });
     }
+
+    // 5e) Insert transactions row with buyer info and mirror numbers
+    const { data: txIns, error: txErr } = await sbService
+      .from('transactions')
+      .insert({
+        raffle_id: raffleId,
+        user_id: user.id,
+        buyer_user_id: user.id,
+        provider: 'asaas',
+        provider_payment_id: asaasPaymentId,
+        reservation_id: reservationId,
+        numbers: pairs,
+        amount: unitPrice,
+        status: 'paid',
+        customer_name: buyerName,
+        customer_phone: buyerPhone,
+        customer_email: buyerEmail,
+        customer_cpf: buyerCpf || null
+      })
+      .select('id')
+      .single();
+
+    if (txErr) {
+      console.error('[finalize-payment] transactions insert failed', txErr);
+      return ok({ ok: false, reason: 'transactions_insert_failed' });
+    }
+
+    // 5f) Link ticket -> transaction
+    const { error: linkErr } = await sbService
+      .from('tickets')
+      .update({ transaction_id: txIns.id })
+      .eq('id', ticketIns.id);
+
+    if (linkErr) {
+      console.warn('[finalize-payment] ticket link failed', linkErr);
+    }
+
+    // Continue to mark payments_applied below
 
     // 6) Mark applied (idempotency record) LAST
     let appliedInsertError: unknown = null;
@@ -259,18 +297,15 @@ serve(async (req) => {
         context: {
           reservation_id: reservationId,
           asaas_payment_id: asaasPaymentId,
-          tickets_created: !existingCount || existingCount === 0,
+          raffle_id: raffleId
         }
       });
     } catch {}
 
-    return new Response(JSON.stringify({
+    return ok({
       ok: true,
       finalized: true,
-      reservation_id: reservationId,
-      tickets_created: !existingCount || existingCount === 0
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
+      reservation_id: reservationId
     });
 
   } catch (error) {

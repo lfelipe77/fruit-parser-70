@@ -1120,6 +1120,19 @@ export default function ConfirmacaoPagamento() {
             });
           }}
           paymentData={pixPaymentData}
+          numbers={(function() {
+            const s = toComboString(selectedNumbers?.[0] ?? "");
+            const arr = s.split("-").filter(Boolean).slice(0, 5).map(n => String(n).padStart(2, "0"));
+            while (arr.length < 5) arr.push("00");
+            return arr;
+          })()}
+          buyer={{
+            name: formData.fullName,
+            phone: formData.phone,
+            email: formData.email,
+            cpf: formData.cpf,
+            address: null
+          }}
         />
       )}
     </>
