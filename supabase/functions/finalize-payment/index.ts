@@ -110,8 +110,17 @@ serve(async (req) => {
       });
     }
 
-    const raffleIdFinal = (paymentRow as any).raffle_id ?? raffleId;
-    const buyerUserIdFinal = user.id;
+    // Prefer canon from RESERVED tickets when available
+    const { data: reservedCanon } = await sbService
+      .from('tickets')
+      .select('raffle_id,user_id')
+      .eq('reservation_id', reservationId)
+      .eq('status', 'reserved')
+      .limit(1)
+      .maybeSingle();
+
+    const raffleIdFinal = (reservedCanon as any)?.raffle_id ?? (paymentRow as any).raffle_id ?? raffleId;
+    const buyerUserIdFinal = (reservedCanon as any)?.user_id ?? user.id;
 
     console.log(`[finalize-payment] Payment verified as PAID. reservation=${reservationId} raffle=${raffleIdFinal}`);
 
@@ -156,7 +165,25 @@ serve(async (req) => {
 
     // 5) If no tickets exist yet, validate numbers and create ticket + transaction
     // 5a) Normalize numbers to exactly 5 singles ("00".."99") preferring pending canonical data
-    const numbers5 = toFiveSingles((paymentRow as any)?.numbers ?? rawNumbers);
+    let numbers5 = toFiveSingles((paymentRow as any)?.numbers ?? rawNumbers);
+    // If undefined/empty, try derive from RESERVED tickets
+    if (numbers5.every((n) => n === '00')) {
+      const { data: reservedNums } = await sbService
+        .from('tickets')
+        .select('numbers')
+        .eq('reservation_id', reservationId)
+        .eq('status','reserved');
+      if (reservedNums && reservedNums.length > 0) {
+        const singles: string[] = [];
+        for (const t of reservedNums as any[]) {
+          const arr = Array.isArray(t.numbers) ? t.numbers : [];
+          if (Array.isArray(arr[0])) singles.push(String(arr[0]?.[0] ?? '00').padStart(2,'0').slice(-2));
+          else for (const x of arr) singles.push(String(x ?? '00').padStart(2,'0').slice(-2));
+        }
+        const uniq = Array.from(new Set(singles)).slice(0,5);
+        if (uniq.length === 5) numbers5 = uniq as any;
+      }
+    }
     const allNums = numbers5;
     // Convert 5 singles to 5 pairs format: [["21","00"], ["39","00"], ...] 
     const numbers5Pairs = numbers5.map((n) => [n, "00"]);
@@ -247,7 +274,7 @@ serve(async (req) => {
         provider_payment_id: asaasPaymentId,
         reservation_id: reservationId,
         numbers: [numbers5], // Array of combos format for transactions
-        amount: unitPrice,
+        amount: (paymentRow as any)?.amount ?? unitPrice,
         status: 'paid',
         customer_name: buyerName,
         customer_phone: buyerPhone,

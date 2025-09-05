@@ -60,13 +60,9 @@ async function handler(req: Request): Promise<Response> {
     const {
       reservationId,
       raffleId,
-      qty = 1,
-      unitPrice = 0,
       amount = 0,
       numbers = [],
-      buyerUserId,
-      pageFingerprint,
-      uiState = {}
+      asaasPaymentId,
     } = body;
 
     if (!reservationId || !raffleId) {
@@ -96,10 +92,9 @@ async function handler(req: Request): Promise<Response> {
 
       // Only update non-null values
       if (raffleId) updateData.raffle_id = raffleId;
-      if (qty) updateData.qty = qty;
-      if (unitPrice) updateData.unit_price = unitPrice;
       if (amount) updateData.amount = amount;
       if (numbers && numbers.length > 0) updateData.numbers = numbers;
+      if (typeof asaasPaymentId !== 'undefined') updateData.asaas_payment_id = asaasPaymentId;
       
 
 
@@ -125,13 +120,11 @@ async function handler(req: Request): Promise<Response> {
       const insertData = {
         reservation_id: reservationId,
         raffle_id: raffleId,
-        
-        qty,
-        unit_price: unitPrice,
         amount,
         numbers,
         status: 'PENDING',
         expires_at: expiresAt,
+        asaas_payment_id: asaasPaymentId ?? null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
