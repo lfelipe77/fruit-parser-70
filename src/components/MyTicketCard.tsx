@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import QRCode from "react-qr-code";
-import { brl, shortDateTime, toComboString, statusLabel } from "@/lib/format";
+import { brl, shortDateTime, statusLabel } from "@/lib/format";
+import { normalizeToFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
 
 type Row = {
@@ -24,24 +25,19 @@ export default function MyTicketCard({ row }: { row: Row }) {
   const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
   const [open, setOpen] = useState(false);
 
-  // Use flattenCombos helper - flatten to depth=2, stringify, Set for dedupe
-  const flattenCombos = (blob: any): string[] => {
-    const arr = Array.isArray(blob) ? blob.flat(2) : [];
-    const stringified = arr.map(x => String(x || '')).filter(Boolean);
-    return Array.from(new Set(stringified));
-  };
-
   const combos = useMemo(() => {
     if (!row.purchased_numbers) return [];
-    const flattened = flattenCombos(row.purchased_numbers);
     
-    // Process each combo to ensure exactly 5 pairs
-    return flattened.map(combo => {
-      const processed = toComboString(combo);
-      const parts = processed.split('-').filter(Boolean);
-      // Ensure exactly 5 pairs (pad with 00 if needed, truncate if too many)
-      while (parts.length < 5) parts.push('00');
-      return parts.slice(0, 5).join('-');
+    // Handle different formats: single combo or array of combos
+    const combinationsList: unknown[] = Array.isArray(row.purchased_numbers) && 
+      row.purchased_numbers.length > 0 && 
+      Array.isArray(row.purchased_numbers[0])
+      ? row.purchased_numbers as unknown[]  // [[...],[...],...]
+      : [row.purchased_numbers];            // [...]
+
+    return combinationsList.map(combo => {
+      const singles = normalizeToFiveSingles(combo);
+      return formatFiveSingles(singles);
     }).filter(Boolean);
   }, [row.purchased_numbers]);
 
