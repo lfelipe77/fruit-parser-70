@@ -18,8 +18,7 @@ import {
   Trophy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-
+import { normalizeToFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 interface PaymentSuccessData {
   raffleId?: string;
   txId?: string;
@@ -105,25 +104,23 @@ export default function PagamentoSucesso() {
 
         if (tx) {
           const raw = tx.numbers;
-          let arr: string[] = [];
-          if (Array.isArray(raw)) {
-            arr = raw as string[];
-          } else if (typeof raw === "string") {
-            try { 
-              arr = JSON.parse(raw); 
-            } catch { 
-              arr = []; 
+          let comboStrings: string[] = [];
+          try {
+            if (Array.isArray(raw) && (raw as any[]).length && Array.isArray((raw as any[])[0])) {
+              comboStrings = (raw as unknown[]).map((r) => formatFiveSingles(normalizeToFiveSingles(r)));
+            } else {
+              comboStrings = [formatFiveSingles(normalizeToFiveSingles(raw as unknown))];
             }
-          }
-          setCombos(arr.map(toComboString).filter(Boolean));
+          } catch { comboStrings = []; }
+          setCombos(comboStrings);
           
           // Also update rehydrated data
           setRehydrated({
             raffleId: tx.raffle_id,
             txId: tx.id,
-            quantity: arr.length || 1,
+            quantity: comboStrings.length || 1,
             totalPaid: asNumber(tx.amount, 0),
-            unitPrice: asNumber(tx.amount, 0) / Math.max(1, arr.length),
+            unitPrice: asNumber(tx.amount, 0) / Math.max(1, comboStrings.length),
           });
           setIsLoading(false);
         } else {

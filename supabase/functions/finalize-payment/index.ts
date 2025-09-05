@@ -53,16 +53,32 @@ serve(async (req) => {
     const reservationId = body?.reservation_id ?? body?.reservationId;
     const asaasPaymentId = body?.asaas_payment_id ?? body?.asaasPaymentId;
     const raffleId = body?.raffle_id ?? body?.raffleId;
-    const numbers = Array.isArray(body?.numbers) ? body.numbers : null;
+    const rawNumbers = body?.numbers ?? body?.ticket_numbers ?? body?.selected_numbers ?? null;
 
     const buyer = body?.buyer ?? {};
     const buyerName  = (buyer?.name || '').trim().slice(0, 200) || null;
     const buyerPhone = buyer?.phone ? normPhone(buyer.phone) : null;
     const buyerEmail = buyer?.email ? String(buyer.email).trim().toLowerCase() : null;
     const buyerCpf   = buyer?.cpf ? normCpf(buyer.cpf) : null;
+
+    // Normalizer helpers: convert any format into exactly 5 singles ("00".."99")
+    const two = (s:any)=>String(s??'00').padStart(2,'0').slice(-2);
+    function toFiveSingles(input: unknown): string[] {
+      if (Array.isArray(input) && input.length===5 && (input as any[]).every(x => typeof x === 'string'))
+        return (input as string[]).map(two);
+      if (Array.isArray(input) && input.length===10 && (input as any[]).every(x => typeof x === 'string'))
+        return [0,2,4,6,8].map(i => two((input as string[])[i]));
+      if (Array.isArray(input) && input.length===5 && (input as any[]).every(p => Array.isArray(p)))
+        return (input as any[]).map((p:any[]) => two(p?.[0]));
+      if (typeof input==='string') {
+        const v = input.split(/\D+/).filter(Boolean).map(two);
+        return [two(v[0]), two(v[1]), two(v[2]), two(v[3]), two(v[4])];
+      }
+      return ['00','00','00','00','00'];
+    }
     
-    if (!reservationId || !asaasPaymentId || !raffleId || !numbers) {
-      console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId, raffleId, hasNumbers: !!numbers });
+    if (!reservationId || !asaasPaymentId || !raffleId || rawNumbers == null) {
+      console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId, raffleId, hasNumbers: rawNumbers != null });
       return ok({ ok: false, reason: "bad_request_fields" });
     }
 
@@ -136,22 +152,9 @@ serve(async (req) => {
     }
 
     // 5) If no tickets exist yet, validate numbers and create ticket + transaction
-    // 5a) Validate numbers shape: exactly 5 pairs of two-digit strings
-    const sanitize = (s: unknown) => String(s ?? '').replace(/\D/g, '').padStart(2, '0').slice(-2);
-    if (!Array.isArray(numbers) || numbers.length !== 5) {
-      console.error('[finalize-payment] Invalid numbers payload shape', { numbers });
-      return ok({ ok: false, reason: 'bad_numbers' });
-    }
-    let normNumbers: string[][];
-    try {
-      normNumbers = numbers.map((pair: unknown) => {
-        if (!Array.isArray(pair) || pair.length !== 2) throw new Error('pair_invalid');
-        return [sanitize(pair[0]), sanitize(pair[1])];
-      });
-    } catch {
-      return ok({ ok: false, reason: 'bad_numbers' });
-    }
-    const allNums = normNumbers.flat();
+    // 5a) Normalize numbers to exactly 5 singles ("00".."99")
+    const numbers5 = toFiveSingles(rawNumbers);
+    const allNums = numbers5;
 
     // 5b) Load raffle to compute price
     const { data: raffleRow, error: raffleErr } = await sbService
@@ -208,7 +211,7 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'numbers_conflict' });
     }
 
-    // 5d) Insert ticket row (bundle of 5 pairs)
+    // 5d) Insert ticket row (bundle of 5 singles)
     const { data: ticketIns, error: tErr } = await sbService
       .from('tickets')
       .insert([{
@@ -218,7 +221,7 @@ serve(async (req) => {
         status: 'paid',
         qty: 5,
         unit_price: unitPrice,
-        numbers: normNumbers
+        numbers: numbers5
       }])
       .select('id')
       .single();
@@ -228,7 +231,7 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'tickets_insert_failed' });
     }
 
-    // 5e) Insert transactions row with buyer info and mirror numbers
+    // 5e) Insert transactions row with buyer info and mirror numbers (5 singles)
     const { data: txIns, error: txErr } = await sbService
       .from('transactions')
       .insert({
@@ -238,7 +241,7 @@ serve(async (req) => {
         provider: 'asaas',
         provider_payment_id: asaasPaymentId,
         reservation_id: reservationId,
-        numbers: normNumbers,
+        numbers: numbers5,
         amount: unitPrice,
         status: 'paid',
         customer_name: buyerName,
