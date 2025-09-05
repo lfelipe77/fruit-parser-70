@@ -77,18 +77,19 @@ serve(async (req) => {
       return ['00','00','00','00','00'];
     }
     
-    if (!reservationId || !asaasPaymentId || !raffleId || rawNumbers == null) {
-      console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId, raffleId, hasNumbers: rawNumbers != null });
-      return ok({ ok: false, reason: "bad_request_fields" });
+    // Minimal required fields: reservation and provider payment id
+    if (!reservationId || !asaasPaymentId) {
+      console.error("[finalize-payment] Missing required fields:", { reservationId, asaasPaymentId });
+      return ok({ ok: false, reason: "bad_request_fields_minimum" });
     }
 
     console.log(`[finalize-payment] Processing reservation: ${reservationId}, payment: ${asaasPaymentId}`);
 
-    // 3) Verify payment is PAID
+    // 3) Verify payment is PAID using reservation_id as the canonical key
     const { data: paymentRow, error: payErr } = await sbService
       .from("payments_pending")
-      .select("status, amount, reservation_id")
-      .eq("asaas_payment_id", asaasPaymentId)
+      .select("status, amount, reservation_id, raffle_id, buyer_user_id, user_id, numbers, asaas_payment_id")
+      .eq("reservation_id", reservationId)
       .maybeSingle();
 
     if (payErr) {
@@ -101,16 +102,18 @@ serve(async (req) => {
       return ok({ ok: false, reason: "not_paid", status: paymentRow?.status });
     }
 
-    // Verify reservation matches payment
-    if (paymentRow.reservation_id !== reservationId) {
-      console.error("[finalize-payment] Reservation ID mismatch:", { 
-        paymentReservation: paymentRow.reservation_id, 
-        requestReservation: reservationId 
+    // Optional: warn if asaas_payment_id mismatch, but don't block
+    if (paymentRow.asaas_payment_id && paymentRow.asaas_payment_id !== asaasPaymentId) {
+      console.warn("[finalize-payment] asaas_payment_id mismatch", {
+        pending: paymentRow.asaas_payment_id,
+        provided: asaasPaymentId,
       });
-      return ok({ ok: false, reason: "reservation_mismatch" });
     }
 
-    console.log(`[finalize-payment] Payment verified as PAID: ${paymentRow.amount}`);
+    const raffleIdFinal = (paymentRow as any).raffle_id ?? raffleId;
+    const buyerUserIdFinal = (paymentRow as any).buyer_user_id ?? (paymentRow as any).user_id ?? user.id;
+
+    console.log(`[finalize-payment] Payment verified as PAID. reservation=${reservationId} raffle=${raffleIdFinal}`);
 
     // 4) Idempotency guard via payments_applied + tickets existence
     const { data: applied, error: appliedErr } = await sbService
@@ -152,15 +155,15 @@ serve(async (req) => {
     }
 
     // 5) If no tickets exist yet, validate numbers and create ticket + transaction
-    // 5a) Normalize numbers to exactly 5 singles ("00".."99")
-    const numbers5 = toFiveSingles(rawNumbers);
+    // 5a) Normalize numbers to exactly 5 singles ("00".."99") preferring pending canonical data
+    const numbers5 = toFiveSingles((paymentRow as any)?.numbers ?? rawNumbers);
     const allNums = numbers5;
 
     // 5b) Load raffle to compute price
     const { data: raffleRow, error: raffleErr } = await sbService
       .from('raffles')
       .select('id, ticket_price')
-      .eq('id', raffleId)
+      .eq('id', raffleIdFinal)
       .maybeSingle();
 
     if (raffleErr || !raffleRow || typeof raffleRow.ticket_price !== 'number') {
@@ -174,7 +177,7 @@ serve(async (req) => {
     let conflict = false;
     // Try RPC first if available
     try {
-      const { data: hasConflict, error: confErr } = await (sbService as any).rpc('tickets_numbers_conflict', { p_raffle_id: raffleId, p_numbers: allNums });
+      const { data: hasConflict, error: confErr } = await (sbService as any).rpc('tickets_numbers_conflict', { p_raffle_id: raffleIdFinal, p_numbers: allNums });
       if (!confErr && (hasConflict === true || hasConflict === 't')) {
         conflict = true;
       }
@@ -187,7 +190,7 @@ serve(async (req) => {
       const { data: existingTickets, error: exErr } = await sbService
         .from('tickets')
         .select('numbers, status')
-        .eq('raffle_id', raffleId)
+        .eq('raffle_id', raffleIdFinal)
         .in('status', ['paid', 'issued', 'reserved']);
       if (exErr) {
         console.warn('[finalize-payment] Conflict fallback query failed', exErr);
@@ -216,8 +219,8 @@ serve(async (req) => {
       .from('tickets')
       .insert([{
         reservation_id: reservationId,
-        raffle_id: raffleId,
-        user_id: user.id,
+        raffle_id: raffleIdFinal,
+        user_id: buyerUserIdFinal,
         status: 'paid',
         qty: 5,
         unit_price: unitPrice,
@@ -235,9 +238,9 @@ serve(async (req) => {
     const { data: txIns, error: txErr } = await sbService
       .from('transactions')
       .insert({
-        raffle_id: raffleId,
-        user_id: user.id,
-        buyer_user_id: user.id,
+        raffle_id: raffleIdFinal,
+        user_id: buyerUserIdFinal,
+        buyer_user_id: buyerUserIdFinal,
         provider: 'asaas',
         provider_payment_id: asaasPaymentId,
         reservation_id: reservationId,
@@ -307,7 +310,7 @@ serve(async (req) => {
         context: {
           reservation_id: reservationId,
           asaas_payment_id: asaasPaymentId,
-          raffle_id: raffleId
+          raffle_id: raffleIdFinal
         }
       });
     } catch {}
