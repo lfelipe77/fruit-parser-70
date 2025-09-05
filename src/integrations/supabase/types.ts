@@ -6807,6 +6807,10 @@ export type Database = {
         Args: { uid: string }
         Returns: boolean
       }
+      is_ticket_numbers_5pairs: {
+        Args: { n: Json }
+        Returns: boolean
+      }
       is_ticket_numbers_valid: {
         Args: { in_numbers: Json }
         Returns: boolean

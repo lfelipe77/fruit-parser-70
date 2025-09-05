@@ -30,7 +30,7 @@ export function usePersistMock(
           p_raffle_id: raffleId,
           p_qty: qty,
           p_unit_price: unitPrice,
-          p_numbers: sanitizedNumbers,
+          p_numbers: sanitizedNumbers.flat(),
           p_provider_ref: `MOCK_${raffleId}_${Date.now()}`
         });
 
