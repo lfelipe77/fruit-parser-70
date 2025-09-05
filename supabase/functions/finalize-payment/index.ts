@@ -51,7 +51,7 @@ serve(async (req) => {
     // 1) Assert PAID in payments_pending
     const { data: pending, error: pendErr } = await sb
       .from("payments_pending")
-      .select("reservation_id, asaas_payment_id, status, amount")
+      .select("reservation_id, asaas_payment_id, status, amount, numbers")
       .eq("reservation_id", reservation_id)
       .eq("asaas_payment_id", asaas_payment_id)
       .maybeSingle();
@@ -91,19 +91,35 @@ serve(async (req) => {
       const singles = reserved.map(r => String(r.ticket_number).padStart(2,"0"));
       numbers5 = toFiveSingles(singles);
     } else {
-      // Fallback to reservation_* views (service role bypasses RLS)
+      // Fallback 1: Try reservation_* views (service role bypasses RLS)
       const [vu, va, vt] = await Promise.all([
         sb.from("reservation_unpaid_v1").select("*").eq("reservation_id", reservation_id).maybeSingle(),
         sb.from("reservation_audit_v1").select("*").eq("reservation_id", reservation_id).maybeSingle(),
         sb.from("reservation_tickets_v1").select("*").eq("reservation_id", reservation_id).maybeSingle(),
       ]);
       const v = vu.data ?? va.data ?? vt.data ?? null;
-      if (!v) {
-        return new Response(JSON.stringify({ ok:false, reason:"canon_missing" }), { status: 500, headers });
+      
+      if (v) {
+        raffle_id = (v.raffle_id ?? null) as string | null;
+        buyer_user_id = (v.buyer_user_id ?? v.user_id ?? null) as string | null;
+        numbers5 = toFiveSingles(v.numbers ?? null);
+      } else {
+        // Fallback 2: Use numbers from payments_pending
+        if (pending.numbers && Array.isArray(pending.numbers)) {
+          numbers5 = pending.numbers as string[];
+          // Still need raffle_id and buyer_user_id - try to get from any related data
+          console.warn("[finalize-payment] Using payments_pending numbers fallback", { reservation_id, numbers5 });
+        }
+        
+        if (!raffle_id || !buyer_user_id || !numbers5) {
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            reason: "canon_missing", 
+            detail: `Missing: raffle_id=${!!raffle_id}, buyer_user_id=${!!buyer_user_id}, numbers5=${!!numbers5}`,
+            reservation_id 
+          }), { status: 500, headers });
+        }
       }
-      raffle_id = (v.raffle_id ?? null) as string | null;
-      buyer_user_id = (v.buyer_user_id ?? v.user_id ?? null) as string | null;
-      numbers5 = toFiveSingles(v.numbers ?? null);
     }
 
     // 3) UPDATE-then-INSERT into transactions (no upsert because reservation_id is not unique)

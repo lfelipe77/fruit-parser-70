@@ -109,6 +109,38 @@ serve(async (req) => {
         });
       }
 
+      // FIRST: Reserve tickets before creating payment
+      if (sb && isUuid(reservation_id)) {
+        // Generate 5 random ticket numbers (00-99)
+        const fiveSingles = Array.from({ length: 5 }, () => 
+          Math.floor(Math.random() * 100).toString().padStart(2, "0")
+        );
+        
+        // Reserve tickets in database
+        const ticketInserts = fiveSingles.map((n, idx) => ({
+          raffle_id,
+          user_id: null, // Will be set by RLS or when user auth is available
+          reservation_id,
+          status: 'reserved' as const,
+          ticket_number: parseInt(n, 10),
+        }));
+
+        const { error: ticketErr } = await sb
+          .from('tickets')
+          .insert(ticketInserts);
+        
+        if (ticketErr) {
+          console.error("[create-checkout] Failed to reserve tickets:", ticketErr);
+          return json(500, { 
+            error: "Failed to reserve tickets", 
+            details: ticketErr.message,
+            reservation_id 
+          });
+        }
+
+        console.log(`[create-checkout] Reserved ${fiveSingles.length} tickets:`, fiveSingles);
+      }
+
       // Reuse if already created for this reservation
       if (sb) {
         const { data: existing, error: exErr } = await sb
@@ -200,12 +232,25 @@ pix_copy_paste = pixString;
         // Set expires_at to 30 minutes from now
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
         
+        // Get the reserved ticket numbers for storage
+        const { data: reservedTickets } = await sb
+          .from('tickets')
+          .select('ticket_number')
+          .eq('reservation_id', reservation_id)
+          .eq('status', 'reserved')
+          .order('ticket_number', { ascending: true });
+        
+        const fiveSingles = reservedTickets?.map(t => 
+          String(t.ticket_number).padStart(2, "0")
+        ) || [];
+        
         const pendingUpsert = {
           reservation_id,
           asaas_payment_id: provider_payment_id,
           amount: subtotal,
           status: "PENDING",
           expires_at: expiresAt,
+          numbers: fiveSingles, // Store numbers as fallback
           updated_at: new Date().toISOString(),
         };
         const { error: upErr } = await sb.from("payments_pending")
