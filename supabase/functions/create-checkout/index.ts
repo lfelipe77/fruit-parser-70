@@ -141,23 +141,51 @@ serve(async (req) => {
         });
       }
 
-      // 3) Aggregate tickets row (one per reservation_id)
+      // 3) Aggregate tickets row (one per reservation_id) using update→insert fallback (partial unique indexes block ON CONFLICT)
       if (sb && isUuid(reservation_id)) {
-        const { error: ticketErr } = await sb.from('tickets').upsert({
+        const baseRow: any = {
           reservation_id,
           raffle_id,
-          user_id: body.buyer_user_id ?? null,
+          user_id: body?.buyer_user_id ?? null,
           status: 'reserved',
-          numbers: normalizedNumbers  // jsonb: either ["..5"] or [["..5"],["..5"],...]
-        }, { onConflict: 'reservation_id' });
-        
-        if (ticketErr) {
-          console.error("[create-checkout] Failed to reserve tickets:", ticketErr);
-          return json(500, { 
-            error: "Failed to reserve tickets", 
-            details: ticketErr.message,
-            reservation_id 
-          });
+          numbers: normalizedNumbers,  // jsonb: either ["..5"] or [["..5"],["..5"],...]
+        };
+
+        // Try UPDATE first
+        const { data: updData, error: updErr, count } = await sb
+          .from('tickets')
+          .update(baseRow)
+          .eq('reservation_id', reservation_id)
+          .select('reservation_id', { count: 'exact', head: true });
+
+        if (updErr) {
+          console.warn('[create-checkout] tickets UPDATE error, will try INSERT:', updErr);
+        }
+
+        if (!count || count === 0) {
+          // No row to update → try INSERT
+          const { error: insErr } = await sb.from('tickets').insert(baseRow);
+          if (insErr) {
+            // race or unique violation → final UPDATE attempt
+            if ((insErr as any)?.code === '23505') {
+              const { error: updErr2 } = await sb.from('tickets').update(baseRow).eq('reservation_id', reservation_id);
+              if (updErr2) {
+                console.error('[create-checkout] tickets UPDATE-after-duplicate failed:', updErr2);
+                return json(500, { 
+                  error: 'Failed to reserve tickets (update-after-duplicate)',
+                  details: updErr2.message,
+                  reservation_id,
+                });
+              }
+            } else {
+              console.error('[create-checkout] tickets INSERT failed:', insErr);
+              return json(500, { 
+                error: 'Failed to reserve tickets (insert)',
+                details: insErr.message,
+                reservation_id,
+              });
+            }
+          }
         }
 
         console.log(`[create-checkout] Reserved tickets with numbers:`, normalizedNumbers);
