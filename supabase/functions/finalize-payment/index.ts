@@ -242,10 +242,6 @@ serve(async (req) => {
     const allNums = Array.from(new Set(combos5.flat()));
     
     console.log('[finalize-payment] Final numbers normalized:', { originalInput: (paymentRow as any)?.numbers ?? rawNumbers, combos: combos5, reservationId });
-      originalInput: (paymentRow as any)?.numbers ?? rawNumbers,
-      normalized5Singles: numbers5,
-      reservationId
-    });
 
     // 5b) Load raffle to compute price
     const { data: raffleRow, error: raffleErr } = await sbService
