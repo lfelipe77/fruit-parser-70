@@ -274,28 +274,8 @@ serve(async (req) => {
     }
 
     if (!conflict) {
-      // Fallback overlap query
-      const { data: existingTickets, error: exErr } = await sbService
-        .from('tickets')
-        .select('numbers, status')
-        .eq('raffle_id', raffleIdFinal)
-        .in('status', ['paid', 'issued', 'reserved']);
-      if (exErr) {
-        console.warn('[finalize-payment] Conflict fallback query failed', exErr);
-      } else if (existingTickets) {
-        const taken = new Set<string>();
-        for (const t of existingTickets as any[]) {
-          const arr = Array.isArray(t.numbers) ? t.numbers : [];
-          for (const x of arr) {
-            if (Array.isArray(x)) {
-              for (const y of x) taken.add(String(y).padStart(2, '0').slice(-2));
-            } else {
-              taken.add(String(x).padStart(2, '0').slice(-2));
-            }
-          }
-        }
-        conflict = allNums.some((p) => taken.has(p));
-      }
+      // Fallback: if RPC not available, proceed (do not block on heuristic)
+      // Rationale: same two-digit numbers can be bought by multiple users; only authoritative RPC should block.
     }
 
     if (conflict) {
