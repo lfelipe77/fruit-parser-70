@@ -6638,13 +6638,20 @@ export type Database = {
         Returns: undefined
       }
       finalize_paid_purchase: {
-        Args: {
-          p_asaas_payment_id?: string
-          p_customer_cpf?: string
-          p_customer_name?: string
-          p_customer_phone?: string
-          p_reservation_id: string
-        }
+        Args:
+          | {
+              p_asaas_payment_id: string
+              p_paid_amount: number
+              p_paid_at: string
+              p_reservation_id: string
+            }
+          | {
+              p_asaas_payment_id?: string
+              p_customer_cpf?: string
+              p_customer_name?: string
+              p_customer_phone?: string
+              p_reservation_id: string
+            }
         Returns: Json
       }
       finalize_payout: {
