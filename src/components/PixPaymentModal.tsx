@@ -103,7 +103,10 @@ export default function PixPaymentModal({
             const { data: finalizeData, error: finalizeError } = await supabase.functions.invoke('finalize-payment', {
               body: {
                 reservation_id: paymentData.reservation_id,
-                asaas_payment_id: paymentData.provider_payment_id
+                asaas_payment_id: paymentData.provider_payment_id,
+                raffle_id: paymentData.raffle_id,
+                numbers,
+                buyer
               },
               headers: jwt ? { Authorization: `Bearer ${jwt}` } : {}
             });

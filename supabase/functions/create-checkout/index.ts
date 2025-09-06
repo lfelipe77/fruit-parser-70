@@ -21,23 +21,6 @@ function json(status: number, body: any) {
 
 const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 
-function normalizeNumbers(anyShape: unknown): string[] | string[][] {
-  const s = typeof anyShape === "string" ? anyShape : JSON.stringify(anyShape ?? "");
-  const tokens = s.match(/\d{2}/g) ?? [];
-  if (tokens.length === 5) return tokens;                       // one ticket
-  if (tokens.length > 5 && tokens.length % 5 === 0) {           // many tickets
-    const out: string[][] = [];
-    for (let i = 0; i < tokens.length; i += 5) out.push(tokens.slice(i, i + 5));
-    return out;
-  }
-  return []; // invalid → caller may generate new ones
-}
-
-function ensureQtyMatches(numbers: string[] | string[][], qty: number) {
-  const count = Array.isArray(numbers[0]) ? (numbers as string[][]).length : 1;
-  return count === qty;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
@@ -48,7 +31,7 @@ serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return json(400, { error: "Invalid JSON body" }); }
 
-  const { provider, method, raffle_id, qty, numbers, buyer, currency, reservation_id, debug, dryRun } = body ?? {};
+  const { provider, method, raffle_id, qty, amount, currency, reservation_id, debug, dryRun } = body ?? {};
   
   // DEBUG: env presence (no secret values leaked)
   if (debug === true) {
@@ -64,8 +47,21 @@ serve(async (req) => {
       }
     }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders }});
   }
-  if (!provider || !raffle_id || !qty || !currency) {
-    return json(400, { error: "Missing fields", required: ["provider", "raffle_id", "qty", "currency"] });
+  if (!provider || !raffle_id || !qty || typeof amount !== "number" || !currency) {
+    return json(400, { error: "Missing fields", required: ["provider", "raffle_id", "qty", "amount:number", "currency"] });
+  }
+
+  const fee_fixed = 2.0;
+  const subtotal = amount;                 // tickets-only
+  const charge_total = subtotal + fee_fixed;
+  if (subtotal < 3.0 || charge_total < 5.0) {
+    return json(400, {
+      error: "Minimum charge requirement not met",
+      minimum_subtotal: 3.0,
+      minimum_charge_total: 5.0,
+      received_subtotal: subtotal,
+      received_charge_total: charge_total,
+    });
   }
 
   const SB_URL = Deno.env.get("SB_URL");
@@ -73,42 +69,6 @@ serve(async (req) => {
   const sb = (SB_URL && SB_SERVICE_KEY)
     ? createClient(SB_URL, SB_SERVICE_KEY, { auth: { persistSession: false } })
     : null;
-
-  // 1) Load raffle & recompute money
-  let unit_price = 0;
-  if (sb) {
-    const { data: raffle } = await sb.from('raffles').select('ticket_price').eq('id', raffle_id).single();
-    unit_price = Number(raffle?.ticket_price ?? 0);
-  }
-  const subtotal = unit_price * qty;
-  const fee_fixed = 2.0;
-  const total = subtotal + fee_fixed;
-
-  if (subtotal < 3.0 || total < 5.0) {
-    return json(400, {
-      error: "Minimum charge requirement not met",
-      minimum_subtotal: 3.0,
-      minimum_total: 5.0,
-      received_subtotal: subtotal,
-      received_total: total,
-    });
-  }
-
-  // 2) Normalize numbers (or generate)
-  let normalizedNumbers = normalizeNumbers(numbers);
-  if (!ensureQtyMatches(normalizedNumbers, qty)) {
-    // generate qty combos of 5 singles "00".."99"
-    const makeCombo = () => Array.from({length:5}, () => Math.floor(Math.random()*100).toString().padStart(2,'0'));
-    normalizedNumbers = qty === 1 ? makeCombo() : Array.from({length: qty}, makeCombo);
-  }
-
-  // Prepare ticketsNumbers (always a flat array of 5 two-digit strings) to satisfy DB CHECK
-  const toFive = (arr: any): string[] => {
-    if (Array.isArray(arr) && arr.length === 5 && arr.every((s) => typeof s === 'string')) return arr as string[];
-    if (Array.isArray(arr) && Array.isArray(arr[0])) return (arr[0] as string[]);
-    return Array.from({length:5}, () => Math.floor(Math.random()*100).toString().padStart(2,'0'));
-  };
-  const ticketsNumbers = toFive(normalizedNumbers);
 
   try {
     let provider_payment_id: string | null = null;
@@ -130,7 +90,8 @@ serve(async (req) => {
       if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
       // DRY RUN: show payload without calling Asaas
       if (dryRun === true) {
-        const value = Number(total.toFixed(2));
+        const subtotal = Number(amount ?? 0);
+        const value = Number(charge_total.toFixed(2));
         const dueDate = new Date().toISOString().slice(0,10);
 
         const asaasPayload = {
@@ -148,56 +109,6 @@ serve(async (req) => {
         });
       }
 
-      // 3) Aggregate tickets row (one per reservation_id) using update→insert fallback (partial unique indexes block ON CONFLICT)
-      if (sb && isUuid(reservation_id)) {
-        const baseRow: any = {
-          reservation_id,
-          raffle_id,
-          user_id: body?.buyer_user_id ?? null,
-          status: 'reserved',
-          numbers: ticketsNumbers,  // DB expects a single 5-singles array
-        };
-
-        // Try UPDATE first
-        const { data: updData, error: updErr, count } = await sb
-          .from('tickets')
-          .update(baseRow)
-          .eq('reservation_id', reservation_id)
-          .select('reservation_id', { count: 'exact', head: true });
-
-        if (updErr) {
-          console.warn('[create-checkout] tickets UPDATE error, will try INSERT:', updErr);
-        }
-
-        if (!count || count === 0) {
-          // No row to update → try INSERT
-          const { error: insErr } = await sb.from('tickets').insert(baseRow);
-          if (insErr) {
-            // race or unique violation → final UPDATE attempt
-            if ((insErr as any)?.code === '23505') {
-              const { error: updErr2 } = await sb.from('tickets').update(baseRow).eq('reservation_id', reservation_id);
-              if (updErr2) {
-                console.error('[create-checkout] tickets UPDATE-after-duplicate failed:', updErr2);
-                return json(500, { 
-                  error: 'Failed to reserve tickets (update-after-duplicate)',
-                  details: updErr2.message,
-                  reservation_id,
-                });
-              }
-            } else {
-              console.error('[create-checkout] tickets INSERT failed:', insErr);
-              return json(500, { 
-                error: 'Failed to reserve tickets (insert)',
-                details: insErr.message,
-                reservation_id,
-              });
-            }
-          }
-        }
-
-        console.log(`[create-checkout] Reserved tickets with numbers:`, normalizedNumbers);
-      }
-
       // Reuse if already created for this reservation
       if (sb) {
         const { data: existing, error: exErr } = await sb
@@ -209,7 +120,7 @@ serve(async (req) => {
       }
 
       if (!provider_payment_id) {
-        const value = Number(total.toFixed(2));
+        const value = Number(charge_total.toFixed(2));
         const dueDate = new Date().toISOString().slice(0,10);
         const asaasPayload = {
           customer: customerId,
@@ -284,22 +195,26 @@ pix_copy_paste = pixString;
         }
       }
 
-      // 4) Upsert payments_pending mirror
+      // Persist minimal snapshot + link (no transactions writes)
       if (sb && isUuid(reservation_id)) {
+        // Set expires_at to 30 minutes from now
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
         
-        const { error: upErr } = await sb.from('payments_pending').upsert({
+        const pendingUpsert = {
           reservation_id,
-          asaas_payment_id: provider_payment_id ?? null,
-          status: 'PENDING',
-          amount: subtotal,             // or total—pick one and be consistent
+          asaas_payment_id: provider_payment_id,
+          amount: subtotal,
+          status: "PENDING",
           expires_at: expiresAt,
-          numbers: normalizedNumbers,
-          buyer: buyer ?? null,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'reservation_id' });
-        
+          updated_at: new Date().toISOString(),
+        };
+        const { error: upErr } = await sb.from("payments_pending")
+          .upsert(pendingUpsert, { onConflict: "reservation_id" });
         if (upErr) console.warn("[create-checkout] payments_pending upsert error:", upErr);
+
+        // Skip purchase_payments upsert as it has FK constraint issues
+        // Focus on payments_pending which is the main tracking table
+        console.log("[create-checkout] Skipping purchase_payments upsert to avoid FK constraint violation");
       } else if (!isUuid(reservation_id)) {
         console.warn("[create-checkout] Skipping DB upserts: reservation_id is not a UUID");
       } else {
@@ -311,7 +226,7 @@ pix_copy_paste = pixString;
       redirect_url = `https://example.com/checkout/${provider_payment_id}`;
     }
 
-    console.log(`Checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal.toFixed(2)}, fee=${fee_fixed.toFixed(2)}, total=${total.toFixed(2)}, reservation=${reservation_id || "none"}`);
+    console.log(`Checkout for ${provider}: raffle=${raffle_id}, qty=${qty}, subtotal=${subtotal.toFixed(2)}, fee=${fee_fixed.toFixed(2)}, total=${charge_total.toFixed(2)}, reservation=${reservation_id || "none"}`);
 
     return json(200, {
       ok: true,
@@ -324,8 +239,8 @@ pix_copy_paste = pixString;
       fee_pct: 0,
       fee_amount: 0,
       amount: subtotal,
-      charge_total: total,
-      total_amount: total,
+      charge_total,
+      total_amount: charge_total,
       raffle_id,
       qty,
       currency,
