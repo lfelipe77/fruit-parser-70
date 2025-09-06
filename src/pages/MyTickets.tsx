@@ -84,7 +84,37 @@ export default function MyTicketsPage() {
   const fetchV7 = async () => {
     if (!user?.id) throw new Error('No user ID');
     
-    // Query my_tickets_ext_v7 directly
+    // Try edge function first, fallback to direct query
+    try {
+      const { data, error } = await supabase.functions.invoke('my-tickets-get', {
+        body: { limit: 50 }
+      });
+      
+      if (!error && data?.items) {
+        // Convert consolidated data to expected format
+        const convertedData = data.items.map((item: any) => ({
+          ...item,
+          purchase_date: item.purchaseDate,
+          raffle_id: item.raffleId,
+          raffle_title: item.raffleTitle,
+          raffle_image_url: item.raffleImageUrl,
+          tx_status: item.status,
+          transaction_id: item.transactionId,
+          purchased_numbers: item.purchasedNumbers,
+          ticket_count: item.ticketCount,
+          value: item.value,
+          goal_amount: item.goalAmount,
+          amount_raised: item.amountRaised,
+          progress_pct_money: item.progressPctMoney,
+          buyer_user_id: user.id
+        }));
+        return { data: convertedData as TicketRow[], error: null };
+      }
+    } catch (edgeFunctionError) {
+      console.warn('[MyTicketsPage] Edge function failed, falling back to direct query:', edgeFunctionError);
+    }
+    
+    // Fallback: Query my_tickets_ext_v7 directly
     const { data, error } = await supabase
       .from('my_tickets_ext_v7' as any)
       .select('*')
