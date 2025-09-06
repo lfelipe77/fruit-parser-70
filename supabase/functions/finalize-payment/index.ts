@@ -266,9 +266,18 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'numbers_conflict' });
     }
 
-    // 5d) Insert ticket row (convert singles to pairs format for constraint compatibility)
-    const numbers5Pairs = numbers5.map(n => [n, "00"]); // Convert ["21", "39"] to [["21","00"], ["39","00"]]
-    
+    // 5d) Insert ticket row using EXACTLY five singles ("00".."99")
+    // Validate format before insert to avoid constraint errors
+    try {
+      const { data: isValid } = await (sbService as any).rpc('is_ticket_numbers_5singles', { n: numbers5 });
+      if (isValid === false || isValid === 'f') {
+        console.warn('[finalize-payment] is_ticket_numbers_5singles returned false, forcing normalization', numbers5);
+        numbers5 = numbers5.map((n) => String(n ?? '00').padStart(2, '0').slice(-2)).slice(0, 5);
+      }
+    } catch (_) {
+      // If RPC not available, continue – DB CHECK will still enforce
+    }
+
     const { data: ticketIns, error: tErr } = await sbService
       .from('tickets')
       .insert([{
@@ -278,14 +287,14 @@ serve(async (req) => {
         status: 'paid',
         qty: 5,
         unit_price: unitPrice,
-        numbers: numbers5Pairs  // Use pairs format: [["21","00"], ["39","00"], ...]
+        numbers: numbers5 // Store singles: ["21","39","15","08","42"]
       }])
       .select('id')
       .single();
 
     if (tErr) {
       console.error('[finalize-payment] tickets insert failed', tErr);
-      return ok({ ok: false, reason: 'tickets_insert_failed' });
+      return ok({ ok: false, reason: 'tickets_insert_failed', code: (tErr as any)?.code });
     }
 
     // 5e) Insert transactions row with buyer info and numbers
