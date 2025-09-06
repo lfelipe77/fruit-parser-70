@@ -266,7 +266,9 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'numbers_conflict' });
     }
 
-    // 5d) Insert ticket row (use 5 singles format for constraint compatibility)
+    // 5d) Insert ticket row (convert singles to pairs format for constraint compatibility)
+    const numbers5Pairs = numbers5.map(n => [n, "00"]); // Convert ["21", "39"] to [["21","00"], ["39","00"]]
+    
     const { data: ticketIns, error: tErr } = await sbService
       .from('tickets')
       .insert([{
@@ -276,7 +278,7 @@ serve(async (req) => {
         status: 'paid',
         qty: 5,
         unit_price: unitPrice,
-        numbers: numbers5  // Use 5 singles format: ["21", "39", "15", "08", "42"]
+        numbers: numbers5Pairs  // Use pairs format: [["21","00"], ["39","00"], ...]
       }])
       .select('id')
       .single();
