@@ -70,15 +70,31 @@ export default function FederalLotteryManager() {
       // Store current data before sync to compare after polling
       const initialData = data;
       
-      const { data: rpcData, error } = await supabase.rpc('admin_federal_sync_enqueue' as any);
+      // First try direct edge function call for immediate feedback
+      const { data: directResult, error: directError } = await supabase.functions.invoke('federal-sync', {
+        body: { debug: '1' }
+      });
       
-      if (error) {
+      if (directError) {
+        console.warn('Direct sync failed, trying RPC:', directError);
+        // Fallback to RPC queue method
+        const { data: rpcData, error } = await supabase.rpc('admin_federal_sync_enqueue' as any);
+        
+        if (error) {
+          toast({ 
+            title: 'Erro ao sincronizar', 
+            description: error.message, 
+            variant: 'destructive' 
+          });
+          return;
+        }
+      } else {
+        // Direct sync worked, show immediate feedback
         toast({ 
-          title: 'Erro ao sincronizar', 
-          description: error.message, 
-          variant: 'destructive' 
+          title: 'Sync iniciado', 
+          description: directResult?.synced ? 'Dados atualizados!' : 'Verificando resultados...',
+          variant: directResult?.synced ? 'default' : 'default'
         });
-        return;
       }
 
       // Start polling
@@ -201,26 +217,67 @@ export default function FederalLotteryManager() {
   const forceSyncAndPick = async () => {
     try {
       setBusy("force");
-      const { data, error } = await supabase.functions.invoke('federal-sync', {
-        body: { auto_pick: '1' }
+      
+      // Step 1: Force sync latest lottery numbers
+      toast({ title: 'Iniciando sync forçado...', description: 'Buscando últimos resultados' });
+      
+      const { data: syncResult, error } = await supabase.functions.invoke('federal-sync', {
+        body: { auto_pick: '1', debug: '1' }
       });
+      
       if (error) {
-        toast({ title: 'Erro ao forçar sync', description: error.message, variant: 'destructive' });
-        return;
+        throw new Error(`Sync failed: ${error.message}`);
       }
-      // Small refresh then pick
+      
+      // Step 2: Refresh our local data
       await fetchData();
-      const { error: pickErr } = await supabase.rpc('admin_federal_pick_now' as any);
-      if (pickErr) {
-        toast({ title: 'Erro ao escolher vencedor', description: pickErr.message, variant: 'destructive' });
+      
+      // Step 3: Check if we have completed raffles to pick from
+      const { data: completedRaffles, error: raffleErr } = await supabase
+        .from('raffles')
+        .select('id, title, status')
+        .eq('status', 'completed');
+        
+      if (raffleErr) {
+        throw new Error(`Failed to check raffles: ${raffleErr.message}`);
+      }
+      
+      if (!completedRaffles || completedRaffles.length === 0) {
+        toast({ 
+          title: 'Aviso', 
+          description: 'Números atualizados, mas não há rifas concluídas para sortear vencedores.',
+          variant: 'default'
+        });
         return;
       }
-      toast({ title: 'Sync + Pick concluídos' });
+      
+      // Step 4: Run winner picking algorithm
+      toast({ title: 'Calculando vencedores...', description: `${completedRaffles.length} rifas para processar` });
+      
+      const { data: pickResult, error: pickErr } = await supabase.rpc('admin_federal_pick_now' as any);
+      
+      if (pickErr) {
+        throw new Error(`Pick failed: ${pickErr.message}`);
+      }
+      
+      // Step 5: Success - invalidate caches and refresh
+      toast({ 
+        title: '✅ Sync + Pick concluídos!', 
+        description: `Resultados: ${syncResult?.concurso || 'N/A'} | Vencedores calculados`
+      });
+      
       queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
       queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
       queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
+      queryClient.invalidateQueries({ queryKey: ['raffles'] });
+      
     } catch (e: any) {
-      toast({ title: 'Erro ao forçar sync', description: e?.message || String(e), variant: 'destructive' });
+      console.error('Force sync failed:', e);
+      toast({ 
+        title: 'Erro no processo', 
+        description: e?.message || String(e), 
+        variant: 'destructive' 
+      });
     } finally {
       setBusy(null);
     }
