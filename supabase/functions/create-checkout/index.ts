@@ -102,6 +102,14 @@ serve(async (req) => {
     normalizedNumbers = qty === 1 ? makeCombo() : Array.from({length: qty}, makeCombo);
   }
 
+  // Prepare ticketsNumbers (always a flat array of 5 two-digit strings) to satisfy DB CHECK
+  const toFive = (arr: any): string[] => {
+    if (Array.isArray(arr) && arr.length === 5 && arr.every((s) => typeof s === 'string')) return arr as string[];
+    if (Array.isArray(arr) && Array.isArray(arr[0])) return (arr[0] as string[]);
+    return Array.from({length:5}, () => Math.floor(Math.random()*100).toString().padStart(2,'0'));
+  };
+  const ticketsNumbers = toFive(normalizedNumbers);
+
   try {
     let provider_payment_id: string | null = null;
     let redirect_url: string | null = null;
@@ -122,8 +130,7 @@ serve(async (req) => {
       if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
       // DRY RUN: show payload without calling Asaas
       if (dryRun === true) {
-        const subtotal = Number(amount ?? 0);
-        const value = Number(charge_total.toFixed(2));
+        const value = Number(total.toFixed(2));
         const dueDate = new Date().toISOString().slice(0,10);
 
         const asaasPayload = {
@@ -148,7 +155,7 @@ serve(async (req) => {
           raffle_id,
           user_id: body?.buyer_user_id ?? null,
           status: 'reserved',
-          numbers: normalizedNumbers,  // jsonb: either ["..5"] or [["..5"],["..5"],...]
+          numbers: ticketsNumbers,  // DB expects a single 5-singles array
         };
 
         // Try UPDATE first

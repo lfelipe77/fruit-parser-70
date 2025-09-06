@@ -36,22 +36,34 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok:false, reason:"method_not_allowed" }), { status: 405, headers });
     }
 
-    const b = (await req.json()) as Body;
-    if (!b?.reservation_id || !b?.status) {
-      return new Response(JSON.stringify({ ok:false, reason:"bad_request" }), { status: 400, headers });
+    const raw: any = await req.json().catch(() => ({}));
+    const reservation_id = raw.reservation_id ?? raw.reservationId;
+    const status: Body["status"] = (raw.status ?? 'PENDING');
+    const asaas_payment_id = raw.asaas_payment_id ?? raw.asaasPaymentId ?? null;
+    const amount = raw.amount ?? raw.subtotal ?? null;
+    const expires_at = raw.expires_at ?? raw.expiresAt ?? null;
+    const pix_qr_code_id = raw.pix_qr_code_id ?? raw.pixQrCodeId ?? null;
+    const numbers = raw.numbers ?? null;
+    const buyer = raw.buyer ?? raw.buyerUserId ?? raw.buyer_user_id ?? null;
+
+    if (!reservation_id) {
+      return new Response(JSON.stringify({ ok:false, reason:"bad_request", detail:"Missing reservation_id|reservationId", got:Object.keys(raw) }), { status: 400, headers });
     }
 
     const { error } = await sb
       .from("payments_pending")
       .upsert({
-        reservation_id: b.reservation_id,
-        asaas_payment_id: b.asaas_payment_id ?? null,
-        status: b.status,
-        amount: b.amount ?? null,
-        expires_at: b.expires_at ?? null,
-        pix_qr_code_id: b.pix_qr_code_id ?? null,
+        reservation_id,
+        asaas_payment_id,
+        status,
+        amount,
+        expires_at,
+        pix_qr_code_id,
+        numbers,
+        buyer,
         updated_at: new Date().toISOString(),
       }, { onConflict: "reservation_id" });
+
 
     if (error) throw error;
     return new Response(JSON.stringify({ ok:true }), { status: 200, headers });
