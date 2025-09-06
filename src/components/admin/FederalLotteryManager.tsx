@@ -197,6 +197,35 @@ export default function FederalLotteryManager() {
     }
   };
 
+  // Force: call Edge Function directly and then pick
+  const forceSyncAndPick = async () => {
+    try {
+      setBusy("force");
+      const { data, error } = await supabase.functions.invoke('federal-sync', {
+        body: { auto_pick: '1' }
+      });
+      if (error) {
+        toast({ title: 'Erro ao forçar sync', description: error.message, variant: 'destructive' });
+        return;
+      }
+      // Small refresh then pick
+      await fetchData();
+      const { error: pickErr } = await supabase.rpc('admin_federal_pick_now' as any);
+      if (pickErr) {
+        toast({ title: 'Erro ao escolher vencedor', description: pickErr.message, variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Sync + Pick concluídos' });
+      queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
+      queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
+      queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
+    } catch (e: any) {
+      toast({ title: 'Erro ao forçar sync', description: e?.message || String(e), variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const onManualSave = async () => {
     try {
       setBusy("manual");
@@ -372,6 +401,14 @@ export default function FederalLotteryManager() {
               variant="secondary"
             >
               {busy === "pick" ? "Calculando…" : "Pick agora (Federal)"}
+            </Button>
+
+            <Button
+              onClick={forceSyncAndPick}
+              disabled={!!busy}
+              variant="outline"
+            >
+              {busy === "force" ? "Executando…" : "Forçar Sync + Pick"}
             </Button>
           </div>
 

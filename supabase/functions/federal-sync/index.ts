@@ -14,8 +14,27 @@ serve(withCORS(async (req: Request) => {
   }
 
   const url = new URL(req.url);
-  const debug = url.searchParams.get("debug") === "1";
-  const autoPick = url.searchParams.get("auto_pick") === "1";
+  const urlDebug = url.searchParams.get("debug");
+  const urlAutoPick = url.searchParams.get("auto_pick");
+
+  // Also accept JSON body flags (so we can use supabase.functions.invoke)
+  let bodyDebug: string | null = null;
+  let bodyAutoPick: string | null = null;
+  try {
+    const contentType = req.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const body = await req.json().catch(() => null);
+      if (body && typeof body === "object") {
+        bodyDebug = (body as any).debug != null ? String((body as any).debug) : null;
+        bodyAutoPick = (body as any).auto_pick != null ? String((body as any).auto_pick) : null;
+      }
+    }
+  } catch (_) {
+    // ignore body parse errors
+  }
+
+  const debug = (urlDebug === "1") || (bodyDebug === "1");
+  const autoPick = (urlAutoPick === "1") || (bodyAutoPick === "1");
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
