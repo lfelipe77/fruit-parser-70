@@ -42,13 +42,13 @@ export default function EmAltaRecentesSection() {
           supabase
             .from("raffles_public_money_ext")
             .select(RAFFLE_CARD_SELECT)
-            .in('status', ['active','completed'])
+            .in('status', ['active','drawing','completed'])
             .order("last_paid_at", { ascending: false, nullsFirst: false }) // nulls last
             .limit(12),
           supabase
             .from("raffles_public_money_ext")
             .select(RAFFLE_CARD_SELECT)
-            .in('status', ['active','completed'])
+            .in('status', ['active','drawing','completed'])
             .order("created_at", { ascending: false })
             .limit(24)
         ]);
