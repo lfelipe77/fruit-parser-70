@@ -282,20 +282,22 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'numbers_conflict' });
     }
 
-    // 5d) Insert one ticket PER COMBO (each ticket stores exactly five singles)
-    const ticketRows = combos5.map((c) => ({
-      reservation_id: reservationId,
-      raffle_id: raffleIdFinal,
-      user_id: buyerUserIdFinal,
-      status: 'paid',
-      unit_price: unitPrice,
-      numbers: c
-    }));
+    // 5d) Insert ONE ticket row for this reservation; use a stable 5-singles key
+    const flatSingles = combos5.flat().map((n) => String(n).padStart(2,'0').slice(-2));
+    const ticketSingles = flatSingles.slice(-5); // tail-5 key
 
-    const { data: ticketsInserted, error: tErr } = await sbService
+    const { data: ticketIns, error: tErr } = await sbService
       .from('tickets')
-      .insert(ticketRows)
-      .select('id');
+      .insert([{
+        reservation_id: reservationId,
+        raffle_id: raffleIdFinal,
+        user_id: buyerUserIdFinal,
+        status: 'paid',
+        unit_price: unitPrice,
+        numbers: ticketSingles
+      }])
+      .select('id')
+      .single();
 
     if (tErr) {
       console.error('[finalize-payment] tickets insert failed', tErr);
