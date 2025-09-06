@@ -706,8 +706,8 @@ export default function ComoFunciona() {
               um sorteio público, auditado e 100% rastreável.
             </p>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Cada número vendido no Ganhavel é composto por 6 pares de dígitos <br />
-              <span className="font-mono bg-muted px-3 py-1 rounded-md text-foreground">(ex: 24-33-47-55-57-60)</span>
+              Cada número vendido no Ganhavel é composto por 5 pares de dígitos <br />
+              <span className="font-mono bg-muted px-3 py-1 rounded-md text-foreground">(ex: 24-33-47-55-57)</span>
             </p>
           </div>
 
