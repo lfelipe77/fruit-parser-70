@@ -63,18 +63,37 @@ serve(async (req) => {
 
     // Normalizer helpers: convert any format into exactly 5 singles ("00".."99")
     const two = (s:any)=>String(s??'00').padStart(2,'0').slice(-2);
+    
     function toFiveSingles(input: unknown): string[] {
-      if (Array.isArray(input) && input.length===5 && (input as any[]).every(x => typeof x === 'string'))
-        return (input as string[]).map(two);
-      if (Array.isArray(input) && input.length===10 && (input as any[]).every(x => typeof x === 'string'))
-        return [0,2,4,6,8].map(i => two((input as string[])[i]));
-      if (Array.isArray(input) && input.length===5 && (input as any[]).every(p => Array.isArray(p)))
-        return (input as any[]).map((p:any[]) => two(p?.[0]));
-      if (typeof input==='string') {
-        const v = input.split(/\D+/).filter(Boolean).map(two);
-        return [two(v[0]), two(v[1]), two(v[2]), two(v[3]), two(v[4])];
+      // Handle string format like "20-75-37-29-90" (from payments_pending)
+      if (typeof input === 'string') {
+        const tokens = input.split(/\D+/).filter(Boolean);
+        if (tokens.length >= 5) {
+          return tokens.slice(0, 5).map(two);
+        }
       }
-      return ['00','00','00','00','00'];
+      
+      // Handle array of strings like ["20", "75", "37", "29", "90"]
+      if (Array.isArray(input) && input.length >= 5 && input.every(x => typeof x === 'string')) {
+        return (input as string[]).slice(0, 5).map(two);
+      }
+      
+      // Handle array format like ["20-75-37-29-90"] (single combo)
+      if (Array.isArray(input) && input.length === 1 && typeof input[0] === 'string') {
+        const tokens = String(input[0]).split(/\D+/).filter(Boolean);
+        if (tokens.length >= 5) {
+          return tokens.slice(0, 5).map(two);
+        }
+      }
+      
+      // Handle pairs format [["21","00"], ["39","00"], ...]
+      if (Array.isArray(input) && input.length === 5 && input.every(p => Array.isArray(p))) {
+        return (input as any[]).map((p:any[]) => two(p?.[0]));
+      }
+      
+      // Generate random numbers as fallback
+      console.warn('[finalize-payment] Generating random numbers due to invalid input:', input);
+      return Array.from({length: 5}, () => Math.floor(Math.random() * 100).toString().padStart(2, '0'));
     }
     
     // Minimal required fields: reservation and provider payment id
@@ -185,8 +204,12 @@ serve(async (req) => {
       }
     }
     const allNums = numbers5;
-    // Convert 5 singles to 5 pairs format: [["21","00"], ["39","00"], ...] 
-    const numbers5Pairs = numbers5.map((n) => [n, "00"]);
+    
+    console.log('[finalize-payment] Final numbers normalized:', {
+      originalInput: (paymentRow as any)?.numbers ?? rawNumbers,
+      normalized5Singles: numbers5,
+      reservationId
+    });
 
     // 5b) Load raffle to compute price
     const { data: raffleRow, error: raffleErr } = await sbService
@@ -243,7 +266,7 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'numbers_conflict' });
     }
 
-    // 5d) Insert ticket row (bundle of 5 singles)
+    // 5d) Insert ticket row (use 5 singles format for constraint compatibility)
     const { data: ticketIns, error: tErr } = await sbService
       .from('tickets')
       .insert([{
@@ -253,7 +276,7 @@ serve(async (req) => {
         status: 'paid',
         qty: 5,
         unit_price: unitPrice,
-        numbers: numbers5Pairs
+        numbers: numbers5  // Use 5 singles format: ["21", "39", "15", "08", "42"]
       }])
       .select('id')
       .single();
@@ -263,7 +286,9 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'tickets_insert_failed' });
     }
 
-    // 5e) Insert transactions row with buyer info and mirror numbers (5 singles)
+    // 5e) Insert transactions row with buyer info and numbers
+    const transactionAmount = (paymentRow as any)?.amount ?? (unitPrice * 5);
+    
     const { data: txIns, error: txErr } = await sbService
       .from('transactions')
       .insert({
@@ -273,8 +298,8 @@ serve(async (req) => {
         provider: 'asaas',
         provider_payment_id: asaasPaymentId,
         reservation_id: reservationId,
-        numbers: [numbers5], // Array of combos format for transactions
-        amount: (paymentRow as any)?.amount ?? unitPrice,
+        numbers: [numbers5], // Array of combos format: [["21", "39", "15", "08", "42"]]
+        amount: transactionAmount,
         status: 'paid',
         customer_name: buyerName,
         customer_phone: buyerPhone,
@@ -282,6 +307,13 @@ serve(async (req) => {
       })
       .select('id')
       .single();
+
+    console.log('[finalize-payment] Transaction creation result:', {
+      success: !txErr,
+      transactionId: txIns?.id,
+      amount: transactionAmount,
+      error: txErr ? String(txErr) : null
+    });
 
     if (txErr) {
       console.error('[finalize-payment] transactions insert failed', txErr);
