@@ -86,14 +86,36 @@ serve(async (req) => {
         }
       }
       
-      // Handle pairs format [["21","00"], ["39","00"], ...]
+      // Handle pairs format [["21","00"], ["39","00"], ...] -> singles
       if (Array.isArray(input) && input.length === 5 && input.every(p => Array.isArray(p))) {
         return (input as any[]).map((p:any[]) => two(p?.[0]));
       }
       
-      // Generate random numbers as fallback
-      console.warn('[finalize-payment] Generating random numbers due to invalid input:', input);
       return Array.from({length: 5}, () => Math.floor(Math.random() * 100).toString().padStart(2, '0'));
+    }
+
+    // Parse potentially MANY combos into an array of 5-singles combos
+    function toCombos5(input: unknown): string[][] {
+      // e.g., ["34-39-85-12-89", "12-84-91-81-23", ...]
+      if (Array.isArray(input) && input.length > 0 && input.every(x => typeof x === 'string')) {
+        return (input as string[])
+          .map((s) => s.split(/\D+/).filter(Boolean).slice(0,5).map(two))
+          .filter((arr) => arr.length === 5);
+      }
+
+      // Already array of combos [["34","39","85","12","89"], ...]
+      if (Array.isArray(input) && input.length > 0 && input.every(x => Array.isArray(x))) {
+        const combos: string[][] = [];
+        for (const c of input as any[]) {
+          const singles = toFiveSingles(c);
+          if (singles.length === 5) combos.push(singles);
+        }
+        return combos;
+      }
+
+      // Single combo variants
+      const singles = toFiveSingles(input);
+      return singles.length === 5 ? [singles] : [];
     }
     
     // Minimal required fields: reservation and provider payment id
@@ -183,29 +205,43 @@ serve(async (req) => {
     }
 
     // 5) If no tickets exist yet, validate numbers and create ticket + transaction
-    // 5a) Normalize numbers to exactly 5 singles ("00".."99") preferring pending canonical data
-    let numbers5 = toFiveSingles((paymentRow as any)?.numbers ?? rawNumbers);
-    // If undefined/empty, try derive from RESERVED tickets
-    if (numbers5.every((n) => n === '00')) {
-      const { data: reservedNums } = await sbService
+    // 5a) Normalize to MANY combos of exactly 5 singles ("00".."99")
+    let combos5: string[][] = toCombos5((paymentRow as any)?.numbers ?? rawNumbers);
+
+    // If empty, try derive combos from RESERVED tickets (one combo per reserved ticket)
+    if (!combos5.length) {
+      const { data: reserved } = await sbService
         .from('tickets')
         .select('numbers')
         .eq('reservation_id', reservationId)
         .eq('status','reserved');
-      if (reservedNums && reservedNums.length > 0) {
-        const singles: string[] = [];
-        for (const t of reservedNums as any[]) {
+      if (reserved && reserved.length > 0) {
+        for (const t of reserved as any[]) {
           const arr = Array.isArray(t.numbers) ? t.numbers : [];
-          if (Array.isArray(arr[0])) singles.push(String(arr[0]?.[0] ?? '00').padStart(2,'0').slice(-2));
-          else for (const x of arr) singles.push(String(x ?? '00').padStart(2,'0').slice(-2));
+          const singles = toFiveSingles(arr);
+          if (singles.length === 5) combos5.push(singles);
         }
-        const uniq = Array.from(new Set(singles)).slice(0,5);
-        if (uniq.length === 5) numbers5 = uniq as any;
       }
     }
-    const allNums = numbers5;
+
+    // Safety: ensure all combos are valid and dedup
+    combos5 = combos5
+      .map((c) => c.map((n) => String(n ?? '00').padStart(2,'0').slice(-2)))
+      .filter((c) => c.length === 5);
+    const comboKey = (c:string[]) => c.join('-');
+    const uniqueMap = new Map<string,string[]>();
+    for (const c of combos5) uniqueMap.set(comboKey(c), c);
+    combos5 = Array.from(uniqueMap.values());
+
+    if (!combos5.length) {
+      // as last resort create one random combo
+      combos5 = [toFiveSingles(undefined)];
+    }
+
+    // Build a flat set of all singles for conflict detection
+    const allNums = Array.from(new Set(combos5.flat()));
     
-    console.log('[finalize-payment] Final numbers normalized:', {
+    console.log('[finalize-payment] Final numbers normalized:', { originalInput: (paymentRow as any)?.numbers ?? rawNumbers, combos: combos5, reservationId });
       originalInput: (paymentRow as any)?.numbers ?? rawNumbers,
       normalized5Singles: numbers5,
       reservationId
@@ -266,39 +302,28 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'numbers_conflict' });
     }
 
-    // 5d) Insert ticket row using EXACTLY five singles ("00".."99")
-    // Validate format before insert to avoid constraint errors
-    try {
-      const { data: isValid } = await (sbService as any).rpc('is_ticket_numbers_5singles', { n: numbers5 });
-      if (isValid === false || isValid === 'f') {
-        console.warn('[finalize-payment] is_ticket_numbers_5singles returned false, forcing normalization', numbers5);
-        numbers5 = numbers5.map((n) => String(n ?? '00').padStart(2, '0').slice(-2)).slice(0, 5);
-      }
-    } catch (_) {
-      // If RPC not available, continue – DB CHECK will still enforce
-    }
+    // 5d) Insert one ticket PER COMBO (each ticket stores exactly five singles)
+    const ticketRows = combos5.map((c) => ({
+      reservation_id: reservationId,
+      raffle_id: raffleIdFinal,
+      user_id: buyerUserIdFinal,
+      status: 'paid',
+      unit_price: unitPrice,
+      numbers: c
+    }));
 
-    const { data: ticketIns, error: tErr } = await sbService
+    const { data: ticketsInserted, error: tErr } = await sbService
       .from('tickets')
-      .insert([{
-        reservation_id: reservationId,
-        raffle_id: raffleIdFinal,
-        user_id: buyerUserIdFinal,
-        status: 'paid',
-        qty: 5,
-        unit_price: unitPrice,
-        numbers: numbers5 // Store singles: ["21","39","15","08","42"]
-      }])
-      .select('id')
-      .single();
+      .insert(ticketRows)
+      .select('id');
 
     if (tErr) {
       console.error('[finalize-payment] tickets insert failed', tErr);
       return ok({ ok: false, reason: 'tickets_insert_failed', code: (tErr as any)?.code });
     }
 
-    // 5e) Insert transactions row with buyer info and numbers
-    const transactionAmount = (paymentRow as any)?.amount ?? (unitPrice * 5);
+    // 5e) Insert transactions row with buyer info and ALL combos
+    const transactionAmount = (paymentRow as any)?.amount ?? (unitPrice * combos5.length);
     
     const { data: txIns, error: txErr } = await sbService
       .from('transactions')
@@ -309,7 +334,7 @@ serve(async (req) => {
         provider: 'asaas',
         provider_payment_id: asaasPaymentId,
         reservation_id: reservationId,
-        numbers: [numbers5], // Array of combos format: [["21", "39", "15", "08", "42"]]
+        numbers: combos5, // [["34","39","85","12","89"], ...]
         amount: transactionAmount,
         status: 'paid',
         customer_name: buyerName,
@@ -331,11 +356,12 @@ serve(async (req) => {
       return ok({ ok: false, reason: 'transactions_insert_failed' });
     }
 
-    // 5f) Link ticket -> transaction
+    // 5f) Link all tickets of this reservation -> transaction
     const { error: linkErr } = await sbService
       .from('tickets')
       .update({ transaction_id: txIns.id })
-      .eq('id', ticketIns.id);
+      .eq('reservation_id', reservationId)
+      .is('transaction_id', null);
 
     if (linkErr) {
       console.warn('[finalize-payment] ticket link failed', linkErr);
