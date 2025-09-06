@@ -32,7 +32,7 @@ interface ConsolidatedTicket {
   status: string;
   value: number;
   ticketCount: number;
-  purchasedNumbers: string[];
+  purchasedNumbers: any[]; // Keep as any[] to preserve combo structure
   progressPctMoney: number;
   drawDate: string | null;
   transactionId: string | null;
@@ -62,10 +62,9 @@ function consolidateByRaffle(rows: TicketRow[]): ConsolidatedTicket[] {
     const existing = raffleMap.get(row.raffle_id);
     
     if (!existing) {
-      // Flatten and dedupe numbers
-      const numbers = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-      const flatNumbers = numbers.flat(2).filter((n: any) => n && typeof n === 'string');
-      const dedupeNumbers = [...new Set(flatNumbers)];
+      // Keep the original combo structure - don't flatten
+      const combos = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
+      const actualTicketCount = Math.max(Number(row.ticket_count) || 0, combos.length);
       
       raffleMap.set(row.raffle_id, {
         raffleId: row.raffle_id,
@@ -74,8 +73,8 @@ function consolidateByRaffle(rows: TicketRow[]): ConsolidatedTicket[] {
         purchaseDate: row.purchase_date,
         status: normalizeStatus(row.tx_status),
         value: Number(row.value) || 0,
-        ticketCount: Number(row.ticket_count) || 0,
-        purchasedNumbers: dedupeNumbers,
+        ticketCount: actualTicketCount,
+        purchasedNumbers: combos, // Keep original structure
         progressPctMoney: Math.min(100, Math.max(0, Number(row.progress_pct_money) || 0)),
         drawDate: row.draw_date,
         transactionId: row.transaction_id,
@@ -85,13 +84,11 @@ function consolidateByRaffle(rows: TicketRow[]): ConsolidatedTicket[] {
     } else {
       // Merge with existing
       existing.value += Number(row.value) || 0;
-      existing.ticketCount += Number(row.ticket_count) || 0;
       
-      // Merge numbers
-      const newNumbers = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-      const flatNewNumbers = newNumbers.flat(2).filter((n: any) => n && typeof n === 'string');
-      const allNumbers = [...existing.purchasedNumbers, ...flatNewNumbers];
-      existing.purchasedNumbers = [...new Set(allNumbers)];
+      // Merge combos
+      const newCombos = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
+      existing.purchasedNumbers = [...(existing.purchasedNumbers as any[]), ...newCombos];
+      existing.ticketCount = Math.max(existing.ticketCount, (existing.purchasedNumbers as any[]).length);
       
       // Keep most recent purchase date and status
       if (new Date(row.purchase_date) > new Date(existing.purchaseDate)) {
