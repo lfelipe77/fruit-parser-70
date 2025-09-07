@@ -77,7 +77,16 @@ export default function EmAltaRecentesSection() {
       }
     };
 
+    // Listen for raffle completion events
+    const handleRaffleCompletion = (event?: any) => {
+      console.log('[EmAltaRecentes] Received raffleCompleted event:', event?.detail);
+      if (!cancelled) {
+        fetchData(); // Refresh to show in completed section
+      }
+    };
+
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    window.addEventListener('raffleCompleted', handleRaffleCompletion);
     
     // Also set up an interval to refresh data periodically
     const interval = setInterval(() => {
@@ -90,6 +99,7 @@ export default function EmAltaRecentesSection() {
     return () => { 
       cancelled = true; 
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+      window.removeEventListener('raffleCompleted', handleRaffleCompletion);
       clearInterval(interval);
     };
   }, []);

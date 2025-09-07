@@ -68,6 +68,7 @@ import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogge
 import { DevErrorBoundary } from '@/components/DevErrorBoundary';
 import { useLocation } from 'react-router-dom';
 import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
+import { GlobalRaffleCompletionMonitor } from '@/components/GlobalRaffleCompletionMonitor';
 import MinimalDashboard from '@/pages/MinimalDashboard';
 import Profile from '@/pages/Profile';
 import MyTickets from '@/pages/MyTickets';
@@ -153,6 +154,7 @@ const AppContent = () => {
       <LegacyDebugBanner />
       <DebugBanner />
       <VisitLogger />
+      <GlobalRaffleCompletionMonitor />
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Index />} />

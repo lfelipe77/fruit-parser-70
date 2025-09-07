@@ -16,6 +16,7 @@ import { nextFederalDrawDate, dateBR } from "@/utils/nextFederalDraw";
 import { useCompletedUnpickedRaffles } from "@/hooks/useCompletedUnpickedRaffles";
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import React from 'react';
 
 dayjs.extend(customParseFormat);
 
@@ -75,10 +76,10 @@ export default function Resultados() {
   });
 
   // Complete raffles data - using new hook that excludes raffles with winners
-  const { data: completeRaffles, isLoading: completeLoading } = useCompletedUnpickedRaffles();
+  const { data: completeRaffles, isLoading: completeLoading, refetch: refetchComplete } = useCompletedUnpickedRaffles();
 
   // Almost complete raffles data
-  const { data: almostCompleteRaffles, isLoading: almostLoading } = useQuery({
+  const { data: almostCompleteRaffles, isLoading: almostLoading, refetch: refetchAlmost } = useQuery({
     queryKey: ['almost_complete_raffles'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -99,6 +100,18 @@ export default function Resultados() {
   const latestConcurso = latestFederal?.concurso_number ?? null;
   const latestDate = latestFederal?.draw_date ?? null;
   const loading = completeLoading || almostLoading;
+
+  // Listen for completion events to refresh data
+  React.useEffect(() => {
+    const handleCompletion = () => {
+      console.log('[Resultados] Raffle completed, refreshing data...');
+      refetchComplete();
+      refetchAlmost();
+    };
+
+    window.addEventListener('raffleCompleted', handleCompletion);
+    return () => window.removeEventListener('raffleCompleted', handleCompletion);
+  }, [refetchComplete, refetchAlmost]);
 
 
   if (loading) {

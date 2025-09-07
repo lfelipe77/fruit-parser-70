@@ -13,6 +13,7 @@ import CompartilheRifa from "@/components/CompartilheRifa";
 import { toRaffleView, type MoneyRow, type RaffleExtras } from "@/adapters/raffleAdapters";
 import { toConfirm } from "@/lib/nav";
 import { computeCheckout } from "@/utils/money";
+import { RaffleCompletionTrigger } from "@/components/RaffleCompletionTrigger";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -405,6 +406,20 @@ export default function GanhaveisDetail() {
           }}
         />
       </div>
+      
+      {/* Completion Detection for this specific raffle */}
+      {id && (
+        <RaffleCompletionTrigger 
+          raffleId={id} 
+          onCompletion={(raffleId) => {
+            console.log(`[GanhaveisDetail] Raffle ${raffleId} completed, triggering refresh...`);
+            // Trigger a data refresh when this raffle completes
+            setTimeout(() => {
+              fetchData();
+            }, 2000);
+          }}
+        />
+      )}
       </div>
     </>
   );

@@ -42,12 +42,23 @@ export function usePersistMock(
           // Re-fetch backend truth for immediate UI update
           const { data: freshData } = await supabase
             .from('raffles_public_money_ext')
-            .select('id, amount_raised, progress_pct_money, last_paid_at')
+            .select('id, amount_raised, progress_pct_money, last_paid_at, status')
             .eq('id', raffleId)
             .single();
           
           if (freshData) {
             console.log('Fresh raffle data after payment:', freshData);
+            
+            // Check if raffle just reached completion
+            const progress = Math.min(100, Math.max(0, Number(freshData.progress_pct_money) || 0));
+            if (progress >= 100 && freshData.status === 'active') {
+              console.log('🎉 Raffle just reached 100% completion!');
+              // Dispatch completion event
+              window.dispatchEvent(new CustomEvent('raffleCompleted', {
+                detail: { raffleId, data: freshData, progress }
+              }));
+            }
+            
             // Trigger a custom event to notify other components
             console.log('Dispatching raffleUpdated event for raffle:', raffleId);
             window.dispatchEvent(new CustomEvent('raffleUpdated', { 
