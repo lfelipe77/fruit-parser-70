@@ -494,7 +494,19 @@ export default function AdminGanhadores() {
                       <TableCell>
                         <div className="space-y-1">
                           <div className="text-sm font-medium">{winner.concurso_number || '—'}</div>
-                          {renderFederalPairs(winner.federal_pairs)}
+                          <div className="text-xs text-muted-foreground">
+                            {formatBrazilianDate(winner.federal_draw_date)}
+                          </div>
+                          {winner.federal_pairs && winner.winning_ticket && (
+                            <div className="space-y-1 pt-1">
+                              <div className="text-xs">
+                                <span className="font-medium">Últimas Dezenas (Federal):</span> {winner.federal_pairs}
+                              </div>
+                              <div className="text-xs">
+                                <span className="font-medium">Bilhete vencedor:</span> {winner.winning_ticket}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </TableCell>
 
@@ -701,10 +713,13 @@ export default function AdminGanhadores() {
 
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Target → Ticket: </span>
-                      <span className="font-mono">{selectedWinnerDetail.federal_target || '—'}</span>
-                      <span className="mx-2">→</span>
-                      <span className="font-mono">{selectedWinnerDetail.winning_ticket || '—'}</span>
+                      <span className="font-medium">Últimas Dezenas (Federal):</span> {selectedWinnerDetail.federal_pairs || '—'}
+                    </div>
+                    <div>
+                      <span className="font-medium">Bilhete vencedor:</span> {selectedWinnerDetail.winning_ticket || '—'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Concurso {selectedWinnerDetail.concurso_number || '—'} · {formatBrazilianDate(selectedWinnerDetail.federal_draw_date)}
                     </div>
                     <div>
                       <span className="text-muted-foreground">Registrado: </span>
@@ -819,7 +834,10 @@ export default function AdminGanhadores() {
                   <Button
                     variant="outline"
                     className="w-full justify-start"
-                    onClick={() => window.open(`/admin/users/${selectedWinnerDetail.link_winner_user_id}`, '_blank')}
+                    onClick={() => {
+                      const handle = selectedWinnerDetail.winner_handle_fallback || selectedWinnerDetail.link_winner_user_id.slice(0, 8);
+                      window.open(`/p/${encodeURIComponent(handle)}`, '_blank');
+                    }}
                   >
                     <User className="h-4 w-4 mr-2" />
                     Ver perfil do vencedor
