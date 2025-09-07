@@ -57,7 +57,7 @@ export default function LotteryFederalTab() {
         {dataStr ? ` – ${dataStr}` : ""}
       </div>
       <div className="mt-2 text-base font-semibold">
-        Números: <span className="font-mono tracking-wide">{pares || "-"}</span>
+        Últimas Dezenas: <span className="font-mono tracking-wide">{pares || "-"}</span>
       </div>
     </div>
   );

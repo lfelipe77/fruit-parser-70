@@ -83,7 +83,7 @@ export default function LotteryFederalCard() {
               {row.draw_date ? ` – ${dateBR(row.draw_date)}` : ""}
             </div>
             <div className="mt-2 text-base font-semibold">
-              Números:{" "}
+              Últimas Dezenas:{" "}
               <span className="font-mono">
                 {(() => {
                   const pares = Array.isArray(row.numbers)

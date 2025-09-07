@@ -111,7 +111,7 @@ export default function CaixaLotterySection() {
                 {federalResult.draw_date ? ` – ${dateBR(federalResult.draw_date)}` : ""}
               </div>
               <div className="mt-2 text-base font-semibold">
-                Números:{" "}
+                Últimas Dezenas:{" "}
                 <span className="font-mono">
                   {(() => {
                     const pares = Array.isArray(federalResult.numbers)
