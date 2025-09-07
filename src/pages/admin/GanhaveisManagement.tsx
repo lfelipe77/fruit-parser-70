@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -77,15 +77,13 @@ export default function GanhaveisManagement() {
   const { logAdminAction } = useAuditLogger();
   const { onView, onToggleStatus } = useRaffleActions(setRaffles);
 
-  // Load raffles from database
-  useEffect(() => {
-    loadRaffles();
-  }, []);
+  // ✅ Prevent overlapping loads
+  const busyRef = useRef(false);
 
-  // Log data shape for debugging
-  console.log('[GanhaveisManagement] Raffles data:', raffles);
-
-  const loadRaffles = async () => {
+  // ✅ Stable loader function
+  const loadRaffles = useCallback(async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     try {
       setLoading(true);
       
@@ -143,8 +141,14 @@ export default function GanhaveisManagement() {
       setRaffles([]); // ✅ Always set to empty array on error
     } finally {
       setLoading(false);
+      busyRef.current = false;
     }
-  };
+  }, []);
+
+  // Load raffles from database
+  useEffect(() => {
+    loadRaffles();
+  }, [loadRaffles]);
 
   // Realtime subscription to reload on raffle inserts/updates/deletes
   useEffect(() => {
@@ -166,7 +170,7 @@ export default function GanhaveisManagement() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadRaffles]);
   // ✅ Filter data safely with fallbacks
   const safeRaffles = Array.isArray(raffles) ? raffles : [];
   const safeCategories = getAllCategories() || [];
