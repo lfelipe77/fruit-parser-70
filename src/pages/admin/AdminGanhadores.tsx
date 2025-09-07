@@ -505,7 +505,18 @@ export default function AdminGanhadores() {
                           <div className="text-xs text-muted-foreground space-y-0.5">
                             {winner.buyer_phone && <div>{winner.buyer_phone}</div>}
                             {winner.buyer_cpf && <div>{winner.buyer_cpf}</div>}
-                            {winner.buyer_email && <div>{winner.buyer_email}</div>}
+                            {winner.buyer_email && (
+                              <div>
+                                <a 
+                                  href={`mailto:${winner.buyer_email}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {winner.buyer_email}
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -737,10 +748,21 @@ export default function AdminGanhadores() {
                     </div>
                   )}
 
-                  <div>
-                    <div className="text-muted-foreground text-sm">Email:</div>
-                    <div className="font-medium">{selectedWinnerDetail.buyer_email || '—'}</div>
-                  </div>
+                  {selectedWinnerDetail.buyer_email && (
+                    <div>
+                      <div className="text-muted-foreground text-sm">Email:</div>
+                      <div className="font-medium">
+                        <a 
+                          href={`mailto:${selectedWinnerDetail.buyer_email}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {selectedWinnerDetail.buyer_email}
+                        </a>
+                      </div>
+                    </div>
+                  )}
 
                   <Button
                     variant="outline"
