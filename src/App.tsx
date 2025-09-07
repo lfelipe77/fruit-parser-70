@@ -60,6 +60,7 @@ import FraudDetection from "./pages/admin/FraudDetection";
 import AdminLogs from "./pages/admin/AdminLogs";
 import AdminRateLimits from "./pages/admin/AdminRateLimits";
 import AdminVisits from "./pages/admin/AdminVisits";
+import AdminGanhadores from "./pages/admin/AdminGanhadores";
 import TurnstileTest from "./pages/TurnstileTest";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import RequireAuth from "./components/RequireAuth";
@@ -232,6 +233,7 @@ const AppContent = () => {
           <Route path="ganhaveis" element={<GanhaveisManagement />} />
           <Route path="rifas" element={<AdminRaffles />} />
           <Route path="ganhaveis-concluidos" element={<GanhavelsConcluidos />} />
+          <Route path="ganhadores" element={<AdminGanhadores />} />
           <Route path="usuarios" element={<UsersManagement />} />
           <Route path="financeiro" element={<FinancialControl />} />
           <Route path="analytics" element={<Analytics />} />
