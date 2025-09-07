@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,44 +18,39 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Trophy,
-  Calendar,
   User,
-  Phone,
-  Mail,
   FileText,
   RefreshCw,
   X
 } from "lucide-react";
 
-// Types based on the database functions
-type AdminWinner = {
-  winner_id: number;
-  winner_created_at: string;
-  raffle_id: string;
-  raffle_title: string;
-  raffle_image_url: string | null;
-  raffle_status: string;
-  raffle_draw_date: string;
-  concurso_number: string;
-  federal_draw_date: string;
-  federal_pairs: string;
-  federal_target: string;
-  winning_ticket: string;
-  winner_user_id: string;
-  winner_handle_fallback: string;
-  buyer_name: string | null;
-  buyer_email: string | null;
-  buyer_phone: string | null;
-  buyer_cpf: string | null;
-  organizer_user_id: string | null;
-  link_raffle_id: string;
-  link_ticket_id: string;
-  link_winner_user_id: string;
-};
+// Types for the RPC returns
+type AdminWinnerMin = {
+  winner_id: number
+  winner_created_at: string
+  raffle_id: string
+  raffle_title: string
+  raffle_image_url: string | null
+  raffle_status: string
+  raffle_draw_date: string | null
+  concurso_number: string | null
+  federal_draw_date: string | null
+  federal_pairs: string | null
+  federal_target: string | null
+  winning_ticket: string | null
+  winner_user_id: string
+  winner_handle_fallback: string
+  buyer_name: string | null
+  buyer_email: string | null
+  buyer_phone: string | null
+  buyer_cpf: string | null
+  organizer_user_id: string | null
+  link_raffle_id: string
+  link_ticket_id: string | null
+  link_winner_user_id: string
+}
 
-type AdminWinnerDetail = AdminWinner & {
-  // Additional fields from v_admin_winners_v2 if needed
-};
+type AdminWinnerFull = AdminWinnerMin // same shape for now (core/v2)
 
 type Filters = {
   search: string;
@@ -82,19 +76,17 @@ const DEFAULT_PAGE_SIZE = 20;
 // Utility functions
 const digitsOnly = (s?: string | null) => (s ?? '').replace(/\D/g, '');
 
-const formatBrazilianDate = (dateStr: string, includeTime = false) => {
+const formatBrazilianDate = (dateStr: string | null, includeTime = false) => {
+  if (!dateStr) return '—';
   const date = new Date(dateStr);
   const options: Intl.DateTimeFormatOptions = {
     timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    ...(includeTime && {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    ...(includeTime 
+      ? { dateStyle: 'short', timeStyle: 'short' }
+      : { dateStyle: 'short' }
+    )
   };
-  return date.toLocaleDateString('pt-BR', options);
+  return new Intl.DateTimeFormat('pt-BR', options).format(date);
 };
 
 const formatRelativeTime = (dateStr: string) => {
@@ -110,11 +102,11 @@ const formatRelativeTime = (dateStr: string) => {
   return `há ${diffInMonths} meses`;
 };
 
-const copyContactsToClipboard = (winner: AdminWinner) => {
-  const text = `Nome: ${winner.buyer_name || '—'}
-Tel: ${winner.buyer_phone || '—'}
-CPF: ${winner.buyer_cpf || '—'}
-Email: ${winner.buyer_email || '—'}`;
+const copyContactsToClipboard = (winner: AdminWinnerMin) => {
+  const text = `Nome: ${winner.buyer_name ?? '—'}
+Tel: ${winner.buyer_phone ?? '—'}
+CPF: ${winner.buyer_cpf ?? '—'}
+Email: ${winner.buyer_email ?? '—'}`;
   
   navigator.clipboard.writeText(text);
 };
@@ -129,7 +121,7 @@ export default function AdminGanhadores() {
   const { toast } = useToast();
   
   // State management
-  const [winners, setWinners] = useState<AdminWinner[]>([]);
+  const [winners, setWinners] = useState<AdminWinnerMin[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [countLoading, setCountLoading] = useState(false);
@@ -137,8 +129,8 @@ export default function AdminGanhadores() {
   const [debouncedFilters, setDebouncedFilters] = useState<Filters>(INITIAL_FILTERS);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [selectedWinner, setSelectedWinner] = useState<AdminWinner | null>(null);
-  const [selectedWinnerDetail, setSelectedWinnerDetail] = useState<AdminWinnerDetail | null>(null);
+  const [selectedWinner, setSelectedWinner] = useState<AdminWinnerMin | null>(null);
+  const [selectedWinnerDetail, setSelectedWinnerDetail] = useState<AdminWinnerFull | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -156,29 +148,22 @@ export default function AdminGanhadores() {
   const loadCount = useCallback(async (filterValues: Filters) => {
     setCountLoading(true);
     try {
-      // Use direct database query instead of RPC for now
-      let query = supabase
-        .from('v_admin_winners_min_v2')
-        .select('*', { count: 'exact', head: true });
-
-      // Apply filters
-      if (filterValues.raffleId) {
-        query = query.eq('raffle_id', filterValues.raffleId);
-      }
-      if (filterValues.winnerUserId) {
-        query = query.eq('winner_user_id', filterValues.winnerUserId);
-      }
-      if (filterValues.organizerUserId) {
-        query = query.eq('organizer_user_id', filterValues.organizerUserId);
-      }
-      if (filterValues.search) {
-        query = query.or(`raffle_title.ilike.%${filterValues.search}%,buyer_name.ilike.%${filterValues.search}%,buyer_email.ilike.%${filterValues.search}%,buyer_phone.ilike.%${filterValues.search}%,buyer_cpf.ilike.%${filterValues.search}%`);
-      }
-
-      const { count, error } = await query;
+      const { data: totalArr, error } = await supabase
+        .rpc('get_admin_winners_min_count', {
+          p_search: filterValues.search || null,
+          p_raffle_id: filterValues.raffleId || null,
+          p_winner_user_id: filterValues.winnerUserId || null,
+          p_organizer_user_id: filterValues.organizerUserId || null,
+          p_from: filterValues.dateFrom || null,
+          p_to: filterValues.dateTo || null,
+        })
+        .returns<number[]>();
 
       if (error) throw error;
-      setTotalCount(count || 0);
+      
+      // Handle both array and scalar returns
+      const total = Array.isArray(totalArr) ? totalArr[0] ?? 0 : (totalArr as unknown as number) ?? 0;
+      setTotalCount(total);
     } catch (error) {
       console.error('Error loading count:', error);
       toast({
@@ -197,30 +182,21 @@ export default function AdminGanhadores() {
     try {
       const offset = (page - 1) * size;
       
-      let query = supabase
-        .from('v_admin_winners_min_v2')
-        .select('*')
-        .order('winner_created_at', { ascending: false })
-        .range(offset, offset + size - 1);
-
-      // Apply filters
-      if (filterValues.raffleId) {
-        query = query.eq('raffle_id', filterValues.raffleId);
-      }
-      if (filterValues.winnerUserId) {
-        query = query.eq('winner_user_id', filterValues.winnerUserId);
-      }
-      if (filterValues.organizerUserId) {
-        query = query.eq('organizer_user_id', filterValues.organizerUserId);
-      }
-      if (filterValues.search) {
-        query = query.or(`raffle_title.ilike.%${filterValues.search}%,buyer_name.ilike.%${filterValues.search}%,buyer_email.ilike.%${filterValues.search}%,buyer_phone.ilike.%${filterValues.search}%,buyer_cpf.ilike.%${filterValues.search}%`);
-      }
-
-      const { data, error } = await query;
+      const { data: rows, error } = await supabase
+        .rpc('get_admin_winners_min', {
+          p_limit: size,
+          p_offset: offset,
+          p_search: filterValues.search || null,
+          p_raffle_id: filterValues.raffleId || null,
+          p_winner_user_id: filterValues.winnerUserId || null,
+          p_organizer_user_id: filterValues.organizerUserId || null,
+          p_from: filterValues.dateFrom || null,
+          p_to: filterValues.dateTo || null,
+        })
+        .returns<AdminWinnerMin[]>();
 
       if (error) throw error;
-      setWinners(data || []);
+      setWinners(rows || []);
     } catch (error) {
       console.error('Error loading winners:', error);
       toast({
@@ -238,14 +214,14 @@ export default function AdminGanhadores() {
   const loadWinnerDetail = useCallback(async (raffleId: string) => {
     setDetailLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('v_admin_winners_v2')
-        .select('*')
-        .eq('raffle_id', raffleId)
-        .maybeSingle();
+      const { data: detailArr, error } = await supabase
+        .rpc('get_admin_winner_detail', { p_raffle_id: raffleId })
+        .returns<AdminWinnerFull[]>();
 
       if (error) throw error;
-      setSelectedWinnerDetail(data);
+      
+      const detail = Array.isArray(detailArr) ? detailArr[0] ?? null : (detailArr as unknown as AdminWinnerFull | null);
+      setSelectedWinnerDetail(detail);
     } catch (error) {
       console.error('Error loading winner detail:', error);
       toast({
@@ -265,7 +241,7 @@ export default function AdminGanhadores() {
   }, [debouncedFilters, currentPage, pageSize, loadCount, loadWinners]);
 
   // Handle drawer open
-  const handleOpenDrawer = (winner: AdminWinner) => {
+  const handleOpenDrawer = (winner: AdminWinnerMin) => {
     setSelectedWinner(winner);
     setDrawerOpen(true);
     loadWinnerDetail(winner.raffle_id);
@@ -294,7 +270,8 @@ export default function AdminGanhadores() {
   const hasPrevPage = currentPage > 1;
 
   // Render federal pairs as chips
-  const renderFederalPairs = (pairs: string) => {
+  const renderFederalPairs = (pairs: string | null) => {
+    if (!pairs) return '—';
     const pairArray = pairs.split('-');
     return (
       <div className="flex gap-1 flex-wrap">
@@ -511,7 +488,7 @@ export default function AdminGanhadores() {
 
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="text-sm font-medium">{winner.concurso_number}</div>
+                          <div className="text-sm font-medium">{winner.concurso_number || '—'}</div>
                           {renderFederalPairs(winner.federal_pairs)}
                         </div>
                       </TableCell>
@@ -570,13 +547,15 @@ export default function AdminGanhadores() {
                             <Copy className="h-3 w-3" />
                           </Button>
                           
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(`/admin/tickets/${winner.link_ticket_id}`, '_blank')}
-                          >
-                            <FileText className="h-3 w-3" />
-                          </Button>
+                          {winner.link_ticket_id && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(`/admin/tickets/${winner.link_ticket_id}`, '_blank')}
+                            >
+                              <FileText className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -687,7 +666,7 @@ export default function AdminGanhadores() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <div className="text-muted-foreground">Concurso:</div>
-                      <div className="font-medium">{selectedWinnerDetail.concurso_number}</div>
+                      <div className="font-medium">{selectedWinnerDetail.concurso_number || '—'}</div>
                     </div>
                     <div>
                       <div className="text-muted-foreground">Data:</div>
@@ -703,9 +682,9 @@ export default function AdminGanhadores() {
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Target → Ticket: </span>
-                      <span className="font-mono">{selectedWinnerDetail.federal_target}</span>
+                      <span className="font-mono">{selectedWinnerDetail.federal_target || '—'}</span>
                       <span className="mx-2">→</span>
-                      <span className="font-mono">{selectedWinnerDetail.winning_ticket}</span>
+                      <span className="font-mono">{selectedWinnerDetail.winning_ticket || '—'}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Registrado: </span>
@@ -775,7 +754,7 @@ export default function AdminGanhadores() {
                     }}
                   >
                     <Copy className="h-4 w-4 mr-2" />
-                    Copiar tudo
+                    Copiar contatos
                   </Button>
                 </CardContent>
               </Card>
@@ -795,14 +774,16 @@ export default function AdminGanhadores() {
                     Ver rifa pública
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => window.open(`/admin/tickets/${selectedWinnerDetail.link_ticket_id}`, '_blank')}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Ver ticket
-                  </Button>
+                  {selectedWinnerDetail.link_ticket_id && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open(`/admin/tickets/${selectedWinnerDetail.link_ticket_id}`, '_blank')}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Ver ticket
+                    </Button>
+                  )}
                   
                   <Button
                     variant="outline"

@@ -23,6 +23,7 @@ import {
   CheckCircle,
   Clock,
   FileText,
+  Trophy,
 } from "lucide-react";
 
 const mainItems = [
@@ -44,7 +45,7 @@ const mainItems = [
   {
     title: "Ganhadores",
     url: "/admin/ganhadores",
-    icon: CheckCircle,
+    icon: Trophy,
   },
   {
     title: "Ganhaveis Concluídos",
