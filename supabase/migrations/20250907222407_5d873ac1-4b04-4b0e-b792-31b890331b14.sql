@@ -1,0 +1,2 @@
+-- Update Supabase types to include the new admin winner functions
+-- This is just a comment to regenerate types - the functions already exist

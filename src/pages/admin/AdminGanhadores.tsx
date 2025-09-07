@@ -156,17 +156,29 @@ export default function AdminGanhadores() {
   const loadCount = useCallback(async (filterValues: Filters) => {
     setCountLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_admin_winners_min_count', {
-        p_raffle_id: filterValues.raffleId || null,
-        p_winner_user_id: filterValues.winnerUserId || null,
-        p_organizer_user_id: filterValues.organizerUserId || null,
-        p_search: filterValues.search || null,
-        p_from: filterValues.dateFrom || null,
-        p_to: filterValues.dateTo || null,
-      });
+      // Use direct database query instead of RPC for now
+      let query = supabase
+        .from('v_admin_winners_min_v2')
+        .select('*', { count: 'exact', head: true });
+
+      // Apply filters
+      if (filterValues.raffleId) {
+        query = query.eq('raffle_id', filterValues.raffleId);
+      }
+      if (filterValues.winnerUserId) {
+        query = query.eq('winner_user_id', filterValues.winnerUserId);
+      }
+      if (filterValues.organizerUserId) {
+        query = query.eq('organizer_user_id', filterValues.organizerUserId);
+      }
+      if (filterValues.search) {
+        query = query.or(`raffle_title.ilike.%${filterValues.search}%,buyer_name.ilike.%${filterValues.search}%,buyer_email.ilike.%${filterValues.search}%,buyer_phone.ilike.%${filterValues.search}%,buyer_cpf.ilike.%${filterValues.search}%`);
+      }
+
+      const { count, error } = await query;
 
       if (error) throw error;
-      setTotalCount(data || 0);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error loading count:', error);
       toast({
@@ -185,16 +197,27 @@ export default function AdminGanhadores() {
     try {
       const offset = (page - 1) * size;
       
-      const { data, error } = await supabase.rpc('get_admin_winners_min', {
-        p_limit: size,
-        p_offset: offset,
-        p_raffle_id: filterValues.raffleId || null,
-        p_winner_user_id: filterValues.winnerUserId || null,
-        p_organizer_user_id: filterValues.organizerUserId || null,
-        p_search: filterValues.search || null,
-        p_from: filterValues.dateFrom || null,
-        p_to: filterValues.dateTo || null,
-      });
+      let query = supabase
+        .from('v_admin_winners_min_v2')
+        .select('*')
+        .order('winner_created_at', { ascending: false })
+        .range(offset, offset + size - 1);
+
+      // Apply filters
+      if (filterValues.raffleId) {
+        query = query.eq('raffle_id', filterValues.raffleId);
+      }
+      if (filterValues.winnerUserId) {
+        query = query.eq('winner_user_id', filterValues.winnerUserId);
+      }
+      if (filterValues.organizerUserId) {
+        query = query.eq('organizer_user_id', filterValues.organizerUserId);
+      }
+      if (filterValues.search) {
+        query = query.or(`raffle_title.ilike.%${filterValues.search}%,buyer_name.ilike.%${filterValues.search}%,buyer_email.ilike.%${filterValues.search}%,buyer_phone.ilike.%${filterValues.search}%,buyer_cpf.ilike.%${filterValues.search}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setWinners(data || []);
@@ -215,12 +238,14 @@ export default function AdminGanhadores() {
   const loadWinnerDetail = useCallback(async (raffleId: string) => {
     setDetailLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_admin_winner_detail', {
-        p_raffle_id: raffleId
-      });
+      const { data, error } = await supabase
+        .from('v_admin_winners_v2')
+        .select('*')
+        .eq('raffle_id', raffleId)
+        .maybeSingle();
 
       if (error) throw error;
-      setSelectedWinnerDetail(data?.[0] || null);
+      setSelectedWinnerDetail(data);
     } catch (error) {
       console.error('Error loading winner detail:', error);
       toast({
