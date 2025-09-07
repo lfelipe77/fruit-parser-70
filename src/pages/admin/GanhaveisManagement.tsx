@@ -148,11 +148,19 @@ export default function GanhaveisManagement() {
 
   // Realtime subscription to reload on raffle inserts/updates/deletes
   useEffect(() => {
+    let lastReload = 0;
+    const DEBOUNCE_MS = 2000; // avoid rapid reload loops
+
+    const handleChange = () => {
+      const now = Date.now();
+      if (now - lastReload < DEBOUNCE_MS) return;
+      lastReload = now;
+      loadRaffles();
+    };
+
     const channel = supabase
       .channel('admin-raffles-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'raffles' }, () => {
-        loadRaffles();
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'raffles' }, handleChange)
       .subscribe();
 
     return () => {
