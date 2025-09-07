@@ -67,7 +67,6 @@ export default function PremiadosList() {
             </div>
 
             <div className="mt-3 flex gap-3">
-              <a href={ticketHref} className="text-sm underline hover:opacity-80">Ver ticket</a>
               <a href={raffleHref} className="text-sm underline hover:opacity-80">Ver ganhável</a>
               <span className="text-xs rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
                 Verificado
