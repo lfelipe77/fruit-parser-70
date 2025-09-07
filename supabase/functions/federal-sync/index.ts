@@ -9,46 +9,49 @@ console.log("🎯 Federal Sync Function - Ready to fetch Federal lottery results
 // Requires SUPABASE_SERVICE_ROLE_KEY (service role) to bypass RLS for inserts.
 
 serve(withCORS(async (req: Request) => {
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
+  // ---- SAFE BODY PARSE ----
+  let body: any = {};
+  try { 
+    body = await req.json(); 
+  } catch { 
+    body = {}; 
   }
 
   const url = new URL(req.url);
-  const urlDebug = url.searchParams.get("debug");
-  const urlAutoPick = url.searchParams.get("auto_pick");
-  const urlDryRun = url.searchParams.get("dry_run");
+  const debug = (url.searchParams.get('debug') ?? body.debug ?? '0') === '1';
+  const autoPick = (url.searchParams.get('auto_pick') ?? body.auto_pick ?? '0') === '1';
+  const dryRun = (url.searchParams.get('dry_run') ?? body.dry_run ?? '0') === '1';
 
-  // Also accept JSON body flags (so we can use supabase.functions.invoke)
-  let bodyDebug: string | null = null;
-  let bodyAutoPick: string | null = null;
-  let bodyDryRun: string | null = null;
-  try {
-    const contentType = req.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-      const body = await req.json().catch(() => null);
-      if (body && typeof body === "object") {
-        bodyDebug = (body as any).debug != null ? String((body as any).debug) : null;
-        bodyAutoPick = (body as any).auto_pick != null ? String((body as any).auto_pick) : null;
-        bodyDryRun = (body as any).dry_run != null ? String((body as any).dry_run) : null;
-      }
-    }
-  } catch (_) {
-    // ignore body parse errors
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ ok: false, error: "POST only" }), { 
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 
-  const debug = (urlDebug === "1") || (bodyDebug === "1");
-  const autoPick = (urlAutoPick === "1") || (bodyAutoPick === "1");
-  const dryRun = (urlDryRun === "1") || (bodyDryRun === "1");
+  // ---- TIMEOUT WRAPPER FOR PROVIDER ----
+  const withTimeout = <T,>(p: Promise<T>, ms = 12000) => {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), ms);
+    return Promise.race([
+      p.then(r => { clearTimeout(t); return r; }),
+      new Promise<T>((_, rej) => ac.signal.addEventListener('abort', () => rej(new Error('provider timeout'))))
+    ]);
+  };
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const apiLoteriasToken = Deno.env.get("API_LOTERIAS_TOKEN");
   
   if (!supabaseUrl || !serviceKey) {
-    return new Response(JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }), { status: 500 });
+    return new Response(JSON.stringify({ ok: false, error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }), { 
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  try {
+    const supabase = createClient(supabaseUrl, serviceKey);
   
   let result = { 
     synced: false, 
@@ -77,16 +80,16 @@ serve(withCORS(async (req: Request) => {
     }
   };
 
-  // Try Caixa first
-  const caixaUrl = "https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados";
-  try {
-    const res = await fetch(caixaUrl, {
-      headers: {
-        "Accept": "application/json",
-        "Cache-Control": "no-cache",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0 Safari/537.36",
-      },
-    });
+    // Try Caixa first
+    const caixaUrl = "https://servicebus2.caixa.gov.br/portaldeloterias/api/home/ultimos-resultados";
+    try {
+      const res = await withTimeout(fetch(caixaUrl, {
+        headers: {
+          "Accept": "application/json",
+          "Cache-Control": "no-cache",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0 Safari/537.36",
+        },
+      }), 12000);
 
     await logStatus(caixaUrl, res.status, true);
     
@@ -133,11 +136,11 @@ serve(withCORS(async (req: Request) => {
     if (debug) result.debug.caixa_error = String(e);
   }
 
-  // Fallback to API Loterias
-  if (apiLoteriasToken) {
-    try {
-      const loteriasUrl = "https://apiloterias.com.br/app/v2/result?token=" + apiLoteriasToken + "&loteria=federal";
-      const res = await fetch(loteriasUrl);
+    // Fallback to API Loterias
+    if (apiLoteriasToken) {
+      try {
+        const loteriasUrl = "https://apiloterias.com.br/app/v2/result?token=" + apiLoteriasToken + "&loteria=federal";
+        const res = await withTimeout(fetch(loteriasUrl), 12000);
       
       await logStatus(loteriasUrl, res.status, !!apiLoteriasToken);
       
@@ -177,10 +180,18 @@ serve(withCORS(async (req: Request) => {
     }
   }
 
-  return new Response(JSON.stringify({ ...result, ok: false, error: "No valid Federal data found" }), {
-    headers: { "Content-Type": "application/json" },
-    status: 200
-  });
+    return new Response(JSON.stringify({ ...result, ok: false, error: "No valid Federal data found" }), {
+      headers: { "Content-Type": "application/json" },
+      status: 200
+    });
+
+  } catch (err: any) {
+    console.error('[federal-sync] error', err);
+    return new Response(JSON.stringify({ ok: false, error: String(err?.message ?? err) }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   // Helper functions
   async function parseFederalData(json: any, source: string, debug: boolean) {

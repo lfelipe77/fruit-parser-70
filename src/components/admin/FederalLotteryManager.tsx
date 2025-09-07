@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export default function FederalLotteryManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const syncingRef = useRef(false);
 
   // Manual form state
   const [concurso, setConcurso] = useState("");
@@ -78,122 +79,68 @@ export default function FederalLotteryManager() {
     };
   }, []);
 
-  const syncFederalNow = async () => {
+  const syncFederalNow = useCallback(async () => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
+    setBusy("sync");
+
+    // 15s client-side timeout so UI never hangs
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 15000);
+
     try {
-      setBusy("sync");
-      
-      // Store current data before sync to compare after polling
-      const initialData = data;
-      
-      // First try direct edge function call for immediate feedback
-      const { data: directResult, error: directError } = await supabase.functions.invoke('federal-sync', {
-        body: { debug: '1' }
+      // 1) Prefer invoke (adds auth automatically)
+      const { data, error } = await supabase.functions.invoke('federal-sync', {
+        body: { debug: '1' },
+        // @ts-ignore: supabase-js passes signal through
+        signal: ac.signal,
       });
-      
-      if (directError) {
-        console.warn('Direct sync failed, trying RPC:', directError);
-        // Fallback to RPC queue method
-        const { data: rpcData, error } = await supabase.rpc('admin_federal_sync_enqueue' as any);
-        
-        if (error) {
-          toast({ 
-            title: 'Erro ao sincronizar', 
-            description: error.message, 
-            variant: 'destructive' 
-          });
-          return;
-        }
-      } else {
-        // Direct sync worked, show immediate feedback
-        toast({ 
-          title: 'Sync iniciado', 
-          description: directResult?.synced ? 'Dados atualizados!' : 'Verificando resultados...',
-          variant: directResult?.synced ? 'default' : 'default'
+
+      if (error) throw error;
+      const payload = data ?? {};
+      if (payload.ok === false) throw new Error(payload.error || 'Sync failed');
+
+      toast({ 
+        title: 'Sync OK', 
+        description: `Concurso ${payload.concurso_number || 'N/A'}` 
+      });
+      await fetchData(); // refresh data
+
+    } catch (err: any) {
+      // 2) Fallback to direct fetch ONCE (with body!)
+      try {
+        const SUPABASE_URL = "https://whqxpuyjxoiufzhvqneg.supabase.co";
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/federal-sync?debug=1`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}), // important
+          signal: ac.signal
         });
+        const payload = await res.json().catch(() => ({ ok: false, error: 'Invalid JSON' }));
+        if (!payload.ok) throw new Error(payload.error || 'Sync failed');
+
+        toast({ 
+          title: 'Sync OK', 
+          description: `Concurso ${payload.concurso_number || 'N/A'}` 
+        });
+        await fetchData();
+
+      } catch (e2: any) {
+        toast({ 
+          title: 'Sync failed', 
+          description: e2?.message || String(e2), 
+          variant: 'destructive' 
+        });
+        console.warn('[syncFederalNow] fail', e2);
       }
 
-      // Start polling
-      let attempts = 0;
-      const maxAttempts = 8;
-      
-      const pollData = async (): Promise<boolean> => {
-        attempts++;
-        
-        const { data: newData, error: fetchError } = await supabase
-          .from("lottery_latest_federal_store")
-          .select("concurso_number, draw_date, numbers, updated_at")
-          .eq("game_slug", "federal")
-          .maybeSingle();
-          
-        if (fetchError || !newData) {
-          return false;
-        }
-
-        // Check if data changed
-        const concursoChanged = newData.concurso_number !== initialData?.concurso_number;
-        const dateAdvanced = initialData && new Date(newData.draw_date) > new Date(initialData.draw_date);
-        const updatedAndNumbersDiffer = initialData && 
-          new Date(newData.updated_at) > new Date(initialData.updated_at) &&
-          JSON.stringify(newData.numbers) !== JSON.stringify(initialData.numbers);
-
-        if (concursoChanged || dateAdvanced || updatedAndNumbersDiffer) {
-          setData(newData);
-          toast({ 
-            title: 'Sincronizado', 
-            description: `Concurso ${newData.concurso_number} - ${formatDate(newData.draw_date)}` 
-          });
-          
-          // Invalidate queries
-          queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
-          queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
-          queryClient.invalidateQueries({ queryKey: ['admin_latest_federal_status'] });
-          queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
-          
-          return true;
-        }
-
-        return false;
-      };
-
-      // Poll every 5s for max 8 tries (~40s)
-      const startPolling = () => {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-        }
-        
-        pollingRef.current = setInterval(async () => {
-          const success = await pollData();
-          
-          if (success || attempts >= maxAttempts) {
-            if (pollingRef.current) {
-              clearInterval(pollingRef.current);
-              pollingRef.current = null;
-            }
-            
-            if (!success && attempts >= maxAttempts) {
-              toast({
-                title: 'Aviso',
-                description: 'A API pode estar lenta — tente novamente ou use o preenchimento manual.',
-                variant: 'default'
-              });
-            }
-            
-            setBusy(null);
-          }
-        }, 5000);
-      };
-
-      startPolling();
-      
-    } catch (e: any) {
-      toast({ 
-        title: 'Erro ao sincronizar', 
-        description: e?.message || String(e), 
-        variant: 'destructive' 
-      });
+    } finally {
+      clearTimeout(t);
       setBusy(null);
+      syncingRef.current = false;
     }
-  };
+
+  }, []);
 
   const pickWinnerNow = async () => {
     try {
