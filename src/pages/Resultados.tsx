@@ -11,6 +11,7 @@ import { timeAgo, formatCurrency } from "@/types/raffles";
 import LotteryFederalTab from "@/components/LotteryFederalTab";
 import LotteryFederalCard from "@/components/LotteryFederalCard";
 import WinnersList from "@/components/WinnersList";
+import PremiadosList from "@/components/PremiadosList";
 import { nextFederalDrawDate, dateBR } from "@/utils/nextFederalDraw";
 import { useCompletedUnpickedRaffles } from "@/hooks/useCompletedUnpickedRaffles";
 import dayjs from 'dayjs';
@@ -328,10 +329,10 @@ export default function Resultados() {
             {/* Ganháveis Premiados - Third Tab */}
             <TabsContent value="premiados" className="space-y-4 sm:space-y-6 mt-6 sm:mt-8">
               <section className="mt-4 sm:mt-6">
-                <h3 className="text-lg sm:text-xl font-semibold">Ganhadores</h3>
+                <h3 className="text-lg sm:text-xl font-semibold">Ganhadores Públicos</h3>
                 <p className="text-sm opacity-70">Sorteios já realizados com ganhadores confirmados</p>
                 <div className="mt-4">
-                  <WinnersList latestConcurso={latestConcurso} latestDate={latestDate} />
+                  <PremiadosList />
                 </div>
               </section>
             </TabsContent>
