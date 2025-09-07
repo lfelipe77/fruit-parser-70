@@ -79,12 +79,19 @@ export default function HeroSection() {
 
   // Use real stats or fallback to hardcoded values
   const paid = Number(stats?.total_prize_paid ?? 0);
+  
+  // For the floating card, show active ganhaveis (not total)
+  const activeCount = stats?.active_ganhaveis ?? 128;
+  
+  // For premiados, we need to show if there are winners even if prize hasn't been paid yet
+  const hasWinners = paid > 0; // Only show if prize money was actually paid
+  
   const displayStats = {
-    prizeValue: stats ? formatCurrency(paid) : "R$ 8M+",
+    prizeValue: hasWinners ? formatCurrency(paid) : "R$ 0",
     prizeLabel: "Premiados",
     participants: stats ? formatNumber(stats.total_participants) : "25K+",
-    ganhaveis: stats ? formatNumber(stats.total_ganhaveis) : "890+",
-    activeGanhaveis: stats ? stats.active_ganhaveis.toString() : "128"
+    ganhaveis: stats ? formatNumber(stats.active_ganhaveis) : "890+", // Show active, not total
+    activeGanhaveis: activeCount.toString()
   };
   
   return (
@@ -158,7 +165,7 @@ export default function HeroSection() {
                     <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-primary" />
                   </div>
                 </div>
-                <div className={`font-semibold text-base md:text-lg ${stats && stats.total_prize_paid === 0 ? 'text-muted-foreground' : ''}`}>
+                <div className={`font-semibold text-base md:text-lg ${!hasWinners ? 'text-muted-foreground' : ''}`}>
                   {displayStats.prizeValue}
                 </div>
                 <div className="text-xs md:text-sm text-muted-foreground">{displayStats.prizeLabel}</div>
@@ -179,7 +186,7 @@ export default function HeroSection() {
                   </div>
                 </div>
                 <div className="font-semibold text-base md:text-lg">{displayStats.ganhaveis}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Ganhaveis</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Ganhaveis Ativos</div>
               </div>
             </div>
             
