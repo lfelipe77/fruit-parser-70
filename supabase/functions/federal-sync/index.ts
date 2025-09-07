@@ -16,10 +16,12 @@ serve(withCORS(async (req: Request) => {
   const url = new URL(req.url);
   const urlDebug = url.searchParams.get("debug");
   const urlAutoPick = url.searchParams.get("auto_pick");
+  const urlDryRun = url.searchParams.get("dry_run");
 
   // Also accept JSON body flags (so we can use supabase.functions.invoke)
   let bodyDebug: string | null = null;
   let bodyAutoPick: string | null = null;
+  let bodyDryRun: string | null = null;
   try {
     const contentType = req.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
@@ -27,6 +29,7 @@ serve(withCORS(async (req: Request) => {
       if (body && typeof body === "object") {
         bodyDebug = (body as any).debug != null ? String((body as any).debug) : null;
         bodyAutoPick = (body as any).auto_pick != null ? String((body as any).auto_pick) : null;
+        bodyDryRun = (body as any).dry_run != null ? String((body as any).dry_run) : null;
       }
     }
   } catch (_) {
@@ -35,6 +38,7 @@ serve(withCORS(async (req: Request) => {
 
   const debug = (urlDebug === "1") || (bodyDebug === "1");
   const autoPick = (urlAutoPick === "1") || (bodyAutoPick === "1");
+  const dryRun = (urlDryRun === "1") || (bodyDryRun === "1");
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -46,7 +50,17 @@ serve(withCORS(async (req: Request) => {
 
   const supabase = createClient(supabaseUrl, serviceKey);
   
-  let result = { synced: false, source: '', concurso: '', draw_date: '', numbers: [] as string[], debug: {} as any };
+  let result = { 
+    synced: false, 
+    source: '', 
+    concurso: '', 
+    concurso_number: '',
+    draw_date: '', 
+    numbers: [] as string[], 
+    debug: {} as any,
+    prizes_raw: null as any,
+    ok: false
+  };
   
   // Log admin status helper
   const logStatus = async (fetched_url: string, http_status: number, authorized: boolean) => {
@@ -90,9 +104,23 @@ serve(withCORS(async (req: Request) => {
       // Parse Caixa Federal data
       const federalItem = await parseFederalData(json, 'caixa', debug);
       if (federalItem) {
+        // For dry run, return immediately without DB writes
+        if (dryRun) {
+          result = { 
+            ...federalItem, 
+            synced: false, 
+            source: 'caixa', 
+            ok: true,
+            prizes_raw: federalItem.prizes_raw || json
+          };
+          return new Response(JSON.stringify(result), {
+            headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+          });
+        }
+        
         const success = await updateStoreIfChanged(supabase, federalItem, 'caixa');
         if (success) {
-          result = { ...federalItem, synced: true, source: 'caixa' };
+          result = { ...federalItem, synced: true, source: 'caixa', ok: true };
           if (autoPick) result.picked = 'deferred_to_trigger';
           return new Response(JSON.stringify(result), {
             headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -119,9 +147,23 @@ serve(withCORS(async (req: Request) => {
         
         const federalItem = await parseFederalData(json, 'apiloterias', debug);
         if (federalItem) {
+          // For dry run, return immediately without DB writes
+          if (dryRun) {
+            result = { 
+              ...federalItem, 
+              synced: false, 
+              source: 'apiloterias', 
+              ok: true,
+              prizes_raw: federalItem.prizes_raw || json
+            };
+            return new Response(JSON.stringify(result), {
+              headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+            });
+          }
+          
           const success = await updateStoreIfChanged(supabase, federalItem, 'apiloterias');
           if (success) {
-            result = { ...federalItem, synced: true, source: 'apiloterias' };
+            result = { ...federalItem, synced: true, source: 'apiloterias', ok: true };
             if (autoPick) result.picked = 'deferred_to_trigger';
             return new Response(JSON.stringify(result), {
               headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -169,8 +211,10 @@ serve(withCORS(async (req: Request) => {
           if (concurso && Array.isArray(prizes) && prizes.length >= 5) {
             federalItem = {
               concurso,
+              concurso_number: concurso,
               draw_date: parseDate(dataStr),
-              numbers: prizes.slice(0, 5).map((s: string) => String(s).slice(-2).padStart(2, "0"))
+              numbers: prizes.slice(0, 5).map((s: string) => String(s).slice(-2).padStart(2, "0")),
+              prizes_raw: prizes
             };
           }
         }
@@ -183,8 +227,10 @@ serve(withCORS(async (req: Request) => {
         if (concurso && Array.isArray(dezenas) && dezenas.length >= 5) {
           federalItem = {
             concurso,
+            concurso_number: concurso,
             draw_date: parseDate(dataStr),
-            numbers: dezenas.slice(0, 5).map((s: string) => String(s).padStart(2, "0"))
+            numbers: dezenas.slice(0, 5).map((s: string) => String(s).padStart(2, "0")),
+            prizes_raw: dezenas
           };
         }
       }

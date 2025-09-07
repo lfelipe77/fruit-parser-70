@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Hash, Clock, Database } from "lucide-react";
+import { Calendar, Hash, Clock, Database, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
@@ -18,6 +19,16 @@ interface FederalStoreData {
   draw_date: string;
   numbers: string[];
   updated_at: string;
+}
+
+interface DryRunResult {
+  ok: boolean;
+  source: string;
+  concurso_number: string;
+  draw_date: string;
+  numbers: string[];
+  prizes_raw: any;
+  debug?: any;
 }
 
 export default function FederalLotteryManager() {
@@ -32,6 +43,10 @@ export default function FederalLotteryManager() {
   const [concurso, setConcurso] = useState("");
   const [drawDate, setDrawDate] = useState("");
   const [manualNumbers, setManualNumbers] = useState<string[]>(Array(5).fill(''));
+  
+  // Dry run modal state
+  const [dryRunModalOpen, setDryRunModalOpen] = useState(false);
+  const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
 
   const fetchData = async () => {
     try {
@@ -384,6 +399,88 @@ export default function FederalLotteryManager() {
     return false;
   };
 
+  // Normalization helper for dry run preview
+  const normalizePrizes = (rawPrizes: any): string[] | null => {
+    let source: any[] = [];
+    
+    if (Array.isArray(rawPrizes)) {
+      source = rawPrizes;
+    } else if (rawPrizes && typeof rawPrizes === 'object') {
+      source = Object.values(rawPrizes);
+    } else if (rawPrizes) {
+      source = [rawPrizes];
+    }
+    
+    const normalized = source
+      .slice(0, 5)
+      .map(x => String(x).replace(/\D/g, '').padStart(5, '0'))
+      .filter(x => x.length === 5);
+    
+    return normalized.length === 5 ? normalized : null;
+  };
+
+  const dryRunSync = async () => {
+    try {
+      setBusy("dry-run");
+      toast({ title: 'Dry-run iniciado...', description: 'Testando sync sem writes' });
+
+      let response: Response;
+      let result: any;
+
+      // First try supabase.functions.invoke
+      try {
+        const { data, error } = await supabase.functions.invoke('federal-sync', {
+          body: { debug: '1', dry_run: '1' }
+        });
+        
+        if (error) throw error;
+        result = data;
+      } catch (invokeError) {
+        // Fallback to direct fetch
+        console.warn('invoke() failed, trying direct fetch:', invokeError);
+        toast({ 
+          title: 'Fallback ativo', 
+          description: 'invoke() falhou, tentando URL direta...' 
+        });
+        
+        const supabaseUrl = "https://whqxpuyjxoiufzhvqneg.supabase.co";
+        const functionsUrl = `${supabaseUrl}/functions/v1/federal-sync?debug=1&dry_run=1`;
+        
+        response = await fetch(functionsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        result = await response.json();
+      }
+
+      console.info('[federal-sync dry-run]', result);
+      
+      setDryRunResult(result);
+      setDryRunModalOpen(true);
+      
+      toast({ 
+        title: 'Dry-run concluído', 
+        description: result.ok ? 'Dados obtidos com sucesso' : 'Falha na obtenção' 
+      });
+      
+    } catch (e: any) {
+      console.error('Dry-run failed:', e);
+      toast({ 
+        title: 'Dry-run falhou', 
+        description: e?.message || String(e), 
+        variant: 'destructive' 
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -467,6 +564,16 @@ export default function FederalLotteryManager() {
             >
               {busy === "force" ? "Executando…" : "Forçar Sync + Pick"}
             </Button>
+
+            <Button
+              onClick={dryRunSync}
+              disabled={!!busy}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              {busy === "dry-run" ? "Testando…" : "Dry-run Sync (no writes)"}
+            </Button>
           </div>
 
           {/* Manual Override Form */}
@@ -530,6 +637,80 @@ export default function FederalLotteryManager() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dry Run Modal */}
+      <Dialog open={dryRunModalOpen} onOpenChange={setDryRunModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Federal Sync - Dry Run Results
+            </DialogTitle>
+          </DialogHeader>
+          
+          {dryRunResult && (
+            <div className="space-y-6">
+              {/* Status */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Status:</span>
+                <Badge variant={dryRunResult.ok ? "default" : "destructive"}>
+                  {dryRunResult.ok ? "✅ OK" : "❌ Falha"}
+                </Badge>
+              </div>
+
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Concurso</Label>
+                  <p className="font-mono text-sm">{dryRunResult.concurso_number || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Data</Label>
+                  <p className="font-mono text-sm">{formatDate(dryRunResult.draw_date) || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Fonte</Label>
+                  <p className="font-mono text-sm">{dryRunResult.source || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* Raw Prizes */}
+              <div>
+                <Label className="text-sm font-medium">Prizes Raw (JSON)</Label>
+                <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto mt-1">
+                  {JSON.stringify(dryRunResult.prizes_raw, null, 2)}
+                </pre>
+              </div>
+
+              {/* Normalized Prizes Preview */}
+              <div>
+                <Label className="text-sm font-medium">Prizes Normalized (Preview)</Label>
+                {(() => {
+                  const normalized = normalizePrizes(dryRunResult.prizes_raw);
+                  return normalized ? (
+                    <div className="flex gap-1 mt-2">
+                      {normalized.map((num, i) => (
+                        <span key={i} className="bg-primary text-primary-foreground px-2 py-1 rounded text-sm font-mono">
+                          {num}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <Badge variant="destructive" className="mt-2">Incomplete - Menos de 5 números válidos</Badge>
+                  );
+                })()}
+              </div>
+
+              {/* Helper Text */}
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  💡 <strong>Dry-run only</strong> — Nenhuma escrita foi feita no banco de dados.
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
