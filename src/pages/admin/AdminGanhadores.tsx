@@ -288,22 +288,22 @@ export default function AdminGanhadores() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Ganhadores (Admin)</h1>
-        <p className="text-muted-foreground">Loteria Federal · somente leitura</p>
+        <h1 className="text-xl font-bold">Ganhadores (Admin)</h1>
+        <p className="text-sm text-muted-foreground">Loteria Federal · somente leitura</p>
       </div>
 
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
-              <Label htmlFor="search">Buscar</Label>
+              <Label htmlFor="search" className="text-sm">Buscar</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -311,69 +311,74 @@ export default function AdminGanhadores() {
                   placeholder="Buscar por rifa, nome, email, telefone ou CPF"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-8"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="organizer">Organizador (ID)</Label>
+              <Label htmlFor="organizer" className="text-sm">Organizador (ID)</Label>
               <Input
                 id="organizer"
                 placeholder="UUID do organizador"
                 value={filters.organizerUserId}
                 onChange={(e) => handleFilterChange('organizerUserId', e.target.value)}
+                className="h-8"
               />
             </div>
 
             <div>
-              <Label htmlFor="raffle">Rifa (ID)</Label>
+              <Label htmlFor="raffle" className="text-sm">Rifa (ID)</Label>
               <Input
                 id="raffle"
                 placeholder="UUID da rifa"
                 value={filters.raffleId}
                 onChange={(e) => handleFilterChange('raffleId', e.target.value)}
+                className="h-8"
               />
             </div>
 
             <div>
-              <Label htmlFor="winner">Vencedor (ID)</Label>
+              <Label htmlFor="winner" className="text-sm">Vencedor (ID)</Label>
               <Input
                 id="winner"
                 placeholder="UUID do vencedor"
                 value={filters.winnerUserId}
                 onChange={(e) => handleFilterChange('winnerUserId', e.target.value)}
+                className="h-8"
               />
             </div>
 
             <div>
-              <Label htmlFor="dateFrom">Data (De)</Label>
+              <Label htmlFor="dateFrom" className="text-sm">Data (De)</Label>
               <Input
                 id="dateFrom"
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                className="h-8"
               />
             </div>
 
             <div>
-              <Label htmlFor="dateTo">Data (Até)</Label>
+              <Label htmlFor="dateTo" className="text-sm">Data (Até)</Label>
               <Input
                 id="dateTo"
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                className="h-8"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center justify-between mt-3">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleClearFilters}>
-                <X className="h-4 w-4 mr-2" />
+              <Button variant="outline" size="sm" onClick={handleClearFilters}>
+                <X className="h-4 w-4 mr-1" />
                 Limpar filtros
               </Button>
-              <Button variant="outline" onClick={handleShowAll}>
+              <Button variant="outline" size="sm" onClick={handleShowAll}>
                 Ver todos
               </Button>
             </div>
@@ -448,8 +453,8 @@ export default function AdminGanhadores() {
                 <TableBody>
                   {winners.map((winner) => (
                     <TableRow key={winner.winner_id}>
-                      <TableCell>
-                        <div className="w-14 h-14 rounded overflow-hidden bg-muted">
+                      <TableCell className="p-2">
+                        <div className="w-12 h-12 rounded overflow-hidden bg-muted">
                           {winner.raffle_image_url ? (
                             <img 
                               src={winner.raffle_image_url} 
@@ -497,10 +502,10 @@ export default function AdminGanhadores() {
                         <div className="text-sm">{winner.winner_handle_fallback}</div>
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell className="p-2">
                         <div className="space-y-1">
                           {winner.buyer_name && (
-                            <div className="font-medium">{winner.buyer_name}</div>
+                            <div className="text-sm font-medium">{winner.buyer_name}</div>
                           )}
                           <div className="text-xs text-muted-foreground space-y-0.5">
                             {winner.buyer_phone && <div>{winner.buyer_phone}</div>}
@@ -521,12 +526,13 @@ export default function AdminGanhadores() {
                         </div>
                       </TableCell>
 
-                      <TableCell className="text-right">
+                      <TableCell className="text-right p-2">
                         <div className="flex gap-1 justify-end">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenDrawer(winner)}
+                            className="h-7 text-xs"
                           >
                             Abrir
                           </Button>
@@ -539,6 +545,7 @@ export default function AdminGanhadores() {
                                 const url = getWhatsAppUrl(winner.buyer_phone);
                                 if (url) window.open(url, '_blank');
                               }}
+                              className="h-7 w-7"
                             >
                               <MessageCircle className="h-3 w-3" />
                             </Button>
@@ -554,6 +561,7 @@ export default function AdminGanhadores() {
                                 description: "Contatos copiados para a área de transferência.",
                               });
                             }}
+                            className="h-7 w-7"
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
@@ -563,6 +571,7 @@ export default function AdminGanhadores() {
                               variant="outline"
                               size="sm"
                               onClick={() => window.open(`/admin/tickets/${winner.link_ticket_id}`, '_blank')}
+                              className="h-7 w-7"
                             >
                               <FileText className="h-3 w-3" />
                             </Button>
@@ -581,7 +590,7 @@ export default function AdminGanhadores() {
       {/* Pagination */}
       {!loading && winners.length > 0 && (
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
