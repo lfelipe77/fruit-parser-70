@@ -177,9 +177,9 @@ serve(withCORS(async (req: Request) => {
     }
   }
 
-  return new Response(JSON.stringify({ ...result, error: "No valid Federal data found" }), {
+  return new Response(JSON.stringify({ ...result, ok: false, error: "No valid Federal data found" }), {
     headers: { "Content-Type": "application/json" },
-    status: 500
+    status: 200
   });
 
   // Helper functions
