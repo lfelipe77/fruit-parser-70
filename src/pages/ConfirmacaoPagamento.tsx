@@ -621,9 +621,9 @@ export default function ConfirmacaoPagamento() {
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
         </div>
 
-      <div className="grid gap-6 lg:grid-cols-[2fr,1fr] lg:gap-8">
+      <div className="grid gap-4 lg:grid-cols-[1.5fr,1fr] lg:gap-6">
         {/* Main Form */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Raffle Summary & Selected Numbers */}
           <Card>
             <CardHeader>
@@ -857,7 +857,7 @@ export default function ConfirmacaoPagamento() {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <PaymentSecureMockCard />
 
           <Card>
@@ -904,17 +904,6 @@ export default function ConfirmacaoPagamento() {
             </CardContent>
           </Card>
 
-          {/* Security Info */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center space-y-2">
-                <div className="text-sm font-medium">🔒 Pagamento Seguro</div>
-                <p className="text-xs text-muted-foreground">
-                  Processado pela Asaas, uma das maiores empresas de pagamento do Brasil
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
       </div>
