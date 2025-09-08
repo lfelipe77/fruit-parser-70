@@ -15,6 +15,7 @@ import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import PixPaymentModal from "@/components/PixPaymentModal";
+import PaymentSecureMockCard from "@/components/PaymentSecureMockCard";
 import { isDebugMode, logDebugInfo } from "@/utils/envDebug";
 import { nanoid } from "nanoid";
 
@@ -857,22 +858,7 @@ export default function ConfirmacaoPagamento() {
 
         {/* Order Summary Sidebar */}
         <div className="space-y-6">
-          {/* Test Payment Notice */}
-          <Card>
-            <CardHeader>
-              <CardTitle>🧪 Pagamento de Teste</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="text-sm text-yellow-800">
-                  <div className="font-semibold mb-2">Modo de Teste Ativo</div>
-                  <p className="text-xs">
-                    Este é um ambiente de desenvolvimento. Os pagamentos são simulados e nenhuma cobrança real será feita.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <PaymentSecureMockCard />
 
           <Card>
             <CardHeader>
