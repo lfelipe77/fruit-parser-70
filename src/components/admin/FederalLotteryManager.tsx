@@ -145,29 +145,53 @@ export default function FederalLotteryManager() {
   const pickWinnerNow = async () => {
     try {
       setBusy("pick");
+      console.log('[PickNow] calling admin_federal_pick_now');
+
       const { data, error } = await supabase.rpc('admin_federal_pick_now' as any);
-      
+
       if (error) {
+        console.error('[PickNow] RPC error', error);
         toast({ 
-          title: 'Erro ao escolher vencedor', 
-          description: error.message, 
+          title: 'Erro', 
+          description: error.message ?? 'Falha ao processar ganhadores.', 
           variant: 'destructive' 
         });
         return;
       }
 
-      toast({ title: 'Vencedor calculado com sucesso' });
-      
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
-      queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
-      queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
+      if (!data?.ok) {
+        console.warn('[PickNow] RPC not ok', data);
+        toast({ 
+          title: 'Erro', 
+          description: data?.error ?? 'Pick falhou.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      const picked = Number(data?.picked ?? 0);
+      if (picked > 0) {
+        toast({ title: 'Sucesso!', description: `Ganhadores processados: ${picked}` });
+      } else {
+        toast({ title: 'Nenhum sorteio elegível', description: 'Sem matches ou já premiados.' });
+      }
+
+      // Make sure "Completas" and related views refresh
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['raffles'] }),
+        queryClient.invalidateQueries({ queryKey: ['raffles', 'completed-unpicked'] }),
+        queryClient.invalidateQueries({ queryKey: ['raffle_winners'] }),
+        queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] }),
+        queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] }),
+        queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] }),
+      ]);
       
       await fetchData();
     } catch (e: any) {
+      console.error('[PickNow] exception', e);
       toast({ 
-        title: 'Erro ao escolher vencedor', 
-        description: e?.message || String(e), 
+        title: 'Erro', 
+        description: e?.message ?? 'Erro inesperado no Pick.', 
         variant: 'destructive' 
       });
     } finally {
