@@ -574,7 +574,7 @@ export default function ConfirmacaoPagamento() {
   return (
     <>
       <Navigation />
-      <div className="container mx-auto px-4 py-3 lg:py-6 max-w-6xl">
+      <div className="container mx-auto px-4 py-2 lg:py-6 max-w-6xl">
         {/* Offline Banner */}
         {isOffline && (
           <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center justify-between">
@@ -595,7 +595,7 @@ export default function ConfirmacaoPagamento() {
         )}
 
         {/* Header */}
-        <div className="mb-4 lg:mb-6">
+        <div className="mb-3 lg:mb-6">
           <div className="flex items-center justify-between mb-4">
             <Button 
               variant="ghost" 
