@@ -17,18 +17,11 @@ export function useCompletedUnpickedRaffles() {
   return useQuery({
     queryKey: ['completed-unpicked'],
     queryFn: async (): Promise<CompletedRaffle[]> => {
-      // Since v_eligible_completed_raffles might not be working correctly,
-      // let's query directly for 100% complete raffles without winners
+      // Use the new view that includes funded/drawing status raffles
       const { data, error } = await supabase
-        .from('raffles_public_money_ext')
-        .select(`
-          id, title, image_url, goal_amount, amount_raised,
-          progress_pct_money, participants_count, draw_date, last_paid_at,
-          status
-        `)
-        .gte('progress_pct_money', 100)
-        .eq('status', 'active')
-        .order('last_paid_at', { ascending: false });
+        .from('raffles_resultados_completas' as any)
+        .select('raffle_id, title, image_url, status, progress_pct_money, amount_raised, goal_amount, last_paid_at, participants_count, draw_date')
+        .order('last_paid_at', { ascending: false, nullsFirst: false }) as any;
       
       if (error) {
         console.error('[Resultados] Error loading completed raffles:', error);
@@ -37,7 +30,7 @@ export function useCompletedUnpickedRaffles() {
       
       // Filter out raffles that already have winners in lottery_results
       if (data && data.length > 0) {
-        const raffleIds = data.map(r => r.id);
+        const raffleIds = data.map((r: any) => r.raffle_id);
         const { data: existingResults } = await supabase
           .from('lottery_results')
           .select('ganhavel_id')
@@ -45,7 +38,19 @@ export function useCompletedUnpickedRaffles() {
         
         const rafflesWithWinners = new Set(existingResults?.map(r => r.ganhavel_id) || []);
         
-        const filteredData = data.filter(raffle => !rafflesWithWinners.has(raffle.id));
+        const filteredData = data
+          .filter((raffle: any) => !rafflesWithWinners.has(raffle.raffle_id))
+          .map((raffle: any) => ({
+            id: raffle.raffle_id,
+            title: raffle.title,
+            image_url: raffle.image_url,
+            goal_amount: raffle.goal_amount,
+            amount_raised: raffle.amount_raised,
+            progress_pct_money: raffle.progress_pct_money,
+            participants_count: raffle.participants_count || 0,
+            draw_date: raffle.draw_date,
+            last_paid_at: raffle.last_paid_at
+          }));
         console.debug('[Resultados] completas loaded:', filteredData?.length, filteredData);
         return filteredData || [];
       }
