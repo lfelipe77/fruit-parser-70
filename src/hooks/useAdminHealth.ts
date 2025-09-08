@@ -9,7 +9,7 @@ export function useAdminHealth() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.rpc('admin_health_snapshot');
+      const { data, error } = await supabase.functions.invoke('admin-health-snapshot');
       setData(data ?? null);
       setError(error ?? null);
       setLoading(false);

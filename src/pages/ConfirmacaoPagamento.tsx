@@ -857,18 +857,37 @@ export default function ConfirmacaoPagamento() {
 
         {/* Order Summary Sidebar */}
         <div className="space-y-6">
-          {/* Test Payment Notice */}
+          {/* How the Draw Works */}
           <Card>
             <CardHeader>
-              <CardTitle>🧪 Pagamento de Teste</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                🎯 Como Funciona o Sorteio
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="text-sm text-yellow-800">
-                  <div className="font-semibold mb-2">Modo de Teste Ativo</div>
-                  <p className="text-xs">
-                    Este é um ambiente de desenvolvimento. Os pagamentos são simulados e nenhuma cobrança real será feita.
-                  </p>
+              <div className="bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-200 rounded-lg p-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <span className="font-medium">Sorteio ao atingir 100% das vendas</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="font-medium">Cada bilhete tem 5 números</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="font-medium">Baseado na Loteria Federal</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <span className="font-medium">Resultado automático e transparente</span>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-emerald-200">
+                    <p className="text-xs text-emerald-700">
+                      ✅ Todos os resultados são registrados na página <strong>Resultados</strong>
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
