@@ -574,7 +574,7 @@ export default function ConfirmacaoPagamento() {
   return (
     <>
       <Navigation />
-      <div className="container mx-auto p-4 max-w-4xl">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Offline Banner */}
         {isOffline && (
           <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center justify-between">
@@ -621,7 +621,7 @@ export default function ConfirmacaoPagamento() {
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
         </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
+      <div className="grid gap-6 lg:grid-cols-[2fr,1fr] lg:gap-8">
         {/* Main Form */}
         <div className="space-y-6">
           {/* Raffle Summary & Selected Numbers */}
