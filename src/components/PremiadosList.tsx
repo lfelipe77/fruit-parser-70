@@ -53,8 +53,8 @@ export default function PremiadosList() {
                 <Link to={profileHref} className="block font-medium truncate hover:underline">
                   {handle}
                 </Link>
-                <Link to={raffleHref} className="block text-sm text-muted-foreground truncate hover:underline">
-                  {w.raffle_title ?? 'Ganhável'}
+                <Link to={raffleHref} className="block text-sm font-medium text-foreground/80 truncate hover:underline">
+                  {w.raffle_title ?? 'Ganhável sem nome'}
                 </Link>
               </div>
             </div>
