@@ -245,12 +245,26 @@ export default function FederalLotteryManager() {
     }
   };
 
-  const onManualSave = async () => {
+  const onManualSave = async (event?: React.FormEvent) => {
+    if (event) {
+      event.preventDefault();
+    }
+    
     try {
       setBusy("manual");
       
+      // Normalize payload before calling RPC
+      const normalizedConcurso = (concurso || '').toString().trim();
+      const isoDate = new Date(drawDate).toISOString().slice(0, 10);
+      
+      // Make sure these are STRINGS with 2 digits
+      const numbers = (manualNumbers || [])
+        .map((n: string | number) => n.toString().trim())
+        .filter(Boolean)
+        .map(s => s.padStart(2, '0'));
+      
       // Validate inputs
-      if (!concurso.trim()) {
+      if (!normalizedConcurso) {
         toast({ title: 'Erro', description: 'Concurso é obrigatório', variant: 'destructive' });
         return;
       }
@@ -260,46 +274,46 @@ export default function FederalLotteryManager() {
         return;
       }
       
-      const validNumbers = manualNumbers.filter(n => n.trim()).map(n => n.trim().padStart(2, '0'));
-      if (validNumbers.length !== 5) {
-        toast({ title: 'Erro', description: 'Todos os 5 números são obrigatórios', variant: 'destructive' });
+      if (numbers.length !== 5) {
+        toast({ title: 'Erro', description: 'Informe exatamente 5 dezenas (00–99).', variant: 'destructive' });
         return;
       }
-
-      const payload = {
-        p_concurso: concurso.trim(),
-        p_draw_date: drawDate,
-        p_numbers: validNumbers
-      };
       
-      const { data, error } = await supabase.rpc('admin_federal_set_latest' as any, payload);
+      const { data, error } = await supabase.rpc('admin_federal_set_latest' as any, {
+        p_concurso: normalizedConcurso,
+        p_draw_date: isoDate,
+        p_numbers: numbers
+      });
       
-      if (error) { 
-        toast({ title: 'Erro', description: error.message, variant: 'destructive' }); 
-        return; 
+      if (error) {
+        console.error('[admin_federal_set_latest] error', error);
+        toast({ title: 'Erro', description: error.message || 'Falha ao salvar override.', variant: 'destructive' });
+        return; // Don't reset form on error
       }
       
       const response = data as { ok?: boolean; concurso?: string } | null;
-      toast({ title: 'Salvo', description: `Concurso ${response?.concurso || concurso} salvo manualmente` });
+      toast({ title: 'Override salvo com sucesso!', description: `Concurso ${response?.concurso || normalizedConcurso}` });
       
-      // Invalidate queries after manual save
+      // Invalidate queries after successful save
       queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
       queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
       queryClient.invalidateQueries({ queryKey: ['admin_latest_federal_status'] });
       queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
       
-      // Reset form
+      // Only reset form on success
       setConcurso("");
       setDrawDate("");
       setManualNumbers(["", "", "", "", ""]);
       
       await fetchData();
     } catch (e: any) {
+      console.error('[onManualSave] catch', e);
       toast({ 
         title: 'Erro', 
         description: e?.message || String(e), 
         variant: 'destructive' 
       });
+      // Don't reset form on error
     } finally {
       setBusy(null);
     }
