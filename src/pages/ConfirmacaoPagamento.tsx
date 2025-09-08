@@ -857,7 +857,7 @@ export default function ConfirmacaoPagamento() {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-2 lg:space-y-4">
           <PaymentSecureMockCard />
 
           <Card>
