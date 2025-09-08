@@ -9,21 +9,10 @@ export function useAdminHealth() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      try {
-        // Mock data until RPC function is created
-        const mockData = {
-          flip_candidates: 0,
-          pick_candidates: 0,
-          last_caixa: { draw_date: '—', numbers: [], concurso: '—' },
-          last_picker_run: { last_pick_at: '—', provider: '—', picks_today: 0 }
-        };
-        setData(mockData);
-        setError(null);
-      } catch (err) {
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
+      const { data, error } = await supabase.rpc('admin_health_snapshot');
+      setData(data ?? null);
+      setError(error ?? null);
+      setLoading(false);
     })();
   }, []);
 

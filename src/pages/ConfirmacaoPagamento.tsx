@@ -15,7 +15,6 @@ import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import PixPaymentModal from "@/components/PixPaymentModal";
-import PaymentSecureMockCard from "@/components/PaymentSecureMockCard";
 import { isDebugMode, logDebugInfo } from "@/utils/envDebug";
 import { nanoid } from "nanoid";
 
@@ -574,7 +573,7 @@ export default function ConfirmacaoPagamento() {
   return (
     <>
       <Navigation />
-      <div className="container mx-auto px-4 py-2 lg:py-6 max-w-6xl">
+      <div className="container mx-auto p-4 max-w-4xl">
         {/* Offline Banner */}
         {isOffline && (
           <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center justify-between">
@@ -595,7 +594,7 @@ export default function ConfirmacaoPagamento() {
         )}
 
         {/* Header */}
-        <div className="mb-3 lg:mb-6">
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <Button 
               variant="ghost" 
@@ -621,9 +620,9 @@ export default function ConfirmacaoPagamento() {
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.5fr,1fr] lg:gap-8 lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
         {/* Main Form */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Raffle Summary & Selected Numbers */}
           <Card>
             <CardHeader>
@@ -857,8 +856,23 @@ export default function ConfirmacaoPagamento() {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="space-y-2 lg:space-y-4">
-          <PaymentSecureMockCard />
+        <div className="space-y-6">
+          {/* Test Payment Notice */}
+          <Card>
+            <CardHeader>
+              <CardTitle>🧪 Pagamento de Teste</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="text-sm text-yellow-800">
+                  <div className="font-semibold mb-2">Modo de Teste Ativo</div>
+                  <p className="text-xs">
+                    Este é um ambiente de desenvolvimento. Os pagamentos são simulados e nenhuma cobrança real será feita.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -904,6 +918,17 @@ export default function ConfirmacaoPagamento() {
             </CardContent>
           </Card>
 
+          {/* Security Info */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <div className="text-sm font-medium">🔒 Pagamento Seguro</div>
+                <p className="text-xs text-muted-foreground">
+                  Processado pela Asaas, uma das maiores empresas de pagamento do Brasil
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
       </div>
