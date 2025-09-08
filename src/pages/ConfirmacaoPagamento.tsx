@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/formatters";
 import { asNumber, computeCheckout } from "@/utils/money";
-import { CreditCard, Smartphone, Building, ArrowLeft, Share2, Eye, RefreshCw } from "lucide-react";
+import { ArrowLeft, Share2, Eye, RefreshCw } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { toConfirm } from "@/lib/nav";
 import { useAuth } from "@/hooks/useAuth";
@@ -183,22 +183,18 @@ export default function ConfirmacaoPagamento() {
   // State
   const [raffle, setRaffle] = React.useState<RaffleRow | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [paymentMethod, setPaymentMethod] = React.useState<'pix' | 'card' | 'bank'>('pix');
+  // Payment method removed - using mock payment only
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [showPixModal, setShowPixModal] = React.useState(false);
   const [pixPaymentData, setPixPaymentData] = React.useState<any>(null);
   const [showAllNumbers, setShowAllNumbers] = React.useState(false);
   
-  // Form data
+  // Form data - simplified for mock payments
   const [formData, setFormData] = React.useState({
     email: '',
     phone: '',
     fullName: '',
-    cpf: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardName: ''
+    cpf: ''
   });
 
   // Form validation states
@@ -296,9 +292,9 @@ export default function ConfirmacaoPagamento() {
           uiState: {
             cameFrom: `ganhavel/${raffleId}`,
             ts: Date.now(),
-            paymentMethod,
+            paymentMethod: 'mock',
             formData,
-            // Store fee info for audit and ASAAS payment
+            // Store fee info for mock payment
             institutional_fee: checkoutData.fee,
             charge_total: checkoutData.chargeTotal,
             qty: checkoutData.adjustedQty,
@@ -379,7 +375,7 @@ export default function ConfirmacaoPagamento() {
     return () => {
       mounted = false;
     };
-  }, [user, raffleId, raffle?.ticket_price, selectedNumbers, checkoutData.chargeTotal, qty, paymentMethod, formData, isMounted]);
+  }, [user, raffleId, raffle?.ticket_price, selectedNumbers, checkoutData.chargeTotal, qty, formData, isMounted]);
 
   // Load raffle data with isMounted guard
   React.useEffect(() => {
@@ -455,123 +451,36 @@ export default function ConfirmacaoPagamento() {
       const safeQty = Math.max(1, Number(qty));
       const subtotal = Number((unitPrice * safeQty).toFixed(2));
 
-      const payloadData = {
-        provider: 'asaas',
-        method: 'pix',
-        reservation_id: reservationId,
-        raffle_id: id,
-        qty: safeQty,
-        amount: subtotal, // tickets-only; fee added server-side
-        currency: 'BRL',
-        buyer: {
-          fullName: formData.fullName,
-          phone: digits(formData.phone),
-          cpf: digits(formData.cpf)
-        }
-      };
-
-      // Log before invoke
-      console.log("[payment] Calling create-checkout", {
-        reservationId: reservationUuid,
+      // Mock payment for testing
+      console.log('[payment] Processing mock payment...', {
         raffleId: id,
-        qty: safeQty,
-        amount: payloadData.amount,
-        expectedUrl: "https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/create-checkout"
+        quantity: safeQty,
+        unitPrice,
+        totalAmount: subtotal,
+        selectedNumbers
       });
 
-      // 4) Call create-checkout with Asaas PIX
-      const { data: checkoutData, error } = await supabase.functions.invoke('create-checkout', {
-        body: payloadData
+      // Simulate success
+      toast({
+        title: "Pagamento simulado com sucesso!",
+        description: "Este é um pagamento de teste.",
+        variant: "default"
       });
 
-      // Log response
-      if (error) {
-        const r = error?.context?.response;
-        console.error('[payment] invoke error:', error.message);
-        if (r) console.error('[payment] body:', await r.text());
-        else console.error('[payment] no response in error.context');
-        
-        // dev-only fallback fetch (so we *always* see status/body)
-        try {
-          const url = `https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/create-checkout`;
-          const resp = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type':'application/json',
-              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndocXhwdXlqeG9pdWZ6aHZxbmVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYyODMsImV4cCI6MjA2OTc0MjI4M30.lXLlvJkB48KSUsroImqkZSjNLpQjg7Pe_bYH5h6ztjo`
-            },
-            body: JSON.stringify(payloadData)
-          });
-          const text = await resp.text();
-          console.log('[payment] fetch status', resp.status, 'body:', text);
-        } catch {}
-        
-        toast({
-          title: "Erro no pagamento",
-          description: "Pagamento falhou. Tente novamente.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log("[payment] create-checkout success", {
-        reservationId,
-        responseKeys: checkoutData ? Object.keys(checkoutData) : [],
-        hasPaymentId: !!checkoutData?.asaas_payment_id
+      // Navigate to success page
+      navigate(`/ganhavel/${id}/pagamento-sucesso`, {
+        replace: true,
+        state: {
+          raffleId: id,
+          txId: `MOCK_${Date.now()}`,
+          quantity: safeQty,
+          unitPrice,
+          totalPaid: subtotal,
+          selectedNumbers: selectedNumbers.map(toComboString),
+        },
       });
 
-      // Debug: Log checkout response structure (only when ?debug=1)
-      if (isDebugMode()) {
-        logDebugInfo("ConfirmacaoPagamento:CheckoutResponse", {
-          function: "create-checkout",
-          success: !error,
-          responseKeys: checkoutData ? Object.keys(checkoutData) : [],
-          errorPresent: !!error,
-          maskedPaymentId: checkoutData?.asaas_payment_id ? "****" + String(checkoutData.asaas_payment_id).slice(-4) : null
-        });
-      }
-
-      // 5) Show PIX modal for embedded payment
-      if (!checkoutData?.provider_payment_id) {
-        console.error("[payment] No payment ID in checkout response:", checkoutData);
-        toast({
-          title: "Erro na criação do pagamento",
-          description: "Tente novamente.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Check if we have PIX data for embedded payment
-      const hasPix = !!(checkoutData.pix_qr_code || checkoutData.pix_copy_paste);
-      if (hasPix) {
-        console.log("[payment] Opening PIX modal:", {
-          payment_id: checkoutData.provider_payment_id,
-          amount: checkoutData.charge_total,
-          has_qr: !!checkoutData.pix_qr_code,
-          has_copy_paste: !!checkoutData.pix_copy_paste
-        });
-
-        setPixPaymentData({
-          provider_payment_id: checkoutData.provider_payment_id,
-          amount: checkoutData.charge_total, // Display charge_total (includes fee)
-          pix_qr_code: checkoutData.pix_qr_code,
-          pix_copy_paste: checkoutData.pix_copy_paste,
-          reservation_id: reservationId,
-          raffle_id: id,
-          qty: safeQty
-        });
-        setShowPixModal(true);
-      } else if (checkoutData.redirect_url) {
-        // Fallback to redirect
-        window.location.href = checkoutData.redirect_url;
-      } else {
-        toast({
-          title: "Erro no pagamento",
-          description: "Dados PIX não encontrados. Tente novamente.",
-          variant: "destructive"
-        });
-      }
+      return;
     } catch (e: any) {
       console.error("[payment] unexpected error", {
         error: e,
@@ -948,93 +857,20 @@ export default function ConfirmacaoPagamento() {
 
         {/* Order Summary Sidebar */}
         <div className="space-y-6">
-          {/* Payment Methods */}
+          {/* Test Payment Notice */}
           <Card>
             <CardHeader>
-              <CardTitle>Forma de Pagamento</CardTitle>
+              <CardTitle>🧪 Pagamento de Teste</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3">
-                <Button
-                  variant={paymentMethod === 'pix' ? 'default' : 'outline'}
-                  onClick={() => setPaymentMethod('pix')}
-                  className="flex items-center gap-2 h-auto p-4 justify-start"
-                >
-                  <Smartphone className="h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-semibold">PIX</div>
-                    <div className="text-xs">Aprovação imediata</div>
-                  </div>
-                </Button>
-                
-                <Button
-                  variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                  onClick={() => setPaymentMethod('card')}
-                  className="flex items-center gap-2 h-auto p-4 justify-start"
-                >
-                  <CreditCard className="h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-semibold">Cartão</div>
-                    <div className="text-xs">Débito ou crédito</div>
-                  </div>
-                </Button>
-                
-                <Button
-                  variant={paymentMethod === 'bank' ? 'default' : 'outline'}
-                  onClick={() => setPaymentMethod('bank')}
-                  className="flex items-center gap-2 h-auto p-4 justify-start"
-                >
-                  <Building className="h-5 w-5" />
-                  <div className="text-left">
-                    <div className="font-semibold">Boleto</div>
-                    <div className="text-xs">Até 3 dias úteis</div>
-                  </div>
-                </Button>
-              </div>
-
-              {/* Card Details */}
-              {paymentMethod === 'card' && (
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <Label htmlFor="cardNumber">Número do Cartão</Label>
-                    <Input
-                      id="cardNumber"
-                      value={formData.cardNumber}
-                      onChange={(e) => handleInputChange('cardNumber', e.target.value)}
-                      placeholder="0000 0000 0000 0000"
-                    />
-                  </div>
-                  <div className="grid gap-4 grid-cols-2">
-                    <div>
-                      <Label htmlFor="expiryDate">Validade</Label>
-                      <Input
-                        id="expiryDate"
-                        value={formData.expiryDate}
-                        onChange={(e) => handleInputChange('expiryDate', e.target.value)}
-                        placeholder="MM/AA"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cvv">CVV</Label>
-                      <Input
-                        id="cvv"
-                        value={formData.cvv}
-                        onChange={(e) => handleInputChange('cvv', e.target.value)}
-                        placeholder="123"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="cardName">Nome no Cartão</Label>
-                    <Input
-                      id="cardName"
-                      value={formData.cardName}
-                      onChange={(e) => handleInputChange('cardName', e.target.value)}
-                      placeholder="Nome impresso"
-                    />
-                  </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="text-sm text-yellow-800">
+                  <div className="font-semibold mb-2">Modo de Teste Ativo</div>
+                  <p className="text-xs">
+                    Este é um ambiente de desenvolvimento. Os pagamentos são simulados e nenhuma cobrança real será feita.
+                  </p>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
