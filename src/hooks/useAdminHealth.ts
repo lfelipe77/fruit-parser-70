@@ -9,7 +9,8 @@ export function useAdminHealth() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.rpc('admin_health_snapshot');
+      // Use a simple admin ping to check connection for now
+      const { data, error } = await supabase.rpc('admin_ping');
       setData(data ?? null);
       setError(error ?? null);
       setLoading(false);
