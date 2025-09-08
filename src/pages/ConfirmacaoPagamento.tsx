@@ -289,17 +289,17 @@ export default function ConfirmacaoPagamento() {
           numbers: selectedNumbers,
           buyerUserId: user.id,
           pageFingerprint: `confirm-${raffleId}-${Date.now()}`,
-          uiState: {
-            cameFrom: `ganhavel/${raffleId}`,
-            ts: Date.now(),
-            paymentMethod: 'mock',
-            formData,
-            // Store fee info for mock payment
-            institutional_fee: checkoutData.fee,
-            charge_total: checkoutData.chargeTotal,
-            qty: checkoutData.adjustedQty,
-            unit_price: raffle?.ticket_price || 0
-          }
+            uiState: {
+              cameFrom: `ganhavel/${raffleId}`,
+              ts: Date.now(),
+              paymentMethod: 'asaas',
+              formData,
+              // Store fee info
+              institutional_fee: checkoutData.fee,
+              charge_total: checkoutData.chargeTotal,
+              qty: checkoutData.adjustedQty,
+              unit_price: raffle?.ticket_price || 0
+            }
         };
 
         // Persist context to server
@@ -446,52 +446,59 @@ export default function ConfirmacaoPagamento() {
         return;
       }
 
-      // 3) Inputs - tickets only (fee added server-side)
+      // 3) Prepare inputs - tickets only (fee added server-side)
       const unitPrice = raffle?.ticket_price ?? 0;
       const safeQty = Math.max(1, Number(qty));
       const subtotal = Number((unitPrice * safeQty).toFixed(2));
 
-      // Mock payment for testing
-      console.log('[payment] Processing mock payment...', {
-        raffleId: id,
-        quantity: safeQty,
-        unitPrice,
-        totalAmount: subtotal,
-        selectedNumbers
+      if (!raffleId) {
+        toast({ title: "Erro", description: "Rifa inválida.", variant: "destructive" });
+        return;
+      }
+
+      // 4) Create Asaas PIX checkout via legacy function
+      console.log('[payment] Creating Asaas PIX checkout...', { raffleId, safeQty, subtotal, reservationId });
+      const { data: checkout, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          provider: 'asaas',
+          method: 'pix',
+          raffle_id: raffleId,
+          qty: safeQty,
+          amount: subtotal, // tickets-only
+          currency: 'BRL',
+          reservation_id: reservationId
+        }
       });
 
-      // Simulate success
-      toast({
-        title: "Pagamento simulado com sucesso!",
-        description: "Este é um pagamento de teste.",
-        variant: "default"
-      });
+      if (error || !checkout?.ok || !checkout?.provider_payment_id) {
+        console.error('[payment] Asaas checkout error', { error, checkout });
+        toast({
+          title: 'Falha ao iniciar pagamento',
+          description: 'Tente novamente em instantes.',
+          variant: 'destructive'
+        });
+        return;
+      }
 
-      // Navigate to success page
-      navigate(`/ganhavel/${id}/pagamento-sucesso`, {
-        replace: true,
-        state: {
-          raffleId: id,
-          txId: `MOCK_${Date.now()}`,
-          quantity: safeQty,
-          unitPrice,
-          totalPaid: subtotal,
-          selectedNumbers: selectedNumbers.map(toComboString),
-        },
-      });
+      // 5) Open PIX modal and start polling until payment is confirmed
+      const paymentData = {
+        provider_payment_id: checkout.provider_payment_id as string,
+        amount: Number(checkout.charge_total ?? checkout.amount ?? subtotal),
+        pix_qr_code: checkout.pix_qr_code as string | undefined,
+        pix_copy_paste: checkout.pix_copy_paste as string | undefined,
+        reservation_id: (checkout.reservation_id as string) || reservationId,
+        raffle_id: raffleId,
+        qty: safeQty,
+      };
+
+      setPixPaymentData(paymentData);
+      setShowPixModal(true);
+      toast({ title: 'PIX gerado', description: 'Use o QR Code ou Copia e Cola para pagar.' });
 
       return;
     } catch (e: any) {
-      console.error("[payment] unexpected error", {
-        error: e,
-        message: e.message,
-        reservationId
-      });
-      toast({
-        title: "Erro no pagamento",
-        description: "Pagamento falhou. Tente novamente.",
-        variant: "destructive"
-      });
+      console.error("[payment] unexpected error", { error: e, message: e.message, reservationId });
+      toast({ title: "Erro no pagamento", description: "Pagamento falhou. Tente novamente.", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
@@ -857,22 +864,6 @@ export default function ConfirmacaoPagamento() {
 
         {/* Order Summary Sidebar */}
         <div className="space-y-6">
-          {/* Test Payment Notice */}
-          <Card>
-            <CardHeader>
-              <CardTitle>🧪 Pagamento de Teste</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="text-sm text-yellow-800">
-                  <div className="font-semibold mb-2">Modo de Teste Ativo</div>
-                  <p className="text-xs">
-                    Este é um ambiente de desenvolvimento. Os pagamentos são simulados e nenhuma cobrança real será feita.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>
