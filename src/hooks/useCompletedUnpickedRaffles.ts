@@ -17,11 +17,12 @@ export function useCompletedUnpickedRaffles() {
   return useQuery({
     queryKey: ['completed-unpicked'],
     queryFn: async (): Promise<CompletedRaffle[]> => {
-      // Use the new view that includes funded/drawing status raffles
+      // Filter by status to show "completed by money" awaiting draw/pick
       const { data, error } = await supabase
-        .from('raffles_resultados_completas' as any)
-        .select('raffle_id, title, image_url, status, progress_pct_money, amount_raised, goal_amount, last_paid_at, participants_count, draw_date')
-        .order('last_paid_at', { ascending: false, nullsFirst: false }) as any;
+        .from('raffles_public_money_ext')
+        .select('id, title, image_url, status, amount_raised, goal_amount, last_paid_at, participants_count, draw_date, progress_pct_money')
+        .in('status', ['funded', 'drawing'])
+        .order('last_paid_at', { ascending: false, nullsFirst: false });
       
       if (error) {
         console.error('[Resultados] Error loading completed raffles:', error);
@@ -30,7 +31,7 @@ export function useCompletedUnpickedRaffles() {
       
       // Filter out raffles that already have winners in lottery_results
       if (data && data.length > 0) {
-        const raffleIds = data.map((r: any) => r.raffle_id);
+        const raffleIds = data.map(r => r.id);
         const { data: existingResults } = await supabase
           .from('lottery_results')
           .select('ganhavel_id')
@@ -39,9 +40,9 @@ export function useCompletedUnpickedRaffles() {
         const rafflesWithWinners = new Set(existingResults?.map(r => r.ganhavel_id) || []);
         
         const filteredData = data
-          .filter((raffle: any) => !rafflesWithWinners.has(raffle.raffle_id))
-          .map((raffle: any) => ({
-            id: raffle.raffle_id,
+          .filter(raffle => !rafflesWithWinners.has(raffle.id))
+          .map(raffle => ({
+            id: raffle.id,
             title: raffle.title,
             image_url: raffle.image_url,
             goal_amount: raffle.goal_amount,
