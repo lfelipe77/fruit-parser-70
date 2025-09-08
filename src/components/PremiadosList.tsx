@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { usePublicWinners } from '@/hooks/usePublicWinners';
 
 function brDate(d?: string | null) {
@@ -36,7 +37,7 @@ export default function PremiadosList() {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((w) => {
         const handle = w.winner_handle ?? (w.user_id ? w.user_id.slice(0, 8) : 'ganhador');
-        const profileHref = `/p/${encodeURIComponent(handle)}`;
+        const profileHref = `/perfil/${encodeURIComponent(handle)}`;
         const ticketHref = w.ticket_id ? `/ticket/${w.ticket_id}` : '#';
         const raffleHref = w.raffle_id ? `/ganhavel/${w.raffle_id}` : '#';
 
@@ -49,12 +50,12 @@ export default function PremiadosList() {
                   : <span className="text-xs text-muted-foreground">👤</span>}
               </div>
               <div className="min-w-0">
-                <a href={profileHref} className="block font-medium truncate hover:underline">
+                <Link to={profileHref} className="block font-medium truncate hover:underline">
                   {handle}
-                </a>
-                <a href={raffleHref} className="block text-sm text-muted-foreground truncate hover:underline">
+                </Link>
+                <Link to={raffleHref} className="block text-sm text-muted-foreground truncate hover:underline">
                   {w.raffle_title ?? 'Ganhável'}
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -67,7 +68,7 @@ export default function PremiadosList() {
             </div>
 
             <div className="mt-3 flex gap-3">
-              <a href={raffleHref} className="text-sm underline hover:opacity-80">Ver ganhável</a>
+              <Link to={raffleHref} className="text-sm underline hover:opacity-80">Ver ganhável</Link>
               <span className="text-xs rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
                 Verificado
               </span>
