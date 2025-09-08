@@ -621,7 +621,7 @@ export default function ConfirmacaoPagamento() {
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
         </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.5fr,1fr] lg:gap-8 lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-[1.5fr,1fr] lg:gap-8 lg:items-start">
         {/* Main Form */}
         <div className="space-y-4">
           {/* Raffle Summary & Selected Numbers */}
