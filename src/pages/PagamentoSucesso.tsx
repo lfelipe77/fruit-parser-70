@@ -58,7 +58,7 @@ function toComboString(input: unknown): string {
 export default function PagamentoSucesso() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { ganhaveisId } = useParams();
+  const { id: ganhaveisId } = useParams();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const s = location.state as PaymentSuccessData || {};

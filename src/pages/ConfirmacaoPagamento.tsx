@@ -426,9 +426,18 @@ export default function ConfirmacaoPagamento() {
 
     try {
       setIsProcessing(true);
+      console.log("[payment] Starting payment process...", {
+        user: !!user,
+        formData,
+        raffle,
+        selectedNumbers
+      });
 
       // 1) Validate form first
-      if (!validateForm()) {
+      const formValid = validateForm();
+      console.log("[payment] Form validation result:", formValid, "Errors:", formErrors);
+      
+      if (!formValid) {
         toast({
           title: "Formulário inválido",
           description: "Por favor, corrija os erros no formulário",
@@ -467,8 +476,11 @@ export default function ConfirmacaoPagamento() {
         variant: "default"
       });
 
-      // Navigate to success page
-      navigate(`/ganhavel/${id}/pagamento-sucesso`, {
+      // Navigate to success page - ensure we're using the correct route parameter
+      const successPath = `/ganhavel/${id}/pagamento-sucesso`;
+      console.log('[payment] Navigating to:', successPath);
+      
+      navigate(successPath, {
         replace: true,
         state: {
           raffleId: id,
