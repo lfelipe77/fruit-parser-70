@@ -7,6 +7,7 @@ import { FadeText } from "@/components/FadeText";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { usePublicWinners } from "@/hooks/usePublicWinners";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
 type HomeStats = {
@@ -25,6 +26,7 @@ export default function HeroSection() {
   const { user } = useAuth();
   const [stats, setStats] = useState<HomeStats | null>(null);
   const [statsSource, setStatsSource] = useState<'cache' | 'live' | null>(null);
+  const { data: winners } = usePublicWinners(1000); // Get all winners for count
   const isDebugMode = new URLSearchParams(window.location.search).has('debug');
   
   // Auto-rotating text every 2 minutes
@@ -83,11 +85,12 @@ export default function HeroSection() {
   // For the floating card, show active ganhaveis (not total)
   const activeCount = stats?.active_ganhaveis ?? 128;
   
-  // For premiados, we need to show if there are winners even if prize hasn't been paid yet
-  const hasWinners = paid > 0; // Only show if prize money was actually paid
+  // Count actual winners from the v_public_winners view (like in Resultados/Premiados)
+  const winnersCount = winners?.length ?? 0;
+  const hasWinners = winnersCount > 0;
   
   const displayStats = {
-    prizeValue: hasWinners ? formatCurrency(paid) : "R$ 0",
+    prizeValue: hasWinners ? formatNumber(winnersCount) : "0",
     prizeLabel: "Premiados",
     participants: stats ? formatNumber(stats.total_participants) : "25K+",
     ganhaveis: stats ? formatNumber(stats.active_ganhaveis) : "890+", // Show active, not total
