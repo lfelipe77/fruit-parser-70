@@ -246,12 +246,15 @@ export default function FederalLotteryManager() {
   };
 
   const onManualSave = async (event?: React.FormEvent) => {
+    console.log('[onManualSave] Starting manual save...');
+    
     if (event) {
       event.preventDefault();
     }
     
     try {
       setBusy("manual");
+      console.log('[onManualSave] Set busy state to manual');
       
       // Normalize payload before calling RPC
       const normalizedConcurso = (concurso || '').toString().trim();
@@ -263,27 +266,44 @@ export default function FederalLotteryManager() {
         .filter(Boolean)
         .map(s => s.padStart(2, '0'));
       
+      console.log('[onManualSave] Normalized data:', {
+        normalizedConcurso,
+        isoDate,
+        numbers,
+        originalDrawDate: drawDate,
+        originalNumbers: manualNumbers
+      });
+      
       // Validate inputs
       if (!normalizedConcurso) {
+        console.log('[onManualSave] Validation failed: missing concurso');
         toast({ title: 'Erro', description: 'Concurso é obrigatório', variant: 'destructive' });
         return;
       }
       
       if (!drawDate) {
+        console.log('[onManualSave] Validation failed: missing draw date');
         toast({ title: 'Erro', description: 'Data do sorteio é obrigatória', variant: 'destructive' });
         return;
       }
       
       if (numbers.length !== 5) {
+        console.log('[onManualSave] Validation failed: wrong number count', numbers.length);
         toast({ title: 'Erro', description: 'Informe exatamente 5 dezenas (00–99).', variant: 'destructive' });
         return;
       }
       
-      const { data, error } = await supabase.rpc('admin_federal_set_latest' as any, {
+      const payload = {
         p_concurso: normalizedConcurso,
         p_draw_date: isoDate,
         p_numbers: numbers
-      });
+      };
+      
+      console.log('[onManualSave] Calling RPC with payload:', payload);
+      
+      const { data, error } = await supabase.rpc('admin_federal_set_latest' as any, payload);
+      
+      console.log('[onManualSave] RPC response:', { data, error });
       
       if (error) {
         console.error('[admin_federal_set_latest] error', error);
@@ -292,6 +312,8 @@ export default function FederalLotteryManager() {
       }
       
       const response = data as { ok?: boolean; concurso?: string } | null;
+      console.log('[onManualSave] Success response:', response);
+      
       toast({ title: 'Override salvo com sucesso!', description: `Concurso ${response?.concurso || normalizedConcurso}` });
       
       // Invalidate queries after successful save
@@ -305,7 +327,9 @@ export default function FederalLotteryManager() {
       setDrawDate("");
       setManualNumbers(["", "", "", "", ""]);
       
+      console.log('[onManualSave] Form reset, refreshing data...');
       await fetchData();
+      console.log('[onManualSave] Data refresh complete');
     } catch (e: any) {
       console.error('[onManualSave] catch', e);
       toast({ 
@@ -315,6 +339,7 @@ export default function FederalLotteryManager() {
       });
       // Don't reset form on error
     } finally {
+      console.log('[onManualSave] Finally block, clearing busy state');
       setBusy(null);
     }
   };
