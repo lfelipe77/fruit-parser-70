@@ -582,14 +582,6 @@ export default function FederalLotteryManager() {
             </Button>
 
             <Button
-              onClick={forceSyncAndPick}
-              disabled={!!busy}
-              variant="outline"
-            >
-              {busy === "force" ? "Executando…" : "Forçar Sync + Pick"}
-            </Button>
-
-            <Button
               onClick={dryRunSync}
               disabled={!!busy}
               variant="outline"
