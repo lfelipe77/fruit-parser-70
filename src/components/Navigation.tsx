@@ -325,10 +325,14 @@ export default function Navigation() {
                     <User className="w-4 h-4 text-destructive" />
                   </div>
                 ) : (
-                  <Link to="/dashboard">
-                    <Avatar className="w-8 h-8">
+                  <Link 
+                    to="/dashboard" 
+                    className="inline-block hover:opacity-80 transition-opacity cursor-pointer"
+                    data-testid="avatar-link"
+                  >
+                    <Avatar className="w-8 h-8 cursor-pointer">
                       <AvatarImage src={getAvatarSrc(profile, user?.id)} data-testid="profile-avatar" />
-                      <AvatarFallback>
+                      <AvatarFallback className="cursor-pointer">
                         {user?.email?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
