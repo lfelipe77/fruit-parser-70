@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type PublicWinner = {
@@ -17,28 +17,19 @@ export type PublicWinner = {
 };
 
 export function usePublicWinners(limit = 50) {
-  const [data, setData] = useState<PublicWinner[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
+  return useQuery({
+    queryKey: ['v_public_winners', limit],
+    queryFn: async (): Promise<PublicWinner[]> => {
       const { data, error } = await (supabase as any)
         .from('v_public_winners')
         .select('*')
         .order('draw_date', { ascending: false, nullsFirst: false })
         .order('logged_at', { ascending: false })
         .limit(limit);
-      if (!cancelled) {
-        if (error) setError(error.message);
-        else setData(data as any);
-        setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [limit]);
-
-  return { data, error, loading };
+      
+      if (error) throw error;
+      return (data as PublicWinner[]) ?? [];
+    },
+    staleTime: 15_000,
+  });
 }
