@@ -46,6 +46,10 @@ export default function DiscoverRaffles() {
       setCategories(mapped);
     }
     loadCategories();
+
+    // Refresh categories periodically to keep counts updated
+    const categoryInterval = setInterval(loadCategories, 120000); // 2 minutes
+    return () => clearInterval(categoryInterval);
   }, []);
 
   // Load raffles
@@ -152,7 +156,8 @@ export default function DiscoverRaffles() {
     setCurrentPage(0);
   };
 
-  const handleSearch = () => {
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setCurrentPage(0);
   };
 
@@ -175,21 +180,22 @@ export default function DiscoverRaffles() {
             </p>
             
             {/* Search Bar */}
-            <div className="flex gap-4 max-w-2xl mx-auto">
+            <form onSubmit={handleSearch} className="flex gap-4 max-w-2xl mx-auto">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Pesquisar ganhaveis..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   className="pl-10 h-12"
                 />
               </div>
-              <Button size="lg" className="h-12 px-8" onClick={handleSearch}>
+              <Button type="submit" size="lg" className="h-12 px-8">
                 <Search className="w-4 h-4 mr-2" />
                 Buscar
               </Button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
