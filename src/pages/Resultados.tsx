@@ -60,28 +60,31 @@ interface AlmostCompleteRaffle extends CompleteRaffle {
 
 
 export default function Resultados() {
-  // Latest federal store data with refetch options
+  // Latest federal store data - optimized
   const { data: latestFederal } = useQuery({
     queryKey: ['lottery_latest_federal_store'],
     queryFn: async () => {
+      console.log('[Resultados] Fetching latest federal data...');
       const { data } = await (supabase as any)
         .from("lottery_latest_federal_store")
         .select("concurso_number, draw_date")
         .eq("game_slug", "federal")
         .maybeSingle();
+      console.log('[Resultados] Got federal data:', data);
       return data;
     },
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    staleTime: 60_000, // Cache for 1 minute
+    gcTime: 120_000,
   });
 
   // Complete raffles data - using new hook that excludes raffles with winners
   const { data: completeRaffles = [], isLoading: completeLoading, refetch: refetchComplete } = useCompletedUnpickedRaffles();
 
-  // Almost complete raffles data
+  // Almost complete raffles data - with better performance
   const { data: almostCompleteRaffles, isLoading: almostLoading, refetch: refetchAlmost } = useQuery({
     queryKey: ['almost_complete_raffles'],
     queryFn: async () => {
+      console.log('[Resultados] Fetching almost complete raffles...');
       const { data, error } = await (supabase as any)
         .from('raffles_public_money_ext')
         .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price')
@@ -90,11 +93,15 @@ export default function Resultados() {
         .lt('progress_pct_money', 100)
         .order('progress_pct_money', { ascending: false })
         .limit(10);
-      if (error) throw error;
+      if (error) {
+        console.error('[Resultados] Almost complete raffles error:', error);
+        throw error;
+      }
+      console.log('[Resultados] Got', data?.length || 0, 'almost complete raffles');
       return data || [];
     },
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    staleTime: 30_000, // Increase cache time to reduce requests
+    gcTime: 60_000,
   });
 
   const latestConcurso = latestFederal?.concurso_number ?? null;

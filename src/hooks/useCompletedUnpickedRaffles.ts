@@ -17,6 +17,7 @@ export function useCompletedUnpickedRaffles() {
   return useQuery({
     queryKey: ['raffles', 'completed-unpicked'],
     queryFn: async (): Promise<CompletedRaffle[]> => {
+      console.log('[useCompletedUnpickedRaffles] Starting query...');
       const { data, error } = await supabase
         .from('raffles')
         .select([
@@ -27,9 +28,14 @@ export function useCompletedUnpickedRaffles() {
         .in('status', ['funded','drawing'])
         .is('raffle_winners.raffle_id', null)
         .order('updated_at', { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error('[useCompletedUnpickedRaffles] Error:', error);
+        throw error;
+      }
+      console.log('[useCompletedUnpickedRaffles] Got', data?.length || 0, 'completed unpicked raffles');
       return (data as unknown as CompletedRaffle[]) ?? [];
     },
-    staleTime: 15_000,
+    staleTime: 30_000, // Increase cache time to reduce requests
+    gcTime: 60_000,
   });
 }
