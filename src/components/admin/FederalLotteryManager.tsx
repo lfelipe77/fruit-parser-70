@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Calendar, Hash, Clock, Database, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
@@ -35,7 +36,8 @@ export default function FederalLotteryManager() {
   const [data, setData] = useState<FederalStoreData | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [picking, setPicking] = useState(false);
+  const { toast: toastHook } = useToast();
   const queryClient = useQueryClient();
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const syncingRef = useRef(false);
@@ -100,7 +102,7 @@ export default function FederalLotteryManager() {
       const payload = data ?? {};
       if (payload.ok === false) throw new Error(payload.error || 'Sync failed');
 
-      toast({ 
+      toastHook({ 
         title: 'Sync OK', 
         description: `Concurso ${payload.concurso_number || 'N/A'}` 
       });
@@ -119,14 +121,14 @@ export default function FederalLotteryManager() {
         const payload = await res.json().catch(() => ({ ok: false, error: 'Invalid JSON' }));
         if (!payload.ok) throw new Error(payload.error || 'Sync failed');
 
-        toast({ 
+        toastHook({ 
           title: 'Sync OK', 
           description: `Concurso ${payload.concurso_number || 'N/A'}` 
         });
         await fetchData();
 
       } catch (e2: any) {
-        toast({ 
+        toastHook({ 
           title: 'Sync failed', 
           description: e2?.message || String(e2), 
           variant: 'destructive' 
@@ -142,62 +144,41 @@ export default function FederalLotteryManager() {
 
   }, []);
 
-  const pickWinnerNow = async () => {
+  async function onPickNow() {
     try {
-      setBusy("pick");
+      setPicking(true);
       console.log('[PickNow] calling admin_federal_pick_now');
-
-      const { data, error } = await supabase.rpc('admin_federal_pick_now' as any);
-
+      const { data, error } = await supabase.rpc('admin_federal_pick_now');
       if (error) {
         console.error('[PickNow] RPC error', error);
-        toast({ 
-          title: 'Erro', 
-          description: error.message ?? 'Falha ao processar ganhadores.', 
-          variant: 'destructive' 
-        });
+        toast.error(error.message ?? 'Falha ao processar ganhadores.');
         return;
       }
-
-      if (!data?.ok) {
-        console.warn('[PickNow] RPC not ok', data);
-        toast({ 
-          title: 'Erro', 
-          description: data?.error ?? 'Pick falhou.', 
-          variant: 'destructive' 
-        });
+      if (!(data as any)?.ok) {
+        console.warn('[PickNow] not ok', data);
+        toast.error((data as any)?.error ?? 'Pick falhou');
         return;
       }
-
-      const picked = Number(data?.picked ?? 0);
+      const picked = Number((data as any)?.picked ?? 0);
       if (picked > 0) {
-        toast({ title: 'Sucesso!', description: `Ganhadores processados: ${picked}` });
+        toast.success(`Ganhadores processados: ${picked}`, {
+          description: `Concurso ${(data as any).concurso} — ${(data as any).draw_date}`,
+        });
       } else {
-        toast({ title: 'Nenhum sorteio elegível', description: 'Sem matches ou já premiados.' });
+        toast('Nenhum elegível agora', { description: 'Sem novos ganhadores.' });
       }
-
-      // Make sure "Completas" and related views refresh
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['raffles'] }),
-        queryClient.invalidateQueries({ queryKey: ['raffles', 'completed-unpicked'] }),
         queryClient.invalidateQueries({ queryKey: ['raffle_winners'] }),
-        queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] }),
-        queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] }),
-        queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] }),
+        queryClient.invalidateQueries({ queryKey: ['raffles'] }),
+        queryClient.invalidateQueries({ queryKey: ['raffles','completed-unpicked'] }),
       ]);
-      
-      await fetchData();
     } catch (e: any) {
       console.error('[PickNow] exception', e);
-      toast({ 
-        title: 'Erro', 
-        description: e?.message ?? 'Erro inesperado no Pick.', 
-        variant: 'destructive' 
-      });
+      toast.error(e?.message ?? 'Erro inesperado');
     } finally {
-      setBusy(null);
+      setPicking(false);
     }
-  };
+  }
 
   // Force: call Edge Function directly and then pick
   const forceSyncAndPick = async () => {
@@ -205,7 +186,7 @@ export default function FederalLotteryManager() {
       setBusy("force");
       
       // Step 1: Force sync latest lottery numbers
-      toast({ title: 'Iniciando sync forçado...', description: 'Buscando últimos resultados' });
+      toastHook({ title: 'Iniciando sync forçado...', description: 'Buscando últimos resultados' });
       
       const { data: syncResult, error } = await supabase.functions.invoke('federal-sync', {
         body: { auto_pick: '1', debug: '1' }
@@ -229,7 +210,7 @@ export default function FederalLotteryManager() {
       }
       
       if (!completedRaffles || completedRaffles.length === 0) {
-        toast({ 
+        toastHook({ 
           title: 'Aviso', 
           description: 'Números atualizados, mas não há rifas concluídas para sortear vencedores.',
           variant: 'default'
@@ -238,7 +219,7 @@ export default function FederalLotteryManager() {
       }
       
       // Step 4: Run winner picking algorithm
-      toast({ title: 'Calculando vencedores...', description: `${completedRaffles.length} rifas para processar` });
+      toastHook({ title: 'Calculando vencedores...', description: `${completedRaffles.length} rifas para processar` });
       
       const { data: pickResult, error: pickErr } = await supabase.rpc('admin_federal_pick_now' as any);
       
@@ -247,7 +228,7 @@ export default function FederalLotteryManager() {
       }
       
       // Step 5: Success - invalidate caches and refresh
-      toast({ 
+      toastHook({ 
         title: '✅ Sync + Pick concluídos!', 
         description: `Resultados: ${syncResult?.concurso || 'N/A'} | Vencedores calculados`
       });
@@ -259,7 +240,7 @@ export default function FederalLotteryManager() {
       
     } catch (e: any) {
       console.error('Force sync failed:', e);
-      toast({ 
+      toastHook({ 
         title: 'Erro no processo', 
         description: e?.message || String(e), 
         variant: 'destructive' 
@@ -301,19 +282,19 @@ export default function FederalLotteryManager() {
       // Validate inputs
       if (!normalizedConcurso) {
         console.log('[onManualSave] Validation failed: missing concurso');
-        toast({ title: 'Erro', description: 'Concurso é obrigatório', variant: 'destructive' });
+        toastHook({ title: 'Erro', description: 'Concurso é obrigatório', variant: 'destructive' });
         return;
       }
       
       if (!drawDate) {
         console.log('[onManualSave] Validation failed: missing draw date');
-        toast({ title: 'Erro', description: 'Data do sorteio é obrigatória', variant: 'destructive' });
+        toastHook({ title: 'Erro', description: 'Data do sorteio é obrigatória', variant: 'destructive' });
         return;
       }
       
       if (numbers.length !== 5) {
         console.log('[onManualSave] Validation failed: wrong number count', numbers.length);
-        toast({ title: 'Erro', description: 'Informe exatamente 5 dezenas (00–99).', variant: 'destructive' });
+        toastHook({ title: 'Erro', description: 'Informe exatamente 5 dezenas (00–99).', variant: 'destructive' });
         return;
       }
       
@@ -331,14 +312,14 @@ export default function FederalLotteryManager() {
       
       if (error) {
         console.error('[admin_federal_set_latest] error', error);
-        toast({ title: 'Erro', description: error.message || 'Falha ao salvar override.', variant: 'destructive' });
+        toastHook({ title: 'Erro', description: error.message || 'Falha ao salvar override.', variant: 'destructive' });
         return; // Don't reset form on error
       }
       
       const response = data as { ok?: boolean; concurso?: string } | null;
       console.log('[onManualSave] Success response:', response);
       
-      toast({ title: 'Override salvo com sucesso!', description: `Concurso ${response?.concurso || normalizedConcurso}` });
+      toastHook({ title: 'Override salvo com sucesso!', description: `Concurso ${response?.concurso || normalizedConcurso}` });
       
       // Invalidate queries after successful save
       queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
@@ -356,7 +337,7 @@ export default function FederalLotteryManager() {
       console.log('[onManualSave] Data refresh complete');
     } catch (e: any) {
       console.error('[onManualSave] catch', e);
-      toast({ 
+      toastHook({ 
         title: 'Erro', 
         description: e?.message || String(e), 
         variant: 'destructive' 
@@ -432,7 +413,7 @@ export default function FederalLotteryManager() {
   const dryRunSync = async () => {
     try {
       setBusy("dry-run");
-      toast({ title: 'Dry-run iniciado...', description: 'Testando sync sem writes' });
+      toastHook({ title: 'Dry-run iniciado...', description: 'Testando sync sem writes' });
 
       let response: Response;
       let result: any;
@@ -448,7 +429,7 @@ export default function FederalLotteryManager() {
       } catch (invokeError) {
         // Fallback to direct fetch
         console.warn('invoke() failed, trying direct fetch:', invokeError);
-        toast({ 
+        toastHook({ 
           title: 'Fallback ativo', 
           description: 'invoke() falhou, tentando URL direta...' 
         });
@@ -474,14 +455,14 @@ export default function FederalLotteryManager() {
       setDryRunResult(result);
       setDryRunModalOpen(true);
       
-      toast({ 
+      toastHook({ 
         title: 'Dry-run concluído', 
         description: result.ok ? 'Dados obtidos com sucesso' : 'Falha na obtenção' 
       });
       
     } catch (e: any) {
       console.error('Dry-run failed:', e);
-      toast({ 
+      toastHook({ 
         title: 'Dry-run falhou', 
         description: e?.message || String(e), 
         variant: 'destructive' 
@@ -560,11 +541,11 @@ export default function FederalLotteryManager() {
             </Button>
             
             <Button 
-              onClick={pickWinnerNow} 
-              disabled={!!busy}
+              onClick={onPickNow} 
+              disabled={picking}
               variant="secondary"
             >
-              {busy === "pick" ? "Calculando…" : "Pick agora (Federal)"}
+              {picking ? "Processando…" : "Pick agora (Federal)"}
             </Button>
 
             <Button

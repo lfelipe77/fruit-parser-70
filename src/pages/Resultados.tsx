@@ -289,11 +289,11 @@ export default function Resultados() {
                      console.debug('[Resultados/Completas] nextDraw=', nextFederalDrawDate().toISOString());
                    }
                    
-                   return (
-                   <Card key={draw.id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <span className="truncate text-base font-semibold">{String(draw.title ?? '')}</span>
+                    return (
+                    <Card key={(draw as any).id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
+                     <CardHeader className="pb-3">
+                       <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                         <span className="truncate text-base font-semibold">{String((draw as any).title ?? '')}</span>
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 self-start sm:self-center">
                           100% Completa
                         </Badge>
@@ -313,12 +313,12 @@ export default function Resultados() {
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Valor Total:</span>
                         <span className="font-bold text-lg text-primary">
-                          {formatCurrency(Number(draw.goal_amount ?? 0))}
+                          {formatCurrency(Number((draw as any).goal_amount ?? 0))}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Participantes:</span>
-                        <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
+                        <span className="font-semibold">{Number((draw as any).participants_count ?? 0)}</span>
                       </div>
                       <div className="w-full bg-green-200 dark:bg-green-900/30 rounded-full h-2">
                         <div className="bg-green-500 h-2 rounded-full w-full" />
@@ -326,7 +326,7 @@ export default function Resultados() {
                       <div className="text-center text-sm text-green-700 dark:text-green-400 font-medium">
                         Meta atingida - aguardando sorteio!
                       </div>
-                      <Link to={`/ganhavel/${draw.id}`} className="block">
+                       <Link to={`/ganhavel/${(draw as any).id}`} className="block">
                         <Button variant="outline" className="w-full text-sm">
                           <ExternalLink className="w-4 h-4 mr-2" />
                           Ver Detalhes
