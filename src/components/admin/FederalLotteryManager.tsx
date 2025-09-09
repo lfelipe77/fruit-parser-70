@@ -168,6 +168,8 @@ export default function FederalLotteryManager() {
         toast('Nenhum elegível agora', { description: 'Sem novos ganhadores.' });
       }
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['winners'] }),
+        queryClient.invalidateQueries({ queryKey: ['winners','recent'] }),
         queryClient.invalidateQueries({ queryKey: ['raffle_winners'] }),
         queryClient.invalidateQueries({ queryKey: ['raffles'] }),
         queryClient.invalidateQueries({ queryKey: ['raffles','completed-unpicked'] }),
@@ -233,6 +235,9 @@ export default function FederalLotteryManager() {
         description: `Resultados: ${syncResult?.concurso || 'N/A'} | Vencedores calculados`
       });
       
+      queryClient.invalidateQueries({ queryKey: ['winners'] });
+      queryClient.invalidateQueries({ queryKey: ['winners','recent'] });
+      queryClient.invalidateQueries({ queryKey: ['raffle_winners'] });
       queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
       queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
       queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
