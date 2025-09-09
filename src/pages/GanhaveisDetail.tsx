@@ -14,6 +14,8 @@ import { toRaffleView, type MoneyRow, type RaffleExtras } from "@/adapters/raffl
 import { toConfirm } from "@/lib/nav";
 import { computeCheckout } from "@/utils/money";
 import { RaffleCompletionTrigger } from "@/components/RaffleCompletionTrigger";
+import SEOHead from "@/components/SEOHead";
+import { formatBRL as formatBRLUtils } from "@/utils/money";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -51,6 +53,30 @@ const FALLBACK_RULES = `
 <li>Processo rastreável, seguro e auditável</li>
 </ul>
 `;
+
+function buildShareMeta(raffle: any, origin: string) {
+  const price = raffle?.ticket_price ?? raffle?.ticketPrice;
+  const goal  = raffle?.goal_amount ?? raffle?.goal;
+  const title = raffle?.title ?? "Ganhavel";
+  const draw  = raffle?.draw_label ?? raffle?.drawLabel ?? "Sorteio pela Loteria Federal";
+  const url   = `${origin}/#/ganhavel/${raffle.id}`;
+  const img   = raffle?.image_url ?? raffle?.img ?? "/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png";
+
+  const description = [
+    `Participe do ${title}!`,
+    price ? `Bilhetes a ${formatBRLUtils(price)}.` : null,
+    draw,
+    goal ? `Meta: ${formatBRLUtils(goal)}.` : null,
+  ].filter(Boolean).join(" ");
+
+  // Texto curtinho e inspirador (para copiar/WhatsApp)
+  const shareText = `${title} • ${draw}\n` +
+    (price ? `Bilhetes: ${formatBRLUtils(price)}\n` : "") +
+    `Transparência e sorte oficial.\n` +
+    `Participar: ${url}`;
+
+  return { title: `${title} - Ganhavel`, description, url, img, shareText };
+}
 
 
 export default function GanhaveisDetail() {
@@ -176,6 +202,10 @@ export default function GanhaveisDetail() {
   const qtyAdjusted = adjustedQty !== qty;
   const drawLabel = raffle?.drawDate ? formatDateBR(raffle.drawDate) : "—";
   const isActive = raffle?.status === "active";
+  
+  // SEO Meta data
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com";
+  const meta = raffle ? buildShareMeta(raffle, origin) : null;
 
   // ---- Render
   if (loading) return <div className="p-6">Carregando…</div>;
@@ -185,6 +215,15 @@ export default function GanhaveisDetail() {
 
   return (
     <>
+      {meta && (
+        <SEOHead
+          title={meta.title}
+          description={meta.description}
+          canonical={meta.url}
+          ogImage={meta.img}
+          ogType="product"
+        />
+      )}
       <Navigation />
       <div className="container mx-auto p-4 space-y-4">
         {/* Back button */}
