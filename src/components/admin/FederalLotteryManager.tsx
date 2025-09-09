@@ -142,10 +142,57 @@ export default function FederalLotteryManager() {
 
   }, []);
 
-  const pickWinnerNow = async () => {
+  // Pick all eligible raffles for federal lottery
+  const pickAllFederalRaffles = async () => {
     try {
-      setBusy("pick");
-      const { data, error } = await supabase.rpc('admin_federal_pick_now' as any);
+      setBusy("pick-all");
+      toast({ title: 'Iniciando Pick Loteria (All)...', description: 'Processando todas as rifas elegíveis' });
+      
+      const { data, error } = await supabase.rpc('admin_federal_pick_all' as any);
+      
+      if (error) {
+        toast({ 
+          title: 'Erro ao escolher vencedores', 
+          description: error.message, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      // Count picked vs skipped from response
+      const results = Array.isArray(data) ? data : [];
+      const picked = results.filter(r => r.ticket_id !== null).length;
+      const skipped = results.filter(r => r.note && r.note.includes('skipped')).length;
+
+      toast({ 
+        title: 'Pick Loteria concluído', 
+        description: `${picked} vencedores escolhidos, ${skipped} rifas puladas (sem candidatos)` 
+      });
+      
+      // Refresh lists
+      invalidateQueries();
+      await fetchData();
+    } catch (e: any) {
+      toast({ 
+        title: 'Erro ao escolher vencedores', 
+        description: e?.message || String(e), 
+        variant: 'destructive' 
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // Pick winner for a single raffle (requires raffle_id)
+  const pickSingleRaffle = async (raffleId: string) => {
+    try {
+      setBusy("pick-single");
+      
+      // Step 1: Backfill tickets if needed
+      await supabase.rpc('admin_tickets_backfill_raffle' as any, { p_raffle_id: raffleId });
+      
+      // Step 2: Pick winner
+      const { data, error } = await supabase.rpc('admin_federal_pick_now' as any, { p_raffle_id: raffleId });
       
       if (error) {
         toast({ 
@@ -158,11 +205,8 @@ export default function FederalLotteryManager() {
 
       toast({ title: 'Vencedor calculado com sucesso' });
       
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
-      queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
-      queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
-      
+      // Refresh lists
+      invalidateQueries();
       await fetchData();
     } catch (e: any) {
       toast({ 
@@ -175,7 +219,18 @@ export default function FederalLotteryManager() {
     }
   };
 
-  // Force: call Edge Function directly and then pick
+  // Centralized query invalidation
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
+    queryClient.invalidateQueries({ queryKey: ['v_raffle_winners_public'] });
+    queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
+    queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
+    queryClient.invalidateQueries({ queryKey: ['raffles'] });
+    queryClient.invalidateQueries({ queryKey: ['eligible_completed_raffles'] });
+    queryClient.invalidateQueries({ queryKey: ['raffles_resultados_completas'] });
+  };
+
+  // Force: call Edge Function directly and then pick all
   const forceSyncAndPick = async () => {
     try {
       setBusy("force");
@@ -194,44 +249,27 @@ export default function FederalLotteryManager() {
       // Step 2: Refresh our local data
       await fetchData();
       
-      // Step 3: Check if we have completed raffles to pick from
-      const { data: completedRaffles, error: raffleErr } = await supabase
-        .from('raffles')
-        .select('id, title, status')
-        .eq('status', 'completed');
-        
-      if (raffleErr) {
-        throw new Error(`Failed to check raffles: ${raffleErr.message}`);
-      }
+      // Step 3: Run pick all algorithm
+      toast({ title: 'Calculando vencedores...', description: 'Processando todas as rifas elegíveis' });
       
-      if (!completedRaffles || completedRaffles.length === 0) {
-        toast({ 
-          title: 'Aviso', 
-          description: 'Números atualizados, mas não há rifas concluídas para sortear vencedores.',
-          variant: 'default'
-        });
-        return;
-      }
-      
-      // Step 4: Run winner picking algorithm
-      toast({ title: 'Calculando vencedores...', description: `${completedRaffles.length} rifas para processar` });
-      
-      const { data: pickResult, error: pickErr } = await supabase.rpc('admin_federal_pick_now' as any);
+      const { data: pickResult, error: pickErr } = await supabase.rpc('admin_federal_pick_all' as any);
       
       if (pickErr) {
         throw new Error(`Pick failed: ${pickErr.message}`);
       }
       
-      // Step 5: Success - invalidate caches and refresh
+      // Count results
+      const results = Array.isArray(pickResult) ? pickResult : [];
+      const picked = results.filter(r => r.ticket_id !== null).length;
+      const skipped = results.filter(r => r.note && r.note.includes('skipped')).length;
+      
+      // Step 4: Success - invalidate caches and refresh
       toast({ 
         title: '✅ Sync + Pick concluídos!', 
-        description: `Resultados: ${syncResult?.concurso || 'N/A'} | Vencedores calculados`
+        description: `${picked} vencedores escolhidos, ${skipped} rifas puladas. Concurso: ${syncResult?.concurso || 'N/A'}`
       });
       
-      queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
-      queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
-      queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
-      queryClient.invalidateQueries({ queryKey: ['raffles'] });
+      invalidateQueries();
       
     } catch (e: any) {
       console.error('Force sync failed:', e);
@@ -314,13 +352,13 @@ export default function FederalLotteryManager() {
       const response = data as { ok?: boolean; concurso?: string } | null;
       console.log('[onManualSave] Success response:', response);
       
-      toast({ title: 'Override salvo com sucesso!', description: `Concurso ${response?.concurso || normalizedConcurso}` });
+      toast({ 
+        title: 'Federal result updated', 
+        description: `Concurso ${response?.concurso || normalizedConcurso} - Pick buttons enabled` 
+      });
       
       // Invalidate queries after successful save
-      queryClient.invalidateQueries({ queryKey: ['lottery_latest_federal_store'] });
-      queryClient.invalidateQueries({ queryKey: ['v_federal_winners'] });
-      queryClient.invalidateQueries({ queryKey: ['admin_latest_federal_status'] });
-      queryClient.invalidateQueries({ queryKey: ['completed_unpicked'] });
+      invalidateQueries();
       
       // Only reset form on success
       setConcurso("");
@@ -536,11 +574,11 @@ export default function FederalLotteryManager() {
             </Button>
             
             <Button 
-              onClick={pickWinnerNow} 
+              onClick={pickAllFederalRaffles} 
               disabled={!!busy}
               variant="secondary"
             >
-              {busy === "pick" ? "Calculando…" : "Pick agora (Federal)"}
+              {busy === "pick-all" ? "Calculando…" : "Pick Loteria (All)"}
             </Button>
 
             <Button
