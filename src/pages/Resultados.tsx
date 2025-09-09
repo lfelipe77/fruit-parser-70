@@ -76,7 +76,7 @@ export default function Resultados() {
   });
 
   // Complete raffles data - using new hook that excludes raffles with winners
-  const { data: completeRaffles, isLoading: completeLoading, refetch: refetchComplete } = useCompletedUnpickedRaffles();
+  const { data: completeRaffles = [], isLoading: completeLoading, refetch: refetchComplete } = useCompletedUnpickedRaffles();
 
   // Almost complete raffles data
   const { data: almostCompleteRaffles, isLoading: almostLoading, refetch: refetchAlmost } = useQuery({
@@ -114,7 +114,7 @@ export default function Resultados() {
   }, [refetchComplete, refetchAlmost]);
 
 
-  if (loading) {
+  if (loading || completeLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -276,14 +276,14 @@ export default function Resultados() {
               </div>
               
               <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                {completeRaffles.length === 0 ? (
+                {!completeRaffles || completeRaffles.length === 0 ? (
                   <Card className="p-8 text-center lg:col-span-2 xl:col-span-3">
                     <div className="text-muted-foreground">
                       <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum ganhavel completo aguardando sorteio.</p>
                     </div>
                   </Card>
-                 ) : completeRaffles?.map((draw: CompletedRaffle) => {
+                 ) : completeRaffles.map((draw: CompletedRaffle) => {
                    // Dev-only safety logs
                    if (import.meta.env.DEV) {
                      console.debug('[Resultados/Completas] nextDraw=', nextFederalDrawDate().toISOString());
