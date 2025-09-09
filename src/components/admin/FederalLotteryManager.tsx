@@ -168,6 +168,7 @@ export default function FederalLotteryManager() {
         toast('Nenhum elegível agora', { description: 'Sem novos ganhadores.' });
       }
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['public_winners'] }),
         queryClient.invalidateQueries({ queryKey: ['v_public_winners'] }),
         queryClient.invalidateQueries({ queryKey: ['winners'] }),
         queryClient.invalidateQueries({ queryKey: ['winners','recent'] }),
@@ -236,6 +237,7 @@ export default function FederalLotteryManager() {
         description: `Resultados: ${syncResult?.concurso || 'N/A'} | Vencedores calculados`
       });
       
+      queryClient.invalidateQueries({ queryKey: ['public_winners'] });
       queryClient.invalidateQueries({ queryKey: ['v_public_winners'] });
       queryClient.invalidateQueries({ queryKey: ['winners'] });
       queryClient.invalidateQueries({ queryKey: ['winners','recent'] });
