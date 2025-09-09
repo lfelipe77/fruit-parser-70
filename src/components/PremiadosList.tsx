@@ -9,7 +9,7 @@ function brDate(d?: string | null) {
 }
 
 export default function PremiadosList() {
-  const { data, error, isLoading: loading } = usePublicWinners(50);
+  const { data, error, loading } = usePublicWinners(50);
 
   if (loading) {
     return (
@@ -21,7 +21,7 @@ export default function PremiadosList() {
   if (error) {
     return (
       <div className="p-6 text-sm text-destructive">
-        Erro ao carregar vencedores: {error instanceof Error ? error.message : String(error)}
+        Erro ao carregar vencedores: {error}
       </div>
     );
   }

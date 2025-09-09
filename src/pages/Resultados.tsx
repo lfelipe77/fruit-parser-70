@@ -13,7 +13,7 @@ import LotteryFederalCard from "@/components/LotteryFederalCard";
 import WinnersList from "@/components/WinnersList";
 import PremiadosList from "@/components/PremiadosList";
 import { nextFederalDrawDate, dateBR } from "@/utils/nextFederalDraw";
-import { useCompletedUnpickedRaffles, type CompletedRaffle } from "@/hooks/useCompletedUnpickedRaffles";
+import { useCompletedUnpickedRaffles } from "@/hooks/useCompletedUnpickedRaffles";
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import React from 'react';
@@ -60,31 +60,28 @@ interface AlmostCompleteRaffle extends CompleteRaffle {
 
 
 export default function Resultados() {
-  // Latest federal store data - optimized
+  // Latest federal store data with refetch options
   const { data: latestFederal } = useQuery({
     queryKey: ['lottery_latest_federal_store'],
     queryFn: async () => {
-      console.log('[Resultados] Fetching latest federal data...');
       const { data } = await (supabase as any)
         .from("lottery_latest_federal_store")
         .select("concurso_number, draw_date")
         .eq("game_slug", "federal")
         .maybeSingle();
-      console.log('[Resultados] Got federal data:', data);
       return data;
     },
-    staleTime: 60_000, // Cache for 1 minute
-    gcTime: 120_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   });
 
   // Complete raffles data - using new hook that excludes raffles with winners
-  const { data: completeRaffles = [], isLoading: completeLoading, refetch: refetchComplete } = useCompletedUnpickedRaffles();
+  const { data: completeRaffles, isLoading: completeLoading, refetch: refetchComplete } = useCompletedUnpickedRaffles();
 
-  // Almost complete raffles data - with better performance
+  // Almost complete raffles data
   const { data: almostCompleteRaffles, isLoading: almostLoading, refetch: refetchAlmost } = useQuery({
     queryKey: ['almost_complete_raffles'],
     queryFn: async () => {
-      console.log('[Resultados] Fetching almost complete raffles...');
       const { data, error } = await (supabase as any)
         .from('raffles_public_money_ext')
         .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price')
@@ -93,15 +90,11 @@ export default function Resultados() {
         .lt('progress_pct_money', 100)
         .order('progress_pct_money', { ascending: false })
         .limit(10);
-      if (error) {
-        console.error('[Resultados] Almost complete raffles error:', error);
-        throw error;
-      }
-      console.log('[Resultados] Got', data?.length || 0, 'almost complete raffles');
+      if (error) throw error;
       return data || [];
     },
-    staleTime: 30_000, // Increase cache time to reduce requests
-    gcTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   });
 
   const latestConcurso = latestFederal?.concurso_number ?? null;
@@ -121,7 +114,7 @@ export default function Resultados() {
   }, [refetchComplete, refetchAlmost]);
 
 
-  if (loading || completeLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -283,68 +276,66 @@ export default function Resultados() {
               </div>
               
               <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                {!completeRaffles || completeRaffles.length === 0 ? (
+                {completeRaffles.length === 0 ? (
                   <Card className="p-8 text-center lg:col-span-2 xl:col-span-3">
                     <div className="text-muted-foreground">
                       <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum ganhavel completo aguardando sorteio.</p>
                     </div>
                   </Card>
-                 ) : completeRaffles.map((draw: CompletedRaffle) => {
+                 ) : completeRaffles.map((draw) => {
                    // Dev-only safety logs
                    if (import.meta.env.DEV) {
                      console.debug('[Resultados/Completas] nextDraw=', nextFederalDrawDate().toISOString());
-                   }
-                   
-                   // Ensure we have valid data
-                   if (!draw || !draw.id) {
-                     console.warn('[Resultados] Invalid draw data:', draw);
-                     return null;
                    }
                    
                    return (
                    <Card key={draw.id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <span className="truncate text-base font-semibold">{draw.title || 'Ganhável sem título'}</span>
-                       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 self-start sm:self-center">
-                         100% Completa
-                       </Badge>
-                     </CardTitle>
-                   </CardHeader>
-                    <CardContent className="space-y-3">
+                        <span className="truncate text-base font-semibold">{String(draw.title ?? '')}</span>
+                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 self-start sm:self-center">
+                          100% Completa
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                     <CardContent className="space-y-3">
+                       <div className="flex justify-between items-center text-sm">
+                         <span className="text-muted-foreground">Próximo Sorteio:</span>
+                         <span className="font-medium">
+                           {dateBR(nextFederalDrawDate())}
+                         </span>
+                       </div>
+                       <div className="flex justify-between items-center text-sm">
+                         <span className="text-muted-foreground">Horário:</span>
+                         <span className="font-medium">20:00</span>
+                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Próximo Sorteio:</span>
-                        <span className="font-medium">
-                          {dateBR(nextFederalDrawDate())}
+                        <span className="text-muted-foreground">Valor Total:</span>
+                        <span className="font-bold text-lg text-primary">
+                          {formatCurrency(Number(draw.goal_amount ?? 0))}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Horário:</span>
-                        <span className="font-medium">20:00</span>
+                        <span className="text-muted-foreground">Participantes:</span>
+                        <span className="font-semibold">{Number(draw.participants_count ?? 0)}</span>
                       </div>
-                     <div className="flex justify-between items-center text-sm">
-                       <span className="text-muted-foreground">Descrição:</span>
-                       <span className="font-medium text-right">
-                         {draw.description || 'Sem descrição'}
-                       </span>
-                     </div>
-                     <div className="w-full bg-green-200 dark:bg-green-900/30 rounded-full h-2">
-                       <div className="bg-green-500 h-2 rounded-full w-full" />
-                     </div>
-                     <div className="text-center text-sm text-green-700 dark:text-green-400 font-medium">
-                       Meta atingida - aguardando sorteio!
-                     </div>
+                      <div className="w-full bg-green-200 dark:bg-green-900/30 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full w-full" />
+                      </div>
+                      <div className="text-center text-sm text-green-700 dark:text-green-400 font-medium">
+                        Meta atingida - aguardando sorteio!
+                      </div>
                       <Link to={`/ganhavel/${draw.id}`} className="block">
-                       <Button variant="outline" className="w-full text-sm">
-                         <ExternalLink className="w-4 h-4 mr-2" />
-                         Ver Detalhes
-                       </Button>
-                     </Link>
-                    </CardContent>
-                  </Card>
-                  );
-                }).filter(Boolean)}
+                        <Button variant="outline" className="w-full text-sm">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
+                      </Link>
+                     </CardContent>
+                   </Card>
+                   );
+                 })}
               </div>
             </TabsContent>
 
