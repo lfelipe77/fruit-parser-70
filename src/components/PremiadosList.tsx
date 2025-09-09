@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePublicWinners } from '@/hooks/usePublicWinners';
+import { toFiveSingles, formatFiveSingles } from '@/lib/numberFormat';
 
 function brDate(d?: string | null) {
   if (!d) return '';
@@ -41,6 +42,9 @@ export default function PremiadosList() {
         const ticketHref = w.ticket_id ? `/ticket/${w.ticket_id}` : '#';
         const raffleHref = w.raffle_id ? `/ganhavel/${w.raffle_id}` : '#';
 
+        const federalFormatted = formatFiveSingles(toFiveSingles(w.federal_target));
+        const winningFormatted = formatFiveSingles(toFiveSingles(w.winning_ticket));
+
         return (
           <div key={w.winner_id} className="rounded-2xl border border-border p-4 shadow-sm bg-card">
             <div className="flex items-center gap-3">
@@ -60,15 +64,14 @@ export default function PremiadosList() {
             </div>
 
             <div className="mt-3 text-sm">
-              <div><span className="font-medium">Últimas Dezenas (Federal):</span> {w.federal_target}</div>
-              <div><span className="font-medium">Bilhete vencedor:</span> {w.winning_ticket}</div>
+              <div><span className="font-medium">Últimas Dezenas (Federal):</span> {federalFormatted}</div>
+              <div><span className="font-medium">Bilhete vencedor:</span> {winningFormatted}</div>
               <div className="text-xs text-muted-foreground mt-1">
                 Concurso {w.concurso_number ?? '—'} · {brDate(w.draw_date)}
               </div>
             </div>
 
-            <div className="mt-3 flex gap-3">
-              <Link to={raffleHref} className="text-sm underline hover:opacity-80">Ver ganhável</Link>
+            <div className="mt-3 flex justify-end">
               <span className="text-xs rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
                 Verificado
               </span>
