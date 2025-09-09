@@ -13,7 +13,7 @@ import LotteryFederalCard from "@/components/LotteryFederalCard";
 import WinnersList from "@/components/WinnersList";
 import PremiadosList from "@/components/PremiadosList";
 import { nextFederalDrawDate, dateBR } from "@/utils/nextFederalDraw";
-import { useCompletedUnpickedRaffles } from "@/hooks/useCompletedUnpickedRaffles";
+import { useCompletedUnpickedRaffles, type CompletedRaffle } from "@/hooks/useCompletedUnpickedRaffles";
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import React from 'react';
@@ -283,59 +283,61 @@ export default function Resultados() {
                       <p>Nenhum ganhavel completo aguardando sorteio.</p>
                     </div>
                   </Card>
-                 ) : completeRaffles.map((draw) => {
+                 ) : completeRaffles?.map((draw: CompletedRaffle) => {
                    // Dev-only safety logs
                    if (import.meta.env.DEV) {
                      console.debug('[Resultados/Completas] nextDraw=', nextFederalDrawDate().toISOString());
                    }
                    
-                    return (
-                    <Card key={(draw as any).id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
-                     <CardHeader className="pb-3">
-                       <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                         <span className="truncate text-base font-semibold">{String((draw as any).title ?? '')}</span>
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 self-start sm:self-center">
-                          100% Completa
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                     <CardContent className="space-y-3">
-                       <div className="flex justify-between items-center text-sm">
-                         <span className="text-muted-foreground">Próximo Sorteio:</span>
-                         <span className="font-medium">
-                           {dateBR(nextFederalDrawDate())}
-                         </span>
-                       </div>
-                       <div className="flex justify-between items-center text-sm">
-                         <span className="text-muted-foreground">Horário:</span>
-                         <span className="font-medium">20:00</span>
-                       </div>
+                   // Ensure we have valid data
+                   if (!draw || !draw.id) {
+                     console.warn('[Resultados] Invalid draw data:', draw);
+                     return null;
+                   }
+                   
+                   return (
+                   <Card key={draw.id} className="border-green-200 bg-green-50/50 dark:bg-green-950/20 h-fit">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <span className="truncate text-base font-semibold">{draw.title || 'Ganhável sem título'}</span>
+                       <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 self-start sm:self-center">
+                         100% Completa
+                       </Badge>
+                     </CardTitle>
+                   </CardHeader>
+                    <CardContent className="space-y-3">
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Valor Total:</span>
-                        <span className="font-bold text-lg text-primary">
-                          {formatCurrency(Number((draw as any).goal_amount ?? 0))}
+                        <span className="text-muted-foreground">Próximo Sorteio:</span>
+                        <span className="font-medium">
+                          {dateBR(nextFederalDrawDate())}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground">Participantes:</span>
-                        <span className="font-semibold">{Number((draw as any).participants_count ?? 0)}</span>
+                        <span className="text-muted-foreground">Horário:</span>
+                        <span className="font-medium">20:00</span>
                       </div>
-                      <div className="w-full bg-green-200 dark:bg-green-900/30 rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full w-full" />
-                      </div>
-                      <div className="text-center text-sm text-green-700 dark:text-green-400 font-medium">
-                        Meta atingida - aguardando sorteio!
-                      </div>
-                       <Link to={`/ganhavel/${(draw as any).id}`} className="block">
-                        <Button variant="outline" className="w-full text-sm">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Ver Detalhes
-                        </Button>
-                      </Link>
-                     </CardContent>
-                   </Card>
-                   );
-                 })}
+                     <div className="flex justify-between items-center text-sm">
+                       <span className="text-muted-foreground">Descrição:</span>
+                       <span className="font-medium text-right">
+                         {draw.description || 'Sem descrição'}
+                       </span>
+                     </div>
+                     <div className="w-full bg-green-200 dark:bg-green-900/30 rounded-full h-2">
+                       <div className="bg-green-500 h-2 rounded-full w-full" />
+                     </div>
+                     <div className="text-center text-sm text-green-700 dark:text-green-400 font-medium">
+                       Meta atingida - aguardando sorteio!
+                     </div>
+                      <Link to={`/ganhavel/${draw.id}`} className="block">
+                       <Button variant="outline" className="w-full text-sm">
+                         <ExternalLink className="w-4 h-4 mr-2" />
+                         Ver Detalhes
+                       </Button>
+                     </Link>
+                    </CardContent>
+                  </Card>
+                  );
+                }).filter(Boolean)}
               </div>
             </TabsContent>
 
