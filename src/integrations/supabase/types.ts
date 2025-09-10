@@ -78,7 +78,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "action_logs_user_id_fkey"
@@ -102,6 +102,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admin_pick_log: {
+        Row: {
+          action: string
+          candidate_count: number | null
+          created_at: string
+          error_text: string | null
+          federal_concurso_number: string | null
+          federal_draw_date: string | null
+          id: number
+          outcome: string
+          raffle_id: string
+          run_id: string
+          ticket_id: string | null
+          trigger_source: string
+          winner_user_id: string | null
+        }
+        Insert: {
+          action: string
+          candidate_count?: number | null
+          created_at?: string
+          error_text?: string | null
+          federal_concurso_number?: string | null
+          federal_draw_date?: string | null
+          id?: number
+          outcome: string
+          raffle_id: string
+          run_id: string
+          ticket_id?: string | null
+          trigger_source?: string
+          winner_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          candidate_count?: number | null
+          created_at?: string
+          error_text?: string | null
+          federal_concurso_number?: string | null
+          federal_draw_date?: string | null
+          id?: number
+          outcome?: string
+          raffle_id?: string
+          run_id?: string
+          ticket_id?: string | null
+          trigger_source?: string
+          winner_user_id?: string | null
+        }
+        Relationships: []
+      }
+      admin_users_base: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          note?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: []
       }
       asaas_events: {
         Row: {
@@ -758,7 +824,7 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "ganhaveis_creator_id_fkey"
@@ -862,7 +928,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "logs_user_id_fkey"
@@ -917,21 +983,27 @@ export type Database = {
           draw_date: string
           game_slug: string
           numbers: string[]
+          source: string | null
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           concurso_number: string
           draw_date: string
           game_slug?: string
           numbers: string[]
+          source?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           concurso_number?: string
           draw_date?: string
           game_slug?: string
           numbers?: string[]
+          source?: string | null
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -1062,6 +1134,13 @@ export type Database = {
             columns: ["winning_ticket_id"]
             isOneToOne: false
             referencedRelation: "v_draw_pool"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "lottery_results_winning_ticket_id_fkey"
+            columns: ["winning_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
             referencedColumns: ["ticket_id"]
           },
           {
@@ -1264,7 +1343,7 @@ export type Database = {
             columns: ["buyer_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "payments_verified_buyer_user_id_fkey"
@@ -1334,6 +1413,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -1496,6 +1603,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -1900,6 +2035,34 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -1998,6 +2161,34 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -2068,6 +2259,13 @@ export type Database = {
             foreignKeyName: "raffle_winners_ticket_fk"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "v_paid_tickets_with_null_numbers"
             referencedColumns: ["ticket_id"]
           },
@@ -2104,6 +2302,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "v_draw_pool"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
             referencedColumns: ["ticket_id"]
           },
           {
@@ -2346,7 +2551,7 @@ export type Database = {
             columns: ["owner_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "raffles_owner_user_id_fkey"
@@ -2422,6 +2627,13 @@ export type Database = {
             foreignKeyName: "raffles_winner_ticket_id_fkey"
             columns: ["winner_ticket_id"]
             isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_ticket_id_fkey"
+            columns: ["winner_ticket_id"]
+            isOneToOne: false
             referencedRelation: "v_paid_tickets_with_null_numbers"
             referencedColumns: ["ticket_id"]
           },
@@ -2444,7 +2656,7 @@ export type Database = {
             columns: ["winner_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "raffles_winner_user_id_fkey"
@@ -2759,6 +2971,34 @@ export type Database = {
             foreignKeyName: "reservation_links_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -2955,6 +3195,13 @@ export type Database = {
             foreignKeyName: "ticket_picks_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "ticket_picks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "v_paid_tickets_with_null_numbers"
             referencedColumns: ["ticket_id"]
           },
@@ -2981,8 +3228,10 @@ export type Database = {
           ganhavel_id: string | null
           id: string
           is_paid: boolean | null
+          line_no: number | null
           number: number | null
           numbers: Json | null
+          numbers_key: number | null
           payment_session_id: string | null
           payment_status: string | null
           qty: number | null
@@ -3005,8 +3254,10 @@ export type Database = {
           ganhavel_id?: string | null
           id?: string
           is_paid?: boolean | null
+          line_no?: number | null
           number?: number | null
           numbers?: Json | null
+          numbers_key?: number | null
           payment_session_id?: string | null
           payment_status?: string | null
           qty?: number | null
@@ -3029,8 +3280,10 @@ export type Database = {
           ganhavel_id?: string | null
           id?: string
           is_paid?: boolean | null
+          line_no?: number | null
           number?: number | null
           numbers?: Json | null
+          numbers_key?: number | null
           payment_session_id?: string | null
           payment_status?: string | null
           qty?: number | null
@@ -3157,6 +3410,34 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -3256,7 +3537,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tickets_user_id_fkey"
@@ -3605,6 +3886,34 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -3655,7 +3964,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "transactions_user_id_fkey"
@@ -3867,6 +4176,34 @@ export type Database = {
             foreignKeyName: "transactions_raffle_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -3917,7 +4254,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "transactions_raffle_user_id_fkey"
@@ -4063,7 +4400,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "user_roles_user_id_fkey"
@@ -4161,6 +4498,34 @@ export type Database = {
             foreignKeyName: "winners_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -4231,13 +4596,13 @@ export type Database = {
       }
       admin_users: {
         Row: {
-          id: string | null
+          user_id: string | null
         }
         Insert: {
-          id?: string | null
+          user_id?: string | null
         }
         Update: {
-          id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -4476,6 +4841,34 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -4526,7 +4919,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tickets_user_id_fkey"
@@ -4598,6 +4991,13 @@ export type Database = {
             foreignKeyName: "raffles_winner_ticket_id_fkey"
             columns: ["winner_ticket_id"]
             isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_ticket_id_fkey"
+            columns: ["winner_ticket_id"]
+            isOneToOne: false
             referencedRelation: "v_paid_tickets_with_null_numbers"
             referencedColumns: ["ticket_id"]
           },
@@ -4662,6 +5062,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -4786,6 +5214,34 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -4898,6 +5354,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -5022,6 +5506,34 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -5134,6 +5646,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -5258,6 +5798,34 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -5365,7 +5933,7 @@ export type Database = {
             columns: ["buyer_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "payments_verified_buyer_user_id_fkey"
@@ -5435,6 +6003,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -5706,7 +6302,7 @@ export type Database = {
             columns: ["owner_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "raffles_owner_user_id_fkey"
@@ -5734,7 +6330,7 @@ export type Database = {
             columns: ["winner_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "raffles_winner_user_id_fkey"
@@ -6014,7 +6610,7 @@ export type Database = {
             columns: ["owner_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "raffles_owner_user_id_fkey"
@@ -6063,7 +6659,7 @@ export type Database = {
             columns: ["winner_user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "raffles_winner_user_id_fkey"
@@ -6087,6 +6683,32 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      raffles_resultados_completas: {
+        Row: {
+          amount_raised: number | null
+          category_name: string | null
+          category_slug: string | null
+          description: string | null
+          description_excerpt: string | null
+          direct_purchase_link: string | null
+          draw_date: string | null
+          goal_amount: number | null
+          id: string | null
+          image_url: string | null
+          last_paid_at: string | null
+          location_city: string | null
+          location_state: string | null
+          participants_count: number | null
+          progress_pct_money: number | null
+          raffle_id: string | null
+          status: string | null
+          subcategory_name: string | null
+          subcategory_slug: string | null
+          ticket_price: number | null
+          title: string | null
+        }
+        Relationships: []
       }
       reservation_audit_v1: {
         Row: {
@@ -6191,6 +6813,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -6413,6 +7063,34 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -6518,6 +7196,47 @@ export type Database = {
           website_url?: string | null
           whatsapp?: string | null
           youtube?: string | null
+        }
+        Relationships: []
+      }
+      v_admin_flip_candidates: {
+        Row: {
+          amount_raised: number | null
+          goal_amount: number | null
+          id: string | null
+          last_paid_at: string | null
+          progress_pct_money: number | null
+          status: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
+      v_admin_last_caixa: {
+        Row: {
+          concurso_number: string | null
+          draw_date: string | null
+          numbers: string[] | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      v_admin_last_picker_run: {
+        Row: {
+          last_draw_date: string | null
+          last_pick_at: string | null
+          picks_today: number | null
+          provider: string | null
+        }
+        Relationships: []
+      }
+      v_admin_pick_candidates: {
+        Row: {
+          draw_date: string | null
+          id: string | null
+          last_paid_at: string | null
+          progress_pct_money: number | null
+          status: string | null
+          title: string | null
         }
         Relationships: []
       }
@@ -6721,6 +7440,34 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -6771,7 +7518,271 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_follower_stats"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_draw_pool_keys: {
+        Row: {
+          numbers_key: string | null
+          paid_at: string | null
+          raffle_id: string | null
+          ticket_id: string | null
+          transaction_id: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v2"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v3"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v5"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v6"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tickets_transaction"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_paid_flat"
+            referencedColumns: ["src_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_winners"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_winners_core"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_winners_min"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_winners_min_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_eligible_completed_raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v2"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v3"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v5"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "my_tickets_ext_v6"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_paid_flat"
+            referencedColumns: ["src_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tickets_user_id_fkey"
@@ -6965,6 +7976,34 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -7064,7 +8103,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tickets_user_id_fkey"
@@ -7158,6 +8197,34 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -7256,6 +8323,34 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -7326,6 +8421,13 @@ export type Database = {
             foreignKeyName: "raffle_winners_ticket_fk"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "v_paid_tickets_with_null_numbers"
             referencedColumns: ["ticket_id"]
           },
@@ -7362,6 +8464,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "v_draw_pool"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
             referencedColumns: ["ticket_id"]
           },
           {
@@ -7542,6 +8651,34 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -7634,6 +8771,34 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
             referencedColumns: ["id"]
           },
           {
@@ -7749,6 +8914,34 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_admin_winners"
             referencedColumns: ["raffle_id"]
           },
@@ -7799,7 +8992,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tickets_user_id_fkey"
@@ -7849,7 +9042,7 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "tickets_user_id_fkey"
@@ -7903,9 +9096,26 @@ export type Database = {
         Args: { p_concurso: string; p_draw_date: string; p_pairs: string[] }
         Returns: Json
       }
-      admin_federal_pick_now: {
+      admin_federal_pick_all: {
         Args: Record<PropertyKey, never>
-        Returns: Json
+        Returns: {
+          concurso_number: string
+          draw_date: string
+          note: string
+          raffle_id: string
+          ticket_id: string
+          user_id: string
+        }[]
+      }
+      admin_federal_pick_now: {
+        Args: Record<PropertyKey, never> | { p_raffle_id: string }
+        Returns: {
+          picked_concurso_number: string
+          picked_draw_date: string
+          result_raffle_id: string
+          result_ticket_id: string
+          result_user_id: string
+        }[]
       }
       admin_federal_set_latest: {
         Args: { p_concurso: string; p_draw_date: string; p_numbers: string[] }
@@ -7919,13 +9129,39 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      admin_health_snapshot: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       admin_pick_all_completed_federal: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      admin_pick_all_with_log: {
+        Args: { p_limit?: number; p_trigger?: string }
+        Returns: {
+          federal_concurso_number: string
+          federal_draw_date: string
+          outcome: string
+          raffle_id: string
+          ticket_id: string
+          winner_user_id: string
+        }[]
+      }
       admin_ping: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      admin_tickets_backfill_raffle: {
+        Args: { p_raffle_id: string }
+        Returns: {
+          arrays_bought: number
+          tickets_inserted: number
+        }[]
+      }
+      admin_unpick_raffle_for_test: {
+        Args: { p_raffle_id: string }
+        Returns: undefined
       }
       admin_upsert_category: {
         Args: {
@@ -7967,6 +9203,10 @@ export type Database = {
       archive_latest_federal: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      auth_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       backfill_all_paid_null_numbers: {
         Args: Record<PropertyKey, never>
@@ -8109,6 +9349,10 @@ export type Database = {
       expire_stale_reservations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      f_numbers_key_from_json: {
+        Args: { p: Json }
+        Returns: number
       }
       finalize_paid_purchase: {
         Args:
@@ -8406,6 +9650,10 @@ export type Database = {
       }
       is_admin_alias: {
         Args: { uid: string }
+        Returns: boolean
+      }
+      is_admin_rpc: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_numbers_5singles: {
@@ -8849,8 +10097,10 @@ export type Database = {
           ganhavel_id: string | null
           id: string
           is_paid: boolean | null
+          line_no: number | null
           number: number | null
           numbers: Json | null
+          numbers_key: number | null
           payment_session_id: string | null
           payment_status: string | null
           qty: number | null
