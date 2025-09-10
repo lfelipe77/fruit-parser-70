@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getPublicLaunchedWithProgress } from "@/data/raffles";
 import { useProfileStats } from "@/hooks/useProfileStats";
 import { ProfileStats } from "@/components/ProfileStats";
+import { getAvatarSrc } from '@/lib/avatarUtils';
 
 export default function PerfilPublico() {
   const { username } = useParams();
@@ -373,7 +374,7 @@ export default function PerfilPublico() {
               <div className="flex flex-col md:flex-row items-start gap-6">
                 <div className="flex flex-col items-center">
                   <Avatar className="w-24 h-24 mb-4">
-                    <AvatarImage src={user.avatar} data-testid="profile-avatar" />
+                    <AvatarImage src={getAvatarSrc(profile, profile?.id)} data-testid="profile-avatar" />
                     <AvatarFallback className="text-2xl">
                       {user.name.charAt(0).toUpperCase()}
                     </AvatarFallback>

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePublicWinners } from '@/hooks/usePublicWinners';
 import { toFiveSingles, formatFiveSingles } from '@/lib/numberFormat';
+import { getAvatarSrc } from '@/lib/avatarUtils';
 
 function brDate(d?: string | null) {
   if (!d) return '';
@@ -51,9 +52,12 @@ export default function PremiadosList() {
           <div key={w.winner_id} className="rounded-2xl border border-border p-4 shadow-sm bg-card">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-                {w.avatar_url
-                  ? <img src={w.avatar_url} alt="" className="h-full w-full object-cover" />
-                  : <span className="text-xs text-muted-foreground">👤</span>}
+                {(() => {
+                  const avatarSrc = getAvatarSrc({ avatar_url: w.avatar_url, updated_at: w.updated_at }, w.user_id);
+                  return avatarSrc && avatarSrc !== "/img/avatar-placeholder.png"
+                    ? <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                    : <span className="text-xs text-muted-foreground">👤</span>;
+                })()}
               </div>
               <div className="min-w-0">
                 <Link to={profileHref} className="block font-medium truncate hover:underline">
