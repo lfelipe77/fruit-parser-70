@@ -4,6 +4,7 @@ import { GanhavelEditor } from "@/components/admin/GanhavelEditor";
 import type { RaffleRow, RaffleCardInfo } from "@/types/raffles";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuditLogger } from "@/hooks/useAuditLogger";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ export default function AdminRaffles() {
   console.log("[AdminRaffles] Component loading...");
   
   const { toast } = useToast();
+  const { logAdminAction } = useAuditLogger();
   const [searchParams] = useSearchParams();
 
   const [rows, setRows] = useState<RaffleCardInfo[]>([]);
@@ -124,6 +126,15 @@ export default function AdminRaffles() {
   };
 
   const handleSaved = (saved: RaffleRow) => {
+    // Log admin action
+    logAdminAction('raffle_updated', {
+      raffle_id: saved.id,
+      title: saved.title,
+      status: saved.status,
+      goal_amount: saved.goal_amount,
+      previous_status: editing?.status,
+    });
+
     // Update the list row in memory
     setRows(prev => {
       const ix = prev.findIndex(p => p.id === saved.id);

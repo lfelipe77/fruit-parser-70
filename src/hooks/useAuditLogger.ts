@@ -158,42 +158,14 @@ export const useAuditLogger = () => {
     });
   };
 
-  // Admin action helpers
+  // Admin action helpers (flexible to accept any audit action)
   const logAdminAction = (
-    action: Extract<AuditAction, 
-      | 'user_banned' 
-      | 'user_unbanned' 
-      | 'role_promoted' 
-      | 'role_demoted'
-      | 'raffle_approved'
-      | 'raffle_rejected'
-      | 'raffle_suspended'
-      | 'raffle_reactivated'
-      | 'raffle_highlighted'
-      | 'ticket_resolved'
-      | 'security_alert_investigated'
-    >,
-    targetData: {
-      targetUserId?: string;
-      targetRaffleId?: string;
-      targetTicketId?: string;
-      targetAlertId?: string;
-      reason?: string;
-      oldRole?: string;
-      newRole?: string;
-      additionalContext?: Record<string, any>;
-    }
+    action: AuditAction | string, // Allow any string for flexibility
+    context: Record<string, any> = {}
   ) => {
-    logEvent(action, {
-      target_user_id: targetData.targetUserId,
-      target_raffle_id: targetData.targetRaffleId,
-      target_ticket_id: targetData.targetTicketId,
-      target_alert_id: targetData.targetAlertId,
-      reason: targetData.reason,
-      old_role: targetData.oldRole,
-      new_role: targetData.newRole,
+    logEvent(action as AuditAction, {
       admin_action: true,
-      ...targetData.additionalContext
+      ...context
     });
   };
 

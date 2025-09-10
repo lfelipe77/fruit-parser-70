@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuditLogger } from "@/hooks/useAuditLogger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,7 @@ export default function UsersManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   
   const { toast } = useToast();
+  const { logAdminAction } = useAuditLogger();
 
   // Load users and stats
   useEffect(() => {
@@ -256,6 +258,14 @@ export default function UsersManagement() {
         .eq("id", userId);
 
       if (error) throw error;
+
+      // Log the admin action
+      logAdminAction('user_ban_toggle', {
+        target_user_id: userId,
+        action: !currentBanStatus ? 'banned' : 'unbanned',
+        previous_status: currentBanStatus ? 'banned' : 'active',
+        new_status: !currentBanStatus ? 'banned' : 'active',
+      });
 
       toast({
         title: "Sucesso",

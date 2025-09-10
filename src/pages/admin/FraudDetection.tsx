@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuditLogger } from "@/hooks/useAuditLogger";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,7 @@ export default function FraudDetection() {
   const [selectedSeverity, setSelectedSeverity] = useState("todas");
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
   const { toast } = useToast();
+  const { logAdminAction } = useAuditLogger();
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
@@ -192,6 +194,14 @@ export default function FraudDetection() {
   });
 
   const handleMarkAsFalsePositive = (alertId: string) => {
+    const alert = fraudAlertsData.find(a => a.id === alertId);
+    logAdminAction('fraud_alert_false_positive', {
+      alert_id: alertId,
+      alert_type: alert?.type,
+      raffle_id: alert?.rifaId,
+      risk_score: alert?.riskScore,
+    });
+
     toast({
       title: "Marcado como Falso Positivo",
       description: `O alerta ${alertId} foi marcado como falso positivo.`,
@@ -199,6 +209,15 @@ export default function FraudDetection() {
   };
 
   const handleConfirmFraud = (alertId: string) => {
+    const alert = fraudAlertsData.find(a => a.id === alertId);
+    logAdminAction('fraud_alert_confirmed', {
+      alert_id: alertId,
+      alert_type: alert?.type,
+      raffle_id: alert?.rifaId,
+      user_id: alert?.userId,
+      risk_score: alert?.riskScore,
+    });
+
     toast({
       title: "Fraude Confirmada",
       description: `O alerta ${alertId} foi confirmado como fraude.`,
@@ -207,6 +226,14 @@ export default function FraudDetection() {
   };
 
   const handleResolve = (alertId: string) => {
+    const alert = fraudAlertsData.find(a => a.id === alertId);
+    logAdminAction('fraud_alert_resolved', {
+      alert_id: alertId,
+      alert_type: alert?.type,
+      raffle_id: alert?.rifaId,
+      resolution_method: 'manual',
+    });
+
     toast({
       title: "Alerta Resolvido",
       description: `O alerta ${alertId} foi marcado como resolvido.`,

@@ -72,11 +72,6 @@ const mainItems = [
     url: "/admin/audit-logs",
     icon: FileText,
   },
-  {
-    title: "Logs de Auditoria",
-    url: "/admin/logs",
-    icon: FileText,
-  },
 ];
 
 const configItems = [
