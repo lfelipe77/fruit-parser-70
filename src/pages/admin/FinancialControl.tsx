@@ -46,81 +46,53 @@ import {
   Banknote,
   AlertTriangle,
   Download,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
-
-const transactionsData = [
-  {
-    id: "TXN001",
-    type: "payment_release",
-    rifaId: "RF001",
-    rifaTitle: "iPhone 15 Pro Max 256GB",
-    organizer: "João Silva",
-    amount: "R$ 5.700",
-    fee: "R$ 300",
-    netAmount: "R$ 5.400",
-    status: "pending",
-    date: "2024-01-15",
-    method: "pix",
-    description: "Liberação de pagamento - Rifa concluída",
-  },
-  {
-    id: "TXN002",
-    type: "commission",
-    rifaId: "RF002",
-    rifaTitle: "Honda Civic 2024",
-    organizer: "Maria Santos",
-    amount: "R$ 12.000",
-    fee: "R$ 0",
-    netAmount: "R$ 12.000",
-    status: "completed",
-    date: "2024-01-14",
-    method: "pix",
-    description: "Comissão da plataforma - 10%",
-  },
-  {
-    id: "TXN003",
-    type: "refund",
-    rifaId: "RF003",
-    rifaTitle: "PS5 + Setup Gamer",
-    organizer: "Carlos Mendes",
-    amount: "R$ 8.500",
-    fee: "R$ 0",
-    netAmount: "R$ 8.500",
-    status: "processing",
-    date: "2024-01-13",
-    method: "credit_card",
-    description: "Reembolso - Rifa cancelada",
-  },
-  {
-    id: "TXN004",
-    type: "dispute",
-    rifaId: "RF004",
-    rifaTitle: "Apartamento Alphaville",
-    organizer: "Ana Costa",
-    amount: "R$ 2.500",
-    fee: "R$ 0",
-    netAmount: "R$ 2.500",
-    status: "disputed",
-    date: "2024-01-12",
-    method: "pix",
-    description: "Disputa aberta - Produto não entregue",
-  },
-];
-
-const summaryData = {
-  totalRevenue: "R$ 156.750",
-  totalCommissions: "R$ 15.675",
-  pendingPayments: "R$ 23.400",
-  totalRefunds: "R$ 8.500",
-  monthlyGrowth: "+18%",
-  disputeRate: "2.3%",
-};
+import { useFinancialStats } from "@/hooks/useFinancialStats";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { toBRL } from "@/utils/money";
+import { useToast } from "@/hooks/use-toast";
 
 export default function FinancialControl() {
+  const { isAdmin } = useIsAdmin();
+  const { stats, transactions, loading, error, refreshData } = useFinancialStats();
+  const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("todos");
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Acesso negado. Apenas administradores podem ver esta página.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Carregando dados financeiros...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={refreshData} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -163,10 +135,10 @@ export default function FinancialControl() {
     }
   };
 
-  const filteredTransactions = transactionsData.filter((transaction) => {
+  const filteredTransactions = transactions.filter((transaction) => {
     const matchesTab = selectedTab === "todas" || transaction.status === selectedTab;
-    const matchesSearch = transaction.rifaTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.organizer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = transaction.raffle_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         transaction.organizer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === "todos" || transaction.type === selectedType;
     
@@ -201,10 +173,10 @@ export default function FinancialControl() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData.totalRevenue}</div>
+            <div className="text-2xl font-bold">{toBRL(stats?.totalRevenue || 0)}</div>
             <div className="flex items-center text-xs text-green-600">
               <TrendingUp className="h-3 w-3 mr-1" />
-              {summaryData.monthlyGrowth} este mês
+              {stats?.monthlyGrowth ? `${stats.monthlyGrowth.toFixed(1)}%` : '0%'} este mês
             </div>
           </CardContent>
         </Card>
@@ -215,7 +187,7 @@ export default function FinancialControl() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData.totalCommissions}</div>
+            <div className="text-2xl font-bold">{toBRL(stats?.totalCommissions || 0)}</div>
             <p className="text-xs text-muted-foreground">10% de taxa média</p>
           </CardContent>
         </Card>
@@ -226,7 +198,7 @@ export default function FinancialControl() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData.pendingPayments}</div>
+            <div className="text-2xl font-bold">{toBRL(stats?.pendingPayments || 0)}</div>
             <p className="text-xs text-muted-foreground">Aguardando liberação</p>
           </CardContent>
         </Card>
@@ -237,7 +209,7 @@ export default function FinancialControl() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData.totalRefunds}</div>
+            <div className="text-2xl font-bold">{toBRL(stats?.totalRefunds || 0)}</div>
             <p className="text-xs text-muted-foreground">Ganhaveis cancelados</p>
           </CardContent>
         </Card>
@@ -248,7 +220,7 @@ export default function FinancialControl() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryData.disputeRate}</div>
+            <div className="text-2xl font-bold">{stats?.disputeRate ? `${stats.disputeRate.toFixed(1)}%` : '0%'}</div>
             <p className="text-xs text-muted-foreground">Abaixo da média</p>
           </CardContent>
         </Card>
@@ -348,21 +320,21 @@ export default function FinancialControl() {
                         <TableCell className="font-medium">{transaction.id}</TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{transaction.rifaTitle}</div>
+                            <div className="font-medium">{transaction.raffle_title}</div>
                             <div className="text-sm text-muted-foreground">
-                              {transaction.organizer}
+                              {transaction.organizer_name}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>{getTypeBadge(transaction.type)}</TableCell>
-                        <TableCell className="font-medium">{transaction.amount}</TableCell>
-                        <TableCell className="text-red-600">{transaction.fee}</TableCell>
-                        <TableCell className="font-medium text-green-600">{transaction.netAmount}</TableCell>
+                        <TableCell className="font-medium">{toBRL(transaction.amount)}</TableCell>
+                        <TableCell className="text-red-600">{toBRL(transaction.fee_amount)}</TableCell>
+                        <TableCell className="font-medium text-green-600">{toBRL(transaction.net_amount)}</TableCell>
                         <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {getMethodIcon(transaction.method)}
-                            <span className="text-sm capitalize">{transaction.method.replace('_', ' ')}</span>
+                            {getMethodIcon(transaction.payment_method)}
+                            <span className="text-sm capitalize">{transaction.payment_method.replace('_', ' ')}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -393,35 +365,35 @@ export default function FinancialControl() {
                                       </div>
                                       <div>
                                         <Label>ID do Ganhavel</Label>
-                                        <p className="text-sm">{selectedTransaction.rifaId}</p>
+                                        <p className="text-sm">{selectedTransaction.raffle_id}</p>
                                       </div>
                                       <div>
                                         <Label>Título do Ganhavel</Label>
-                                        <p className="text-sm">{selectedTransaction.rifaTitle}</p>
+                                        <p className="text-sm">{selectedTransaction.raffle_title}</p>
                                       </div>
                                       <div>
                                         <Label>Organizador</Label>
-                                        <p className="text-sm">{selectedTransaction.organizer}</p>
+                                        <p className="text-sm">{selectedTransaction.organizer_name}</p>
                                       </div>
                                       <div>
                                         <Label>Valor Bruto</Label>
-                                        <p className="text-sm font-medium">{selectedTransaction.amount}</p>
+                                        <p className="text-sm font-medium">{toBRL(selectedTransaction.amount)}</p>
                                       </div>
                                       <div>
                                         <Label>Taxa</Label>
-                                        <p className="text-sm text-red-600">{selectedTransaction.fee}</p>
+                                        <p className="text-sm text-red-600">{toBRL(selectedTransaction.fee_amount)}</p>
                                       </div>
                                       <div>
                                         <Label>Valor Líquido</Label>
-                                        <p className="text-sm font-medium text-green-600">{selectedTransaction.netAmount}</p>
+                                        <p className="text-sm font-medium text-green-600">{toBRL(selectedTransaction.net_amount)}</p>
                                       </div>
                                       <div>
                                         <Label>Método de Pagamento</Label>
-                                        <p className="text-sm capitalize">{selectedTransaction.method.replace('_', ' ')}</p>
+                                        <p className="text-sm capitalize">{selectedTransaction.payment_method?.replace('_', ' ')}</p>
                                       </div>
                                       <div>
                                         <Label>Data</Label>
-                                        <p className="text-sm">{selectedTransaction.date}</p>
+                                        <p className="text-sm">{new Date(selectedTransaction.transaction_date).toLocaleDateString('pt-BR')}</p>
                                       </div>
                                       <div>
                                         <Label>Status</Label>
@@ -452,7 +424,7 @@ export default function FinancialControl() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Liberar Pagamento</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Tem certeza que deseja liberar o pagamento de {transaction.netAmount} para {transaction.organizer}?
+                                      Tem certeza que deseja liberar o pagamento de {toBRL(transaction.net_amount)} para {transaction.organizer_name}?
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
