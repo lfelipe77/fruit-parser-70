@@ -81,6 +81,7 @@ import { useAuthContext } from '@/providers/AuthProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { DebugBanner } from '@/components/DebugBanner';
 import DiagnosticsPage from '@/pages/DiagnosticsPage';
+import EmailTest from '@/pages/admin/EmailTest';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -251,6 +252,7 @@ const AppContent = () => {
           <Route path="configuracoes" element={<Settings />} />
           <Route path="visits" element={<AdminVisits />} />
           <Route path="payouts" element={<AdminPayouts />} />
+          <Route path="email-test" element={<EmailTest />} />
         </Route>
         
         {/* Standalone admin routes - also protected */}
