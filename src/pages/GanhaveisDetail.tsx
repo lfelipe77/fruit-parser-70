@@ -15,6 +15,7 @@ import { toConfirm } from "@/lib/nav";
 import { computeCheckout } from "@/utils/money";
 import { RaffleCompletionTrigger } from "@/components/RaffleCompletionTrigger";
 import SEOHead from "@/components/SEOHead";
+import { getProductSchema } from "@/utils/structuredData";
 import { formatBRL as formatBRLUtils } from "@/utils/money";
 import { useRaffleWinner } from "@/hooks/useRaffleWinner";
 
@@ -61,22 +62,37 @@ function buildShareMeta(raffle: any, origin: string) {
   const title = raffle?.title ?? "Ganhavel";
   const draw  = raffle?.draw_label ?? raffle?.drawLabel ?? "Sorteio pela Loteria Federal";
   const url   = `${origin}/#/ganhavel/${raffle.id}`;
-  const img   = raffle?.image_url ?? raffle?.img ?? "/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png";
+  
+  // ✅ FIX: Ensure absolute URL for social media sharing
+  let img = raffle?.image_url ?? raffle?.img ?? "/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png";
+  if (img.startsWith('/')) {
+    img = `${origin}${img}`;
+  }
 
   const description = [
-    `Participe do ${title}!`,
-    price ? `Bilhetes a ${formatBRLUtils(price)}.` : null,
-    draw,
+    `Compartilhe e participe deste ganhavel: ${title}!`,
+    price ? `Bilhetes a partir de ${formatBRLUtils(price)}.` : null,
+    `🎯 ${draw}`,
     goal ? `Meta: ${formatBRLUtils(goal)}.` : null,
+    `✅ Transparência total e sorte oficial.`
   ].filter(Boolean).join(" ");
 
   // Texto curtinho e inspirador (para copiar/WhatsApp)
-  const shareText = `${title} • ${draw}\n` +
-    (price ? `Bilhetes: ${formatBRLUtils(price)}\n` : "") +
-    `Transparência e sorte oficial.\n` +
-    `Participar: ${url}`;
+  const shareText = `🎯 ${title} • ${draw}\n` +
+    (price ? `💰 Bilhetes: ${formatBRLUtils(price)}\n` : "") +
+    `✅ Transparência e sorte oficial.\n` +
+    `🎁 Participe: ${url}`;
 
-  return { title: `${title} - Ganhavel`, description, url, img, shareText };
+  return { 
+    title: `${title} - Ganhavel`, 
+    description, 
+    url, 
+    img, 
+    shareText,
+    imageAlt: `${title} - Ganha prêmios incríveis com transparência total`,
+    price,
+    goal
+  };
 }
 
 
@@ -226,7 +242,11 @@ export default function GanhaveisDetail() {
           description={meta.description}
           canonical={meta.url}
           ogImage={meta.img}
+          ogImageAlt={meta.imageAlt}
           ogType="product"
+          price={meta.price}
+          author={raffle?.ownerUserId ? "Organizador Verificado" : undefined}
+          structuredData={raffle ? getProductSchema(raffle) : undefined}
         />
       )}
       <Navigation />

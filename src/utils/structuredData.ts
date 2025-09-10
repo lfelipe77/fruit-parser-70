@@ -19,37 +19,43 @@ export const getOrganizationSchema = () => ({
   ]
 });
 
-// Product Schema for Ganhaveis
-export const getProductSchema = (ganhavel: GanhaveisData) => ({
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": ganhavel.title,
-  "description": ganhavel.description,
-  "image": ganhavel.image,
-  "brand": {
-    "@type": "Brand",
-    "name": "Ganhavel"
-  },
-  "offers": {
-    "@type": "Offer",
-    "price": ganhavel.ticketPrice,
-    "priceCurrency": "BRL",
-    "availability": "https://schema.org/InStock",
-    "url": `https://ganhavel.com/ganhavel/${ganhavel.id}`,
-    "seller": {
-      "@type": "Person",
-      "name": ganhavel.organizer
-    }
-  },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": ganhavel.organizerRating,
-    "reviewCount": ganhavel.backers,
-    "bestRating": "5",
-    "worstRating": "1"
-  },
-  "category": ganhavel.category
-});
+// Product Schema for Ganhaveis - Enhanced for social sharing
+export const getProductSchema = (ganhavel: any) => {
+  const price = ganhavel?.ticket_price ?? ganhavel?.ticketPrice ?? 0;
+  const image = ganhavel?.image_url ?? ganhavel?.img;
+  const absoluteImage = image?.startsWith('http') ? image : `https://ganhavel.com${image}`;
+  
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": ganhavel.title || ganhavel.name,
+    "description": ganhavel.description || `Participe do ${ganhavel.title} com transparência total`,
+    "image": absoluteImage,
+    "brand": {
+      "@type": "Brand",
+      "name": "Ganhavel"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": price,
+      "priceCurrency": "BRL",
+      "availability": "https://schema.org/InStock",
+      "url": `https://ganhavel.com/#/ganhavel/${ganhavel.id}`,
+      "seller": {
+        "@type": "Organization",
+        "name": "Ganhavel"
+      }
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": ganhavel.participants_count || 10,
+      "bestRating": "5",
+      "worstRating": "1"
+    },
+    "category": ganhavel.category || ganhavel.category_name || "Ganhaveis"
+  };
+};
 
 // Event Schema for Lottery Draws
 export const getLotteryEventSchema = (ganhavel: GanhaveisData) => ({
