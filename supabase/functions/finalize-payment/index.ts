@@ -317,7 +317,8 @@ serve(async (req) => {
         status: 'paid',
         customer_name: buyerName,
         customer_phone: buyerPhone,
-        customer_cpf: buyerCpf || null
+        customer_cpf: buyerCpf || null,
+        customer_email: buyerEmail
       })
       .select('id')
       .single();
