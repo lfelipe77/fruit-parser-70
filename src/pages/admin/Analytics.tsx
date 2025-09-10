@@ -15,44 +15,12 @@ import {
   Eye,
   Clock,
   Target,
+  Loader2,
 } from "lucide-react";
-import { getAllCategories } from "@/data/categoriesData";
-
-const metricsData = {
-  overview: {
-    totalUsers: { value: 2847, growth: 12, period: "este mês" },
-    totalRifas: { value: 156, growth: 8, period: "este mês" },
-    totalRevenue: { value: 156750, growth: 18, period: "este mês" },
-    conversionRate: { value: 73.5, growth: 2.1, period: "este mês" },
-  },
-  topCategories: getAllCategories().slice(0, 4).map(cat => ({
-    name: cat.name,
-    rifas: cat.count,
-    revenue: cat.count * 1500, // Mock calculation
-    growth: Math.floor(Math.random() * 20) + 5 // Random growth between 5-25%
-  })),
-  topOrganizers: [
-    { name: "João Silva", rifas: 8, revenue: 45000, rating: 4.9 },
-    { name: "Maria Santos", rifas: 6, revenue: 125000, rating: 4.8 },
-    { name: "Carlos Mendes", rifas: 5, revenue: 32000, rating: 4.7 },
-    { name: "Ana Costa", rifas: 4, revenue: 28000, rating: 4.6 },
-  ],
-  recentTrends: [
-    { metric: "Ganhaveis Criados", thisWeek: 24, lastWeek: 18, change: 33 },
-    { metric: "Novos Usuários", thisWeek: 156, lastWeek: 134, change: 16 },
-    { metric: "Receita", thisWeek: 23400, lastWeek: 19800, change: 18 },
-    { metric: "Taxa de Conclusão", thisWeek: 87, lastWeek: 82, change: 6 },
-  ],
-  geoData: [
-    { state: "São Paulo", users: 1245, rifas: 67, revenue: 89000 },
-    { state: "Rio de Janeiro", users: 456, rifas: 23, revenue: 34000 },
-    { state: "Minas Gerais", users: 234, rifas: 12, revenue: 18000 },
-    { state: "Paraná", users: 187, rifas: 15, revenue: 22000 },
-    { state: "Bahia", users: 156, rifas: 8, revenue: 12000 },
-  ],
-};
+import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
 
 export default function Analytics() {
+  const { overview, categories, organizers, trends, geography, loading, error } = useAdminAnalytics();
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -87,6 +55,23 @@ export default function Analytics() {
       );
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Carregando analytics...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -125,10 +110,10 @@ export default function Analytics() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(metricsData.overview.totalUsers.value)}</div>
+            <div className="text-2xl font-bold">{formatNumber(overview?.totalUsers || 0)}</div>
             <div className="flex items-center gap-2 text-xs">
-              {getGrowthBadge(metricsData.overview.totalUsers.growth)}
-              <span className="text-muted-foreground">{metricsData.overview.totalUsers.period}</span>
+              {getGrowthBadge(overview?.monthlyGrowth.users || 0)}
+              <span className="text-muted-foreground">este mês</span>
             </div>
           </CardContent>
         </Card>
@@ -139,10 +124,10 @@ export default function Analytics() {
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNumber(metricsData.overview.totalRifas.value)}</div>
+            <div className="text-2xl font-bold">{formatNumber(overview?.totalRaffles || 0)}</div>
             <div className="flex items-center gap-2 text-xs">
-              {getGrowthBadge(metricsData.overview.totalRifas.growth)}
-              <span className="text-muted-foreground">{metricsData.overview.totalRifas.period}</span>
+              {getGrowthBadge(overview?.monthlyGrowth.raffles || 0)}
+              <span className="text-muted-foreground">este mês</span>
             </div>
           </CardContent>
         </Card>
@@ -153,24 +138,23 @@ export default function Analytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(metricsData.overview.totalRevenue.value)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(overview?.totalRevenue || 0)}</div>
             <div className="flex items-center gap-2 text-xs">
-              {getGrowthBadge(metricsData.overview.totalRevenue.growth)}
-              <span className="text-muted-foreground">{metricsData.overview.totalRevenue.period}</span>
+              {getGrowthBadge(overview?.monthlyGrowth.revenue || 0)}
+              <span className="text-muted-foreground">este mês</span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
+            <CardTitle className="text-sm font-medium">Ganhaveis Ativos</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metricsData.overview.conversionRate.value}%</div>
+            <div className="text-2xl font-bold">{formatNumber(overview?.activeRaffles || 0)}</div>
             <div className="flex items-center gap-2 text-xs">
-              {getGrowthBadge(metricsData.overview.conversionRate.growth)}
-              <span className="text-muted-foreground">{metricsData.overview.conversionRate.period}</span>
+              <span className="text-muted-foreground">atualmente</span>
             </div>
           </CardContent>
         </Card>
@@ -195,7 +179,7 @@ export default function Analytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {metricsData.topCategories.map((category, index) => (
+                {categories.map((category, index) => (
                   <div key={category.name} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -203,7 +187,7 @@ export default function Analytics() {
                       </div>
                       <div>
                         <h3 className="font-medium">{category.name}</h3>
-                        <p className="text-sm text-muted-foreground">{category.rifas} ganhaveis</p>
+                        <p className="text-sm text-muted-foreground">{category.rafflesCount} ganhaveis</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -230,7 +214,7 @@ export default function Analytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {metricsData.topOrganizers.map((organizer, index) => (
+                {organizers.map((organizer, index) => (
                   <div key={organizer.name} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -239,14 +223,12 @@ export default function Analytics() {
                       <div>
                         <h3 className="font-medium">{organizer.name}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{organizer.rifas} ganhaveis</span>
-                          <span>•</span>
-                          <span>⭐ {organizer.rating}</span>
+                          <span>{organizer.rafflesCount} ganhaveis</span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">{formatCurrency(organizer.revenue)}</div>
+                      <div className="font-medium">{formatCurrency(organizer.totalRevenue)}</div>
                       <div className="text-sm text-muted-foreground">receita total</div>
                     </div>
                   </div>
@@ -267,7 +249,7 @@ export default function Analytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {metricsData.recentTrends.map((trend) => (
+                {trends.map((trend) => (
                   <div key={trend.metric} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <h3 className="font-medium">{trend.metric}</h3>
@@ -322,7 +304,7 @@ export default function Analytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {metricsData.geoData.map((state, index) => (
+                {geography.map((state, index) => (
                   <div key={state.state} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -331,7 +313,7 @@ export default function Analytics() {
                       <div>
                         <h3 className="font-medium">{state.state}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {formatNumber(state.users)} usuários • {state.rifas} ganhaveis
+                          {formatNumber(state.usersCount)} usuários • {state.rafflesCount} ganhaveis
                         </p>
                       </div>
                     </div>
