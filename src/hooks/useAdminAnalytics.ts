@@ -173,40 +173,52 @@ export function useAdminAnalytics() {
   };
 
   const fetchCategories = async (): Promise<CategoryPerformance[]> => {
-    // Get categories with raffle counts and revenue
+    // Get all categories
     const { data: categoriesData } = await supabase
       .from('categories')
-      .select(`
-        id,
-        nome,
-        raffles!inner (
-          id,
-          transactions!inner (
-            amount,
-            status
-          )
-        )
-      `);
+      .select('id, nome')
+      .order('id');
 
     if (!categoriesData) return [];
 
-    const categoryPerformance = categoriesData.map(category => {
-      const rafflesCount = category.raffles?.length || 0;
-      const revenue = category.raffles?.reduce((sum, raffle) => {
-        return sum + (raffle.transactions?.filter((tx: any) => tx.status === 'paid')
-          .reduce((txSum: number, tx: any) => txSum + (tx.amount || 0), 0) || 0);
-      }, 0) || 0;
+    // Get raffles count and revenue per category
+    const categoryStats = await Promise.all(
+      categoriesData.map(async (category) => {
+        // Count raffles for this category
+        const { count: rafflesCount } = await supabase
+          .from('raffles')
+          .select('*', { count: 'exact', head: true })
+          .eq('category_id', category.id);
 
-      return {
-        id: category.id,
-        name: category.nome,
-        rafflesCount,
-        revenue,
-        growth: Math.floor(Math.random() * 30) + 5 // Mock growth for now
-      };
-    }).sort((a, b) => b.revenue - a.revenue).slice(0, 6);
+        // Get revenue for this category
+        const { data: revenueData } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('status', 'paid')
+          .in('raffle_id', 
+            await supabase
+              .from('raffles')
+              .select('id')
+              .eq('category_id', category.id)
+              .then(({ data }) => data?.map(r => r.id) || [])
+          );
 
-    return categoryPerformance;
+        const revenue = revenueData?.reduce((sum, tx) => sum + (tx.amount || 0), 0) || 0;
+
+        return {
+          id: category.id,
+          name: category.nome,
+          rafflesCount: rafflesCount || 0,
+          revenue,
+          growth: Math.floor(Math.random() * 30) + 5 // Mock growth for now
+        };
+      })
+    );
+
+    return categoryStats
+      .filter(cat => cat.rafflesCount > 0 || cat.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 6);
   };
 
   const fetchOrganizers = async (): Promise<TopOrganizer[]> => {
