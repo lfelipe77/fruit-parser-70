@@ -91,22 +91,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (profile && !profile.welcome_sent_at) {
+      // Atomic "send once" guard
+      const { data: claim, error: claimError } = await supabase
+        .from('user_profiles')
+        .update({ welcome_sent_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .is('welcome_sent_at', null)
+        .select('id');
+
+      if (claimError) {
+        console.error('Error claiming welcome email send:', claimError);
+        return;
+      }
+      if (!claim || claim.length === 0) {
+        return; // already sent or claimed elsewhere
+      }
+
+      try {
         const parts = welcomeEmail({
-          name: profile.full_name || 'Ganhavel',
+          name: profile?.full_name || 'Ganhavel',
           myTicketsUrl: `${window.location.origin}/#/minha-conta?tab=bilhetes`,
           resultsUrl: `${window.location.origin}/#/resultados`
         });
-
         await sendAppEmail(user.email, parts.subject, parts.html, parts.text);
-        
-        // Mark welcome email as sent
+        console.log('Welcome email sent successfully to:', user.email);
+      } catch (e) {
+        console.error('Welcome email send failed, reverting claim:', e);
         await supabase
           .from('user_profiles')
-          .update({ welcome_sent_at: new Date().toISOString() })
+          .update({ welcome_sent_at: null })
           .eq('id', user.id);
-
-        console.log('Welcome email sent successfully to:', user.email);
       }
     } catch (error) {
       console.error('Error sending welcome email:', error);

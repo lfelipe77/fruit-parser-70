@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import nodemailer from "npm:nodemailer@6.9.14";
 import { withCORS } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 
 interface EmailPayload {
   to: string;
@@ -80,17 +81,60 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Feature toggle: panic switch for emails
+    const emailsEnabled = Deno.env.get("EMAILS_ENABLED");
+    if (emailsEnabled !== "true") {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Emails disabled by configuration" }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // AuthN/AuthZ: require a valid user and restrict "to" unless admin
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const authHeader = req.headers.get("Authorization") || "";
+
+    const supabaseClient = createClient(supabaseUrl!, supabaseAnonKey!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: userRes, error: userErr } = await supabaseClient.auth.getUser();
+    const user = userRes?.user || null;
+    if (userErr || !user) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    let isAdmin = false;
+    try {
+      const { data: adminData } = await supabaseClient.rpc('is_admin', { p_uid: user.id });
+      isAdmin = !!adminData;
+    } catch (_e) {
+      isAdmin = false;
+    }
+
+    if (!isAdmin && to !== user.email) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Forbidden: cannot send emails to other recipients" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // Read SMTP settings from environment
     const host = Deno.env.get("SMTP_HOST");
     const portStr = Deno.env.get("SMTP_PORT") ?? "587";
     const port = Number(portStr);
-    const user = Deno.env.get("SMTP_USER");
+    const userSmtp = Deno.env.get("SMTP_USER");
     const pass = Deno.env.get("SMTP_PASS");
     const fromEmail = Deno.env.get("FROM_EMAIL") || "no-reply@ganhavel.com";
-    const replyTo = Deno.env.get("REPLY_TO") || fromEmail;
+    const supportEmail = "suporte@ganhavel.com";
+    const replyTo = Deno.env.get("REPLY_TO") || supportEmail;
 
-    if (!host || !user || !pass || !port || Number.isNaN(port)) {
-      console.error("[send-email] Missing SMTP configuration", { host: !!host, user: !!user, pass: !!pass, port });
+    if (!host || !userSmtp || !pass || !port || Number.isNaN(port)) {
+      console.error("[send-email] Missing SMTP configuration", { host: !!host, user: !!userSmtp, pass: !!pass, port });
       return new Response(
         JSON.stringify({ ok: false, error: "SMTP not configured (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL)" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
@@ -101,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
       host,
       port,
       secure: false, // STARTTLS on port 587
-      auth: { user, pass },
+      auth: { user: userSmtp, pass },
     });
 
     console.log(`[send-email] Sending email to=${to}`);

@@ -255,27 +255,40 @@ export default function GanhaveisManagement() {
         return;
       }
 
-      const raffleUrl = `${window.location.origin}/#/ganhavel/${raffle.slug || raffle.id}`;
-      const parts = launchEmail({
-        raffleTitle: raffle.title,
-        raffleUrl,
-        resultsUrl: `${window.location.origin}/#/resultados`,
-        tipsUrl: null
-      });
-
-      await sendAppEmail(userData.user.email, parts.subject, parts.html, parts.text);
-      
-      // Mark launch email as sent
-      const { error: updateError } = await supabase
+      // Atomic "send once" guard
+      const { data: claim, error: claimError } = await supabase
         .from('raffles')
         .update({ launch_email_sent_at: new Date().toISOString() })
-        .eq('id', raffle.id);
+        .eq('id', raffle.id)
+        .is('launch_email_sent_at', null)
+        .select('id');
 
-      if (updateError) {
-        console.error('Error updating launch_email_sent_at:', updateError);
+      if (claimError) {
+        console.error('Error claiming launch email send:', claimError);
+        return;
+      }
+      if (!claim || claim.length === 0) {
+        return; // already sent/claimed
       }
 
-      console.log('Launch email sent successfully to:', userData.user.email);
+      try {
+        const raffleUrl = `${window.location.origin}/#/ganhavel/${raffle.slug || raffle.id}`;
+        const parts = launchEmail({
+          raffleTitle: raffle.title,
+          raffleUrl,
+          resultsUrl: `${window.location.origin}/#/resultados`,
+          tipsUrl: null
+        });
+
+        await sendAppEmail(userData.user.email, parts.subject, parts.html, parts.text);
+        console.log('Launch email sent successfully to:', userData.user.email);
+      } catch (e) {
+        console.error('Launch email send failed, reverting claim:', e);
+        await supabase
+          .from('raffles')
+          .update({ launch_email_sent_at: null })
+          .eq('id', raffle.id);
+      }
     } catch (error) {
       console.error('Error sending launch email:', error);
       // Don't throw - just log the error so approval continues

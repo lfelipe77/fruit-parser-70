@@ -164,30 +164,43 @@ export default function PagamentoSucesso() {
       }
 
       if (raffle) {
-        const parts = receiptEmail({
-          raffleTitle: raffle.title,
-          raffleUrl: `${window.location.origin}/#/ganhavel/${raffle.slug || raffle.id}`,
-          tickets: ticketNumbers,
-          myTicketsUrl: `${window.location.origin}/#/minha-conta?tab=bilhetes`,
-          resultsUrl: `${window.location.origin}/#/resultados`,
-          valueBRL: toBRL(asNumber(tx.amount, 0)),
-          txId: tx.id
-        });
-
-        await sendAppEmail(buyerEmail, parts.subject, parts.html, parts.text);
-        
-        // Mark receipt email as sent
-        const { error: updateError } = await supabase
+        // Atomic "send once" guard
+        const { data: claim, error: claimError } = await supabase
           .from('transactions')
           .update({ receipt_email_sent_at: new Date().toISOString() })
-          .eq('id', tx.id);
+          .eq('id', tx.id)
+          .is('receipt_email_sent_at', null)
+          .select('id');
 
-        if (updateError) {
-          console.error('Error updating receipt_email_sent_at:', updateError);
+        if (claimError) {
+          console.error('Error claiming receipt email send:', claimError);
+          return;
+        }
+        if (!claim || claim.length === 0) {
+          return; // already sent/claimed elsewhere
         }
 
-        setEmailSent(true);
-        console.log('Receipt email sent successfully to:', buyerEmail);
+        try {
+          const parts = receiptEmail({
+            raffleTitle: raffle.title,
+            raffleUrl: `${window.location.origin}/#/ganhavel/${raffle.slug || raffle.id}`,
+            tickets: ticketNumbers,
+            myTicketsUrl: `${window.location.origin}/#/minha-conta?tab=bilhetes`,
+            resultsUrl: `${window.location.origin}/#/resultados`,
+            valueBRL: toBRL(asNumber(tx.amount, 0)),
+            txId: tx.id
+          });
+
+          await sendAppEmail(buyerEmail, parts.subject, parts.html, parts.text);
+          setEmailSent(true);
+          console.log('Receipt email sent successfully to:', buyerEmail);
+        } catch (e) {
+          console.error('Receipt email send failed, reverting claim:', e);
+          await supabase
+            .from('transactions')
+            .update({ receipt_email_sent_at: null })
+            .eq('id', tx.id);
+        }
       }
     } catch (error) {
       console.error('Error sending receipt email:', error);
