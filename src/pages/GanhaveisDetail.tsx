@@ -357,7 +357,9 @@ export default function GanhaveisDetail() {
                       {winner.winner_handle || 'Ganhador'}
                     </a>
                     <div className="text-xs text-gray-600">
-                      Bilhete: {winner.winning_ticket || '-'}
+                      Bilhete: {winner.winning_ticket ? 
+                        winner.winning_ticket.match(/.{1,2}/g)?.join(' · ') ?? winner.winning_ticket 
+                        : '-'}
                     </div>
                   </div>
                 </div>
