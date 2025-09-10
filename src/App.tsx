@@ -195,6 +195,12 @@ const AppContent = () => {
         <Route path="/proposta-de-investimento" element={<Investment />} />
         <Route path="/business-model" element={<BusinessModel />} />
         {import.meta.env.DEV && (<Route path="/turnstile-test" element={<TurnstileTest />} />)}
+        {/* My Profile redirect - legacy route support */}
+        <Route path="/perfil" element={
+          <RequireAuth>
+            <Profile />
+          </RequireAuth>
+        } />
         <Route path="/perfil/:username" element={<PerfilPublico />} />
         {/* User dashboard - requires auth but not admin */}
         <Route path="/dashboard" element={
