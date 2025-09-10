@@ -24,10 +24,15 @@ export default function ShareButton({
   size = "sm"
 }: ShareButtonProps) {
   const { toast } = useToast();
+  
+  // Convert hash-based URLs to SEO-friendly URLs for social sharing
+  const shareUrl = url.includes('/#/ganhavel/') 
+    ? url.replace('/#/ganhavel/', '/ganhavel/')
+    : url;
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copiado!",
         description: "O link foi copiado para sua área de transferência.",
@@ -42,29 +47,29 @@ export default function ShareButton({
   };
 
   const handleShare = (platform: string) => {
-    const encodedUrl = encodeURIComponent(url);
+    const encodedUrl = encodeURIComponent(shareUrl);
     const encodedTitle = encodeURIComponent(title);
     const encodedDescription = encodeURIComponent(description);
 
-    let shareUrl = "";
+    let platformUrl = "";
 
     switch (platform) {
       case "facebook":
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        platformUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
         break;
       case "twitter":
-        shareUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
+        platformUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
         break;
       case "linkedin":
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+        platformUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
         break;
       case "whatsapp":
-        shareUrl = `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
+        platformUrl = `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
         break;
     }
 
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400');
+    if (platformUrl) {
+      window.open(platformUrl, '_blank', 'width=600,height=400');
     }
   };
 

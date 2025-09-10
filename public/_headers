@@ -21,3 +21,7 @@
     frame-src https://challenges.cloudflare.com;
     worker-src 'self' blob:;
     base-uri 'self';
+
+# Dynamic meta tags for social sharing
+/ganhavel/*
+  X-Robots-Tag: index, follow

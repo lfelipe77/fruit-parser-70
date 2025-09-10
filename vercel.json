@@ -1,4 +1,14 @@
 {
+  "rewrites": [
+    {
+      "source": "/ganhavel/:id",
+      "destination": "/api/ganhavel/:id"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
