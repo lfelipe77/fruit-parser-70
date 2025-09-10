@@ -236,12 +236,22 @@ export default function GanhaveisManagement() {
   };
 
   const handleLaunchEmail = async (raffle: any) => {
+    if (!raffle?.owner_user_id || !raffle?.title) {
+      console.warn('Missing required raffle data for launch email');
+      return;
+    }
+
     try {
       // Get organizer email from auth.users
       const { data: userData, error: userError } = await supabase.auth.admin.getUserById(raffle.owner_user_id);
       
-      if (userError || !userData?.user?.email) {
-        console.error('Could not get organizer email:', userError);
+      if (userError) {
+        console.error('Error fetching user for launch email:', userError);
+        return;
+      }
+
+      if (!userData?.user?.email) {
+        console.warn('No email found for raffle organizer:', raffle.owner_user_id);
         return;
       }
 
@@ -256,10 +266,14 @@ export default function GanhaveisManagement() {
       await sendAppEmail(userData.user.email, parts.subject, parts.html, parts.text);
       
       // Mark launch email as sent
-      await supabase
+      const { error: updateError } = await supabase
         .from('raffles')
         .update({ launch_email_sent_at: new Date().toISOString() })
         .eq('id', raffle.id);
+
+      if (updateError) {
+        console.error('Error updating launch_email_sent_at:', updateError);
+      }
 
       console.log('Launch email sent successfully to:', userData.user.email);
     } catch (error) {

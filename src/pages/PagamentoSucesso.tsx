@@ -145,13 +145,23 @@ export default function PagamentoSucesso() {
   }, [txId, combos, emailSent]);
 
   const handleReceiptEmail = async (tx: any, ticketNumbers: string[], buyerEmail: string) => {
+    if (!buyerEmail || !tx?.raffle_id) {
+      console.warn('Missing required data for receipt email');
+      return;
+    }
+
     try {
       // Fetch raffle details for email
-      const { data: raffle } = await supabase
+      const { data: raffle, error: raffleError } = await supabase
         .from('raffles')
         .select('title, slug, id')
         .eq('id', tx.raffle_id)
-        .single();
+        .maybeSingle();
+
+      if (raffleError) {
+        console.error('Error fetching raffle for receipt email:', raffleError);
+        return;
+      }
 
       if (raffle) {
         const parts = receiptEmail({
@@ -167,10 +177,14 @@ export default function PagamentoSucesso() {
         await sendAppEmail(buyerEmail, parts.subject, parts.html, parts.text);
         
         // Mark receipt email as sent
-        await supabase
+        const { error: updateError } = await supabase
           .from('transactions')
           .update({ receipt_email_sent_at: new Date().toISOString() })
           .eq('id', tx.id);
+
+        if (updateError) {
+          console.error('Error updating receipt_email_sent_at:', updateError);
+        }
 
         setEmailSent(true);
         console.log('Receipt email sent successfully to:', buyerEmail);

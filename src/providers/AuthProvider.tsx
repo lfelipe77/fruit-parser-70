@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [welcomeEmailChecked, setWelcomeEmailChecked] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -33,11 +34,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         setInitializing(false);
 
-        // Handle welcome email after session is established
-        if (session?.user && event === 'SIGNED_IN') {
+        // Handle welcome email for authenticated users (avoid duplicate calls)
+        if (session?.user && !welcomeEmailChecked) {
+          setWelcomeEmailChecked(true);
           setTimeout(() => {
             handleWelcomeEmail(session.user);
           }, 0);
+        }
+        
+        // Reset flag when user logs out
+        if (!session?.user) {
+          setWelcomeEmailChecked(false);
         }
       }
     );
@@ -49,6 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setInitializing(false);
+      
+      // Check welcome email for existing sessions too
+      if (session?.user && !welcomeEmailChecked) {
+        setWelcomeEmailChecked(true);
+        setTimeout(() => {
+          handleWelcomeEmail(session.user);
+        }, 0);
+      }
     });
 
     return () => {
@@ -58,13 +73,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleWelcomeEmail = async (user: User) => {
+    if (!user?.email) {
+      console.warn('No user email available for welcome email');
+      return;
+    }
+
     try {
       // Check if welcome email already sent
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('id, full_name, welcome_sent_at')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching user profile for welcome email:', profileError);
+        return;
+      }
 
       if (profile && !profile.welcome_sent_at) {
         const parts = welcomeEmail({
@@ -73,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           resultsUrl: `${window.location.origin}/#/resultados`
         });
 
-        await sendAppEmail(user.email!, parts.subject, parts.html, parts.text);
+        await sendAppEmail(user.email, parts.subject, parts.html, parts.text);
         
         // Mark welcome email as sent
         await supabase
