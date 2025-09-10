@@ -181,8 +181,8 @@ const fetchTransactions = async (): Promise<FinancialTransaction[]> => {
         raffle_title: tx.raffles.title || 'Rifa sem título',
         organizer_name: organizerName,
         amount: tx.amount || 0,
-        fee_amount: (tx.amount || 0) * 0.1, // 10% fee
-        net_amount: (tx.amount || 0) * 0.9, // 90% goes to organizer
+        fee_amount: 2.00, // taxa fixa por transação
+        net_amount: Math.max(0, (tx.amount || 0) - 2.00), // líquido = bruto - taxa fixa
         status: tx.status || 'pending',
         payment_method: tx.provider || 'unknown',
         transaction_date: tx.created_at,
