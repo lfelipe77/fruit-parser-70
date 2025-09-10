@@ -27,11 +27,11 @@ export const useWinnerSelection = () => {
       const randomIndex = Math.floor(Math.random() * tickets.length);
       const winningTicket = tickets[randomIndex];
 
-      // Update raffle with winner
+      // Update raffle with winner - use 'premiado' status to indicate winner selected
       const { error: updateError } = await supabase
         .from('raffles')
         .update({
-          status: 'completed',
+          status: 'premiado',
           winner_user_id: winningTicket.user_id,
           draw_timestamp: new Date().toISOString(),
           closed_at: new Date().toISOString()
@@ -75,6 +75,7 @@ export const useWinnerSelection = () => {
   const getRaffleStatus = (raffle: any) => {
     if (!raffle) return 'unknown';
     
+    if (raffle.status === 'premiado') return 'premiado';
     if (raffle.status === 'completed') return 'completed';
     if (raffle.progress_pct >= 100) return 'ready_for_draw';
     if (raffle.status === 'active') return 'active';

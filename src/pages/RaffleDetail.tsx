@@ -131,6 +131,11 @@ export default function RaffleDetail() {
         setErrorMsg("Informe uma quantidade válida.");
         return;
       }
+      // Allow purchasing even after goal reached, stop only when winner selected
+      if (raffle.status === 'completed' || raffle.status === 'premiado') {
+        setErrorMsg("Esta rifa já teve seu ganhador selecionado.");
+        return;
+      }
       if ((raffle.tickets_remaining ?? 0) < 1) {
         setErrorMsg("Rifa esgotada.");
         return;

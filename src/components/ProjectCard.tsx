@@ -60,8 +60,9 @@ export default function ProjectCard({
 
   // Use raffleStatus for buy button logic, fallback to status
   const actualStatus = raffleStatus || status;
-  const canBuy = actualStatus === 'active';
-  const isCompleted = actualStatus === 'completed' || percentage >= 100;
+  // Allow buying until winner is selected (premiado), not just until goal reached
+  const canBuy = actualStatus === 'active' || (actualStatus !== 'completed' && actualStatus !== 'premiado');
+  const isCompleted = actualStatus === 'completed' || actualStatus === 'premiado';
 
   return (
     <Link to={`/ganhavel/${ganhaveisId}`} className="block">
