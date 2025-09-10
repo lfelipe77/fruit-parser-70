@@ -15,16 +15,19 @@ export interface Notification {
   created_at: string;
 }
 
-export function useNotifications(userId?: string) {
+export function useNotifications(userId?: string, options?: { limit?: number; offset?: number }) {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
+  
+  const limit = options?.limit || 20;
+  const offset = options?.offset || 0;
   
   // Use provided userId or fall back to current user, but only if feature flag is enabled
   const effectiveUserId = FLAGS.notifications ? (userId || user?.id) : undefined;
   const enabled = FLAGS.notifications && !!effectiveUserId;
 
   const query = useQuery({
-    queryKey: ['notifications', effectiveUserId],
+    queryKey: ['notifications', effectiveUserId, limit, offset],
     enabled,
     queryFn: async (): Promise<Notification[]> => {
       const { data, error } = await supabase
@@ -32,7 +35,7 @@ export function useNotifications(userId?: string) {
         .select('*')
         .eq('user_id', effectiveUserId!)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .range(offset, offset + limit - 1);
       if (error) throw error;
       return data as Notification[];
     },

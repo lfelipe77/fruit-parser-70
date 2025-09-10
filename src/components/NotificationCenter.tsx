@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +8,15 @@ import { Bell, Trophy, Heart, DollarSign, Calendar, X, Ticket, Crown } from "luc
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNotifications, markNotificationRead, markAllNotificationsRead } from '@/hooks/useNotifications';
+import { mapTypeToUiKind, uiKindToLabel, type DbNotificationType } from '@/lib/notificationAdapter';
 import { FLAGS } from '@/config/flags';
 import { useAuthContext } from '@/providers/AuthProvider';
 
 export default function NotificationCenter() {
   const { user } = useAuthContext();
   const enabled = FLAGS.notifications && !!user?.id;
+  const [page, setPage] = useState(0);
+  const limit = 20;
 
   const {
     data: notifications = [],
@@ -24,21 +28,20 @@ export default function NotificationCenter() {
     isMarkingAsRead,
     isMarkingAllAsRead,
     isDeletingNotification
-  } = useNotifications(enabled ? user!.id : undefined);
+  } = useNotifications(enabled ? user!.id : undefined, { limit, offset: page * limit });
 
   const getIcon = (type: string) => {
-    switch (type) {
-      case 'nova_rifa':
+    const kind = mapTypeToUiKind(type as DbNotificationType);
+    switch (kind) {
+      case 'novo_ganhavel':
         return <Trophy className="h-4 w-4 text-primary" />;
-      case 'rifa_finalizada':
+      case 'ganhavel_finalizado':
         return <DollarSign className="h-4 w-4 text-green-500" />;
       case 'sorteio_proximo':
         return <Calendar className="h-4 w-4 text-orange-500" />;
-      case 'organizador_seguido':
-        return <Heart className="h-4 w-4 text-pink-500" />;
-      case 'ticket_purchased':
+      case 'compra_confirmada':
         return <Ticket className="h-4 w-4 text-blue-500" />;
-      case 'winner_selected':
+      case 'vencedor_definido':
         return <Crown className="h-4 w-4 text-yellow-500" />;
       default:
         return <Bell className="h-4 w-4" />;
@@ -138,12 +141,12 @@ export default function NotificationCenter() {
                             </Button>
                           </div>
                           
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {notification.message}
-                          </p>
-                          
-                          <div className="text-xs text-muted-foreground mt-2">
-                            {notification.type.replace('_', ' ')} • {formatTimeAgo(notification.created_at)}
+                           <p className="text-sm text-muted-foreground mt-1">
+                             {notification.message}
+                           </p>
+                           
+                           <div className="text-xs text-muted-foreground mt-2">
+                             {uiKindToLabel(mapTypeToUiKind(notification.type as DbNotificationType))} • {formatTimeAgo(notification.created_at)}
                           </div>
                         </div>
                         
@@ -152,9 +155,22 @@ export default function NotificationCenter() {
                         )}
                       </div>
                     </button>
-                  ))
-                )}
-              </ScrollArea>
+                   ))
+                 )}
+                 {notifications.length === limit && (
+                   <div className="p-4 border-t">
+                     <Button 
+                       variant="outline" 
+                       size="sm" 
+                       className="w-full"
+                       onClick={() => setPage(p => p + 1)}
+                       disabled={isLoading}
+                     >
+                       {isLoading ? 'Carregando...' : 'Carregar mais'}
+                     </Button>
+                   </div>
+                 )}
+               </ScrollArea>
             )}
           </CardContent>
         </Card>

@@ -205,6 +205,30 @@ export default function FederalLotteryManager() {
 
       toast({ title: 'Vencedor calculado com sucesso' });
       
+      // Send winner notification if we have winner data
+      if (data && typeof data === 'object' && 'winner_user_id' in data && data.winner_user_id) {
+        try {
+          // Fetch raffle title for notification
+          const { data: raffle } = await supabase
+            .from('raffles')
+            .select('title')
+            .eq('id', raffleId)
+            .maybeSingle();
+            
+          await pushNotification({
+            user_id: data.winner_user_id as string,
+            type: 'winner_selected',
+            title: 'Você venceu! 🎉',
+            message: `Parabéns! Você foi o vencedor${raffle ? ` do Ganhavel "${raffle.title}"` : ''}!`,
+            dedupe_key: `winner_selected:${raffleId}`,
+            data: { raffle_id: raffleId, raffle_title: raffle?.title },
+          });
+        } catch (notifyError) {
+          console.error('Error sending winner notification:', notifyError);
+          // Don't fail the whole operation for notification error
+        }
+      }
+      
       // Refresh lists
       invalidateQueries();
       await fetchData();

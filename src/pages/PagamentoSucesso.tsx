@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { sendAppEmail } from "@/lib/sendAppEmail";
 import { receiptEmail } from "@/lib/emailTemplates";
+import { pushNotification } from "@/lib/notify";
 interface PaymentSuccessData {
   raffleId?: string;
   txId?: string;
@@ -129,6 +130,18 @@ export default function PagamentoSucesso() {
           // Send receipt email if not already sent
           if (!tx.receipt_email_sent_at && !emailSent) {
             await handleReceiptEmail(tx, comboStrings, session.user.email);
+          }
+          
+          // Send notification if transaction is paid
+          if (session.user?.id && tx.raffle_id) {
+            await pushNotification({
+              user_id: session.user.id,
+              type: 'ticket_purchased',
+              title: 'Compra confirmada!',
+              message: 'Seus bilhetes do Ganhavel foram confirmados.',
+              dedupe_key: `ticket_purchased:${tx.id}`,
+              data: { transaction_id: tx.id, raffle_id: tx.raffle_id, ticket_count: comboStrings.length },
+            });
           }
           
           setIsLoading(false);
