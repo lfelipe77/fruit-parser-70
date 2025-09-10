@@ -25,104 +25,33 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import NotificationCenter from "@/components/NotificationCenter";
 import LanguageSelector from "@/components/LanguageSelector";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { useAuth } from "@/hooks/useAuth";
 import { useAuthContext } from "@/providers/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getAvatarSrc } from "@/lib/avatarUtils";
-import { useUnifiedProfile } from "@/hooks/useUnifiedProfile";
-import ProfileErrorState from "@/components/ProfileErrorState";
+import { useMyProfile } from "@/hooks/useMyProfile";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
-function useIsAdmin() {
-  const { user, initializing } = useAuthContext();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  
-  useEffect(() => {
-    if (initializing) return; // Wait for auth to initialize
-    
-    if (!user) {
-      console.log('[useIsAdmin] No user found');
-      setIsAdmin(false);
-      return;
-    }
-    
-    const checkAdmin = async () => {
-      console.log('[useIsAdmin] Checking admin status for user:', user.id);
-      try {
-        const { data } = await supabase
-          .from("user_profiles")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle();
-        
-        console.log('[useIsAdmin] Profile data:', data);
-        const adminStatus = ((data?.role ?? "") as string).toLowerCase() === "admin";
-        console.log('[useIsAdmin] Admin status:', adminStatus);
-        setIsAdmin(adminStatus);
-      } catch (error) {
-        console.error('[useIsAdmin] Error:', error);
-        setIsAdmin(false);
-      }
-    };
-    
-    checkAdmin();
-  }, [user, initializing]);
-  
-  return isAdmin;
-}
 
 export default function Navigation() {
   const { t } = useTranslation();
   const [selectedLottery, setSelectedLottery] = useState('br');
-  const { isAdmin: legacyIsAdmin } = useAdminCheck();
-  const { user } = useAuth();
-  const { user: authUser, initializing } = useAuthContext();
-  const { profile, isLoading: profileLoading, error: profileError, isAdmin } = useUnifiedProfile();
+  const { user } = useAuthContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Get user role from profile hook (simplified) - handle both profile types
-  const userRole = (profile as any)?.role || "";
-  
-  // Legacy admin check that's still needed for some fallback cases
-  const useIsAdmin = () => {
-    const { user, initializing } = useAuthContext();
-    const [isAdminState, setIsAdminState] = useState<boolean | null>(null);
-    
-    useEffect(() => {
-      if (initializing) return;
-      
-      if (!user) {
-        setIsAdminState(false);
-        return;
-      }
-      
-      const checkAdmin = async () => {
-        try {
-          const { data } = await supabase
-            .from("user_profiles")
-            .select("role")
-            .eq("id", user.id)
-            .maybeSingle();
-          
-          const adminStatus = ((data?.role ?? "") as string).toLowerCase() === "admin";
-          setIsAdminState(adminStatus);
-        } catch (error) {
-          console.error('[useIsAdmin] Error:', error);
-          setIsAdminState(false);
-        }
-      };
-      
-      checkAdmin();
-    }, [user, initializing]);
-    
-    return isAdminState;
-  };
-  
-  const legacyIsAdminResult = useIsAdmin();
+  // Unified profile and admin hooks
+  const { data: me, error: meErr, status: meStatus } = useMyProfile();
+  const { isAdmin, isLoading: adminLoading } = useIsAdmin();
+
+  // Dev-only diagnostics
+  if (import.meta.env.DEV) {
+    console.group('[Navigation]');
+    console.log({ uid: user?.id, profileStatus: meStatus, me, meErr, isAdmin });
+    console.groupEnd();
+  }
+
+  const profileReady = !!me && !meErr;
 
   const lotteryDraws = [
     { id: 'br', flag: '🇧🇷', name: 'Mega-Sena', date: '10/08', time: '20:00' },
@@ -133,13 +62,6 @@ export default function Navigation() {
 
   const selectedDraw = lotteryDraws.find(draw => draw.id === selectedLottery);
 
-  // Debug logging for admin status
-  console.log('[Navigation] Current user:', user?.id);
-  console.log('[Navigation] Current userRole:', userRole);
-  console.log('[Navigation] legacyIsAdmin hook result:', legacyIsAdmin);
-  console.log('[Navigation] useUnifiedProfile isAdmin result:', isAdmin);
-  console.log('[Navigation] Admin dropdown visible:', userRole === "admin");
-  console.log('[Navigation] Direct admin link visible:', isAdmin === true);
   
   return (
     <>
@@ -269,17 +191,16 @@ export default function Navigation() {
                 </Link>
               )}
               
-              {/* Legacy Admin dropdown menu - Fallback */}
-              {userRole === "admin" && !isAdmin && (
+              {/* Admin dropdown menu - only show when user is confirmed admin */}
+              {isAdmin === true && !adminLoading && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="ghost" 
                       className="flex items-center gap-2"
-                      onClick={() => console.log('[Navigation] Legacy admin dropdown clicked, userRole:', userRole, 'isAdmin:', legacyIsAdminResult)}
                     >
                       <Shield className="h-4 w-4" />
-                      Admin (Legacy)
+                      Admin
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -288,7 +209,6 @@ export default function Navigation() {
                       <Link 
                         to="/admin" 
                         className="flex items-center gap-2"
-                        onClick={() => console.log('[Navigation] Clicking admin main panel link')}
                       >
                         <Settings className="h-4 w-4" />
                         Painel Principal
@@ -298,7 +218,6 @@ export default function Navigation() {
                       <Link 
                         to="/admin-dashboard" 
                         className="flex items-center gap-2"
-                        onClick={() => console.log('[Navigation] Clicking admin dashboard link')}
                       >
                         <BarChart3 className="h-4 w-4" />
                         Dashboard
@@ -308,7 +227,6 @@ export default function Navigation() {
                       <Link 
                         to="/admin-visits" 
                         className="flex items-center gap-2"
-                        onClick={() => console.log('[Navigation] Clicking admin visits link')}
                       >
                         <Eye className="h-4 w-4" />
                         Visitas Públicas
@@ -318,26 +236,21 @@ export default function Navigation() {
                 </DropdownMenu>
               )}
               {user ? (
-                profileLoading ? (
-                  <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
-                ) : profileError ? (
-                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
-                    <User className="w-4 h-4 text-destructive" />
-                  </div>
-                ) : (
-                  <Link 
-                    to="/dashboard" 
-                    className="inline-block hover:opacity-80 transition-opacity cursor-pointer"
-                    data-testid="avatar-link"
-                  >
-                    <Avatar className="w-8 h-8 cursor-pointer">
-                      <AvatarImage src={getAvatarSrc(profile, user?.id)} data-testid="profile-avatar" />
-                      <AvatarFallback className="cursor-pointer">
-                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                <Link 
+                  to="/perfil" 
+                  className="inline-flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  data-testid="avatar-link"
+                >
+                  <Avatar className="h-8 w-8">
+                    {me?.avatar_url ? (
+                      <AvatarImage src={me.avatar_url} alt={me?.username ?? 'profile'} />
+                    ) : (
+                      <AvatarFallback>
+                        {(me?.username ?? user?.email ?? 'U').slice(0,2).toUpperCase()}
                       </AvatarFallback>
-                    </Avatar>
-                  </Link>
-                )
+                    )}
+                  </Avatar>
+                </Link>
               ) : (
                 <Button variant="outline" size="sm" asChild className="hidden md:flex">
                   <Link to="/login">
