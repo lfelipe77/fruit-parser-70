@@ -349,64 +349,88 @@ export default function FinancialControl() {
                                   <Eye className="h-3 w-3" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Detalhes da Transação - {selectedTransaction?.id}</DialogTitle>
-                                  <DialogDescription>
-                                    Informações completas da transação financeira
-                                  </DialogDescription>
-                                </DialogHeader>
-                                {selectedTransaction && (
-                                  <div className="space-y-4">
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                      <div>
-                                        <Label>ID da Transação</Label>
-                                        <p className="text-sm">{selectedTransaction.id}</p>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Detalhes da Transação - {selectedTransaction?.id}</DialogTitle>
+                                    <DialogDescription>
+                                      Informações completas da transação financeira
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  {selectedTransaction && (
+                                    <div className="space-y-4">
+                                      <div className="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                          <Label>ID da Transação</Label>
+                                          <p className="text-sm">{selectedTransaction.id}</p>
+                                        </div>
+                                        <div>
+                                          <Label>ID do Ganhavel</Label>
+                                          <p className="text-sm">{selectedTransaction.raffle_id}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Título do Ganhavel</Label>
+                                          <p className="text-sm">{selectedTransaction.raffle_title}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Organizador</Label>
+                                          <p className="text-sm">{selectedTransaction.organizer_name}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Valor Bruto</Label>
+                                          <p className="text-sm font-medium">{toBRL(selectedTransaction.amount)}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Taxa</Label>
+                                          <p className="text-sm text-red-600">{toBRL(selectedTransaction.fee_amount)}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Valor Líquido</Label>
+                                          <p className="text-sm font-medium text-green-600">{toBRL(selectedTransaction.net_amount)}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Método de Pagamento</Label>
+                                          <p className="text-sm capitalize">{selectedTransaction.payment_method?.replace('_', ' ')}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Data</Label>
+                                          <p className="text-sm">{new Date(selectedTransaction.transaction_date).toLocaleDateString('pt-BR')}</p>
+                                        </div>
+                                        <div>
+                                          <Label>Status</Label>
+                                          <div className="mt-1">{getStatusBadge(selectedTransaction.status)}</div>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <Label>ID do Ganhavel</Label>
-                                        <p className="text-sm">{selectedTransaction.raffle_id}</p>
+
+                                      {/* Dados do Comprador */}
+                                      <div className="border-t pt-4">
+                                        <Label>Dados do Comprador</Label>
+                                        <div className="grid gap-4 md:grid-cols-2 mt-2">
+                                          <div>
+                                            <Label>Nome</Label>
+                                            <p className="text-sm">{selectedTransaction.customer_name || '—'}</p>
+                                          </div>
+                                          <div>
+                                            <Label>E-mail</Label>
+                                            <p className="text-sm">{selectedTransaction.customer_email || '—'}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Telefone</Label>
+                                            <p className="text-sm">{selectedTransaction.customer_phone || '—'}</p>
+                                          </div>
+                                          <div>
+                                            <Label>CPF</Label>
+                                            <p className="text-sm">{selectedTransaction.customer_cpf || '—'}</p>
+                                          </div>
+                                        </div>
                                       </div>
+
                                       <div>
-                                        <Label>Título do Ganhavel</Label>
-                                        <p className="text-sm">{selectedTransaction.raffle_title}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Organizador</Label>
-                                        <p className="text-sm">{selectedTransaction.organizer_name}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Valor Bruto</Label>
-                                        <p className="text-sm font-medium">{toBRL(selectedTransaction.amount)}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Taxa</Label>
-                                        <p className="text-sm text-red-600">{toBRL(selectedTransaction.fee_amount)}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Valor Líquido</Label>
-                                        <p className="text-sm font-medium text-green-600">{toBRL(selectedTransaction.net_amount)}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Método de Pagamento</Label>
-                                        <p className="text-sm capitalize">{selectedTransaction.payment_method?.replace('_', ' ')}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Data</Label>
-                                        <p className="text-sm">{new Date(selectedTransaction.transaction_date).toLocaleDateString('pt-BR')}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Status</Label>
-                                        <div className="mt-1">{getStatusBadge(selectedTransaction.status)}</div>
+                                        <Label>Descrição</Label>
+                                        <p className="text-sm">{selectedTransaction.description}</p>
                                       </div>
                                     </div>
-                                    <div>
-                                      <Label>Descrição</Label>
-                                      <p className="text-sm">{selectedTransaction.description}</p>
-                                    </div>
-                                  </div>
-                                )}
-                              </DialogContent>
+                                  )}
+                                </DialogContent>
                             </Dialog>
                             
                             {transaction.status === "pending" && transaction.type === "payment_release" && (

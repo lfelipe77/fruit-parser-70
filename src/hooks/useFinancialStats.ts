@@ -27,6 +27,11 @@ export interface FinancialTransaction {
   transaction_date: string;
   type: string;
   description: string;
+  // Buyer contact info
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  customer_cpf?: string | null;
 }
 
 export function useFinancialStats() {
@@ -125,23 +130,27 @@ export function useFinancialStats() {
     };
   };
 
-  const fetchTransactions = async (): Promise<FinancialTransaction[]> => {
-    const { data: transactions } = await supabase
-      .from('transactions')
-      .select(`
-        id,
-        raffle_id,
-        amount,
-        status,
-        created_at,
-        provider,
-        raffles!inner (
-          title,
-          owner_user_id
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(100);
+const fetchTransactions = async (): Promise<FinancialTransaction[]> => {
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select(`
+      id,
+      raffle_id,
+      amount,
+      status,
+      created_at,
+      provider,
+      customer_name,
+      customer_email,
+      customer_phone,
+      customer_cpf,
+      raffles!inner (
+        title,
+        owner_user_id
+      )
+    `)
+    .order('created_at', { ascending: false })
+    .limit(100);
 
     if (!transactions) return [];
 
@@ -178,7 +187,11 @@ export function useFinancialStats() {
         payment_method: tx.provider || 'unknown',
         transaction_date: tx.created_at,
         type: tx.status === 'paid' ? 'payment_release' : 'pending_payment',
-        description: `Transação - ${tx.raffles.title}`
+        description: `Transação - ${tx.raffles.title}`,
+        customer_name: tx.customer_name ?? null,
+        customer_email: tx.customer_email ?? null,
+        customer_phone: tx.customer_phone ?? null,
+        customer_cpf: tx.customer_cpf ?? null,
       };
     });
   };
