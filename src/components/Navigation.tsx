@@ -32,6 +32,7 @@ import { useAuthContext } from "@/providers/AuthProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMyProfile } from "@/hooks/useMyProfile";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { getAvatarSrc } from '@/lib/avatarUtils';
 
 
 export default function Navigation() {
@@ -242,13 +243,13 @@ export default function Navigation() {
                   data-testid="avatar-link"
                 >
                   <Avatar className="h-8 w-8">
-                    {me?.avatar_url ? (
-                      <AvatarImage src={me.avatar_url} alt={me?.username ?? 'profile'} />
-                    ) : (
-                      <AvatarFallback>
-                        {(me?.username ?? user?.email ?? 'U').slice(0,2).toUpperCase()}
-                      </AvatarFallback>
-                    )}
+                    <AvatarImage 
+                      src={getAvatarSrc({ avatar_url: me?.avatar_url }, me?.id)} 
+                      alt={me?.username ?? 'profile'} 
+                    />
+                    <AvatarFallback>
+                      {(me?.username ?? user?.email ?? 'U').slice(0,2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                 </Link>
               ) : (
