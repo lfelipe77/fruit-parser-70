@@ -237,7 +237,7 @@ export default function Navigation() {
               )}
               {user ? (
                 <Link 
-                  to="/perfil" 
+                  to="/profile" 
                   className="inline-flex items-center cursor-pointer hover:opacity-80 transition-opacity"
                   data-testid="avatar-link"
                 >
