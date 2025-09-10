@@ -16,6 +16,7 @@ import { computeCheckout } from "@/utils/money";
 import { RaffleCompletionTrigger } from "@/components/RaffleCompletionTrigger";
 import SEOHead from "@/components/SEOHead";
 import { formatBRL as formatBRLUtils } from "@/utils/money";
+import { useRaffleWinner } from "@/hooks/useRaffleWinner";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -99,6 +100,10 @@ export default function GanhaveisDetail() {
   );
   
   const lastPaidAgo = useRelativeTime(raffle?.lastPaidAt ?? null, "pt-BR");
+
+  // ---- Winner data for premiado raffles
+  const isPremiado = raffle?.status === 'premiado';
+  const { data: winner } = useRaffleWinner(raffle?.id, isPremiado);
 
   // ---- Data fetching function
   const fetchData = React.useCallback(async () => {
@@ -332,99 +337,147 @@ export default function GanhaveisDetail() {
             <div className="text-sm text-gray-600">Último pagamento: {moneyRow?.last_paid_at ? lastPaidAgo : "—"}</div>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Valor do Ganhavel</div>
-              <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.goal)}</div>
-            </div>
-
-            <div className="flex items-center gap-3 bg-white rounded-lg p-2">
-              <button 
-                onClick={() => setQty(q => Math.max(1, q - 1))} 
-                className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
-              >
-                –
-              </button>
-              <span className="w-12 text-center font-semibold">{adjustedQty}</span>
-              <button 
-                onClick={() => setQty(q => q + 1)} 
-                className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
-              >
-                +
-              </button>
-            </div>
-            
-            {qtyAdjusted && (
-              <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
-                Quantidade ajustada para atender o mínimo de R$ 5,00.
-              </div>
-            )}
-
-            <div className="space-y-2 bg-white rounded-lg p-4">
-              <div className="flex justify-between text-sm">
-                <span>Bilhetes ({adjustedQty}x):</span><span>{formatBRL(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Taxa institucional:</span><span>{formatBRL(fee)}</span>
-              </div>
-              <hr className="my-2 border-gray-200" />
-              <div className="flex justify-between font-bold text-lg text-emerald-700">
-                <span>Total a pagar</span><span>{formatBRL(chargeTotal)}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => navigate(toConfirm(raffle.id, adjustedQty))}
-              disabled={!isActive}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Comprar {adjustedQty} bilhetes
-            </button>
-
-            {/* Share section */}
-            {raffle?.id && (
-              <div className="mt-4 pt-4 border-t border-emerald-200">
-                <CompartilheRifa raffleId={raffle.id} className="" />
-              </div>
-            )}
-
-            {/* Direct Purchase Link - HIGHLIGHTED */}
-            {directLink && (
-              <div className="mt-6 pt-6 border-t border-emerald-200">
-                <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-2 border-orange-200 rounded-lg p-5 shadow-md">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">🛒</span>
-                    <h4 className="text-lg font-bold text-orange-800">Compra Direta ou Negociação</h4>
+          {isPremiado ? (
+            winner ? (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="mb-2 text-center text-emerald-800 font-semibold">
+                  🏆 Ganhador Sorteado
+                </div>
+                <div className="flex items-center gap-3 bg-white rounded-lg p-3">
+                  <img
+                    src={winner.winner_avatar_url || '/default-avatar.png'}
+                    alt=""
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                  <div className="min-w-0">
+                    <a
+                      href={`/perfil/${winner.winner_handle || winner.winner_user_id}`}
+                      className="truncate font-medium text-emerald-700 hover:underline"
+                    >
+                      {winner.winner_handle || 'Ganhador'}
+                    </a>
+                    <div className="text-xs text-gray-600">
+                      Bilhete: {winner.winning_ticket || '-'}
+                    </div>
                   </div>
-                  <p className="text-sm text-orange-700 mb-4 font-medium">
-                    ⚡ Prefere tratar direto? Clique aqui para negociar com o vendedor <strong>ou comprar pelo link de afiliado oficial</strong>.
-                  </p>
-                  <a
-                    href={directLink}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    🔗 Negociar / Comprar Direto
-                  </a>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-white p-2">
+                    <dt className="text-gray-500">Concurso</dt>
+                    <dd className="font-medium">{winner.concurso_number || '-'}</dd>
+                  </div>
+                  <div className="rounded-md bg-white p-2">
+                    <dt className="text-gray-500">Data</dt>
+                    <dd className="font-medium">
+                      {winner.draw_date ? new Date(winner.draw_date).toLocaleDateString() : '-'}
+                    </dd>
+                  </div>
+                  <div className="col-span-2 rounded-md bg-white p-2">
+                    <dt className="text-gray-500">Últimas dezenas (Federal)</dt>
+                    <dd className="font-medium">{winner.federal_pairs || '-'}</dd>
+                  </div>
+                </dl>
+              </div>
+            ) : (
+              <div className="rounded-xl border p-4 text-sm text-gray-600">
+                Aguardando publicação do resultado…
+              </div>
+            )
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <div className="text-xs text-gray-500 uppercase tracking-wide">Valor do Ganhavel</div>
+                <div className="text-2xl font-bold text-emerald-700">{formatBRL(raffle.goal)}</div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white rounded-lg p-2">
+                <button 
+                  onClick={() => setQty(q => Math.max(1, q - 1))} 
+                  className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
+                >
+                  –
+                </button>
+                <span className="w-12 text-center font-semibold">{adjustedQty}</span>
+                <button 
+                  onClick={() => setQty(q => q + 1)} 
+                  className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
+                >
+                  +
+                </button>
+              </div>
+              
+              {qtyAdjusted && (
+                <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
+                  Quantidade ajustada para atender o mínimo de R$ 5,00.
+                </div>
+              )}
+
+              <div className="space-y-2 bg-white rounded-lg p-4">
+                <div className="flex justify-between text-sm">
+                  <span>Bilhetes ({adjustedQty}x):</span><span>{formatBRL(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Taxa institucional:</span><span>{formatBRL(fee)}</span>
+                </div>
+                <hr className="my-2 border-gray-200" />
+                <div className="flex justify-between font-bold text-lg text-emerald-700">
+                  <span>Total a pagar</span><span>{formatBRL(chargeTotal)}</span>
                 </div>
               </div>
-            )}
 
-            {/* Regulamento Section */}
+              <button
+                onClick={() => navigate(toConfirm(raffle.id, adjustedQty))}
+                disabled={!isActive}
+                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Comprar {adjustedQty} bilhetes
+              </button>
+            </div>
+          )}
+
+          {/* Share section */}
+          {raffle?.id && (
+            <div className="mt-4 pt-4 border-t border-emerald-200">
+              <CompartilheRifa raffleId={raffle.id} className="" />
+            </div>
+          )}
+
+          {/* Direct Purchase Link - HIGHLIGHTED */}
+          {directLink && (
             <div className="mt-6 pt-6 border-t border-emerald-200">
-              <h4 className="text-md font-semibold text-emerald-800 mb-3">📋 Regulamento</h4>
-              <div className="bg-white rounded-lg p-4 text-sm text-gray-700 space-y-2">
-                <p className="font-medium text-emerald-700">🏆 Como o ganhador é definido:</p>
-                <ul className="space-y-1 text-xs leading-relaxed">
-                  <li>• Sorteio através da Loteria Federal</li>
-                  <li>• Bilhete com número exato ou mais próximo</li>
-                  <li>• Em caso de empate: quem comprou primeiro</li>
-                  <li>• Processo 100% transparente e auditável</li>
-                </ul>
-                <div className="mt-3 pt-2 border-t border-gray-100">
-                  <p className="text-xs text-emerald-600 font-medium">✅ Garantia total de justiça e transparência</p>
+              <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-2 border-orange-200 rounded-lg p-5 shadow-md">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">🛒</span>
+                  <h4 className="text-lg font-bold text-orange-800">Compra Direta ou Negociação</h4>
                 </div>
+                <p className="text-sm text-orange-700 mb-4 font-medium">
+                  ⚡ Prefere tratar direto? Clique aqui para negociar com o vendedor <strong>ou comprar pelo link de afiliado oficial</strong>.
+                </p>
+                <a
+                  href={directLink}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  🔗 Negociar / Comprar Direto
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Regulamento Section */}
+          <div className="mt-6 pt-6 border-t border-emerald-200">
+            <h4 className="text-md font-semibold text-emerald-800 mb-3">📋 Regulamento</h4>
+            <div className="bg-white rounded-lg p-4 text-sm text-gray-700 space-y-2">
+              <p className="font-medium text-emerald-700">🏆 Como o ganhador é definido:</p>
+              <ul className="space-y-1 text-xs leading-relaxed">
+                <li>• Sorteio através da Loteria Federal</li>
+                <li>• Bilhete com número exato ou mais próximo</li>
+                <li>• Em caso de empate: quem comprou primeiro</li>
+                <li>• Processo 100% transparente e auditável</li>
+              </ul>
+              <div className="mt-3 pt-2 border-t border-gray-100">
+                <p className="text-xs text-emerald-600 font-medium">✅ Garantia total de justiça e transparência</p>
               </div>
             </div>
           </div>

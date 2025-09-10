@@ -8128,6 +8128,373 @@ export type Database = {
           },
         ]
       }
+      v_public_raffle_winner_detail: {
+        Row: {
+          concurso_number: string | null
+          draw_date: string | null
+          federal_pairs: string | null
+          federal_target: string | null
+          raffle_id: string | null
+          ticket_id: string | null
+          winner_avatar_url: string | null
+          winner_handle: string | null
+          winner_published_at: string | null
+          winner_user_id: string | null
+          winning_ticket: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_core"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_eligible_completed_raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_by_category_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_money_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_resultados_completas"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_flip_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_pick_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_core"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_eligible_completed_raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_paid_tickets_with_null_numbers"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_numbers_resolved"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_paid_tickets_with_null_numbers"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_numbers_resolved"
+            referencedColumns: ["ticket_id"]
+          },
+        ]
+      }
       v_public_winners: {
         Row: {
           avatar_url: string | null
