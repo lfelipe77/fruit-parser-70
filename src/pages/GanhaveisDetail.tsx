@@ -222,7 +222,8 @@ export default function GanhaveisDetail() {
   
   const qtyAdjusted = adjustedQty !== qty;
   const drawLabel = raffle?.drawDate ? formatDateBR(raffle.drawDate) : "—";
-  const isActive = raffle?.status === "active";
+  // Allow purchasing until winner is selected (premiado), not just when active
+  const isActive = raffle?.status === "active" || (raffle?.status !== "completed" && raffle?.status !== "premiado");
   
   // SEO Meta data
   const origin = typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com";
