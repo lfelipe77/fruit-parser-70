@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
+import { sendAppEmail } from "@/lib/sendAppEmail";
+import { receiptEmail } from "@/lib/emailTemplates";
 interface PaymentSuccessData {
   raffleId?: string;
   txId?: string;
@@ -66,6 +68,7 @@ export default function PagamentoSucesso() {
   const [combos, setCombos] = useState<string[] | null>(
     s?.selectedNumbers?.map(toComboString) ?? null
   );
+  const [emailSent, setEmailSent] = useState(false);
 
   const txId = s?.txId ?? searchParams.get("tx") ?? id ?? ganhaveisId ?? undefined;
   const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +94,7 @@ export default function PagamentoSucesso() {
 
         const { data: tx, error } = await supabase
           .from("transactions")
-          .select("id, numbers, buyer_user_id, raffle_id, amount")
+          .select("id, numbers, buyer_user_id, raffle_id, amount, receipt_email_sent_at")
           .eq("id", txId)
           .maybeSingle();
 
@@ -122,6 +125,12 @@ export default function PagamentoSucesso() {
             totalPaid: asNumber(tx.amount, 0),
             unitPrice: asNumber(tx.amount, 0) / Math.max(1, comboStrings.length),
           });
+          
+          // Send receipt email if not already sent
+          if (!tx.receipt_email_sent_at && !emailSent) {
+            await handleReceiptEmail(tx, comboStrings, session.user.email);
+          }
+          
           setIsLoading(false);
         } else {
           setHasError(true);
@@ -133,7 +142,44 @@ export default function PagamentoSucesso() {
         setIsLoading(false);
       }
     })();
-  }, [txId, combos]);
+  }, [txId, combos, emailSent]);
+
+  const handleReceiptEmail = async (tx: any, ticketNumbers: string[], buyerEmail: string) => {
+    try {
+      // Fetch raffle details for email
+      const { data: raffle } = await supabase
+        .from('raffles')
+        .select('title, slug, id')
+        .eq('id', tx.raffle_id)
+        .single();
+
+      if (raffle) {
+        const parts = receiptEmail({
+          raffleTitle: raffle.title,
+          raffleUrl: `${window.location.origin}/#/ganhavel/${raffle.slug || raffle.id}`,
+          tickets: ticketNumbers,
+          myTicketsUrl: `${window.location.origin}/#/minha-conta?tab=bilhetes`,
+          resultsUrl: `${window.location.origin}/#/resultados`,
+          valueBRL: toBRL(asNumber(tx.amount, 0)),
+          txId: tx.id
+        });
+
+        await sendAppEmail(buyerEmail, parts.subject, parts.html, parts.text);
+        
+        // Mark receipt email as sent
+        await supabase
+          .from('transactions')
+          .update({ receipt_email_sent_at: new Date().toISOString() })
+          .eq('id', tx.id);
+
+        setEmailSent(true);
+        console.log('Receipt email sent successfully to:', buyerEmail);
+      }
+    } catch (error) {
+      console.error('Error sending receipt email:', error);
+      // Don't throw - just log the error
+    }
+  };
 
   // Support both new and legacy formats
   const quantity = asNumber(rehydrated.quantity || rehydrated.quantity, 1);

@@ -28,6 +28,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { RafflePublicMoney } from "@/types/public-views";
 import { AdminRaffleRow } from "@/components/AdminRaffleRow";
 import FederalLotteryManager from "@/components/admin/FederalLotteryManager";
+import { sendAppEmail } from "@/lib/sendAppEmail";
+import { launchEmail } from "@/lib/emailTemplates";
 
 
 const PAUSE_TO = "archived"; // toggle policy: active <-> archived
@@ -185,6 +187,18 @@ export default function GanhaveisManagement() {
 
   const handleApprove = async (ganhaveisId: string) => {
     try {
+      // First, get raffle details 
+      const { data: raffleData, error: fetchError } = await supabase
+        .from('raffles')
+        .select(`
+          id, title, slug, owner_user_id, launch_email_sent_at,
+          user_profiles!owner_user_id (id, full_name)
+        `)
+        .eq('id', ganhaveisId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       // Update raffle status to active in database
       const { error: updateError } = await supabase
         .from('raffles')
@@ -198,6 +212,11 @@ export default function GanhaveisManagement() {
         targetRaffleId: ganhaveisId,
         reason: 'Approved via admin panel'
       });
+
+      // Send launch email if not already sent
+      if (raffleData && !raffleData.launch_email_sent_at) {
+        await handleLaunchEmail(raffleData);
+      }
 
       toast({
         title: "Ganhavel Aprovado",
@@ -213,6 +232,39 @@ export default function GanhaveisManagement() {
         description: "Falha ao aprovar o ganhavel. Tente novamente.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleLaunchEmail = async (raffle: any) => {
+    try {
+      // Get organizer email from auth.users
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(raffle.owner_user_id);
+      
+      if (userError || !userData?.user?.email) {
+        console.error('Could not get organizer email:', userError);
+        return;
+      }
+
+      const raffleUrl = `${window.location.origin}/#/ganhavel/${raffle.slug || raffle.id}`;
+      const parts = launchEmail({
+        raffleTitle: raffle.title,
+        raffleUrl,
+        resultsUrl: `${window.location.origin}/#/resultados`,
+        tipsUrl: null
+      });
+
+      await sendAppEmail(userData.user.email, parts.subject, parts.html, parts.text);
+      
+      // Mark launch email as sent
+      await supabase
+        .from('raffles')
+        .update({ launch_email_sent_at: new Date().toISOString() })
+        .eq('id', raffle.id);
+
+      console.log('Launch email sent successfully to:', userData.user.email);
+    } catch (error) {
+      console.error('Error sending launch email:', error);
+      // Don't throw - just log the error so approval continues
     }
   };
 

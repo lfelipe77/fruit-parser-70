@@ -2353,6 +2353,7 @@ export type Database = {
           goal_amount: number | null
           id: string
           image_url: string | null
+          launch_email_sent_at: string | null
           location_city: string | null
           location_state: string | null
           organizer_id: string
@@ -2395,6 +2396,7 @@ export type Database = {
           goal_amount?: number | null
           id?: string
           image_url?: string | null
+          launch_email_sent_at?: string | null
           location_city?: string | null
           location_state?: string | null
           organizer_id: string
@@ -2437,6 +2439,7 @@ export type Database = {
           goal_amount?: number | null
           id?: string
           image_url?: string | null
+          launch_email_sent_at?: string | null
           location_city?: string | null
           location_state?: string | null
           organizer_id?: string
@@ -3752,6 +3755,7 @@ export type Database = {
           provider_payment_id: string | null
           provider_ref: string | null
           raffle_id: string
+          receipt_email_sent_at: string | null
           received_at: string | null
           reservation_id: string | null
           selected_numbers: string[] | null
@@ -3787,6 +3791,7 @@ export type Database = {
           provider_payment_id?: string | null
           provider_ref?: string | null
           raffle_id: string
+          receipt_email_sent_at?: string | null
           received_at?: string | null
           reservation_id?: string | null
           selected_numbers?: string[] | null
@@ -3822,6 +3827,7 @@ export type Database = {
           provider_payment_id?: string | null
           provider_ref?: string | null
           raffle_id?: string
+          receipt_email_sent_at?: string | null
           received_at?: string | null
           reservation_id?: string | null
           selected_numbers?: string[] | null
@@ -4324,6 +4330,7 @@ export type Database = {
           updated_at: string | null
           username: string | null
           website_url: string | null
+          welcome_sent_at: string | null
           whatsapp: string | null
           youtube: string | null
         }
@@ -4350,6 +4357,7 @@ export type Database = {
           updated_at?: string | null
           username?: string | null
           website_url?: string | null
+          welcome_sent_at?: string | null
           whatsapp?: string | null
           youtube?: string | null
         }
@@ -4376,6 +4384,7 @@ export type Database = {
           updated_at?: string | null
           username?: string | null
           website_url?: string | null
+          welcome_sent_at?: string | null
           whatsapp?: string | null
           youtube?: string | null
         }
