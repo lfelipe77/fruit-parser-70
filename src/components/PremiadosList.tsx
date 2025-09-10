@@ -53,7 +53,7 @@ export default function PremiadosList() {
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-muted overflow-hidden flex items-center justify-center">
                 {(() => {
-                  const avatarSrc = getAvatarSrc({ avatar_url: w.avatar_url, updated_at: w.updated_at }, w.user_id);
+                  const avatarSrc = getAvatarSrc({ avatar_url: w.avatar_url }, w.user_id);
                   return avatarSrc && avatarSrc !== "/img/avatar-placeholder.png"
                     ? <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
                     : <span className="text-xs text-muted-foreground">👤</span>;
