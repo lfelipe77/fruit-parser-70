@@ -44,7 +44,6 @@ const FALLBACK_RULES = `
 <ol>
 <li><strong>Sorteio acontece</strong><br/>Utilizamos o número da Loteria Federal do país de origem do prêmio.</li>
 <li><strong>Comparação com os bilhetes vendidos</strong><br/>Se houver um bilhete com o número exato → esse é o ganhador.<br/>Se nenhum tiver o número exato → vale o mais próximo em ordem crescente.</li>
-<li><strong>Critério de desempate</strong><br/>Se dois ou mais bilhetes forem igualmente próximos, vence quem comprou primeiro.</li>
 <li><strong>Sem repetições</strong><br/>Cada bilhete é único no sistema. Um número premiado não pode ser repetido em outro sorteio.</li>
 </ol>
 <p>✅ <strong>Garantia de Justiça</strong></p>
@@ -52,6 +51,7 @@ const FALLBACK_RULES = `
 <li>Sorteio 100% vinculado à Loteria Federal</li>
 <li>Zero manipulação / nenhuma fraude</li>
 <li>Processo rastreável, seguro e auditável</li>
+<li>O site, toda a lógica e toda operação é 100% transparente e auditável</li>
 </ul>
 `;
 
