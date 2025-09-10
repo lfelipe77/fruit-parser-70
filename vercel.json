@@ -5,10 +5,14 @@
       "destination": "/api/ganhavel/:id"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|ganhavel/).*)",
       "destination": "/index.html"
     }
   ],
+  "env": {
+    "SUPABASE_URL": "https://whqxpuyjxoiufzhvqneg.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key"
+  },
   "headers": [
     {
       "source": "/(.*)",
