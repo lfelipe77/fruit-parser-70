@@ -75,7 +75,7 @@ export default function CrowdfundingHome() {
             <div>
               <h3 className="font-semibold mb-4">Para Participantes</h3>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition-colors">Descobrir Ganhaveis</a></li>
+                <li><Link to="/descobrir" className="hover:text-foreground transition-colors">Descobrir Ganhaveis</Link></li>
                 <li><Link to="/confianca-seguranca" className="hover:text-foreground transition-colors">Confiança & Segurança</Link></li>
                 <li><Link to="/central-de-ajuda" className="hover:text-foreground transition-colors">Central de Ajuda</Link></li>
               </ul>
