@@ -14,6 +14,7 @@ type RaffleCardProps = {
     last_paid_at?: string | null;
     location_city?: string | null;
     location_state?: string | null;
+    location_display?: string | null;
     goal_amount?: number | null;
   };
   showBuy?: boolean;
@@ -89,9 +90,9 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
       {/* Title + excerpt */}
       <div className="p-4 space-y-3">
         <h3 className="font-semibold leading-snug line-clamp-1">{String(data.title || 'Ganhável')}</h3>
-        {(data as any).location_display && (
-          <div className="text-sm text-muted-foreground mt-1">
-            {(data as any).location_display}
+        {data.location_display && (
+          <div className="text-sm text-muted-foreground">
+            {data.location_display}
           </div>
         )}
         
@@ -114,19 +115,10 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
         </div>
         <p className="text-xs" data-testid={`progress-pct-${data.id}`}>{pct}% arrecadado</p>
 
-        {/* Participants + last sale + location */}
-        <div className="text-xs text-muted-foreground">
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <div>{Number(data.participants_count || 0)} participantes</div>
-              <div>{data.last_paid_at ? `Última venda: ${timeAgo(data.last_paid_at)}` : "Sem vendas ainda"}</div>
-            </div>
-            {(data as any).location_display && (
-              <div className="text-right">
-                <div className="text-primary font-medium">{(data as any).location_display}</div>
-              </div>
-            )}
-          </div>
+        {/* Participants + last sale */}
+        <div className="text-xs text-muted-foreground space-y-1">
+          <div>{Number(data.participants_count || 0)} participantes</div>
+          <div>{data.last_paid_at ? `Última venda: ${timeAgo(data.last_paid_at)}` : "Sem vendas ainda"}</div>
         </div>
 
         {/* CTA */}
