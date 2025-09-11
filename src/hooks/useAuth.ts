@@ -35,11 +35,17 @@ export const useAuth = () => {
             }
           }, 0);
           
-          // Navigate to last path or home instead of forcing dashboard
-          const lastPath = sessionStorage.getItem("lastPath");
-          const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
-          navigate(redirectTo, { replace: true });
-          toast.success('Login realizado com sucesso!');
+          // Only navigate on SIGNED_IN if we came from login page or have explicit redirectTo
+          const currentPath = window.location.hash.replace('#', '');
+          const cameFromLogin = currentPath.includes('/login') || currentPath.includes('/auth');
+          
+          if (cameFromLogin) {
+            const lastPath = sessionStorage.getItem("lastPath");
+            const redirectTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
+            navigate(redirectTo, { replace: true });
+            toast.success('Login realizado com sucesso!');
+          }
+          // Note: No navigation on TOKEN_REFRESHED or other auth events
         }
 
         if (event === 'SIGNED_OUT') {

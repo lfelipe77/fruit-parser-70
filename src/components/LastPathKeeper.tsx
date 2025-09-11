@@ -15,7 +15,7 @@ export default function LastPathKeeper({ isAuthenticated }: { isAuthenticated: b
     }
   }, [location]);
 
-  // Restore once on first load (respect auth)
+  // Restore once on first load (respect auth) - only run once to prevent loops
   useEffect(() => {
     if (!firstLoad.current) return;
     firstLoad.current = false;
@@ -28,7 +28,10 @@ export default function LastPathKeeper({ isAuthenticated }: { isAuthenticated: b
     if (needsAuth && !isAuthenticated) return;
 
     const current = location.pathname + location.search + location.hash;
-    if (current !== saved) navigate(saved, { replace: true });
+    // Only navigate if we're not already at the saved path AND we're on a generic route
+    if (current !== saved && (current === '/' || current === '/#/')) {
+      navigate(saved, { replace: true });
+    }
   }, [isAuthenticated, location, navigate]);
 
   return null;

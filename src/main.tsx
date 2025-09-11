@@ -8,6 +8,11 @@ import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 // --- EARLY OAUTH HANDLER (runs before router/guards) ---
 import { supabase } from '@/integrations/supabase/client';
 
+// Debug blink diagnostics (preview only)
+if (import.meta.env.VITE_DEBUG_BLINK === 'true') {
+  import('./debugBlink');
+}
+
 function parseFragmentParams(href: string) {
   // HashRouter yields "/#/auth-callback#access_token=..."
   const parts = href.split('#');
@@ -49,8 +54,11 @@ async function oauthEarly() {
     // Clean URL without reloading; restore to home instead of forcing dashboard
     const lastPath = sessionStorage.getItem("lastPath");
     const restoreTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
-    // Use replaceState synchronously to avoid layout flash
-    history.replaceState(null, '', `${window.location.origin}/#${restoreTo}`);
+    // Use replaceState synchronously to avoid layout flash - only if different
+    const currentPath = `${window.location.origin}/#${restoreTo}`;
+    if (window.location.href !== currentPath) {
+      history.replaceState(null, '', currentPath);
+    }
   } catch (e) {
     console.error('[oauth-early] failed', e);
     history.replaceState(null, '', `${window.location.origin}/#/login`);

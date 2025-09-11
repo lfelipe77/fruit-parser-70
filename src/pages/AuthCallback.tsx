@@ -20,18 +20,18 @@ export default function AuthCallback() {
           if (error) {
             console.error('[oauth] exchangeCodeForSession error', error);
             setMsg('Falha no login. Tente novamente.');
-            setTimeout(() => navigate('/login'), 1500);
+            // Immediate redirect on error, no delay
+            navigate('/login', { replace: true });
             return;
           }
           // success
           console.log('[AuthCallback] Session exchange successful, navigating to intended destination');
           setMsg('Login concluído! Redirecionando...');
-          setTimeout(() => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const redirectTo = urlParams.get('redirectTo');
-            const destination = redirectTo ? decodeURIComponent(redirectTo) : '/';
-            navigate(destination, { replace: true });
-          }, 500);
+          // Immediate redirect on success, no delay
+          const urlParams = new URLSearchParams(window.location.search);
+          const redirectTo = urlParams.get('redirectTo');
+          const destination = redirectTo ? decodeURIComponent(redirectTo) : '/';
+          navigate(destination, { replace: true });
           return;
         }
 
