@@ -57,20 +57,16 @@ export default function EmAltaRecentesSection() {
           if (emAlta.error) throw emAlta.error;
           if (recentes.error) throw recentes.error;
           
-          // Add location_label for each item
+          // Add location_label for each item (city only)
           const emAltaWithLocation = ((emAlta.data ?? []) as unknown as RaffleCardInfo[]).map(item => ({
             ...item,
-            location_label: item.location_city && item.location_state 
-              ? `${item.location_city} (${item.location_state})`
-              : item.location_city || item.location_state || null
+            location_label: item.location_city || null
           }));
-          console.debug('[Raffles] sample row', emAltaWithLocation?.[0]?.title, emAltaWithLocation?.[0]?.location_label);
           const recentesWithLocation = ((recentes.data ?? []) as unknown as RaffleCardInfo[]).map(item => ({
             ...item,
-            location_label: item.location_city && item.location_state 
-              ? `${item.location_city} (${item.location_state})`
-              : item.location_city || item.location_state || null
+            location_label: item.location_city || null
           }));
+          console.debug('[Raffles] sample row', emAltaWithLocation?.[0]?.title, emAltaWithLocation?.[0]?.location_label);
           
           setTop(emAltaWithLocation.slice(0, 3));
           setRecent(recentesWithLocation.slice(0, 3));

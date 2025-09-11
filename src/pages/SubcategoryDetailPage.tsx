@@ -178,12 +178,10 @@ export default function SubcategoryDetailPage() {
         if (raffErr) {
           console.error("[SubcategoryDetail] raffles error:", raffErr);
         } else {
-          // Add location_label for each item
+          // Add location_label for each item (city only)
           const rafflesWithLocation = (raffles || []).map((item: any) => ({
             ...item,
-            location_label: item.location_city && item.location_state 
-              ? `${item.location_city} (${item.location_state})`
-              : item.location_city || item.location_state || null
+            location_label: item.location_city || null
           }));
           setRaffles(rafflesWithLocation);
         }

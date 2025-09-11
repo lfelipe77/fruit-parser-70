@@ -139,13 +139,11 @@ export default function GanhaveisDetail() {
         .maybeSingle();
         
       if (moneyError) console.warn("money error", moneyError);
-      // Add location_label to moneyRow
+      // Add location_label to moneyRow (city only)
       if (v) {
         const moneyRowWithLocation = {
           ...v,
-          location_label: v.location_city && v.location_state 
-            ? `${v.location_city} (${v.location_state})`
-            : v.location_city || v.location_state || null
+          location_label: v.location_city || null
         };
         setMoneyRow(moneyRowWithLocation as unknown as MoneyRow);
       } else {
