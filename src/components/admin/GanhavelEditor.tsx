@@ -24,7 +24,6 @@ interface FormState {
   ticket_price: string;
   status: "active" | "pending" | "archived";
   location_city: string;
-  location_state: string;
   direct_purchase_link: string;
 }
 
@@ -50,7 +49,6 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
     ticket_price: "",
     status: "pending",
     location_city: "",
-    location_state: "",
     direct_purchase_link: "",
   });
 
@@ -98,7 +96,6 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
         ticket_price: "",
         status: "pending",
         location_city: "",
-        location_state: "",
         direct_purchase_link: "",
       });
       setSelectedCategoryId(null);
@@ -115,7 +112,6 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       ticket_price: row.ticket_price != null ? String(row.ticket_price) : "",
       status: (row.status as FormState["status"]) ?? "pending",
       location_city: row.location_city ?? "",
-      location_state: row.location_state ?? "",
       direct_purchase_link: row.direct_purchase_link ?? "",
     });
     setSelectedCategoryId(row.category_id);
@@ -170,9 +166,10 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
   };
 
   const handleSave = async () => {
-    if (uploading || saving || !isValid || !row) return;
+    if (uploading || saving || !isValid) return;
     setSaving(true);
     try {
+      const isEdit = !!row?.id;
       const imageUrl = await handleUpload();
       if (imageFile && !imageUrl) {
         setSaving(false);
@@ -182,49 +179,65 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       const goal = form.goal_amount.trim();
       const ticket = form.ticket_price.trim();
       const city = form.location_city?.trim();
-      const stateUf = form.location_state?.trim();
       const directLink = form.direct_purchase_link?.trim();
 
-      // Editor payload must match exactly the raffles table columns
-      // NOTE: For editing, we assume goal_amount already includes the 2% fee
-      // Do NOT double-apply the fee here since it was applied during creation
-      const payload: Partial<RaffleRow> = {
+      // Payload matches raffles table columns
+      const basePayload: Partial<RaffleRow> = {
         title: form.title.trim(),
         description: (form.description ?? "").trim() || null,
         image_url: imageUrl || null,
-        goal_amount: goal !== "" ? Number(goal) : null, // Keep as-is (already includes fee)
+        goal_amount: goal !== "" ? Number(goal) : null,
         ticket_price: ticket !== "" ? Number(ticket) : null,
         category_id: selectedCategoryId ?? null,
         subcategory_id: selectedSubcategoryId ?? null,
         location_city: city || null,
-        location_state: stateUf || null,
         direct_purchase_link: directLink || null,
         status: (form.status || "active") as any,
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await (supabase as any)
-        .from("raffles")
-        .update(payload)
-        .eq("id", row.id)
-        .select("*")
-        .single();
-        
-      if (error) throw error;
-      
-      toast({ title: "Ganhavel atualizado", description: "As alterações foram salvas." });
-      
-      // Create updated row for callback
-      const updatedRow: RaffleRow = {
-        ...row,
-        ...payload,
-        id: row.id,
-        user_id: row.user_id,
-        created_at: row.created_at,
-        updated_at: data?.updated_at || payload.updated_at || row.updated_at,
-      };
-      
-      onSaved(updatedRow);
+      if (isEdit) {
+        const { data, error } = await (supabase as any)
+          .from("raffles")
+          .update(basePayload)
+          .eq("id", row!.id)
+          .select("*")
+          .maybeSingle();
+
+        if (error) throw error;
+
+        toast({ title: "Ganhavel atualizado", description: "As alterações foram salvas." });
+
+        const updatedRow: RaffleRow = {
+          ...row!,
+          ...basePayload,
+          id: row!.id,
+          user_id: row!.user_id,
+          created_at: row!.created_at,
+          updated_at: data?.updated_at || basePayload.updated_at || row!.updated_at,
+        };
+        onSaved(updatedRow);
+      } else {
+        const { data: authData } = await supabase.auth.getUser();
+        const userId = authData?.user?.id ?? null;
+
+        const insertPayload: any = {
+          ...basePayload,
+          user_id: userId,
+          created_at: new Date().toISOString(),
+        };
+
+        const { data, error } = await (supabase as any)
+          .from("raffles")
+          .insert(insertPayload)
+          .select("*")
+          .maybeSingle();
+
+        if (error) throw error;
+
+        toast({ title: "Ganhavel criado", description: "Seu ganhavel foi criado com sucesso." });
+        onSaved(data as RaffleRow);
+      }
     } catch (err) {
       console.error("Save error", err);
       toast({ title: "Erro", description: "Falha ao salvar ganhavel.", variant: "destructive" });
@@ -304,7 +317,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
                 onValueChange={(v: FormState["status"]) => setForm(p => ({ ...p, status: v }))}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione um status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pending">Pendente</SelectItem>
@@ -364,24 +377,14 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
             </div>
           </div>
 
-          {/* State and Direct Purchase Link */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Estado</Label>
-              <Input 
-                value={form.location_state} 
-                onChange={(e) => setForm(p => ({ ...p, location_state: e.target.value }))} 
-                placeholder="Estado"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Link de Compra Direta</Label>
-              <Input 
-                value={form.direct_purchase_link} 
-                onChange={(e) => setForm(p => ({ ...p, direct_purchase_link: e.target.value }))} 
-                placeholder="https://..."
-              />
-            </div>
+          {/* Direct Purchase Link */}
+          <div className="grid gap-2">
+            <Label>Link de Compra Direta</Label>
+            <Input 
+              value={form.direct_purchase_link} 
+              onChange={(e) => setForm(p => ({ ...p, direct_purchase_link: e.target.value }))} 
+              placeholder="https://..."
+            />
           </div>
 
           {/* Image Upload */}
@@ -413,7 +416,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
             </button>
             <button
               className="rounded-lg px-4 py-2 bg-primary text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
-              disabled={!isValid || saving || uploading || !row}
+              disabled={!isValid || saving || uploading}
               onClick={handleSave}
             >
               {saving ? "Salvando..." : uploading ? "Enviando..." : "Salvar"}
