@@ -277,6 +277,11 @@ export default function GanhaveisDetail() {
           </div>
 
           <h1 className="mt-4 text-2xl font-semibold">{raffle.title}</h1>
+          {(moneyRow as any)?.location_label && (
+            <div className="text-sm text-muted-foreground mt-1">
+              {(moneyRow as any).location_label}
+            </div>
+          )}
           
           {/* Location Display */}
           {(locationData.city || locationData.state) && (

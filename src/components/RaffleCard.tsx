@@ -89,6 +89,11 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
       {/* Title + excerpt */}
       <div className="p-4 space-y-3">
         <h3 className="font-semibold leading-snug line-clamp-1">{String(data.title || 'Ganhável')}</h3>
+        {(data as any).location_label && (
+          <div className="text-sm text-muted-foreground mt-1">
+            {(data as any).location_label}
+          </div>
+        )}
         
         {/* Money line */}
         <p className="text-sm">
