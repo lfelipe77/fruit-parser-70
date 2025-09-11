@@ -1,52 +1,51 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRaffleCompletionDetector } from '@/hooks/useRaffleCompletionDetector';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
- * Global component to monitor all active raffles for completion
- * This should be included once in the app root
+ * Global component to monitor raffles using real-time updates
+ * Much more efficient than polling - no more blinking!
  */
 export function GlobalRaffleCompletionMonitor() {
   const navigate = useNavigate();
 
-  // Monitor all active raffles - reduced frequency to prevent blinking
-  useRaffleCompletionDetector({
-    checkInterval: 300000, // Check every 5 minutes instead of 30 seconds
-    enabled: false, // Disable global monitoring to prevent UI interference
-    onCompletion: (raffleId, details) => {
-      console.log(`[GlobalMonitor] 🎉 Raffle completed: ${raffleId}`, details);
-      
-      // Show a more prominent completion notification
-      toast.success(
-        `🏆 "${details.title}" está completo! Aguardando sorteio da Loteria Federal.`,
+  // Use real-time updates instead of polling
+  useEffect(() => {
+    const channel = supabase
+      .channel('raffle-updates')
+      .on(
+        'postgres_changes',
         {
-          duration: 15000,
-          action: {
-            label: 'Ver Completos',
-            onClick: () => navigate('/resultados?tab=completas')
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'raffles_public_money_ext',
+          filter: 'status=eq.completed'
+        },
+        (payload) => {
+          console.log('[RealTime] Raffle completed:', payload);
+          const raffle = payload.new;
+          
+          if (raffle) {
+            toast.success(
+              `🏆 "${raffle.title}" está completo! Aguardando sorteio da Loteria Federal.`,
+              {
+                duration: 15000,
+                action: {
+                  label: 'Ver Completos',
+                  onClick: () => navigate('/resultados?tab=completas')
+                }
+              }
+            );
           }
         }
-      );
-    },
-    onStatusChange: (raffleId, newStatus, details) => {
-      console.log(`[GlobalMonitor] Status change for ${raffleId}: ${newStatus}`, details);
-      
-      // Handle specific status changes
-      if (newStatus === 'completed' && details.previous?.status !== 'completed') {
-        toast.info(
-          `✅ "${details.title}" foi finalizado e já tem ganhador!`,
-          {
-            duration: 10000,
-            action: {
-              label: 'Ver Premiados',
-              onClick: () => navigate('/resultados?tab=premiados')
-            }
-          }
-        );
-      }
-    }
-  });
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [navigate]);
 
   // Listen for completion events from other parts of the app
   useEffect(() => {
