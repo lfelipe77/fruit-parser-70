@@ -24,6 +24,7 @@ interface FormState {
   ticket_price: string;
   status: "active" | "pending" | "archived";
   location_city: string;
+  location_state: string;
   direct_purchase_link: string;
 }
 
@@ -49,6 +50,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
     ticket_price: "",
     status: "pending",
     location_city: "",
+    location_state: "",
     direct_purchase_link: "",
   });
 
@@ -96,6 +98,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
         ticket_price: "",
         status: "pending",
         location_city: "",
+        location_state: "",
         direct_purchase_link: "",
       });
       setSelectedCategoryId(null);
@@ -112,6 +115,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       ticket_price: row.ticket_price != null ? String(row.ticket_price) : "",
       status: (row.status as FormState["status"]) ?? "pending",
       location_city: row.location_city ?? "",
+      location_state: row.location_state ?? "",
       direct_purchase_link: row.direct_purchase_link ?? "",
     });
     setSelectedCategoryId(row.category_id);
@@ -179,6 +183,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       const goal = form.goal_amount.trim();
       const ticket = form.ticket_price.trim();
       const city = form.location_city?.trim();
+      const state = form.location_state?.trim();
       const directLink = form.direct_purchase_link?.trim();
 
       // Payload matches raffles table columns
@@ -191,6 +196,7 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
         category_id: selectedCategoryId ?? null,
         subcategory_id: selectedSubcategoryId ?? null,
         location_city: city || null,
+        location_state: state || null,
         direct_purchase_link: directLink || null,
         status: (form.status || "active") as any,
         updated_at: new Date().toISOString(),
@@ -372,9 +378,19 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
               <Input 
                 value={form.location_city} 
                 onChange={(e) => setForm(p => ({ ...p, location_city: e.target.value }))} 
-                placeholder="Cidade"
+                placeholder="Ex: Campinas"
               />
             </div>
+          </div>
+
+          {/* State Field */}
+          <div className="grid gap-2">
+            <Label>Estado</Label>
+            <Input 
+              value={form.location_state} 
+              onChange={(e) => setForm(p => ({ ...p, location_state: e.target.value }))} 
+              placeholder="Ex: SP"
+            />
           </div>
 
           {/* Direct Purchase Link */}
