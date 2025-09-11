@@ -247,16 +247,39 @@ export default function LanceSeuGanhavel() {
       const netGoal = Number(valueGoal || 0); // Use Number() directly instead of toNum
       const grossGoal = Math.round((netGoal * (1 + PROVIDER_GOAL_FEE_PCT)) * 100) / 100;
 
-      // Robust city/state parsing supporting formats:
+      // Enhanced city/state parsing supporting formats:
       // "Cidade - UF", "Cidade, UF", "Cidade/UF", "Cidade UF", "Cidade (UF)"
       const rawCity = (city || "").trim();
-      const locMatch = rawCity.match(/^(.*?)\s*(?:[-,\/]\s*|\s+)?\(?([A-Za-z]{2})\)?$/);
-      const parsedCity = locationType === "cidade"
-        ? (locMatch ? locMatch[1].trim() : (rawCity || null))
-        : null;
-      const parsedState = locationType === "cidade"
-        ? (locMatch ? locMatch[2].toUpperCase() : null)
-        : null;
+      let parsedCity = null;
+      let parsedState = null;
+      
+      if (locationType === "cidade" && rawCity) {
+        // Try multiple parsing patterns
+        const patterns = [
+          /^(.*?)\s*[-–—]\s*\(?([A-Za-z]{2})\)?$/,           // "Cidade - UF" or "Cidade - (UF)"
+          /^(.*?)\s*,\s*\(?([A-Za-z]{2})\)?$/,              // "Cidade, UF" or "Cidade, (UF)"
+          /^(.*?)\s*\/\s*\(?([A-Za-z]{2})\)?$/,             // "Cidade/UF" or "Cidade/(UF)"
+          /^(.*?)\s*\(\s*([A-Za-z]{2})\s*\)$/,              // "Cidade (UF)"
+          /^(.*?)\s+([A-Za-z]{2})$/                         // "Cidade UF"
+        ];
+        
+        let matched = false;
+        for (const pattern of patterns) {
+          const match = rawCity.match(pattern);
+          if (match) {
+            parsedCity = match[1].trim();
+            parsedState = match[2].toUpperCase();
+            matched = true;
+            break;
+          }
+        }
+        
+        // If no pattern matched, treat the whole string as city name
+        if (!matched) {
+          parsedCity = rawCity;
+          parsedState = null;
+        }
+      }
 
       const payload = {
         organizer_id: session.user.id,

@@ -283,9 +283,25 @@ export default function GanhaveisDetail() {
             <div className="mt-2 inline-flex items-center gap-2 rounded-lg px-3 py-1 border bg-blue-50/60 border-blue-200">
               <span aria-hidden className="text-blue-600">📍</span>
               <span className="text-sm font-medium text-blue-800">
-                {locationData.city && locationData.state
-                  ? `${locationData.city} (${locationData.state})`
-                  : (locationData.city || locationData.state)}
+                {(() => {
+                  // Handle cases where data might be parsed incorrectly
+                  const city = locationData.city || "";
+                  const state = locationData.state || "";
+                  
+                  // If city contains state info (like "Campinas SP"), extract properly
+                  const cityStateMatch = city.match(/^(.*?)\s+([A-Z]{2})$/);
+                  if (cityStateMatch && !state) {
+                    return `${cityStateMatch[1]} (${cityStateMatch[2]})`;
+                  }
+                  
+                  // Normal case: separate city and state
+                  if (city && state && city !== state) {
+                    return `${city} (${state})`;
+                  }
+                  
+                  // Fallback: just show what we have
+                  return city || state;
+                })()}
               </span>
             </div>
           )}
