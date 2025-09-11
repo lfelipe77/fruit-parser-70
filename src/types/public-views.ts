@@ -14,6 +14,7 @@ export type RafflePublic = {
   subcategory_name: string | null;
   paid_tickets: number;
   progress_pct: number;
+  location_display?: string | null;
 };
 
 export type RafflePublicMoney = {
@@ -34,6 +35,7 @@ export type RafflePublicMoney = {
   progress_pct_money: number;   // 0..100
   last_paid_at: string | null;  // date only (used for time-ago)
   created_at: string;
+  location_display?: string | null;
 };
 
 // Card-specific type for consistent display
@@ -57,6 +59,7 @@ export type RaffleCardInfo = {
   location_city?: string | null;
   location_state?: string | null;
   location_label?: string | null;
+  location_display?: string | null;
 };
 
 export type PublicProfile = {

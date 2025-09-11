@@ -32,7 +32,7 @@ export default function EmAltaRecentesSection() {
       "ticket_price,goal_amount,amount_raised,progress_pct_money," +
       "last_paid_at,created_at,draw_date," +
       "category_name,subcategory_name," +
-      "location_city,location_state,participants_count";
+      "location_display:location_city,participants_count";
     
     const fetchData = async () => {
       setLoading(true);
@@ -57,19 +57,10 @@ export default function EmAltaRecentesSection() {
           if (emAlta.error) throw emAlta.error;
           if (recentes.error) throw recentes.error;
           
-          // Add location_label for each item (city only)
-          const emAltaWithLocation = ((emAlta.data ?? []) as unknown as RaffleCardInfo[]).map(item => ({
-            ...item,
-            location_label: item.location_city || null
-          }));
-          const recentesWithLocation = ((recentes.data ?? []) as unknown as RaffleCardInfo[]).map(item => ({
-            ...item,
-            location_label: item.location_city || null
-          }));
-          console.debug('[Raffles] sample row', emAltaWithLocation?.[0]?.title, emAltaWithLocation?.[0]?.location_label);
+          console.debug('[Raffles] sample row', emAlta.data?.[0]);
           
-          setTop(emAltaWithLocation.slice(0, 3));
-          setRecent(recentesWithLocation.slice(0, 3));
+          setTop(((emAlta.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
+          setRecent(((recentes.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");

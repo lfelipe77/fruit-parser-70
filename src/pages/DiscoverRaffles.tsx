@@ -63,7 +63,7 @@ export default function DiscoverRaffles() {
         "ticket_price,goal_amount,amount_raised,progress_pct_money," +
         "last_paid_at,created_at,draw_date," +
         "category_name,subcategory_name," +
-        "location_city,location_state,participants_count";
+        "location_display:location_city,participants_count";
 
       let query = (supabase as any)
         .from('raffles_public_money_ext')
@@ -107,12 +107,7 @@ export default function DiscoverRaffles() {
       
       if (!cancelled) {
         if (!error) {
-          // Add location_label for each item (city only)
-          const rafflesWithLocation = ((data || []) as RaffleCardInfo[]).map(item => ({
-            ...item,
-            location_label: item.location_city || null
-          }));
-          setRaffles(rafflesWithLocation);
+          setRaffles((data as unknown as RaffleCardInfo[]) || []);
           setTotalCount(count || 0);
         }
         setLoading(false);

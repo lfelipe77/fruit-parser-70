@@ -5,6 +5,7 @@ export type MoneyRow = {
   category_name: string | null; subcategory_name: string | null;
   amount_raised: number; goal_amount: number; progress_pct_money: number; last_paid_at: string | null;
   created_at?: string | null; // novo (veio da view)
+  location_display?: string | null;
 };
 
 export type RaffleExtras = {

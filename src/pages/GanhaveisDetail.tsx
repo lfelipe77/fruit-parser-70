@@ -130,7 +130,7 @@ export default function GanhaveisDetail() {
       
       // Load raffle data (standardized money view)
   const RAFFLE_CARD_SELECT =
-    "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count,direct_purchase_link";
+    "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_display:location_city,participants_count,direct_purchase_link";
 
       const { data: v, error: moneyError } = await (supabase as any)
         .from('raffles_public_money_ext')
@@ -139,13 +139,8 @@ export default function GanhaveisDetail() {
         .maybeSingle();
         
       if (moneyError) console.warn("money error", moneyError);
-      // Add location_label to moneyRow (city only)
       if (v) {
-        const moneyRowWithLocation = {
-          ...v,
-          location_label: v.location_city || null
-        };
-        setMoneyRow(moneyRowWithLocation as unknown as MoneyRow);
+        setMoneyRow(v as unknown as MoneyRow);
       } else {
         setMoneyRow(null);
       }
@@ -286,26 +281,10 @@ export default function GanhaveisDetail() {
           </div>
 
           <h1 className="mt-4 text-2xl font-semibold">{raffle.title}</h1>
-          {(moneyRow as any)?.location_label && (
-            <div className="text-sm text-muted-foreground mt-1">
-              {(moneyRow as any).location_label}
-            </div>
-          )}
-          
           {/* Location Display - city only */}
-          {locationData.city && (
-            <div className="mt-2 inline-flex items-center gap-2 rounded-lg px-3 py-1 border bg-blue-50/60 border-blue-200">
-              <span aria-hidden className="text-blue-600">📍</span>
-              <span className="text-sm font-medium text-blue-800">
-                {(() => {
-                  const rawCity = (locationData.city || '').trim();
-                  // Remove trailing UF patterns like " (SP)" or " SP"
-                  const cleaned = rawCity
-                    .replace(/\s*\([A-Z]{2}\)\s*$/, '')
-                    .replace(/\s+[A-Z]{2}$/, '');
-                  return cleaned || rawCity;
-                })()}
-              </span>
+          {moneyRow?.location_display && (
+            <div className="text-sm text-muted-foreground mt-1">
+              {moneyRow.location_display}
             </div>
           )}
 
