@@ -151,7 +151,7 @@ const AppContent = () => {
   const isAuthenticated = !!session;
   
   // Google Analytics tracking
-  useGoogleAnalytics('G-XXXXXXXXXX');
+  useGoogleAnalytics('G-E7V14RLKKV');
 
   return (
     <>
