@@ -216,36 +216,38 @@ export default function Settings() {
 
   const handleRemoveSubcategory = async (subcategoryId: string) => {
     try {
-      // Check if subcategory is used by any raffles first
-      const { count, error: countError } = await supabase
-        .from('raffles')
-        .select('id', { count: 'exact', head: true })
-        .eq('subcategory_id', subcategoryId);
+      // Check if subcategory is used anywhere before deleting (raffles or legacy)
+      const [rafflesRes, legacyRes] = await Promise.all([
+        supabase.from('raffles').select('id', { count: 'exact', head: true }).eq('subcategory_id', subcategoryId),
+        supabase.from('ganhaveis_legacy').select('id', { count: 'exact', head: true }).eq('subcategory_id', subcategoryId),
+      ]);
 
-      if (countError) throw countError;
+      const rafflesCount = (rafflesRes as any)?.count ?? 0;
+      const legacyCount = (legacyRes as any)?.count ?? 0;
 
-      if ((count ?? 0) > 0) {
+      // If any query errored with something other than relation not found, surface it
+      const fatal = [rafflesRes, legacyRes].find((r: any) => r && r.error && !`${r.error?.message || ''}`.includes('relation') );
+      if (fatal) throw (fatal as any).error;
+
+      const totalInUse = (rafflesCount || 0) + (legacyCount || 0);
+      if (totalInUse > 0) {
         toast({
-          title: "Subcategoria em uso",
-          description: `Esta subcategoria está sendo usada por ${count} rifa(s). Reatribua ou arquive antes de remover.`,
-          variant: "destructive"
+          title: 'Subcategoria em uso',
+          description: `Esta subcategoria está vinculada a ${totalInUse} ganhavel(is). Reatribua ou arquive antes de remover.`,
+          variant: 'destructive'
         });
         return;
       }
 
-      // Delete subcategory directly
-      const { error } = await supabase
+      // Safe to delete
+      const { error: delError } = await supabase
         .from('subcategories')
         .delete()
         .eq('id', subcategoryId);
-
-      if (error) throw error;
+      if (delError) throw delError;
 
       setSubcategories(subcategories.filter(sub => sub.id !== subcategoryId));
-      toast({
-        title: "Subcategoria removida",
-        description: "A subcategoria foi removida com sucesso.",
-      });
+      toast({ title: 'Subcategoria removida', description: 'A subcategoria foi removida com sucesso.' });
     } catch (error: any) {
       console.error('Error removing subcategory:', error);
       let description = "Não foi possível remover a subcategoria.";
