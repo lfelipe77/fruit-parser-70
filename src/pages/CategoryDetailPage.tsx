@@ -79,7 +79,14 @@ export default function CategoryDetailPage() {
     }
 
     console.log("[CategoryDetail] Raffles loaded for category:", slug, data?.length);
-    return data || [];
+    // Add location_label for each item
+    const rafflesWithLocation = (data || []).map((item: any) => ({
+      ...item,
+      location_label: item.location_city && item.location_state 
+        ? `${item.location_city} (${item.location_state})`
+        : item.location_city || item.location_state || null
+    }));
+    return rafflesWithLocation;
   };
 
   useEffect(() => {

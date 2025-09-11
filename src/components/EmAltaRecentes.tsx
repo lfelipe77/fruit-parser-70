@@ -57,8 +57,23 @@ export default function EmAltaRecentesSection() {
           if (emAlta.error) throw emAlta.error;
           if (recentes.error) throw recentes.error;
           
-          setTop(((emAlta.data ?? []) as unknown as RaffleCardInfo[]).slice(0, 3));
-          setRecent(((recentes.data ?? []) as unknown as RaffleCardInfo[]).slice(0, 3));
+          // Add location_label for each item
+          const emAltaWithLocation = ((emAlta.data ?? []) as unknown as RaffleCardInfo[]).map(item => ({
+            ...item,
+            location_label: item.location_city && item.location_state 
+              ? `${item.location_city} (${item.location_state})`
+              : item.location_city || item.location_state || null
+          }));
+          console.debug('[Raffles] sample row', emAltaWithLocation?.[0]?.title, emAltaWithLocation?.[0]?.location_label);
+          const recentesWithLocation = ((recentes.data ?? []) as unknown as RaffleCardInfo[]).map(item => ({
+            ...item,
+            location_label: item.location_city && item.location_state 
+              ? `${item.location_city} (${item.location_state})`
+              : item.location_city || item.location_state || null
+          }));
+          
+          setTop(emAltaWithLocation.slice(0, 3));
+          setRecent(recentesWithLocation.slice(0, 3));
         }
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");

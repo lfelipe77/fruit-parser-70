@@ -84,7 +84,14 @@ export default function CategoriesView() {
         .limit(12);
       
       if (!cancelled) {
-        setRaffles((data || []) as RaffleCardInfo[]);
+        // Add location_label for each item
+        const rafflesWithLocation = ((data || []) as RaffleCardInfo[]).map(item => ({
+          ...item,
+          location_label: item.location_city && item.location_state 
+            ? `${item.location_city} (${item.location_state})`
+            : item.location_city || item.location_state || null
+        }));
+        setRaffles(rafflesWithLocation);
         setLoading(false);
       }
     }

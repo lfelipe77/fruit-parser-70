@@ -107,7 +107,14 @@ export default function DiscoverRaffles() {
       
       if (!cancelled) {
         if (!error) {
-          setRaffles((data || []) as RaffleCardInfo[]);
+          // Add location_label for each item
+          const rafflesWithLocation = ((data || []) as RaffleCardInfo[]).map(item => ({
+            ...item,
+            location_label: item.location_city && item.location_state 
+              ? `${item.location_city} (${item.location_state})`
+              : item.location_city || item.location_state || null
+          }));
+          setRaffles(rafflesWithLocation);
           setTotalCount(count || 0);
         }
         setLoading(false);

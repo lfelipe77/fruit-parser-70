@@ -178,7 +178,14 @@ export default function SubcategoryDetailPage() {
         if (raffErr) {
           console.error("[SubcategoryDetail] raffles error:", raffErr);
         } else {
-          setRaffles(raffles || []);
+          // Add location_label for each item
+          const rafflesWithLocation = (raffles || []).map((item: any) => ({
+            ...item,
+            location_label: item.location_city && item.location_state 
+              ? `${item.location_city} (${item.location_state})`
+              : item.location_city || item.location_state || null
+          }));
+          setRaffles(rafflesWithLocation);
         }
 
       } catch (err) {

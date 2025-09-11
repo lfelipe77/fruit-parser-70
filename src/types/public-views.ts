@@ -56,6 +56,7 @@ export type RaffleCardInfo = {
   participants_count?: number;
   location_city?: string | null;
   location_state?: string | null;
+  location_label?: string | null;
 };
 
 export type PublicProfile = {
