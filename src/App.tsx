@@ -82,6 +82,7 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import { DebugBanner } from '@/components/DebugBanner';
 import DiagnosticsPage from '@/pages/DiagnosticsPage';
 import EmailTest from '@/pages/admin/EmailTest';
+import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -148,6 +149,9 @@ function VisitLogger() {
 const AppContent = () => {
   const { session } = useAuthContext();
   const isAuthenticated = !!session;
+  
+  // Google Analytics tracking
+  useGoogleAnalytics('G-XXXXXXXXXX');
 
   return (
     <>
