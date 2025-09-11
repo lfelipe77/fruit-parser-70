@@ -233,10 +233,11 @@ export default function Settings() {
         return;
       }
 
-      // Use the secure admin function
-      const { error } = await supabase.rpc('admin_delete_subcategory', {
-        p_id: subcategoryId
-      });
+      // Delete subcategory directly
+      const { error } = await supabase
+        .from('subcategories')
+        .delete()
+        .eq('id', subcategoryId);
 
       if (error) throw error;
 
