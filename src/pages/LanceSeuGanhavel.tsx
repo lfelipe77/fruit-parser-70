@@ -247,6 +247,17 @@ export default function LanceSeuGanhavel() {
       const netGoal = Number(valueGoal || 0); // Use Number() directly instead of toNum
       const grossGoal = Math.round((netGoal * (1 + PROVIDER_GOAL_FEE_PCT)) * 100) / 100;
 
+      // Robust city/state parsing supporting formats:
+      // "Cidade - UF", "Cidade, UF", "Cidade/UF", "Cidade UF", "Cidade (UF)"
+      const rawCity = (city || "").trim();
+      const locMatch = rawCity.match(/^(.*?)\s*(?:[-,\/]\s*|\s+)?\(?([A-Za-z]{2})\)?$/);
+      const parsedCity = locationType === "cidade"
+        ? (locMatch ? locMatch[1].trim() : (rawCity || null))
+        : null;
+      const parsedState = locationType === "cidade"
+        ? (locMatch ? locMatch[2].toUpperCase() : null)
+        : null;
+
       const payload = {
         organizer_id: session.user.id,
         title: title.trim(),
@@ -259,8 +270,8 @@ export default function LanceSeuGanhavel() {
         status: "active",
         category_id: categoryId ? Number(categoryId) : null,
         subcategory_id: subcategoryId || null,
-        location_city: locationType === "cidade" ? city.split(" - ")[0]?.trim() || city : null,
-        location_state: locationType === "cidade" ? city.split(" - ")[1]?.trim() || null : null,
+        location_city: parsedCity,
+        location_state: parsedState,
         direct_purchase_link: (affiliateUrl ?? '').trim() || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

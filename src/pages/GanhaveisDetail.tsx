@@ -280,10 +280,12 @@ export default function GanhaveisDetail() {
           
           {/* Location Display */}
           {(locationData.city || locationData.state) && (
-            <div className="mt-3 inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-100 border border-blue-200 rounded-lg px-4 py-2 shadow-sm">
-              <span className="text-blue-600">📍</span>
+            <div className="mt-2 inline-flex items-center gap-2 rounded-lg px-3 py-1 border bg-blue-50/60 border-blue-200">
+              <span aria-hidden className="text-blue-600">📍</span>
               <span className="text-sm font-medium text-blue-800">
-                {[locationData.city, locationData.state].filter(Boolean).join(", ")}
+                {locationData.city && locationData.state
+                  ? `${locationData.city} (${locationData.state})`
+                  : (locationData.city || locationData.state)}
               </span>
             </div>
           )}
