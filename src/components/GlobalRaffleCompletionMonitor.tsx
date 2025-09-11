@@ -10,10 +10,10 @@ import { toast } from 'sonner';
 export function GlobalRaffleCompletionMonitor() {
   const navigate = useNavigate();
 
-  // Monitor all active raffles
+  // Monitor all active raffles - reduced frequency to prevent blinking
   useRaffleCompletionDetector({
-    checkInterval: 30000, // Check every 30 seconds
-    enabled: true,
+    checkInterval: 300000, // Check every 5 minutes instead of 30 seconds
+    enabled: false, // Disable global monitoring to prevent UI interference
     onCompletion: (raffleId, details) => {
       console.log(`[GlobalMonitor] 🎉 Raffle completed: ${raffleId}`, details);
       
