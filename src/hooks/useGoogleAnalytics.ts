@@ -15,6 +15,12 @@ export const useGoogleAnalytics = (measurementId: string) => {
     // Só funciona no cliente
     if (typeof window === 'undefined') return;
     
+    // Check if already injected to prevent duplicates
+    if (!window.gtag && !document.querySelector('script[src*="gtag/js"]')) {
+      console.warn('[GA] Script not found in DOM, analytics may not be working');
+      return;
+    }
+    
     // Verifica se o Google Analytics já foi carregado
     if (!window.gtag) return;
 

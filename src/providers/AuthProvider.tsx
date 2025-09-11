@@ -30,6 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (event, session) => {
         if (!mounted) return;
         console.log('[AuthProvider] Auth state change:', event, session?.user?.id || 'no-user');
+        
+        // Only update state synchronously - no navigation on auth events
         setSession(session);
         setUser(session?.user ?? null);
         setInitializing(false);

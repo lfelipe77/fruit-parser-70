@@ -49,6 +49,7 @@ async function oauthEarly() {
     // Clean URL without reloading; restore to home instead of forcing dashboard
     const lastPath = sessionStorage.getItem("lastPath");
     const restoreTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
+    // Use replaceState synchronously to avoid layout flash
     history.replaceState(null, '', `${window.location.origin}/#${restoreTo}`);
   } catch (e) {
     console.error('[oauth-early] failed', e);

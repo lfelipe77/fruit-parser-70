@@ -150,8 +150,10 @@ const AppContent = () => {
   const { session } = useAuthContext();
   const isAuthenticated = !!session;
   
-  // Google Analytics tracking
-  useGoogleAnalytics('G-E7V14RLKKV');
+  // Google Analytics tracking - check for duplicate injection
+  if (import.meta.env.VITE_DISABLE_GA !== 'true') {
+    useGoogleAnalytics('G-E7V14RLKKV');
+  }
 
   return (
     <>
