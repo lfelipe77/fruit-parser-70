@@ -32,8 +32,8 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
   const moneyNow = Math.max(0, Number(data.amount_raised) || 0);
   const moneyGoal = Math.max(0, Number(data.goal_amount) || 0);
   
-  // Fix location duplication and support state_uf fallback
-  const state = data.location_state || (data as any).state_uf || "";
+  // Fix location duplication
+  const state = data.location_state || "";
   const city = data.location_city || "";
   const cityState = city && state && city !== state 
     ? [city, state].join(" • ")

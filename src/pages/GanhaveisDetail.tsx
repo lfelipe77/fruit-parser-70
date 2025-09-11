@@ -130,7 +130,7 @@ export default function GanhaveisDetail() {
       
       // Load raffle data (standardized money view)
   const RAFFLE_CARD_SELECT =
-    "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,state_uf,participants_count,direct_purchase_link";
+    "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_city,location_state,participants_count,direct_purchase_link";
 
       const { data: v, error: moneyError } = await (supabase as any)
         .from('raffles_public_money_ext')
@@ -145,7 +145,7 @@ export default function GanhaveisDetail() {
       if (v) {
         setLocationData({
           city: v.location_city || null,
-          state: (v.location_state || (v as any).state_uf) || null
+          state: v.location_state || null
         });
       }
 
