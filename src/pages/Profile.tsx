@@ -97,14 +97,12 @@ export default function Profile() {
     try {
       const result = await saveProfile({
         updates: formData,
-        avatarFile: croppedBlob ? new File([croppedBlob], 'avatar.webp', { type: 'image/webp' }) : null
+        avatarFile: croppedBlob ? new File([croppedBlob], 'avatar.webp', { type: 'image/webp' }) : undefined
       });
 
       if (result) {
-        // Refresh profile data (invalidateQueries handled by useUnifiedProfile)
-        
         // Refresh profile data
-        refreshProfile();
+        await refreshProfile();
         
         toast({
           title: 'Perfil atualizado',
@@ -318,29 +316,14 @@ export default function Profile() {
           setCropOpen(false);
           setCroppedBlob(null);
         }}
-        onCropped={async (blob) => {
-          try {
-            setSavingAvatar(true);
-            // Use drop-in handler for immediate upload and save
-            await handleAvatarSave(blob, (updater) => {
-              setFormData(updater);
-            });
-            await refreshProfile();
-            setCropOpen(false);
-            toast({
-              title: 'Avatar atualizado',
-              description: 'Seu avatar foi atualizado com sucesso.',
-            });
-          } catch (error: any) {
-            console.error('Avatar save error:', error);
-            toast({
-              title: 'Erro',
-              description: error.message || 'Erro ao atualizar avatar.',
-              variant: 'destructive',
-            });
-          } finally {
-            setSavingAvatar(false);
-          }
+        onCropped={(blob) => {
+          // Just store the cropped blob for later save
+          setCroppedBlob(blob);
+          setCropOpen(false);
+          toast({
+            title: 'Avatar preparado',
+            description: 'Avatar cortado. Clique em "Salvar Alterações" para finalizar.',
+          });
         }}
       />
     </div>

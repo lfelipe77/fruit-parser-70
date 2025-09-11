@@ -176,24 +176,43 @@ export function useEnhancedProfileSave() {
     setStage('Starting...');
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not signed in');
+
       if (avatarFile) {
-        return await handleAvatarSave(
-          avatarFile,
-          undefined,
-          (currentStage, currentProgress) => {
-            setStage(currentStage);
-            setProgress(currentProgress);
-          }
-        );
+        // Upload avatar and save profile with new avatar URL
+        setStage('Uploading avatar...');
+        setProgress(25);
+        
+        const avatarUrl = await uploadAvatarWithRetry(user.id, avatarFile);
+        
+        setStage('Saving profile...');
+        setProgress(75);
+        
+        const result = await saveAvatarProfileResilient(supabase, user.id, avatarUrl, updates);
+        
+        setProgress(100);
+        setStage('Complete!');
+        
+        return result;
       } else {
-        // Regular profile update without avatar
+        // Regular profile update without avatar - don't touch avatar_url
         setStage('Saving profile...');
         setProgress(50);
         
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not signed in');
+        // Get current profile to preserve avatar_url
+        const { data: currentProfile } = await supabase
+          .from('user_profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
         
-        const result = await saveAvatarProfileResilient(supabase, user.id, '', updates);
+        const result = await saveAvatarProfileResilient(
+          supabase, 
+          user.id, 
+          currentProfile?.avatar_url || '', 
+          updates
+        );
         
         setProgress(100);
         setStage('Complete!');
