@@ -8,6 +8,7 @@ import {
 import { Link } from "react-router-dom";
 import { useProfileStats } from "@/hooks/useProfileStats";
 import { ProfileStats } from "@/components/ProfileStats";
+import { getAvatarSrc } from "@/lib/avatarUtils";
 
 interface DetalhesOrganizadorProps {
   organizer: {
@@ -17,7 +18,9 @@ interface DetalhesOrganizadorProps {
     bio?: string;
     location?: string;
     memberSince: string;
-    avatar: string;
+    avatar?: string;
+    avatar_url?: string;
+    updated_at?: string;
   };
 }
 
@@ -35,7 +38,7 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
         {/* Profile Section */}
         <div className="flex items-start gap-4">
           <Avatar className="w-16 h-16">
-            <AvatarImage src={organizer.avatar} />
+            <AvatarImage src={getAvatarSrc(organizer, organizer.id)} />
             <AvatarFallback className="text-lg">
               {organizer.name.charAt(0).toUpperCase()}
             </AvatarFallback>

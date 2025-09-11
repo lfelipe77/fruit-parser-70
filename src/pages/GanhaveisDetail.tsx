@@ -318,7 +318,8 @@ export default function GanhaveisDetail() {
                 bio: organizerData?.bio || "Organizador experiente na plataforma.",
                 location: organizerData?.location || "Brasil",
                 memberSince: "Janeiro 2023", // TODO: wire from created_at
-                avatar: organizerData?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+                avatar_url: organizerData?.avatar_url,
+                updated_at: organizerData?.updated_at
               }}
             />
           </div>
