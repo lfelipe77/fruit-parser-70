@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { GanhavelEditor } from "@/components/admin/GanhavelEditor";
 import type { RaffleRow, RaffleCardInfo } from "@/types/raffles";
@@ -44,7 +44,7 @@ export default function AdminRaffles() {
   }
 
   // Load ganhaveis from the view (for dashboard stats)
-  const loadGanhaveis = async (page = 1) => {
+  const loadGanhaveis = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       const from = (page - 1) * itemsPerPage;
@@ -102,11 +102,11 @@ export default function AdminRaffles() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, toast]);
 
   useEffect(() => {
     loadGanhaveis(currentPage);
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, loadGanhaveis]);
 
   // Auto-open with ?edit=<id>
   useEffect(() => {
@@ -175,15 +175,17 @@ export default function AdminRaffles() {
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     setCurrentPage(1);
     loadGanhaveis(1);
-  };
+  }, [loadGanhaveis]);
 
-  const handleStatusChange = (value: string) => {
+  const handleStatusChange = useCallback((value: string) => {
     setStatusFilter(value);
     setCurrentPage(1);
-  };
+    // Trigger search with new status
+    setTimeout(() => loadGanhaveis(1), 0);
+  }, [loadGanhaveis]);
 
   return (
     <div className="p-6">
