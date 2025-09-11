@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import PixPaymentModal from "@/components/PixPaymentModal";
 import { isDebugMode, logDebugInfo } from "@/utils/envDebug";
 import { nanoid } from "nanoid";
+import { safeConfirmStateGet } from "@/lib/confirmState";
 
 type RaffleRow = {
   id: string;
@@ -323,17 +324,10 @@ export default function ConfirmacaoPagamento() {
           // Ignore localStorage errors
         }
 
-        // Get current state from server
-        const getUrl = `https://whqxpuyjxoiufzhvqneg.supabase.co/functions/v1/confirm-state-get?reservationId=${reservationId}`;
-        const getResponse = await fetch(getUrl, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        // Get current state from server (soft, CORS-safe)
+        const getResult = await safeConfirmStateGet(reservationId, session.access_token);
 
-        if (!getResponse.ok) {
+        if (!getResult?.ok) {
           setIsOffline(true);
           // Try to load from localStorage as fallback
           const backup = safeParseLocalStorage(`confirm.${reservationId}`);
@@ -343,9 +337,7 @@ export default function ConfirmacaoPagamento() {
           return;
         }
 
-        const getResult = await getResponse.json();
-
-        if (getResult?.ok && mounted && isMounted) {
+        if (mounted && isMounted) {
           setServerState(getResult);
           setStateMachineInitialized(true);
           

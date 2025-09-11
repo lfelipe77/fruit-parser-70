@@ -3,7 +3,7 @@
 type Handler = (req: Request) => Promise<Response> | Response;
 
 function parseAllowed(): string[] {
-  const raw = Deno.env.get("ALLOWED_ORIGINS") ?? "";
+  const raw = Deno.env.get("EDGE_ALLOW_ORIGINS") ?? Deno.env.get("ALLOWED_ORIGINS") ?? "";
   return raw.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 }
 
