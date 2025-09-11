@@ -114,10 +114,19 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
         </div>
         <p className="text-xs" data-testid={`progress-pct-${data.id}`}>{pct}% arrecadado</p>
 
-        {/* Participants + last sale */}
-        <div className="text-xs text-muted-foreground space-y-1">
-          <div>{Number(data.participants_count || 0)} participantes</div>
-          <div>{data.last_paid_at ? `Última venda: ${timeAgo(data.last_paid_at)}` : "Sem vendas ainda"}</div>
+        {/* Participants + last sale + location */}
+        <div className="text-xs text-muted-foreground">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <div>{Number(data.participants_count || 0)} participantes</div>
+              <div>{data.last_paid_at ? `Última venda: ${timeAgo(data.last_paid_at)}` : "Sem vendas ainda"}</div>
+            </div>
+            {(data as any).location_display && (
+              <div className="text-right">
+                <div className="text-primary font-medium">{(data as any).location_display}</div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* CTA */}
