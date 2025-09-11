@@ -190,13 +190,16 @@ export default function Settings() {
         .from('subcategories')
         .insert([{
           name: newSubcategory.name,
-          slug: newSubcategory.slug || newSubcategory.name.toLowerCase().replace(/\s+/g, '-'),
+          slug: newSubcategory.slug || newSubcategory.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, ''),
           category_id: categoryId
         }])
         .select('*, categories(nome)')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error adding subcategory:', error);
+        throw error;
+      }
 
       setSubcategories([...subcategories, data]);
       setNewSubcategory({ name: "", slug: "", category_id: null });
@@ -204,11 +207,18 @@ export default function Settings() {
         title: "Subcategoria adicionada",
         description: `A subcategoria "${data.name}" foi adicionada com sucesso.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding subcategory:', error);
+      let description = "Não foi possível adicionar a subcategoria.";
+      if (error?.message) {
+        description = error.message;
+        if (error.message.includes('permission denied') || error.message.includes('RLS')) {
+          description = "Permissão negada. Verifique se você tem permissões de administrador.";
+        }
+      }
       toast({
         title: "Erro ao adicionar subcategoria",
-        description: "Não foi possível adicionar a subcategoria.",
+        description,
         variant: "destructive"
       });
     }
