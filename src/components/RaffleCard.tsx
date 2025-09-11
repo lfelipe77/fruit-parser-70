@@ -32,10 +32,12 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
   const moneyNow = Math.max(0, Number(data.amount_raised) || 0);
   const moneyGoal = Math.max(0, Number(data.goal_amount) || 0);
   
-  // Fix location duplication - if city and state are the same, show only once
-  const cityState = data.location_city && data.location_state && data.location_city !== data.location_state 
-    ? [data.location_city, data.location_state].filter(Boolean).join(" • ")
-    : (data.location_city || data.location_state || "");
+  // Fix location duplication and support state_uf fallback
+  const state = data.location_state || (data as any).state_uf || "";
+  const city = data.location_city || "";
+  const cityState = city && state && city !== state 
+    ? [city, state].join(" • ")
+    : (city || state);
 
   // Navigate to ganhavel detail page
   const handleCardClick = (e: React.MouseEvent) => {

@@ -164,7 +164,7 @@ export default function SubcategoryDetailPage() {
           "ticket_price,goal_amount,amount_raised,progress_pct_money," +
           "last_paid_at,created_at,draw_date," +
           "category_name,subcategory_name," +
-          "location_city,location_state,participants_count";
+          "location_city,location_state,state_uf,participants_count";
 
         const { data: raffles, error: raffErr } = await (supabase as any)
           .from('raffles_public_money_ext')
