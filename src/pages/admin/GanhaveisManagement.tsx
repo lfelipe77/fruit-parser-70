@@ -23,7 +23,7 @@ import {
   Gift,
   AlertTriangle,
 } from "lucide-react";
-import { getAllCategories } from "@/data/categoriesData";
+// Removed mock data import - will fetch real categories from database
 import { supabase } from "@/integrations/supabase/client";
 import { RafflePublicMoney } from "@/types/public-views";
 import { AdminRaffleRow } from "@/components/AdminRaffleRow";
@@ -175,7 +175,27 @@ export default function GanhaveisManagement() {
   }, [loadRaffles]);
   // ✅ Filter data safely with fallbacks
   const safeRaffles = Array.isArray(raffles) ? raffles : [];
-  const safeCategories = getAllCategories() || [];
+  const [realCategories, setRealCategories] = useState<Array<{id: number; nome: string}>>([]);
+  
+  // Load real categories from database
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, nome')
+          .order('nome', { ascending: true });
+        
+        if (error) throw error;
+        setRealCategories(data || []);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        setRealCategories([]);
+      }
+    };
+    
+    loadCategories();
+  }, []);
   
   const filteredGanhaveis = safeRaffles.filter((raffle) => {
     const matchesTab = selectedTab === "todas" || raffle.status === selectedTab;
@@ -513,11 +533,11 @@ export default function GanhaveisManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas as categorias</SelectItem>
-                  {safeCategories.map(category => (
-                    <SelectItem key={category.slug} value={category.slug}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
+                   {realCategories.map(category => (
+                     <SelectItem key={category.id} value={category.nome}>
+                       {category.nome}
+                     </SelectItem>
+                   ))}
                 </SelectContent>
               </Select>
             </div>

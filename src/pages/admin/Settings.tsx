@@ -216,10 +216,27 @@ export default function Settings() {
 
   const handleRemoveSubcategory = async (subcategoryId: string) => {
     try {
-      const { error } = await supabase
-        .from('subcategories')
-        .delete()
-        .eq('id', subcategoryId);
+      // Check if subcategory is used by any raffles first
+      const { count, error: countError } = await supabase
+        .from('raffles')
+        .select('id', { count: 'exact', head: true })
+        .eq('subcategory_id', subcategoryId);
+
+      if (countError) throw countError;
+
+      if ((count ?? 0) > 0) {
+        toast({
+          title: "Subcategoria em uso",
+          description: `Esta subcategoria está sendo usada por ${count} rifa(s). Reatribua ou arquive antes de remover.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Use the secure admin function
+      const { error } = await supabase.rpc('admin_delete_subcategory', {
+        p_id: subcategoryId
+      });
 
       if (error) throw error;
 
@@ -228,11 +245,15 @@ export default function Settings() {
         title: "Subcategoria removida",
         description: "A subcategoria foi removida com sucesso.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing subcategory:', error);
+      let description = "Não foi possível remover a subcategoria.";
+      if (error?.message?.includes('foreign key') || error?.message?.includes('violates')) {
+        description = "Esta subcategoria está em uso e não pode ser removida. Reatribua os ganhaveis primeiro.";
+      }
       toast({
         title: "Erro ao remover subcategoria",
-        description: "Não foi possível remover a subcategoria.",
+        description,
         variant: "destructive"
       });
     }
@@ -262,11 +283,10 @@ export default function Settings() {
         .eq('category_id', id);
       if (subErr) throw subErr;
 
-      // Then delete the category itself
-      const { error: catErr } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
+      // Use the secure admin function to delete category
+      const { error: catErr } = await supabase.rpc('admin_delete_category', {
+        p_id: id
+      });
       if (catErr) throw catErr;
 
       // Update local state
