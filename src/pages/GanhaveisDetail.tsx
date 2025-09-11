@@ -129,8 +129,8 @@ export default function GanhaveisDetail() {
       setLoading(true);
       
       // Load raffle data (standardized money view)
-  const RAFFLE_CARD_SELECT =
-    "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_display:location_city,participants_count,direct_purchase_link";
+      const RAFFLE_CARD_SELECT =
+        "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_display:location_city,participants_count,direct_purchase_link";
 
       const { data: v, error: moneyError } = await (supabase as any)
         .from('raffles_public_money_ext')
@@ -141,6 +141,26 @@ export default function GanhaveisDetail() {
       if (moneyError) console.warn("money error", moneyError);
       if (v) {
         setMoneyRow(v as unknown as MoneyRow);
+        
+        // Fallback: if location_display is null/undefined, fetch from base table
+        if (!v.location_display) {
+          const { data: r } = await supabase
+            .from('raffles')
+            .select('location_city')
+            .eq('id', id)
+            .single();
+          
+          if (r?.location_city) {
+            // Update the moneyRow with the fallback location
+            const updatedRow = { ...v, location_display: r.location_city };
+            setMoneyRow(updatedRow as unknown as MoneyRow);
+            console.debug('[Detail] location fallback', { 
+              id, 
+              fromMoney: v.location_display, 
+              fromRaffles: r.location_city 
+            });
+          }
+        }
       } else {
         setMoneyRow(null);
       }
