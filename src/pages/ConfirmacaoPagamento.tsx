@@ -338,6 +338,9 @@ export default function ConfirmacaoPagamento() {
         }
 
         if (mounted && isMounted) {
+          // TypeScript now knows getResult.ok is true, so it's ConfirmStateSuccessResponse
+          // which is compatible with ServerState
+          setServerState(getResult);
           setServerState(getResult);
           setStateMachineInitialized(true);
           

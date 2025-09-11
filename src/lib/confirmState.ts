@@ -11,10 +11,35 @@ function backoff(attempt: number) {
   return Math.min(MAX, BASE * Math.pow(2, attempt));
 }
 
-export type ConfirmStateResponse = {
-  ok: boolean;
-  [key: string]: any;
+export type ConfirmStateSuccessResponse = {
+  ok: true;
+  source: 'pending' | 'transactions';
+  reservationId: string;
+  raffleId: string;
+  status: 'pending' | 'paid' | 'expired' | 'failed';
+  qty: number;
+  unitPrice: number;
+  amount: number;
+  numbers: string[];
+  transaction: {
+    id: string | null;
+    provider: string | null;
+    providerPaymentId: string | null;
+    paidAt: string | null;
+  };
+  debug: {
+    hasTicketsPaid: boolean;
+  };
 };
+
+export type ConfirmStateErrorResponse = {
+  ok: false;
+  transient?: boolean;
+  error?: string;
+  exhausted?: boolean;
+};
+
+export type ConfirmStateResponse = ConfirmStateSuccessResponse | ConfirmStateErrorResponse;
 
 export async function safeConfirmStateGet(reservationId: string, accessToken: string, attempt = 0): Promise<ConfirmStateResponse> {
   const url = `${PROJECT_FN_BASE}/confirm-state-get?reservationId=${encodeURIComponent(reservationId)}`;
