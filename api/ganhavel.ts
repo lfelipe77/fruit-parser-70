@@ -1,11 +1,10 @@
-// api/ganhavel/[key].ts
+// api/ganhavel.ts
 export const config = { runtime: "edge" };
 
 export default async function handler(req: Request) {
   try {
     const url = new URL(req.url);
-    const keyRaw = url.pathname.split("/").pop() || "";
-    const key = keyRaw.replace(/\.html$/i, "");
+    const key = (url.searchParams.get("key") || "").replace(/\.html$/i, "");
     if (!key) return new Response("Missing key", { status: 400 });
 
     const base = process.env.SUPABASE_FUNCTIONS_URL || "https://whqxpuyjxoiufzhvqneg.functions.supabase.co";
@@ -35,10 +34,7 @@ export default async function handler(req: Request) {
   } catch (e) {
     return new Response(`Proxy error: ${e}`, {
       status: 500,
-      headers: {
-        "content-type": "text/plain; charset=utf-8",
-        "cache-control": "no-cache"
-      }
+      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-cache" }
     });
   }
 }
