@@ -71,6 +71,7 @@ export default function DiscoverRaffles() {
         .in('status', ['active','completed']);
 
       if (searchTerm) {
+        console.log('[Discover Search Debug]', { searchTerm });
         query = query.ilike("title", `%${searchTerm}%`);
       }
 

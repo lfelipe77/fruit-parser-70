@@ -199,8 +199,17 @@ export default function GanhaveisManagement() {
   
   const filteredGanhaveis = safeRaffles.filter((raffle) => {
     const matchesTab = selectedTab === "todas" || raffle.status === selectedTab;
-    const matchesSearch = raffle.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || raffle.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "todas" || raffle.category_name === selectedCategory;
+    
+    // Debug logging
+    if (searchTerm) {
+      console.log('[Admin Search Debug]', {
+        searchTerm,
+        raffleTitle: raffle.title,
+        matches: raffle.title.toLowerCase().includes(searchTerm.toLowerCase())
+      });
+    }
     
     return matchesTab && matchesSearch && matchesCategory;
   });
