@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/ganhavel/:key.html",
-      "destination": "https://whqxpuyjxoiufzhvqneg.functions.supabase.co/ganhavel-meta?key=:key"
+      "destination": "/api/ganhavel/:key"
     },
     {
       "source": "/ganhavel/:id",
