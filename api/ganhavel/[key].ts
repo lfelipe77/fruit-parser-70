@@ -12,9 +12,7 @@ export default async function handler(req: Request) {
     const anon = process.env.SUPABASE_ANON_KEY;
     if (!anon) return new Response("Missing SUPABASE_ANON_KEY", { status: 500 });
 
-    const target = `${base}/ganhavel-meta?key=${encodeURIComponent(key)}`;
-
-    const upstream = await fetch(target, {
+    const upstream = await fetch(`${base}/ganhavel-meta?key=${encodeURIComponent(key)}`, {
       headers: {
         "Authorization": `Bearer ${anon}`,
         "apikey": anon,
