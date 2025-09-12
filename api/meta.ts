@@ -1,4 +1,4 @@
-// api/ganhavel.ts
+// api/meta.ts
 export const config = { runtime: "edge" };
 
 export default async function handler(req: Request) {

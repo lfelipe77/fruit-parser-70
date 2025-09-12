@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/ganhavel/:key.html",
-      "destination": "/api/ganhavel?key=:key"
+      "destination": "/api/meta?key=:key"
     },
     {
       "source": "/ganhavel/:id",
