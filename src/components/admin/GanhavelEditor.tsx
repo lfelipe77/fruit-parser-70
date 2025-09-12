@@ -186,6 +186,26 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
       const state = form.location_state?.trim();
       const directLink = form.direct_purchase_link?.trim();
 
+      // Clean and validate direct purchase link
+      let cleanDirectLink = directLink || null;
+      if (cleanDirectLink && !cleanDirectLink.startsWith('http')) {
+        cleanDirectLink = 'https://' + cleanDirectLink;
+      }
+      // Fix common URL corruption issues
+      if (cleanDirectLink) {
+        cleanDirectLink = cleanDirectLink.replace(/^https:\/\/.*\/compra\/p/, '');
+        cleanDirectLink = cleanDirectLink.replace(/phttps?:\/\//, 'https://');
+        cleanDirectLink = cleanDirectLink.replace(/^https?:\/\/https?:\/\//, 'https://');
+      }
+
+      console.log('[GanhavelEditor] Saving data:', {
+        title: form.title.trim(),
+        location_city: city,
+        location_state: state,
+        original_direct_link: directLink,
+        cleaned_direct_link: cleanDirectLink
+      });
+
       // Payload matches raffles table columns
       const basePayload: Partial<RaffleRow> = {
         title: form.title.trim(),
@@ -196,8 +216,8 @@ export function GanhavelEditor({ open, row, onClose, onSaved }: GanhavelEditorPr
         category_id: selectedCategoryId ?? null,
         subcategory_id: selectedSubcategoryId ?? null,
         location_city: city || null,
-        location_state: state || null,
-        direct_purchase_link: directLink || null,
+         location_state: state || null,
+         direct_purchase_link: cleanDirectLink,
         status: (form.status || "active") as any,
         updated_at: new Date().toISOString(),
       };
