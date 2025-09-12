@@ -8,10 +8,6 @@
       "destination": "/api/meta?key=:key"
     },
     {
-      "source": "/ganhavel/:id",
-      "destination": "/api/ganhavel/:id"
-    },
-    {
       "source": "/((?!api/|ganhavel/).*)",
       "destination": "/index.html"
     }
