@@ -6373,8 +6373,11 @@ export type Database = {
           draw_date: string | null
           id: string | null
           image_url: string | null
+          location_city: string | null
+          location_label: string | null
           paid_tickets: number | null
           progress_pct: number | null
+          state_uf: string | null
           status: string | null
           subcategory_id: string | null
           subcategory_name: string | null
@@ -6460,6 +6463,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ganhavel_categories_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_state_uf_fkey"
+            columns: ["state_uf"]
+            isOneToOne: false
+            referencedRelation: "brazil_states"
+            referencedColumns: ["uf"]
           },
           {
             foreignKeyName: "raffles_subcategory_fk"
@@ -10452,6 +10462,10 @@ export type Database = {
       should_log_visit: {
         Args: { visit_ip: string; visit_url: string }
         Returns: boolean
+      }
+      slugify: {
+        Args: { txt: string }
+        Returns: string
       }
       some_function: {
         Args: Record<PropertyKey, never>
