@@ -102,7 +102,7 @@ export default function AdminRaffles() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, toast]);
+  }, [searchTerm, statusFilter, toast]);
 
   useEffect(() => {
     loadGanhaveis(currentPage);
