@@ -24,14 +24,7 @@ function absoluteImage(url?: string | null): string {
   return `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-function html(tags: {
-  title: string;
-  description: string;
-  image: string;
-  ogUrl: string;
-  canonical: string;
-  price?: number | null;
-}) {
+function html(tags: { title: string; description: string; image: string; ogUrl: string; canonical: string; price?: number | null; }) {
   const { title, description, image, ogUrl, canonical, price } = tags;
   const priceMeta = (price ?? null) !== null
     ? `<meta property="product:price:amount" content="${price!.toFixed(2)}" />
@@ -61,16 +54,22 @@ ${priceMeta}
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${image}">
 
+<!-- Fallback noscript for humans -->
 <noscript>
-  <meta http-equiv="refresh" content="0; url=/#${new URL(canonical).pathname}">
+  <meta http-equiv="refresh" content="0; url=/#/ganhavel/${canonical.split('/').pop()!.replace(/\\.html$/i,'')}">
 </noscript>
 </head>
 <body>
 Carregando…
 <script>
   (function () {
-    var p = new URL("${canonical}").pathname.replace(/^\\/ganhavel\\//, "/#/ganhavel/");
-    if (location.pathname !== p) location.replace(p);
+    // canonical like: https://ganhavel.com/ganhavel/<slug>.html
+    var path = new URL("${canonical}").pathname;        // "/ganhavel/<slug>.html"
+    var slug = path.replace(/^\\/ganhavel\\//, '').replace(/\\.html$/i, '');
+    var spa = "/#/ganhavel/" + slug;                    // "/#/ganhavel/<slug>"
+    if (location.pathname + location.hash !== spa) {
+      location.replace(spa);
+    }
   })();
 </script>
 </body>
