@@ -1,4 +1,7 @@
 {
+  "functions": {
+    "api/ganhavel/[key].ts": { "runtime": "edge" }
+  },
   "rewrites": [
     {
       "source": "/ganhavel/:key.html",
