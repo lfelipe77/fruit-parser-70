@@ -308,6 +308,13 @@ export default function GanhaveisDetail() {
             </div>
           )}
 
+          {/* Description */}
+          {moneyRow?.description && (
+            <div className="mt-4 text-muted-foreground whitespace-pre-line leading-relaxed">
+              {moneyRow.description}
+            </div>
+          )}
+
           {/* Tabs */}
           <Tabs defaultValue="detalhes" className="mt-6">
             <TabsList className="grid w-full grid-cols-2">
