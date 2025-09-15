@@ -308,13 +308,6 @@ export default function GanhaveisDetail() {
             </div>
           )}
 
-          {/* Description */}
-          {moneyRow?.description && (
-            <div className="mt-4 text-muted-foreground whitespace-pre-line leading-relaxed">
-              {moneyRow.description}
-            </div>
-          )}
-
           {/* Tabs */}
           <Tabs defaultValue="detalhes" className="mt-6">
             <TabsList className="grid w-full grid-cols-2">
@@ -323,6 +316,12 @@ export default function GanhaveisDetail() {
             </TabsList>
 
             <TabsContent value="detalhes" className="prose mt-4 max-w-none">
+              {/* Description */}
+              {moneyRow?.description && (
+                <div className="not-prose mb-6 text-muted-foreground whitespace-pre-line leading-relaxed">
+                  {moneyRow.description}
+                </div>
+              )}
               <div
                 dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
               />
