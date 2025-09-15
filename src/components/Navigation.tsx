@@ -97,13 +97,6 @@ export default function Navigation() {
                     Debug Token
                   </Link>
                 )}
-                {/* Admin link - only visible to admin users */}
-                {isAdmin && (
-                  <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors">
-                    <Settings className="w-4 h-4 inline mr-1" />
-                    Admin
-                  </Link>
-                )}
               </div>
             </div>
             
@@ -179,18 +172,6 @@ export default function Navigation() {
               <NotificationCenter />
               <LanguageSelector />
               
-              {/* Direct Admin Link - Primary Method */}
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  className="px-3 py-2 text-sm font-medium hover:opacity-80 flex items-center gap-2 bg-primary/10 text-primary rounded-md transition-colors"
-                  data-testid="nav-admin-link"
-                  onClick={() => console.log('[Navigation] Direct admin link clicked')}
-                >
-                  <Shield className="h-4 w-4" />
-                  Admin
-                </Link>
-              )}
               
               {/* Admin dropdown menu - only show when user is confirmed admin */}
               {isAdmin === true && !adminLoading && (
