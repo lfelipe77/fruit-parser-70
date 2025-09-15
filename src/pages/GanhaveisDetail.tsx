@@ -322,9 +322,6 @@ export default function GanhaveisDetail() {
                   {moneyRow.description}
                 </div>
               )}
-              <div
-                dangerouslySetInnerHTML={{ __html: raffle.detalhesHtml || FALLBACK_DETAILS }}
-              />
             </TabsContent>
 
             <TabsContent value="regulamento" className="prose mt-4 max-w-none">
