@@ -55,40 +55,45 @@ function normalizeStatus(status: string): string {
   return statusMap[status?.toLowerCase()] || 'pending';
 }
 
-function consolidateByRaffle(rows: TicketRow[]): ConsolidatedTicket[] {
+function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
   const raffleMap = new Map<string, ConsolidatedTicket>();
   
   for (const row of rows) {
     const existing = raffleMap.get(row.raffle_id);
     
+    // Extract raffle data from nested object
+    const raffle = row.raffles;
+    const combos = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
+    const ticketCount = combos.length || 1;
+    
+    // Calculate progress percentage
+    const goalAmount = Number(raffle?.goal_amount) || 0;
+    const amountRaised = Number(raffle?.amount_raised) || 0;
+    const progressPctMoney = goalAmount > 0 ? Math.min(100, (amountRaised / goalAmount) * 100) : 0;
+    
     if (!existing) {
-      // Keep the original combo structure - don't flatten
-      const combos = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-      const actualTicketCount = Math.max(Number(row.ticket_count) || 0, combos.length);
-      
       raffleMap.set(row.raffle_id, {
         raffleId: row.raffle_id,
-        raffleTitle: row.raffle_title,
-        raffleImageUrl: row.raffle_image_url,
+        raffleTitle: raffle?.raffle_title || 'Untitled',
+        raffleImageUrl: raffle?.raffle_image_url || null,
         purchaseDate: row.purchase_date,
         status: normalizeStatus(row.tx_status),
-        value: Number(row.value) || 0,
-        ticketCount: actualTicketCount,
-        purchasedNumbers: combos, // Keep original structure
-        progressPctMoney: Math.min(100, Math.max(0, Number(row.progress_pct_money) || 0)),
-        drawDate: row.draw_date,
+        value: Number(row.amount) || 0,
+        ticketCount: ticketCount,
+        purchasedNumbers: combos,
+        progressPctMoney: progressPctMoney,
+        drawDate: raffle?.draw_date || null,
         transactionId: row.transaction_id,
-        goalAmount: Number(row.goal_amount) || 0,
-        amountRaised: Number(row.amount_raised) || 0
+        goalAmount: goalAmount,
+        amountRaised: amountRaised
       });
     } else {
       // Merge with existing
-      existing.value += Number(row.value) || 0;
+      existing.value += Number(row.amount) || 0;
       
       // Merge combos
-      const newCombos = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
-      existing.purchasedNumbers = [...(existing.purchasedNumbers as any[]), ...newCombos];
-      existing.ticketCount = Math.max(existing.ticketCount, (existing.purchasedNumbers as any[]).length);
+      existing.purchasedNumbers = [...(existing.purchasedNumbers as any[]), ...combos];
+      existing.ticketCount += ticketCount;
       
       // Keep most recent purchase date and status
       if (new Date(row.purchase_date) > new Date(existing.purchaseDate)) {
@@ -134,15 +139,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[my-tickets-get] User: ${user.id}, limit: ${limit}, wonOnly: ${wonOnly}, cursor: ${cursor}`);
 
-    // Build query
+    // Build query directly from transactions and raffles
     let query = supabaseClient
-      .from('my_tickets_ext_v6')
-      .select('*')
-      .eq('buyer_user_id', user.id);
+      .from('transactions')
+      .select(`
+        id as transaction_id,
+        raffle_id,
+        amount,
+        status as tx_status,
+        numbers as purchased_numbers,
+        created_at as purchase_date,
+        user_id as buyer_user_id,
+        raffles!inner(
+          title as raffle_title,
+          image_url as raffle_image_url,
+          goal_amount,
+          amount_raised,
+          draw_date,
+          winner_ticket_id
+        )
+      `)
+      .eq('user_id', user.id);
 
     // Apply won filter
     if (wonOnly) {
-      query = query.not('winner_ticket_id', 'is', null);
+      query = query.not('raffles.winner_ticket_id', 'is', null);
     }
 
     // Apply cursor pagination
