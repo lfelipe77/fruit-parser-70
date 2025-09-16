@@ -71,6 +71,7 @@ export default function PagamentoSucesso() {
     s?.selectedNumbers?.map(toComboString) ?? null
   );
   const [emailSent, setEmailSent] = useState(false);
+  const [raffleSlug, setRaffleSlug] = useState<string | null>(null);
 
   const txId = s?.txId ?? searchParams.get("tx") ?? id ?? ganhaveisId ?? undefined;
   const [isLoading, setIsLoading] = useState(false);
@@ -119,6 +120,17 @@ export default function PagamentoSucesso() {
           } catch { comboStrings = []; }
           setCombos(comboStrings);
           
+          // Fetch raffle details to get the slug
+          const { data: raffle } = await supabase
+            .from('raffles')
+            .select('slug')
+            .eq('id', tx.raffle_id)
+            .maybeSingle();
+
+          if (raffle?.slug) {
+            setRaffleSlug(raffle.slug);
+          }
+
           // Also update rehydrated data
           setRehydrated({
             raffleId: tx.raffle_id,
@@ -323,7 +335,7 @@ export default function PagamentoSucesso() {
 
 Participe você também e concorra a este prêmio incrível! 🚀`;
     
-    const shareUrl = buildPrettyShareUrlSync({ id: paymentData.rifaId, slug: undefined });
+    const shareUrl = buildPrettyShareUrlSync({ id: paymentData.rifaId, slug: raffleSlug });
 
     if (navigator.share) {
       navigator.share({
