@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import ShareButton from "@/components/ShareButton";
+import { appUrlFor, shareUrlFor } from "@/lib/urlHelpers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

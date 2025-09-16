@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Gift, Users, Clock, ArrowLeft, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { appUrlFor } from "@/lib/urlHelpers";
 
 interface Raffle {
   id: string;

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { appUrlFor } from "@/lib/urlHelpers";
 import ShareButton from "@/components/ShareButton";
 import { 
   User, 

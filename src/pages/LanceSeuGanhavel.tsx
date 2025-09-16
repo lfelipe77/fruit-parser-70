@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useNavigate } from "react-router-dom";
+import { appUrlFor } from "@/lib/urlHelpers";
 import { toast } from "sonner";
 import { RAFFLE_IMAGE_BUCKET, pathForRaffleImage } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
