@@ -3,7 +3,7 @@ import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
-import { buildPrettyShareUrl, buildPrettyShareUrlSync } from "@/lib/shareUrl";
+import { buildPrettyShareUrl, buildPrettyShareUrlSync, buildAppUrlSync } from "@/lib/shareUrl";
 import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
@@ -223,7 +223,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
             Compartilhar
           </button>
           <a
-            href={`/ganhavel/${row.raffle_id}`}
+            href={buildAppUrlSync({ id: row.raffle_id, slug: row.raffle_slug })}
             className="inline-flex items-center justify-center text-xs px-2 py-1 rounded border hover:bg-gray-50 w-full sm:w-auto"
             aria-label="Ver Ganhavel"
           >
