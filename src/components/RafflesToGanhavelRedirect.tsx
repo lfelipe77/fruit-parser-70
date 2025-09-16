@@ -1,5 +1,4 @@
 import { useParams, Navigate } from "react-router-dom";
-import { appUrlFor } from "@/lib/urlHelpers";
 
 export default function RafflesToGanhavelRedirect() {
   const { id } = useParams<{ id: string }>();
@@ -8,5 +7,5 @@ export default function RafflesToGanhavelRedirect() {
     return <Navigate to="/" replace />;
   }
   
-  return <Navigate to={appUrlFor({ id })} replace />;
+  return <Navigate to={`/ganhavel/${id}`} replace />;
 }

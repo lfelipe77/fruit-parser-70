@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,7 +10,6 @@ import CategoriesPage from "./pages/CategoriesPage";
 import CategoryDetailPage from "./pages/CategoryDetailPage";
 import SubcategoryDetailPage from "./pages/SubcategoryDetailPage";
 import GanhaveisDetail from "./pages/GanhaveisDetail";
-import GanhavelPage from "./pages/GanhavelPage";
 import RafflesToGanhavelRedirect from "./components/RafflesToGanhavelRedirect";
 import ComoFunciona from "./pages/ComoFunciona";
 import Resultados from "./pages/Resultados";
@@ -177,8 +176,7 @@ const AppContent = () => {
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/categorias/:categorySlug" element={<CategoryDetailPage />} />
         <Route path="/categorias/:categorySlug/:subSlug" element={<SubcategoryDetailPage />} />
-        <Route path="/ganhavel/:id([0-9a-fA-F-]{36})" element={<GanhavelPage />} />
-        <Route path="/ganhavel/:slug" element={<GanhavelPage />} />
+        <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
         {/* Optional alias/redirect for legacy URLs */}
         <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
         <Route path="/ganhavel/:id/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
@@ -296,7 +294,6 @@ const AppContent = () => {
         )}
         {/* Diagnostics page - only visible with ?debug=1 */}
         <Route path="/_diag" element={<DiagnosticsPage />} />
-        <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

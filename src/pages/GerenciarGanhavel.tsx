@@ -26,7 +26,6 @@ import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { appUrlFor } from "@/lib/urlHelpers";
 
 export default function GerenciarRifa() {
   const { id } = useParams();
@@ -277,7 +276,7 @@ export default function GerenciarRifa() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 mb-8">
-            <Link to={appUrlFor({ id: rifa.id.toString() })}>
+            <Link to={`/ganhavel/${rifa.id}`}>
               <Button variant="outline">
                 <Eye className="h-4 w-4 mr-2" />
                 Ver Página da Rifa

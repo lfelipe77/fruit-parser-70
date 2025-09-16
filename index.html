@@ -58,24 +58,12 @@
       gtag('config', 'G-E7V14RLKKV');
     </script>
     
-    <!-- Hash redirect script removed for clean URLs -->
+    <script src="/redirect-hash.js" defer></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- B) Graceful hash → pretty redirect for legacy links -->
-    <script>
-    (function() {
-      // If someone opens /#/ganhavel/<id or slug>, convert it to /ganhavel/<...>
-      var h = location.hash || "";
-      if (h.startsWith("#/ganhavel/")) {
-        var target = h.slice(1); // remove '#'
-        history.replaceState(null, "", target);
-      }
-    })();
-    </script>
   </body>
 </html>

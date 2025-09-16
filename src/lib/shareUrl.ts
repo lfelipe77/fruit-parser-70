@@ -1,10 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { shareUrlFor } from "./urlHelpers";
 
 export type RaffleLike = { id: string; slug?: string | null };
 
+function toPrettyPath(key: string) {
+  // Always send crawlers to the meta worker (.html)
+  return `/ganhavel/${encodeURIComponent(key)}.html`;
+}
+
 export function buildPrettyShareUrlSync(raffle: RaffleLike, origin?: string) {
-  return shareUrlFor(raffle, origin);
+  const base = origin || (typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com");
+  const key = raffle.slug && raffle.slug.trim() ? raffle.slug : raffle.id;
+  return `${base}${toPrettyPath(key)}`;
 }
 
 /**
@@ -31,5 +37,6 @@ export async function buildPrettyShareUrl(
 
   if (!key) key = raffle.id; // last-resort fallback
 
-  return shareUrlFor({ id: raffle.id, slug: key }, origin);
+  const base = origin || (typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com");
+  return `${base}${toPrettyPath(key)}`;
 }

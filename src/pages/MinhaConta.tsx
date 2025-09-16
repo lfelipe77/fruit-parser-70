@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { appUrlFor } from "@/lib/urlHelpers";
 import ShareButton from "@/components/ShareButton";
 import { 
   User, 
@@ -338,7 +337,7 @@ export default function MinhaConta() {
                 <CardContent>
                   <div className="space-y-4">
                     {recentRifas.map((rifa) => (
-                      <Link to={appUrlFor({ id: rifa.id.toString() })} key={rifa.id} className="block">
+                      <Link to={`/ganhavel/${rifa.id}`} key={rifa.id} className="block">
                         <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
                           <img 
                             src={rifa.image} 
@@ -402,7 +401,7 @@ export default function MinhaConta() {
                         >
                           {rifa.status}
                         </Badge>
-                        <Link to={appUrlFor({ id: rifa.id.toString() })}>
+                        <Link to={`/ganhavel/${rifa.id}`}>
                           <Button variant="outline" size="sm">
                             Gerenciar
                           </Button>

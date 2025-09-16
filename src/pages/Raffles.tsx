@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Gift, Users, Clock, ArrowLeft, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { appUrlFor } from "@/lib/urlHelpers";
 
 interface Raffle {
   id: string;
@@ -201,7 +200,7 @@ export default function Raffles() {
                   </div>
                   
                   <Button className="w-full" asChild>
-                    <Link to={appUrlFor({ id: raffle.id })}>
+                    <Link to={`/ganhavel/${raffle.id}`}>
                       Ver Ganhavel
                     </Link>
                   </Button>
