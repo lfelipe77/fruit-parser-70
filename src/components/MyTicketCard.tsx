@@ -71,10 +71,14 @@ export default function MyTicketCard({ row }: { row: Row }) {
         supabase
       );
       
+      // Build CTA-first share text
+      const cta = `✨ Participe você também deste Ganhavel e concorra a ${row.raffle_title}!`;
+      const shareText = cta; // No additional description available in this context
+      
       if (navigator.share) {
         await navigator.share({
           title: row.raffle_title,
-          text: "Participe comigo deste Ganhavel!",
+          text: shareText,
           url: shareUrl,
         });
         return;

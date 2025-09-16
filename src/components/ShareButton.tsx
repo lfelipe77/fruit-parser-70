@@ -16,7 +16,7 @@ interface ShareButtonProps {
   description?: string;
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
-  raffle?: RaffleLike;
+  raffle?: RaffleLike & { title?: string; description?: string };
 }
 
 export default function ShareButton({ 
@@ -64,8 +64,13 @@ export default function ShareButton({
       : fallbackUrl;
       
     const encodedUrl = encodeURIComponent(shareUrl);
-    const encodedTitle = encodeURIComponent(title);
-    const encodedDescription = encodeURIComponent(description);
+    
+    // Build CTA-first share text
+    const cta = raffle ? `✨ Participe você também deste Ganhavel e concorra a ${raffle.title || title}!` : title;
+    const body = raffle?.description?.trim() ?? description;
+    const shareText = [cta, body].filter(Boolean).join("\n\n");
+    
+    const encodedText = encodeURIComponent(shareText);
 
     let platformUrl = "";
 
@@ -74,13 +79,13 @@ export default function ShareButton({
         platformUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
         break;
       case "twitter":
-        platformUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
+        platformUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`;
         break;
       case "linkedin":
         platformUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
         break;
       case "whatsapp":
-        platformUrl = `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
+        platformUrl = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
         break;
     }
 

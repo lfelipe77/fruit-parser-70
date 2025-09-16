@@ -43,8 +43,12 @@ function cleanText(s: string) {
 }
 
 // Build a WhatsApp share button (works in email clients that open links)
-function whatsappShare(raffleTitle: string, raffleUrl: string) {
-  const text = encodeURIComponent(`Bora participar do Ganhavel "${raffleTitle}"? ${raffleUrl}`);
+function whatsappShare(raffleTitle: string, raffleUrl: string, description?: string) {
+  // Build CTA-first share text
+  const cta = `✨ Participe você também deste Ganhavel e concorra a ${raffleTitle}!`;
+  const body = description?.trim() ?? "";
+  const shareText = [cta, body].filter(Boolean).join("\n\n");
+  const text = encodeURIComponent(`${shareText}\n\n${raffleUrl}`);
   const href = `https://wa.me/?text=${text}`;
   return `<a href="${href}" style="display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid #16a34a;text-decoration:none;color:#065f46;">
     Compartilhar no WhatsApp
@@ -52,8 +56,8 @@ function whatsappShare(raffleTitle: string, raffleUrl: string) {
 }
 
 // Fixed CTA line used across emails
-function shareCtaLine(raffleTitle?: string, raffleUrl?: string) {
-  const wa = raffleTitle && raffleUrl ? whatsappShare(raffleTitle, raffleUrl) : '';
+function shareCtaLine(raffleTitle?: string, raffleUrl?: string, description?: string) {
+  const wa = raffleTitle && raffleUrl ? whatsappShare(raffleTitle, raffleUrl, description) : '';
   return `
     <div style="margin-top:14px;padding:12px;border:1px dashed #e5e7eb;border-radius:10px;">
       <div style="font-weight:600;margin-bottom:6px;">Compartilha para que o sorteio aconteça 🔁</div>
