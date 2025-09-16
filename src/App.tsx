@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -176,7 +176,9 @@ const AppContent = () => {
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/categorias/:categorySlug" element={<CategoryDetailPage />} />
         <Route path="/categorias/:categorySlug/:subSlug" element={<SubcategoryDetailPage />} />
-        <Route path="/ganhavel/:id" element={<GanhaveisDetail />} />
+        {/* Ganhavel routes - slug first, then UUID with redirect */}
+        <Route path="/ganhavel/:slug" element={<GanhaveisDetail />} />
+        <Route path="/ganhavel/:id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})" element={<GanhaveisDetail />} />
         {/* Optional alias/redirect for legacy URLs */}
         <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
         <Route path="/ganhavel/:id/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />

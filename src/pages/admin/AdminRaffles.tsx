@@ -144,7 +144,6 @@ export default function AdminRaffles() {
         copy[ix] = {
           ...copy[ix],
           title: saved.title,
-          description: saved.description,
           image_url: saved.image_url,
           status: saved.status,
           ticket_price: saved.ticket_price,
@@ -152,7 +151,7 @@ export default function AdminRaffles() {
           location_city: saved.location_city,
           location_state: saved.location_state,
           direct_purchase_link: saved.direct_purchase_link,
-        };
+        } as any;
         return copy;
       }
       return prev;
@@ -267,7 +266,7 @@ export default function AdminRaffles() {
                 </div>
                 <div className="flex justify-between">
                   <span>Ticket:</span>
-                  <span className="font-medium">{fmtBRL(r.ticket_price)}</span>
+                  <span className="font-medium">{fmtBRL((r as any).ticket_price || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Progresso:</span>

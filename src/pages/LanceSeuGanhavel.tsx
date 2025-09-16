@@ -317,7 +317,7 @@ export default function LanceSeuGanhavel() {
       setToastMsg("✅ Ganhavel lançado! Navegando para a página do ganhavel...");
       setToastOpen(true);
       redirectTimerRef.current = window.setTimeout(() => {
-        navigate(`/ganhavel/${data.id}`);
+        navigate(appUrlFor({ id: data.id, slug: (data as any).slug }));
       }, 1800);
     } catch (err: any) {
       console.error(err);

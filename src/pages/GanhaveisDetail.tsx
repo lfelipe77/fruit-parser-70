@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -98,8 +98,15 @@ function buildShareMeta(raffle: any, origin: string) {
 
 
 export default function GanhaveisDetail() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine if we're dealing with UUID or slug
+  const key = params.slug || params.id || "";
+  const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+  const isUUID = UUID_RE.test(key);
+  const [normalizedOnce, setNormalizedOnce] = React.useState(false);
 
   // ---- Hooks (always first)
   const [moneyRow, setMoneyRow] = React.useState<MoneyRow | null>(null);
@@ -124,7 +131,7 @@ export default function GanhaveisDetail() {
 
   // ---- Data fetching function
   const fetchData = React.useCallback(async () => {
-    if (!id) return;
+    if (!key) return;
     
     try {
       setLoading(true);
@@ -133,11 +140,14 @@ export default function GanhaveisDetail() {
       const RAFFLE_CARD_SELECT =
         "id,title,description,image_url,status,ticket_price,goal_amount,amount_raised,progress_pct_money,last_paid_at,created_at,draw_date,category_name,subcategory_name,location_display:location_city,participants_count,direct_purchase_link";
 
-      const { data: v, error: moneyError } = await (supabase as any)
+      // Fetch by slug or id depending on what we have
+      const query = (supabase as any)
         .from('raffles_public_money_ext')
-        .select(RAFFLE_CARD_SELECT)
-        .eq('id', id)
-        .maybeSingle();
+        .select(RAFFLE_CARD_SELECT);
+      
+      const { data: v, error: moneyError } = isUUID ? 
+        await query.eq('id', key).maybeSingle() :
+        await query.eq('slug', key).maybeSingle();
         
       if (moneyError) console.warn("money error", moneyError);
       if (v) {
@@ -148,7 +158,7 @@ export default function GanhaveisDetail() {
           const { data: r } = await supabase
             .from('raffles')
             .select('location_city')
-            .eq('id', id)
+            .eq(isUUID ? 'id' : 'slug', key)
             .single();
           
           if (r?.location_city) {
@@ -156,7 +166,7 @@ export default function GanhaveisDetail() {
             const updatedRow = { ...v, location_display: r.location_city };
             setMoneyRow(updatedRow as unknown as MoneyRow);
             console.debug('[Detail] location fallback', { 
-              id, 
+              key, 
               fromMoney: v.location_display, 
               fromRaffles: r.location_city 
             });
@@ -177,8 +187,8 @@ export default function GanhaveisDetail() {
       // Load extras from base table
       const { data: baseData, error: baseError } = await supabase
         .from("raffles")
-        .select("user_id,description,direct_purchase_link")
-        .eq("id", id)
+        .select("user_id,description,direct_purchase_link,slug,id")
+        .eq(isUUID ? "id" : "slug", key)
         .maybeSingle();
       if (baseError) console.warn("extras error", baseError);
       if (baseData) {
@@ -205,10 +215,26 @@ export default function GanhaveisDetail() {
       } else {
         setOrganizerData(null);
       }
+
+      // URL normalization - redirect to canonical slug if needed
+      if (baseData && !normalizedOnce) {
+        if (isUUID && baseData.slug && !location.pathname.endsWith(`/ganhavel/${baseData.slug}`)) {
+          setNormalizedOnce(true);
+          navigate(`/ganhavel/${baseData.slug}`, { replace: true });
+          return;
+        }
+        
+        // If we arrived by slug but it's different in DB, normalize
+        if (!isUUID && baseData.slug && key !== baseData.slug) {
+          setNormalizedOnce(true);
+          navigate(`/ganhavel/${baseData.slug}`, { replace: true });
+          return;
+        }
+      }
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [key, isUUID, location.pathname, navigate, normalizedOnce]);
 
   // ---- Data load
   React.useEffect(() => {
@@ -225,7 +251,7 @@ export default function GanhaveisDetail() {
 
     // Listen for raffle updates from payment success
     const handleRaffleUpdate = (event: any) => {
-      if (event.detail?.raffleId === id) {
+      if (event.detail?.raffleId === key) {
         fetchData();
       }
     };
@@ -238,7 +264,7 @@ export default function GanhaveisDetail() {
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
       clearInterval(interval);
     };
-  }, [fetchData, id]);
+  }, [fetchData, key]);
 
   // ---- Derived - compute checkout with minimum validation
   const { qty: adjustedQty, fee, subtotal, chargeTotal } = React.useMemo(() => {
@@ -258,7 +284,7 @@ export default function GanhaveisDetail() {
   if (loading) return <div className="p-6">Carregando…</div>;
   if (!raffle) return <div className="p-6">Ganhavel não encontrado.</div>;
 
-  const pageUrl = `${location.origin}/#/ganhavel/${raffle.id}`;
+  const pageUrl = `${origin}/ganhavel/${raffle.slug || raffle.id}`;
 
   return (
     <>
@@ -548,9 +574,9 @@ export default function GanhaveisDetail() {
       </div>
       
       {/* Completion Detection for this specific raffle */}
-      {id && (
+      {raffle?.id && (
         <RaffleCompletionTrigger 
-          raffleId={id} 
+          raffleId={raffle.id} 
           onCompletion={(raffleId) => {
             console.log(`[GanhaveisDetail] Raffle ${raffleId} completed, triggering refresh...`);
             // Trigger a data refresh when this raffle completes

@@ -42,7 +42,7 @@ export type RafflePublicMoney = {
 export type RaffleCardInfo = {
   id: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   image_url: string | null;
   status: string;
   ticket_price: number;
@@ -60,6 +60,7 @@ export type RaffleCardInfo = {
   location_state?: string | null;
   location_label?: string | null;
   location_display?: string | null;
+  slug?: string | null;
 };
 
 export type PublicProfile = {

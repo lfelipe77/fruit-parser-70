@@ -223,7 +223,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
             Compartilhar
           </button>
           <a
-            href={`#/ganhavel/${row.raffle_id}`}
+            href={`/ganhavel/${row.raffle_id}`}
             className="inline-flex items-center justify-center text-xs px-2 py-1 rounded border hover:bg-gray-50 w-full sm:w-auto"
             aria-label="Ver Ganhavel"
           >

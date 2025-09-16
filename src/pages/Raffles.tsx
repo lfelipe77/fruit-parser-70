@@ -200,7 +200,7 @@ export default function Raffles() {
                   </div>
                   
                   <Button className="w-full" asChild>
-                    <Link to={`/ganhavel/${raffle.id}`}>
+                    <Link to={appUrlFor({ id: raffle.id, slug: (raffle as any).slug })}>
                       Ver Ganhavel
                     </Link>
                   </Button>

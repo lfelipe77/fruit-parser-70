@@ -7,10 +7,20 @@ function toPrettyPath(key: string) {
   return `/ganhavel/${encodeURIComponent(key)}.html`;
 }
 
+// New clean URL without .html for app navigation
+function toAppPath(key: string) {
+  return `/ganhavel/${encodeURIComponent(key)}`;
+}
+
 export function buildPrettyShareUrlSync(raffle: RaffleLike, origin?: string) {
   const base = origin || (typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com");
   const key = raffle.slug && raffle.slug.trim() ? raffle.slug : raffle.id;
   return `${base}${toPrettyPath(key)}`;
+}
+
+export function buildAppUrlSync(raffle: RaffleLike) {
+  const key = raffle.slug && raffle.slug.trim() ? raffle.slug : raffle.id;
+  return toAppPath(key);
 }
 
 /**

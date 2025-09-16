@@ -249,7 +249,7 @@ export default function Resultados() {
                           <span className="font-semibold text-orange-600">{formatCurrency(missing)}</span>
                         </div>
                         
-                        <Link to={`/ganhavel/${draw.id}`} className="block">
+                        <Link to={appUrlFor({ id: draw.id, slug: (draw as any).slug })} className="block">
                           <Button className="w-full bg-orange-500 hover:bg-orange-600 text-sm">
                             <Clock className="w-4 h-4 mr-2" />
                             Últimas Chances!
@@ -326,7 +326,7 @@ export default function Resultados() {
                       <div className="text-center text-sm text-green-700 dark:text-green-400 font-medium">
                         Meta atingida - aguardando sorteio!
                       </div>
-                      <Link to={`/ganhavel/${draw.id}`} className="block">
+                      <Link to={appUrlFor({ id: draw.id, slug: (draw as any).slug })} className="block">
                         <Button variant="outline" className="w-full text-sm">
                           <ExternalLink className="w-4 h-4 mr-2" />
                           Ver Detalhes

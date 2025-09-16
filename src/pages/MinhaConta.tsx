@@ -337,7 +337,7 @@ export default function MinhaConta() {
                 <CardContent>
                   <div className="space-y-4">
                     {recentRifas.map((rifa) => (
-                      <Link to={`/ganhavel/${rifa.id}`} key={rifa.id} className="block">
+                      <Link to={appUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })} key={rifa.id} className="block">
                         <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
                           <img 
                             src={rifa.image} 
@@ -401,7 +401,7 @@ export default function MinhaConta() {
                         >
                           {rifa.status}
                         </Badge>
-                        <Link to={`/ganhavel/${rifa.id}`}>
+                        <Link to={appUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })}>
                           <Button variant="outline" size="sm">
                             Gerenciar
                           </Button>

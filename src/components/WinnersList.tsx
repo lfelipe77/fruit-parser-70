@@ -143,7 +143,7 @@ export default function WinnersList({ latestConcurso, latestDate }: { latestConc
               {r.raffle_id ? (
                 <a
                   className="inline-flex rounded-lg border border-green-600 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50"
-                  href={`#/ganhavel/${r.raffle_id}`}
+                  href={`/ganhavel/${r.raffle_id}`}
                 >
                   Ver sorteio
                 </a>

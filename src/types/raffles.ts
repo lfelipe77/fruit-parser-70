@@ -14,6 +14,23 @@ export type RaffleWithProgress = {
 // Re-export everything from public-views for backward compatibility
 export * from './public-views';
 
+// Updated RaffleCardInfo with slug support
+export type RaffleCardInfo = {
+  id: string;
+  title?: string | null;
+  image_url?: string | null;
+  status?: string | null;
+  amount_raised?: number | null;
+  progress_pct_money?: number | null;
+  participants_count?: number | null;
+  last_paid_at?: string | null;
+  location_city?: string | null;
+  location_state?: string | null;
+  location_display?: string | null;
+  goal_amount?: number | null;
+  slug?: string | null;
+};
+
 // Additional types for admin/components  
 export type RaffleRow = {
   id: string;

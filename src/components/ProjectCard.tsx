@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { MapPin } from "lucide-react";
+import { appUrlFor } from "@/lib/urlHelpers";
 
 interface ProjectCardProps {
   title: string;
@@ -16,7 +17,8 @@ interface ProjectCardProps {
   backers: number;
   organizer?: string;
   location?: string;
-  raffleId?: string; // Add this to use proper IDs
+  raffleId?: string; // Raffle ID
+  raffleSlug?: string; // Raffle slug for clean URLs
   status?: string; // Add status to determine button text
   raffleStatus?: string; // Raw raffle status from DB
   progress_pct_money?: number; // Progress percentage from DB
@@ -34,6 +36,7 @@ export default function ProjectCard({
   organizer,
   location,
   raffleId,
+  raffleSlug,
   status,
   raffleStatus,
   progress_pct_money,
@@ -48,10 +51,8 @@ export default function ProjectCard({
   const minutesAgo = Math.floor(Math.random() * 30) + 1;
   const lastPurchaseText = `${minutesAgo}min`;
 
-  // Use provided raffleId or fallback to legacy slug generation
-  const ganhaveisId = raffleId || title.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, '-');
+  // Use clean URL helper
+  const raffleUrl = raffleId ? appUrlFor({ id: raffleId, slug: raffleSlug }) : '#';
 
   // Dev safety checks
   if (import.meta.env.DEV) {
@@ -65,7 +66,7 @@ export default function ProjectCard({
   const isCompleted = actualStatus === 'completed' || actualStatus === 'premiado';
 
   return (
-    <Link to={`/ganhavel/${ganhaveisId}`} className="block">
+    <Link to={raffleUrl} className="block">
       <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" data-testid="raffle-card">
       <div className="relative overflow-hidden rounded-t-lg">
         <img

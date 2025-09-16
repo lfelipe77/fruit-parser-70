@@ -62,7 +62,7 @@ export default function GerenciarRifa() {
   const netRevenue = totalRevenue - platformFee;
 
   const handleCopyLink = () => {
-    const ganhavelUrl = `${window.location.origin}/ganhavel/${rifa.id}`;
+    const ganhavelUrl = `${window.location.origin}${appUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })}`;
     navigator.clipboard.writeText(ganhavelUrl);
     setCopied(true);
     toast({
@@ -77,7 +77,7 @@ export default function GerenciarRifa() {
       navigator.share({
         title: rifa.title,
         text: `Participe do ganhavel: ${rifa.title}`,
-        url: `${window.location.origin}/ganhavel/${rifa.id}`
+        url: shareUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })
       });
     } else {
       handleCopyLink();
@@ -276,7 +276,7 @@ export default function GerenciarRifa() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 mb-8">
-            <Link to={`/ganhavel/${rifa.id}`}>
+            <Link to={appUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })}>
               <Button variant="outline">
                 <Eye className="h-4 w-4 mr-2" />
                 Ver Página da Rifa
@@ -284,7 +284,7 @@ export default function GerenciarRifa() {
             </Link>
             
             <ShareButton 
-              url={`${window.location.origin}/ganhavel/${rifa.id}`}
+              url={shareUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })}
               title={`Participe da minha rifa: ${rifa.title}`}
               description={rifa.description}
               variant="outline"

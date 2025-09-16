@@ -1,5 +1,6 @@
 import { brl, timeAgo, RaffleCardInfo } from "@/types/raffles";
 import { Link, useNavigate } from "react-router-dom";
+import { appUrlFor } from "@/lib/urlHelpers";
 
 type RaffleCardProps = {
   r?: RaffleCardInfo;
@@ -16,6 +17,7 @@ type RaffleCardProps = {
     location_state?: string | null;
     location_display?: string | null;
     goal_amount?: number | null;
+    slug?: string | null;
   };
   showBuy?: boolean;
   onView?: () => void;
@@ -40,6 +42,9 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
     ? [city, state].join(" • ")
     : (city || state);
 
+  // Generate clean URL
+  const raffleUrl = appUrlFor({ id: data.id, slug: data.slug });
+
   // Navigate to ganhavel detail page
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on interactive elements
@@ -48,7 +53,7 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
     if (onView) {
       onView();
     } else {
-      navigate(`/ganhavel/${data.id}`);
+      navigate(raffleUrl);
     }
   };
 
@@ -57,7 +62,7 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
     if (onView) {
       onView();
     } else {
-      navigate(`/ganhavel/${data.id}`);
+      navigate(raffleUrl);
     }
   };
 
