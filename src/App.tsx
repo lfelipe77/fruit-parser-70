@@ -203,6 +203,9 @@ const AppContent = () => {
         <Route path="/investment" element={<Investment />} />
         <Route path="/proposta-de-investimento" element={<Investment />} />
         <Route path="/business-model" element={<BusinessModel />} />
+        {/* Hash route compatibility for direct hash access */}
+        <Route path="business-model" element={<BusinessModel />} />
+        <Route path="investment" element={<Investment />} />
         {import.meta.env.DEV && (<Route path="/turnstile-test" element={<TurnstileTest />} />)}
         {/* My Profile redirect - legacy route support */}
         <Route path="/perfil" element={
