@@ -102,17 +102,11 @@ export default function Navigation() {
             </div>
             
             <div className="flex items-center space-x-2 md:space-x-4">
-              {/* Mobile quick actions - streamlined */}
-              <div className="lg:hidden flex items-center gap-2">
+              {/* Mobile search only */}
+              <div className="lg:hidden">
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/descobrir" className="text-xs">
                     <Search className="w-4 h-4" />
-                  </Link>
-                </Button>
-                <Button variant="default" size="sm" asChild className="bg-primary hover:bg-primary/90 text-primary-foreground px-3">
-                  <Link to="/lance-seu-ganhavel" className="text-xs font-medium">
-                    <Plus className="w-4 h-4 mr-1" />
-                    Criar
                   </Link>
                 </Button>
               </div>
@@ -223,15 +217,7 @@ export default function Navigation() {
                 </SheetContent>
               </Sheet>
 
-              {/* Search and Heart buttons hidden for now */}
-              {/* <Button variant="ghost" size="sm" className="hidden sm:flex">
-                <Search className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="hidden sm:flex">
-                <Heart className="w-4 h-4" />
-              </Button> */}
-              <NotificationCenter />
-              <LanguageSelector />
+              {/* Remove notification and language selector per user request */}
               
               
               {/* Admin dropdown menu - only show when user is confirmed admin */}

@@ -90,10 +90,10 @@ export default function HeroSection() {
   const hasWinners = winnersCount > 0;
   
   const displayStats = {
-    prizeValue: hasWinners ? formatNumber(winnersCount) : "0",
+    prizeValue: hasWinners ? winnersCount.toString() : "0",
     prizeLabel: "Premiados",
-    participants: stats ? formatNumber(stats.total_participants) : "25K+",
-    ganhaveis: stats ? formatNumber(stats.active_ganhaveis) : "890+", // Show active, not total
+    participants: stats ? stats.total_participants.toString() : "25000",
+    ganhaveis: stats ? stats.active_ganhaveis.toString() : "890",
     activeGanhaveis: activeCount.toString()
   };
   
