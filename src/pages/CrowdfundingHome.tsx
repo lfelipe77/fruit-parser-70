@@ -7,10 +7,11 @@ import EmAltaRecentesSection from "@/components/EmAltaRecentes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 export default function CrowdfundingHome() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
       <Navigation />
       <HeroSection />
       
@@ -95,6 +96,8 @@ export default function CrowdfundingHome() {
           </div>
         </div>
       </footer>
+      
+      <MobileBottomNav />
     </div>
   );
 }

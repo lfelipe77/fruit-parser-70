@@ -1,4 +1,5 @@
 import Navigation from "@/components/Navigation";
+import Layout from "@/components/Layout";
 import { DescobrirSEO } from "@/components/SEOPages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,9 +166,10 @@ export default function DiscoverRaffles() {
   const hasMorePages = (currentPage + 1) * PAGE_SIZE < totalCount;
 
   return (
-    <div className="min-h-screen bg-background">
-      <DescobrirSEO />
-      <Navigation />
+    <Layout>
+      <div className="min-h-screen bg-background">
+        <DescobrirSEO />
+        <Navigation />
       
       {/* Header */}
       <div className="bg-gradient-hero py-16">
@@ -317,6 +319,7 @@ export default function DiscoverRaffles() {
           )}
         </div>
       </section>
-    </div>
+      </div>
+    </Layout>
   );
 }

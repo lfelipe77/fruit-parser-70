@@ -21,7 +21,8 @@ import {
   Shield,
   BarChart3,
   Eye,
-  Menu
+  Menu,
+  Plus
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -101,62 +102,122 @@ export default function Navigation() {
             </div>
             
             <div className="flex items-center space-x-2 md:space-x-4">
-              {/* Mobile Menu */}
+              {/* Mobile quick actions - streamlined */}
+              <div className="lg:hidden flex items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/descobrir" className="text-xs">
+                    <Search className="w-4 h-4" />
+                  </Link>
+                </Button>
+                <Button variant="default" size="sm" asChild className="bg-primary hover:bg-primary/90 text-primary-foreground px-3">
+                  <Link to="/lance-seu-ganhavel" className="text-xs font-medium">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Criar
+                  </Link>
+                </Button>
+              </div>
+              
+              {/* Mobile Menu - Simplified */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="sm" className="lg:hidden">
                     <Menu className="w-4 h-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-72">
-                  <div className="flex flex-col space-y-4 mt-6">
+                <SheetContent side="right" className="w-72 bg-background">
+                  <div className="flex flex-col space-y-1 mt-6">
+                    {/* User section first if logged in */}
+                    {user && (
+                      <div className="border-b pb-4 mb-4">
+                        <Link 
+                          to="/dashboard" 
+                          className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <span className="font-medium">Minha Conta</span>
+                        </Link>
+                      </div>
+                    )}
+                    
+                    {/* Main navigation */}
                     <Link 
                       to="/descobrir" 
-                      className="text-foreground hover:text-primary transition-colors py-2"
+                      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      {t('discover')}
+                      <Search className="w-4 h-4 text-muted-foreground" />
+                      <span>Descobrir Ganhaveis</span>
                     </Link>
+                    
                     <Link 
                       to="/categorias" 
-                      className="text-foreground hover:text-primary transition-colors py-2"
+                      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      {t('categories')}
+                      <BarChart3 className="w-4 h-4 text-muted-foreground" />
+                      <span>Categorias</span>
                     </Link>
+                    
                     <Link 
                       to="/resultados" 
-                      className="text-foreground hover:text-primary transition-colors py-2"
+                      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      {t('results')}
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span>Resultados Loteria</span>
                     </Link>
+                    
                     <Link 
                       to="/como-funciona" 
-                      className="text-foreground hover:text-primary transition-colors py-2"
+                      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      {t('howItWorks')}
+                      <Eye className="w-4 h-4 text-muted-foreground" />
+                      <span>Como Funciona</span>
                     </Link>
+                    
+                    {/* Create action button */}
+                    <Button 
+                      asChild 
+                      className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Link to="/lance-seu-ganhavel" className="flex items-center justify-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        Lance seu Ganhavel
+                      </Link>
+                    </Button>
+                    
+                    {/* Admin section if admin */}
                     {isAdmin && (
-                      <Link 
-                        to="/admin" 
-                        className="text-foreground hover:text-primary transition-colors py-2 flex items-center gap-2"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <Settings className="w-4 h-4" />
-                        Admin
-                      </Link>
+                      <div className="border-t pt-4 mt-4">
+                        <Link 
+                          to="/admin" 
+                          className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors text-amber-600"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      </div>
                     )}
+                    
+                    {/* Login button if not logged in */}
                     {!user && (
-                      <Link 
-                        to="/login" 
-                        className="text-foreground hover:text-primary transition-colors py-2 flex items-center gap-2"
+                      <Button 
+                        variant="outline" 
+                        asChild 
+                        className="mt-4"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <User className="w-4 h-4" />
-                        {t('login')}
-                      </Link>
+                        <Link to="/login" className="flex items-center justify-center gap-2">
+                          <User className="w-4 h-4" />
+                          Entrar / Cadastrar
+                        </Link>
+                      </Button>
                     )}
                   </div>
                 </SheetContent>
