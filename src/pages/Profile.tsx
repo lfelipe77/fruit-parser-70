@@ -320,7 +320,11 @@ export default function Profile() {
             <Button 
               onClick={() => {
                 console.log('[Profile] Save button clicked!');
-                handleSave();
+                alert('Button clicked!'); // Simple test
+                handleSave().catch(err => {
+                  console.error('[Profile] handleSave error:', err);
+                  alert('Save error: ' + err.message);
+                });
               }} 
               disabled={savingProfile} 
               className="w-full" 
