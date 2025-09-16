@@ -317,7 +317,15 @@ export default function Profile() {
             </div>
           </div>
 
-            <Button onClick={handleSave} disabled={savingProfile} className="w-full" data-testid="save-profile">
+            <Button 
+              onClick={() => {
+                console.log('[Profile] Save button clicked!');
+                handleSave();
+              }} 
+              disabled={savingProfile} 
+              className="w-full" 
+              data-testid="save-profile"
+            >
               {savingProfile ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
             
