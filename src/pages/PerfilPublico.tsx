@@ -138,10 +138,19 @@ export default function PerfilPublico() {
         let participadosError: any = null;
 
         const { data, error } = await supabase
-          .from('my_tickets_ext_v6')
-          .select('raffle_id,raffle_title,raffle_image_url,goal_amount,amount_raised,progress_pct_money,draw_date,ticket_count,purchased_numbers,tx_status,buyer_user_id')
+          .from('transactions')
+          .select(`
+            raffle_id,
+            raffles!inner(title, image_url, draw_date),
+            amount,
+            status,
+            numbers,
+            created_at,
+            buyer_user_id
+          `)
           .eq('buyer_user_id', profileUserId)
-          .order('purchase_date', { ascending: false })
+          .eq('status', 'paid')
+          .order('created_at', { ascending: false })
           .limit(200);
 
         participados = data ?? [];
@@ -161,22 +170,25 @@ export default function PerfilPublico() {
             const key = row.raffle_id;
             if (!key) continue;
             const existing = groupedMap.get(key);
+            
+            // Extract ticket count from numbers array
+            const ticketCount = Array.isArray(row.numbers) ? row.numbers.length : 0;
+            const purchasedNumbers = Array.isArray(row.numbers) ? row.numbers : [];
+            
             if (existing) {
-              existing.ticket_count += row.ticket_count || 0;
-              if (Array.isArray(row.purchased_numbers)) {
-                existing.purchased_numbers.push(...row.purchased_numbers);
-              }
+              existing.ticket_count += ticketCount;
+              existing.purchased_numbers.push(...purchasedNumbers);
             } else {
               groupedMap.set(key, {
                 raffle_id: row.raffle_id,
-                raffle_title: row.raffle_title,
-                raffle_image_url: row.raffle_image_url,
-                goal_amount: row.goal_amount,
-                amount_raised: row.amount_raised,
-                progress_pct_money: row.progress_pct_money,
-                draw_date: row.draw_date,
-                ticket_count: row.ticket_count || 0,
-                purchased_numbers: Array.isArray(row.purchased_numbers) ? [...row.purchased_numbers] : [],
+                raffle_title: row.raffles?.title || 'Raffle sem título',
+                raffle_image_url: row.raffles?.image_url || '',
+                goal_amount: 0, // We don't have this from transactions
+                amount_raised: 0, // We don't have this from transactions
+                progress_pct_money: 0, // We don't have this from transactions
+                draw_date: row.raffles?.draw_date,
+                ticket_count: ticketCount,
+                purchased_numbers: [...purchasedNumbers],
               });
             }
           }
