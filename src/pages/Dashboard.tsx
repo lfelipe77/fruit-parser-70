@@ -14,6 +14,7 @@ interface DashboardStats {
   totalTickets: number;
   totalSpent: number;
   activeGanhaveis: number;
+  totalWins: number;
   recentTransactions: any[];
 }
 
@@ -26,6 +27,7 @@ export default function Dashboard() {
     totalTickets: 0,
     totalSpent: 0,
     activeGanhaveis: 0,
+    totalWins: 0,
     recentTransactions: []
   });
   const [loading, setLoading] = useState(true);
@@ -65,13 +67,14 @@ export default function Dashboard() {
           totalTickets: 0,
           totalSpent: 0,
           activeGanhaveis: 0,
+          totalWins: 0,
           recentTransactions: []
         });
         return;
       }
 
       // Parallel queries for better performance
-      const [ticketsResult, rafflesResult, transactionsResult] = await Promise.all([
+      const [ticketsResult, rafflesResult, transactionsResult, winsResult] = await Promise.all([
         // Get all paid transactions with their ticket counts to calculate total tickets
         supabase
           .from('transactions')
@@ -99,7 +102,21 @@ export default function Dashboard() {
           `)
           .eq('user_id', uid)
           .order('created_at', { ascending: false })
-          .limit(10)
+          .limit(10),
+
+        // Check for wins - raffles where user has paid transactions and raffle has a winner
+        supabase
+          .from('raffles')
+          .select(`
+            id,
+            winner_user_id,
+            status,
+            transactions!inner(buyer_user_id)
+          `)
+          .eq('transactions.buyer_user_id', uid)
+          .eq('transactions.status', 'paid')
+          .eq('winner_user_id', uid)
+          .eq('status', 'completed')
       ]);
 
       // Handle results and errors
@@ -113,6 +130,10 @@ export default function Dashboard() {
 
       if (transactionsResult.error) {
         console.error('Error fetching transactions:', transactionsResult.error);
+      }
+
+      if (winsResult.error) {
+        console.error('Error fetching wins:', winsResult.error);
       }
 
       // Calculate total tickets from transaction numbers (each array element represents one ticket)
@@ -131,10 +152,14 @@ export default function Dashboard() {
         .filter(t => ['completed', 'paid', 'approved', 'succeeded'].includes(t.status))
         .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
+      // Count wins
+      const totalWins = winsResult.data?.length || 0;
+
       setStats({
         totalTickets: totalTickets,
         totalSpent: totalSpent,
         activeGanhaveis: rafflesResult.count ?? 0,
+        totalWins: totalWins,
         recentTransactions: transactions.slice(0, 5).map(t => ({
           ...t,
           raffle_title: t.raffles?.title || 'Rifa removida'
@@ -295,9 +320,9 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-2xl font-bold">{loading ? "..." : stats.totalWins}</p>
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma vitória ainda
+                  {stats.totalWins === 0 ? "Nenhuma vitória ainda" : `${stats.totalWins} vitória${stats.totalWins > 1 ? 's' : ''}`}
                 </p>
               </CardContent>
             </Card>
@@ -311,7 +336,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
-                  {loading ? "..." : `R$ ${(stats.totalSpent / 100).toFixed(2)}`}
+                  {loading ? "..." : `R$ ${stats.totalSpent.toFixed(2)}`}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {stats.totalSpent === 0 ? "Nenhum gasto registrado" : "Valor acumulado"}
@@ -372,7 +397,7 @@ export default function Dashboard() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-semibold">
-                            R$ {((transaction.amount || 0) / 100).toFixed(2)}
+                            R$ {(transaction.amount || 0).toFixed(2)}
                           </p>
                           <p className={`text-xs ${
                             ['completed', 'paid', 'approved', 'succeeded'].includes(transaction.status) ? 'text-green-600' : 
