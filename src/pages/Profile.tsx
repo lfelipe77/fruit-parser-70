@@ -77,15 +77,11 @@ export default function Profile() {
       return;
     }
 
-    // Option 1: Direct upload (for testing)
-    if (window.confirm('Upload direto sem corte? (Clique OK) ou Cancelar para usar o cortador')) {
-      console.log('[Avatar] Direct upload chosen');
-      event.target.value = "";
-      await handleDirectAvatarUpload(file);
-      return;
-    }
-
-    // Option 2: Use cropper
+    // Direct upload without cropping
+    console.log('[Avatar] Direct upload chosen');
+    event.target.value = "";
+    await handleDirectAvatarUpload(file);
+    return;
     try {
       console.log('[Avatar] Starting file preparation...');
       setUploading(true);
