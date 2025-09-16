@@ -9704,7 +9704,7 @@ export type Database = {
               p_user_id?: string
             }
           | { p_message: string; p_meta: Json; p_type: string }
-        Returns: undefined
+        Returns: string
       }
       create_security_alert_admin_v2: {
         Args: { p_message: string; p_meta: Json; p_type: string }
@@ -9780,6 +9780,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      ganhavel_slugify: {
+        Args: { _t: string }
+        Returns: string
+      }
       generate_deterministic_pair: {
         Args: { p_position: number; p_ticket_id: string }
         Returns: string
@@ -9801,10 +9805,10 @@ export type Database = {
         Args: Record<PropertyKey, never> | { p_limit?: number }
         Returns: {
           action: string
-          created_at: string | null
-          details: string | null
+          context: Json
+          created_at: string
           id: string
-          user_id: string | null
+          user_id: string
         }[]
       }
       get_admin_winner_detail: {
@@ -10462,6 +10466,10 @@ export type Database = {
       should_log_visit: {
         Args: { visit_ip: string; visit_url: string }
         Returns: boolean
+      }
+      slug_dedup: {
+        Args: { _base: string }
+        Returns: string
       }
       slugify: {
         Args: { txt: string }
