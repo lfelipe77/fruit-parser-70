@@ -104,19 +104,11 @@ export default function Dashboard() {
           .order('created_at', { ascending: false })
           .limit(10),
 
-        // Check for wins - raffles where user has paid transactions and raffle has a winner
+        // Get wins count from v_public_winners view
         supabase
-          .from('raffles')
-          .select(`
-            id,
-            winner_user_id,
-            status,
-            transactions!inner(buyer_user_id)
-          `)
-          .eq('transactions.buyer_user_id', uid)
-          .eq('transactions.status', 'paid')
-          .eq('winner_user_id', uid)
-          .eq('status', 'completed')
+          .from('v_public_winners')
+          .select('winner_id', { count: 'exact', head: true })
+          .eq('user_id', uid)
       ]);
 
       // Handle results and errors
@@ -153,7 +145,7 @@ export default function Dashboard() {
         .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
       // Count wins
-      const totalWins = winsResult.data?.length || 0;
+      const totalWins = winsResult.count || 0;
 
       setStats({
         totalTickets: totalTickets,
