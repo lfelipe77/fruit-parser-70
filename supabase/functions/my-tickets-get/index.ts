@@ -66,10 +66,10 @@ function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
     const combos = Array.isArray(row.numbers) ? row.numbers : [];
     const ticketCount = combos.length || 1;
     
-    // Calculate progress percentage
+    // Calculate progress percentage - simplified for now
     const goalAmount = Number(raffle?.goal_amount) || 0;
-    const amountRaised = Number(raffle?.amount_raised) || 0;
-    const progressPctMoney = goalAmount > 0 ? Math.min(100, (amountRaised / goalAmount) * 100) : 0;
+    const amountRaised = 0; // We don't have this data easily available
+    const progressPctMoney = 0; // Simplified for now
     
     if (!existing) {
       raffleMap.set(row.raffle_id, {
@@ -154,7 +154,6 @@ const handler = async (req: Request): Promise<Response> => {
           title,
           image_url,
           goal_amount,
-          amount_raised,
           draw_date,
           winner_ticket_id
         )

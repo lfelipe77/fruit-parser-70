@@ -129,7 +129,6 @@ export default function MyTicketsPage() {
           title,
           image_url,
           goal_amount,
-          amount_raised,
           draw_date
         )
       `)
@@ -149,9 +148,8 @@ export default function MyTicketsPage() {
       purchased_numbers: item.numbers || [],
       ticket_count: Array.isArray(item.numbers) ? item.numbers.length : 1,
       goal_amount: Number(item.raffles?.goal_amount) || 0,
-      amount_raised: Number(item.raffles?.amount_raised) || 0,
-      progress_pct_money: item.raffles?.goal_amount > 0 ? 
-        Math.min(100, (Number(item.raffles.amount_raised) / Number(item.raffles.goal_amount)) * 100) : 0,
+      amount_raised: 0, // We'll calculate this separately if needed
+      progress_pct_money: 0, // We'll calculate this separately if needed
       draw_date: item.raffles?.draw_date,
       buyer_user_id: item.user_id
     })) || [];
