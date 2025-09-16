@@ -57,6 +57,35 @@ export default function ShareButton({
     }
   };
 
+  const handleNativeShare = async () => {
+    try {
+      // Use async version for sharing to ensure slug is fetched
+      const shareUrl = raffle 
+        ? await buildPrettyShareUrl(raffle, supabase)
+        : fallbackUrl;
+        
+      // Build CTA-first share text
+      const cta = raffle ? `✨ Participe você também deste Ganhavel e concorra a ${raffle.title || title}!` : title;
+      const body = raffle?.description?.trim() ?? description;
+      const shareText = [cta, body].filter(Boolean).join("\n\n");
+
+      if (navigator.share) {
+        await navigator.share({
+          title: raffle?.title || title,
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      }
+      
+      // Fallback to copy link
+      await handleCopyLink();
+    } catch (error) {
+      // User cancelled share or error occurred, fallback to copy
+      await handleCopyLink();
+    }
+  };
+
   const handleShare = async (platform: string) => {
     // Use async version for sharing to ensure slug is fetched
     const shareUrl = raffle 
@@ -110,6 +139,12 @@ export default function ShareButton({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
+        {navigator.share && (
+          <DropdownMenuItem onClick={handleNativeShare}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Compartilhar
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={handleCopyLink}>
           <Copy className="mr-2 h-4 w-4" />
           Copiar Link

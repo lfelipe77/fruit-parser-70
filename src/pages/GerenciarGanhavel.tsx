@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import ShareButton from "@/components/ShareButton";
-import { appUrlFor, shareUrlFor } from "@/lib/urlHelpers";
+import { appUrlFor } from "@/lib/urlHelpers";
+import { buildPrettyShareUrlSync } from "@/lib/shareUrl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +79,7 @@ export default function GerenciarRifa() {
       navigator.share({
         title: rifa.title,
         text: `Participe do ganhavel: ${rifa.title}`,
-        url: shareUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })
+        url: buildPrettyShareUrlSync({ id: String(rifa.id), slug: (rifa as any).slug })
       });
     } else {
       handleCopyLink();
@@ -285,9 +286,7 @@ export default function GerenciarRifa() {
             </Link>
             
             <ShareButton 
-              url={shareUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })}
-              title={`Participe da minha rifa: ${rifa.title}`}
-              description={rifa.description}
+              raffle={{ id: String(rifa.id), slug: (rifa as any).slug, title: rifa.title, description: rifa.description }}
               variant="outline"
             />
             
