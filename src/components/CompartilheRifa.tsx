@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import { Share2 } from "lucide-react";
 import { buildPrettyShareUrl, buildPrettyShareUrlSync, type RaffleLike } from "@/lib/shareUrl";
 import { supabase } from "@/integrations/supabase/client";
+import ShareButton from "@/components/ShareButton";
 
 type Props = { raffle: RaffleLike; size?: number; className?: string };
 
@@ -23,24 +25,6 @@ export default function CompartilheRifa({ raffle, size = 168, className }: Props
     fetchUrl();
   }, [raffle]);
 
-  const copyLink = async () => {
-    try {
-      // Ensure we have the latest URL with slug
-      const shareUrl = await buildPrettyShareUrl(raffle, supabase);
-      
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = shareUrl; document.body.appendChild(ta);
-        ta.select(); document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-      notify("Link copiado!");
-    } catch {
-      notify("Não foi possível copiar. Tente novamente.");
-    }
-  };
 
   return (
     <div className={className}>
@@ -49,18 +33,12 @@ export default function CompartilheRifa({ raffle, size = 168, className }: Props
           <QRCodeCanvas value={url} size={100} includeMargin ref={qrRef as any} />
         </div>
 
-        <button
-          type="button"
-          onClick={copyLink}
-          className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition text-sm font-medium"
-          aria-label="Copiar link do ganhavel"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" className="opacity-80">
-            <path fill="currentColor" d="M10 4H6a2 2 0 0 0-2 2v10h2V6h4z"/>
-            <path fill="currentColor" d="M18 8h-6a2 2 0 0 0-2 2v8h8a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2m0 8h-6v-6h6z"/>
-          </svg>
-          Copiar link
-        </button>
+        <ShareButton
+          url={url}
+          raffle={raffle}
+          variant="default"
+          size="sm"
+        />
       </div>
     </div>
   );
