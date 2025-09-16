@@ -10,9 +10,12 @@ export function appUrlFor(raffle: RaffleLike): string {
 
 /**
  * Generate social share URLs with .html for meta worker
+ * C) Handle preview domains properly
  */
 export function shareUrlFor(raffle: RaffleLike, origin?: string): string {
-  const base = origin || (typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com");
+  const currentOrigin = origin || (typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com");
+  // Use ganhavel.com for production, otherwise use current origin for previews
+  const base = currentOrigin.includes('ganhavel.com') ? 'https://ganhavel.com' : currentOrigin;
   const key = raffle.slug && raffle.slug.trim() ? raffle.slug : raffle.id;
   return `${base}/ganhavel/${encodeURIComponent(key)}.html`;
 }

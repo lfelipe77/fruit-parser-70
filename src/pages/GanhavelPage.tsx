@@ -73,6 +73,29 @@ export default function GanhavelPage() {
     fetchRaffle();
   }, [slug, navigate]);
 
+  // A) Add canonical tag for SEO
+  useEffect(() => {
+    if (!raffle?.slug) return;
+    const link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    const href = `https://ganhavel.com/ganhavel/${raffle.slug}`;
+    if (link) {
+      link.href = href;
+    } else {
+      const el = document.createElement('link');
+      el.rel = 'canonical';
+      el.href = href;
+      document.head.appendChild(el);
+    }
+
+    // Cleanup function to remove canonical tag when component unmounts
+    return () => {
+      const canonicalLink = document.querySelector('link[rel="canonical"]');
+      if (canonicalLink && canonicalLink.getAttribute('href')?.includes('/ganhavel/')) {
+        canonicalLink.remove();
+      }
+    };
+  }, [raffle?.slug]);
+
   if (loading) {
     return <div>Loading...</div>;
   }
