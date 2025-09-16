@@ -8,12 +8,13 @@
       "destination": "/api/meta?key=:key"
     },
     {
-      "source": "/((?!api/|ganhavel/).*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ],
   "env": {
     "SUPABASE_URL": "https://whqxpuyjxoiufzhvqneg.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndocXhwdXlqeG9pdWZ6aHZxbmVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQxNjYyODMsImV4cCI6MjA2OTc0MjI4M30.lXLlvJkB48KSUsroImqkZSjNLpQjg7Pe_bYH5h6ztjo",
     "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key"
   },
   "headers": [
