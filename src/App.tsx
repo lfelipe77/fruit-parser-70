@@ -177,6 +177,7 @@ const AppContent = () => {
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/categorias/:categorySlug" element={<CategoryDetailPage />} />
         <Route path="/categorias/:categorySlug/:subSlug" element={<SubcategoryDetailPage />} />
+        <Route path="/ganhavel/:id([0-9a-fA-F-]{36})" element={<GanhavelPage />} />
         <Route path="/ganhavel/:slug" element={<GanhavelPage />} />
         {/* Optional alias/redirect for legacy URLs */}
         <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />

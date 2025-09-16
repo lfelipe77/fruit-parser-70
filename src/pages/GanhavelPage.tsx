@@ -1,79 +1,71 @@
-import { useParams, useNavigate, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { isUUID, appUrlFor } from "@/lib/urlHelpers";
 import GanhaveisDetail from "./GanhaveisDetail";
 
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
 export default function GanhavelPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [raffle, setRaffle] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [status, setStatus] = useState<"loading"|"ready"|"notfound">("loading");
+  const normalizedOnce = useRef(false);
+
+  const key = params.slug ?? params.id ?? ""; // we use one param name in routes
+  const mode: "id" | "slug" = useMemo(
+    () => (UUID_RE.test(key) ? "id" : "slug"),
+    [key]
+  );
 
   useEffect(() => {
-    if (!slug) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
+    let cancelled = false;
+    (async () => {
+      setStatus("loading");
 
-    const fetchRaffle = async () => {
-      try {
-        let query;
+      const by = mode === "id" ? "id" : "slug";
+      const { data, error } = await supabase
+        .from("raffles")
+        .select("id, slug, title, description")
+        .eq(by, key)
+        .maybeSingle();
 
-        // If it looks like a UUID, search by id first
-        if (isUUID(slug)) {
-          query = supabase
-            .from("raffles")
-            .select("id, slug, title, description")
-            .eq("id", slug)
-            .single();
-        } else {
-          // Otherwise search by slug
-          query = supabase
-            .from("raffles")
-            .select("id, slug, title, description")
-            .eq("slug", slug)
-            .single();
-        }
+      if (cancelled) return;
 
-        const { data, error } = await query;
-
-        if (error || !data) {
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
-
-        setRaffle(data);
-
-        // If we found by UUID but have a slug, redirect to canonical URL
-        if (isUUID(slug) && data.slug && data.slug.trim()) {
-          const canonicalUrl = appUrlFor(data);
-          navigate(canonicalUrl, { replace: true });
-          return;
-        }
-
-        // If we found by slug but the URL slug doesn't match, redirect
-        if (!isUUID(slug) && data.slug !== slug) {
-          const canonicalUrl = appUrlFor(data);
-          navigate(canonicalUrl, { replace: true });
-          return;
-        }
-
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching raffle:", error);
-        setNotFound(true);
-        setLoading(false);
+      if (error || !data) {
+        setStatus("notfound");
+        return;
       }
-    };
 
-    fetchRaffle();
-  }, [slug, navigate]);
+      setRaffle(data);
+      setStatus("ready");
 
-  // A) Add canonical tag for SEO
+      // Normalize: if we arrived by id, move to slug once
+      if (mode === "id" && data.slug && !normalizedOnce.current) {
+        normalizedOnce.current = true;
+        if (!location.pathname.endsWith(`/ganhavel/${data.slug}`)) {
+          navigate(`/ganhavel/${data.slug}`, { replace: true });
+        }
+      }
+
+      // If we arrived by slug but it's different in DB (case/encoding), normalize once
+      if (mode === "slug" && data.slug && key !== data.slug && !normalizedOnce.current) {
+        normalizedOnce.current = true;
+        navigate(`/ganhavel/${data.slug}`, { replace: true });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [key, mode, navigate, location.pathname]);
+
+  if (status === "loading") return <>Carregando…</>;
+  if (status === "notfound") return <Navigate to="/404" replace />;
+
+  return <RaffleView raffle={raffle} />;
+}
+
+function RaffleView({ raffle }: { raffle: any }) {
+  // Add canonical tag for SEO
   useEffect(() => {
     if (!raffle?.slug) return;
     const link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -96,15 +88,5 @@ export default function GanhavelPage() {
     };
   }, [raffle?.slug]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (notFound) {
-    return <Navigate to="/404" replace />;
-  }
-
-  // Pass the raffle data to GanhaveisDetail via a prop or context
-  // For now, let GanhaveisDetail handle its own fetching
   return <GanhaveisDetail />;
 }
