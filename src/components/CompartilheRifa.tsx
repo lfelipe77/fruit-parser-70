@@ -64,17 +64,17 @@ export default function CompartilheRifa({ raffle, size = 168, className }: Props
 
   return (
     <div className={className}>
-      <div className="flex flex-col items-center gap-3">
+      <div className="flex flex-col items-center gap-4">
         <div className="rounded-lg bg-white p-2 shadow-sm">
           <QRCodeCanvas value={url} size={100} includeMargin ref={qrRef as any} />
         </div>
 
         <button
           onClick={handleShare}
-          className="inline-flex items-center justify-center gap-1 text-xs px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto"
+          className="w-full max-w-xs rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
           aria-label="Compartilhar Ganhavel"
         >
-          <Share2 className="h-3.5 w-3.5" />
+          <Share2 className="h-4 w-4" />
           Compartilhar
         </button>
       </div>
