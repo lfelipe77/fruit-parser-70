@@ -56,19 +56,21 @@ ${priceMeta}
 
 <!-- Fallback noscript for humans -->
 <noscript>
-  <meta http-equiv="refresh" content="0; url=/#/ganhavel/${canonical.split('/').pop()!.replace(/\\.html$/i,'')}">
+  <meta http-equiv="refresh" content="0; url=/ganhavel/${canonical.split('/').pop()!.replace(/\\.html$/i,'')}">
 </noscript>
 </head>
 <body>
 Carregando…
 <script>
   (function () {
-    // canonical like: https://ganhavel.com/ganhavel/<slug>.html
-    var path = new URL("${canonical}").pathname;        // "/ganhavel/<slug>.html"
-    var slug = path.replace(/^\\/ganhavel\\//, '').replace(/\\.html$/i, '');
-    var spa = "/ganhavel/" + slug;                      // "/ganhavel/<slug>" (no hash)
-    if (location.pathname !== spa) {
-      location.href = spa;
+    // Extract slug from current URL
+    var currentPath = location.pathname;  // "/ganhavel/<slug>.html"
+    var slug = currentPath.replace(/^\\/ganhavel\\//, '').replace(/\\.html$/i, '');
+    var targetPath = "/ganhavel/" + slug;  // "/ganhavel/<slug>"
+    
+    // Only redirect if we're not already on the target path
+    if (currentPath !== targetPath && currentPath.includes('.html')) {
+      location.replace(targetPath);
     }
   })();
 </script>
