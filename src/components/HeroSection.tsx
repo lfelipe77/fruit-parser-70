@@ -36,22 +36,43 @@ export default function HeroSection() {
   });
 
   async function fetchStats(): Promise<{ src: 'cache'|'live', data: HomeStats|null }> {
-    // Skip cache temporarily due to stale data after nuclear reset
-    // const cache = await supabase
-    //   .from('homepage_stats_cache' as any)   // use `as any` to avoid TS type generation issues for views
-    //   .select('*')
-    //   .limit(1)
-    //   .single();
-    // if (!cache.error && cache.data) return { src: 'cache', data: cache.data as unknown as HomeStats };
+    try {
+      // Get real statistics from the database
+      const [activeRaffles, participantsData, winnersData] = await Promise.all([
+        supabase
+          .from('raffles')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active'),
+        supabase
+          .from('transactions')
+          .select('user_id', { count: 'exact', head: true })
+          .eq('status', 'paid'),
+        supabase
+          .from('winners')
+          .select('*', { count: 'exact', head: true })
+      ]);
 
-    const live = await supabase
-      .from('homepage_stats' as any)
-      .select('*')
-      .limit(1)
-      .single();
-    if (!live.error && live.data) return { src: 'live', data: live.data as unknown as HomeStats };
+      if (activeRaffles.error || participantsData.error || winnersData.error) {
+        console.error('Error fetching stats:', { activeRaffles: activeRaffles.error, participantsData: participantsData.error, winnersData: winnersData.error });
+        return { src: 'live', data: null };
+      }
 
-    return { src: 'live', data: null };
+      const statsData: HomeStats = {
+        total_raised: 0,
+        total_prize_paid: 0,
+        total_participants: participantsData.count || 0,
+        total_ganhaveis: activeRaffles.count || 0,
+        active_ganhaveis: activeRaffles.count || 0,
+        almost_complete_ganhaveis: 0,
+        total_tickets_sold: 0,
+        recent_transactions: 0
+      };
+
+      return { src: 'live', data: statsData };
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+      return { src: 'live', data: null };
+    }
   }
 
   useEffect(() => {
@@ -92,8 +113,8 @@ export default function HeroSection() {
   const displayStats = {
     prizeValue: hasWinners ? winnersCount.toString() : "0",
     prizeLabel: "Premiados",
-    participants: stats ? stats.total_participants.toString() : "25000",
-    ganhaveis: stats ? stats.active_ganhaveis.toString() : "890",
+    participants: stats ? stats.total_participants.toString() : "0",
+    ganhaveis: stats ? stats.active_ganhaveis.toString() : "0",
     activeGanhaveis: activeCount.toString()
   };
   
