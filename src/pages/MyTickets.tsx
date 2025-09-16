@@ -114,15 +114,49 @@ export default function MyTicketsPage() {
       console.warn('[MyTicketsPage] Edge function failed, falling back to direct query:', edgeFunctionError);
     }
     
-    // Fallback: Query my_tickets_ext_v7 directly
+    // Fallback: Query transactions directly
     const { data, error } = await supabase
-      .from('my_tickets_ext_v7' as any)
-      .select('*')
-      .eq('buyer_user_id', user.id)
-      .order('purchase_date', { ascending: false })
+      .from('transactions')
+      .select(`
+        id,
+        raffle_id,
+        amount,
+        status,
+        numbers,
+        created_at,
+        user_id,
+        raffles!inner(
+          title,
+          image_url,
+          goal_amount,
+          amount_raised,
+          draw_date
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
       .limit(50);
 
-    return { data: data as unknown as TicketRow[] | null, error };
+    // Transform data to match expected format
+    const transformedData = data?.map((item: any) => ({
+      transaction_id: item.id,
+      raffle_id: item.raffle_id,
+      raffle_title: item.raffles?.title || 'Untitled',
+      raffle_image_url: item.raffles?.image_url,
+      purchase_date: item.created_at,
+      tx_status: item.status,
+      value: Number(item.amount) || 0,
+      purchased_numbers: item.numbers || [],
+      ticket_count: Array.isArray(item.numbers) ? item.numbers.length : 1,
+      goal_amount: Number(item.raffles?.goal_amount) || 0,
+      amount_raised: Number(item.raffles?.amount_raised) || 0,
+      progress_pct_money: item.raffles?.goal_amount > 0 ? 
+        Math.min(100, (Number(item.raffles.amount_raised) / Number(item.raffles.goal_amount)) * 100) : 0,
+      draw_date: item.raffles?.draw_date,
+      buyer_user_id: item.user_id
+    })) || [];
+
+    return { data: transformedData as TicketRow[], error };
   };
 
   const fetchTickets = async () => {

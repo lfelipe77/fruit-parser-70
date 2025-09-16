@@ -63,7 +63,7 @@ function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
     
     // Extract raffle data from nested object
     const raffle = row.raffles;
-    const combos = Array.isArray(row.purchased_numbers) ? row.purchased_numbers : [];
+    const combos = Array.isArray(row.numbers) ? row.numbers : [];
     const ticketCount = combos.length || 1;
     
     // Calculate progress percentage
@@ -74,16 +74,16 @@ function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
     if (!existing) {
       raffleMap.set(row.raffle_id, {
         raffleId: row.raffle_id,
-        raffleTitle: raffle?.raffle_title || 'Untitled',
-        raffleImageUrl: raffle?.raffle_image_url || null,
-        purchaseDate: row.purchase_date,
-        status: normalizeStatus(row.tx_status),
+        raffleTitle: raffle?.title || 'Untitled',
+        raffleImageUrl: raffle?.image_url || null,
+        purchaseDate: row.created_at,
+        status: normalizeStatus(row.status),
         value: Number(row.amount) || 0,
         ticketCount: ticketCount,
         purchasedNumbers: combos,
         progressPctMoney: progressPctMoney,
         drawDate: raffle?.draw_date || null,
-        transactionId: row.transaction_id,
+        transactionId: row.id,
         goalAmount: goalAmount,
         amountRaised: amountRaised
       });
@@ -96,10 +96,10 @@ function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
       existing.ticketCount += ticketCount;
       
       // Keep most recent purchase date and status
-      if (new Date(row.purchase_date) > new Date(existing.purchaseDate)) {
-        existing.purchaseDate = row.purchase_date;
-        existing.status = normalizeStatus(row.tx_status);
-        existing.transactionId = row.transaction_id;
+      if (new Date(row.created_at) > new Date(existing.purchaseDate)) {
+        existing.purchaseDate = row.created_at;
+        existing.status = normalizeStatus(row.status);
+        existing.transactionId = row.id;
       }
     }
   }
@@ -143,16 +143,16 @@ const handler = async (req: Request): Promise<Response> => {
     let query = supabaseClient
       .from('transactions')
       .select(`
-        id as transaction_id,
+        id,
         raffle_id,
         amount,
-        status as tx_status,
-        numbers as purchased_numbers,
-        created_at as purchase_date,
-        user_id as buyer_user_id,
+        status,
+        numbers,
+        created_at,
+        user_id,
         raffles!inner(
-          title as raffle_title,
-          image_url as raffle_image_url,
+          title,
+          image_url,
           goal_amount,
           amount_raised,
           draw_date,
@@ -169,10 +169,10 @@ const handler = async (req: Request): Promise<Response> => {
     // Apply cursor pagination
     if (cursor) {
       const [cursorDate, cursorId] = cursor.split('|');
-      query = query.or(`purchase_date.lt.${cursorDate},and(purchase_date.eq.${cursorDate},raffle_id.lt.${cursorId})`);
+      query = query.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},raffle_id.lt.${cursorId})`);
     }
 
-    query = query.order('purchase_date', { ascending: false })
+    query = query.order('created_at', { ascending: false })
                  .order('raffle_id', { ascending: false })
                  .limit(limit + 1); // Fetch one extra for next cursor
 
@@ -186,11 +186,11 @@ const handler = async (req: Request): Promise<Response> => {
       )
     }
 
-    const rows = (rawRows || []) as TicketRow[];
+    const rows = (rawRows || []) as any[];
     console.log(`[my-tickets-get] Raw rows fetched: ${rows.length}`);
 
     // Security check - all rows should belong to the authenticated user
-    const invalidRows = rows.filter(row => row.buyer_user_id !== user.id);
+    const invalidRows = rows.filter(row => row.user_id !== user.id);
     if (invalidRows.length > 0) {
       console.error(`[my-tickets-get] Security violation: ${invalidRows.length} rows don't belong to user ${user.id}`);
       return new Response(
