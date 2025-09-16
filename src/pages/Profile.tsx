@@ -318,13 +318,18 @@ export default function Profile() {
           </div>
 
             <Button 
-              onClick={() => {
-                console.log('[Profile] Save button clicked!');
-                alert('Button clicked!'); // Simple test
-                handleSave().catch(err => {
-                  console.error('[Profile] handleSave error:', err);
-                  alert('Save error: ' + err.message);
-                });
+              onClick={(e) => {
+                console.log('[Profile] Save button clicked! Event:', e);
+                console.log('[Profile] Button disabled?', savingProfile);
+                console.log('[Profile] Form data:', formData);
+                console.log('[Profile] Has cropped blob?', !!croppedBlob);
+                
+                try {
+                  handleSave();
+                } catch (error) {
+                  console.error('[Profile] Immediate error in handleSave:', error);
+                  alert('Immediate error: ' + error.message);
+                }
               }} 
               disabled={savingProfile} 
               className="w-full" 
