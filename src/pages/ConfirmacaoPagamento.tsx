@@ -159,18 +159,26 @@ export default function ConfirmacaoPagamento() {
   };
 
   // 2) INITIAL STATE: use lazy initializers that do not reference variables declared below
-  const [qty] = React.useState<number>(() =>
-    Number.isFinite(Number(navState.quantity)) && Number(navState.quantity) > 0
-      ? Number(navState.quantity)
-      : deriveInitialQty()
-  );
+  const [qty] = React.useState<number>(() => {
+    // First priority: navState.quantity (navigation state)
+    if (Number.isFinite(Number(navState.quantity)) && Number(navState.quantity) > 0) {
+      return Number(navState.quantity);
+    }
+    // Second priority: derive from URL
+    return deriveInitialQty();
+  });
 
   const [selectedNumbers, setSelectedNumbers] = React.useState<string[]>(() => {
     const fromNav = deriveInitialCombos(navState);
     if (fromNav.length > 0) return fromNav;
-    // Fallback to generating new numbers
+    
+    // Fallback: generate new numbers based on the correct qty
+    const actualQty = Number.isFinite(Number(navState.quantity)) && Number(navState.quantity) > 0 
+      ? Number(navState.quantity) 
+      : deriveInitialQty();
+    
     const numbers = [];
-    for (let i = 0; i < qty; i++) {
+    for (let i = 0; i < actualQty; i++) {
       const combo = [];
       for (let j = 0; j < 5; j++) {
         const num = String(Math.floor(Math.random() * 100)).padStart(2, '0');
@@ -500,6 +508,7 @@ export default function ConfirmacaoPagamento() {
   }
 
   const handleRegenerateNumbers = () => {
+    // Use the correct quantity for regeneration
     const numbers = generateNumbers(qty);
     const safeNumbers = numbers.map(toComboString).filter(Boolean);
     setSelectedNumbers(safeNumbers);
@@ -575,7 +584,7 @@ export default function ConfirmacaoPagamento() {
   return (
     <>
       <Navigation />
-      <div className="container mx-auto p-4 max-w-4xl">
+      <div className="container mx-auto px-4 py-4 max-w-4xl">
         {/* Offline Banner */}
         {isOffline && (
           <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-center justify-between">
@@ -622,9 +631,9 @@ export default function ConfirmacaoPagamento() {
           <p className="text-muted-foreground">Complete seus dados para finalizar a compra</p>
         </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr,400px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr,400px] xl:gap-8">
         {/* Main Form */}
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Raffle Summary & Selected Numbers */}
           <Card>
             <CardHeader>
@@ -858,7 +867,7 @@ export default function ConfirmacaoPagamento() {
         </div>
 
         {/* Order Summary Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           
           {/* Como funciona o sorteio */}
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
