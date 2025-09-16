@@ -154,6 +154,7 @@ export function useProfileSave() {
   const [error, setError] = useState<string | null>(null);
 
   const save = useCallback(async ({ updates, avatarFile }: SaveArgs) => {
+    console.log('[useProfileSave] Starting save with:', { updates, hasAvatarFile: !!avatarFile });
     setSaving(true);
     setError(null);
     try {
@@ -161,21 +162,28 @@ export function useProfileSave() {
       const user = auth?.user;
       if (!user) throw new Error('Not signed in');
 
+      console.log('[useProfileSave] User authenticated:', user.id);
       let avatarUrl: string | null = null;
 
       // 1) If there is a new avatar, validate and upload it
       if (avatarFile) {
+        console.log('[useProfileSave] Processing avatar file:', avatarFile.size, avatarFile.type);
         validateAvatarFile(avatarFile);
         
         const key = `${user.id}/avatar.webp`;
+        console.log('[useProfileSave] Uploading to storage key:', key);
         const { error: upErr } = await supabase
           .storage
           .from('avatars')
           .upload(key, avatarFile, { upsert: true, contentType: 'image/webp' });
-        if (upErr) throw upErr;
+        if (upErr) {
+          console.error('[useProfileSave] Upload error:', upErr);
+          throw upErr;
+        }
 
         const { data: pub } = supabase.storage.from('avatars').getPublicUrl(key);
         avatarUrl = pub?.publicUrl ? `${pub.publicUrl}?v=${Date.now()}` : null;
+        console.log('[useProfileSave] Generated avatar URL:', avatarUrl);
       }
 
       // 2) Build final update payload
@@ -191,8 +199,12 @@ export function useProfileSave() {
         Object.entries(base).filter(([k, v]) => allowedKeys.has(k) && v !== undefined)
       );
 
+      console.log('[useProfileSave] Final payload:', payload);
+
       // 3) Use resilient save function
-      return await saveAvatarProfileResilient(supabase, user.id, avatarUrl || '', payload);
+      const result = await saveAvatarProfileResilient(supabase, user.id, avatarUrl || '', payload);
+      console.log('[useProfileSave] Save completed successfully:', result);
+      return result;
     } catch (e: any) {
       console.error('[useProfileSave] Error:', fmtErr(e));
       setError(e.message ?? 'Failed to save profile');
