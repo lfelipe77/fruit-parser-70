@@ -64,8 +64,11 @@ export default function Profile() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('[Avatar] File selected:', file.name, file.size, file.type);
+
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
+      console.error('[Avatar] File too large:', file.size);
       toast({
         title: 'Erro',
         description: 'Imagem muito grande (máx. 5MB).',
@@ -75,33 +78,56 @@ export default function Profile() {
     }
 
     try {
+      console.log('[Avatar] Starting file preparation...');
+      setUploading(true);
+      
       // Open cropper
       const dataUrl = await fileToDataUrl(file);
+      console.log('[Avatar] File converted to data URL');
+      
       setPendingFileExt("webp"); // we will export to webp
       setCropSrc(dataUrl);
       setCropOpen(true);
+      
       // Clear file input
       event.target.value = "";
+      
+      console.log('[Avatar] Cropper opened successfully');
     } catch (error) {
-      console.error('Error preparing file for crop:', error);
+      console.error('[Avatar] Error preparing file for crop:', error);
       toast({
         title: 'Erro',
         description: 'Erro ao preparar imagem para corte.',
         variant: 'destructive',
       });
+    } finally {
+      setUploading(false);
     }
   };
 
 
   const handleSave = async () => {
     try {
+      console.log('[Profile] Starting save...', { 
+        hasFormChanges: JSON.stringify(formData) !== JSON.stringify({
+          full_name: profile?.full_name || '',
+          username: profile?.username || '',
+          bio: profile?.bio || '',
+          location: profile?.location || ''
+        }),
+        hasCroppedBlob: !!croppedBlob 
+      });
+
       const result = await saveProfile({
         updates: formData,
         avatarFile: croppedBlob ? new File([croppedBlob], 'avatar.webp', { type: 'image/webp' }) : undefined
       });
 
+      console.log('[Profile] Save result:', result);
+
       if (result) {
         // Refresh profile data
+        console.log('[Profile] Refreshing profile data...');
         await refreshProfile();
         
         toast({
@@ -111,12 +137,13 @@ export default function Profile() {
         
         // Clear avatar state after successful save
         setCroppedBlob(null);
+        console.log('[Profile] Save completed successfully');
       }
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('[Profile] Error saving profile:', error);
       toast({
         title: 'Erro',
-        description: saveError || 'Erro ao salvar perfil.',
+        description: saveError || error?.message || 'Erro ao salvar perfil.',
         variant: 'destructive',
       });
     }
@@ -317,6 +344,7 @@ export default function Profile() {
           setCroppedBlob(null);
         }}
         onCropped={(blob) => {
+          console.log('[Avatar] Cropping completed, blob size:', blob.size);
           // Just store the cropped blob for later save
           setCroppedBlob(blob);
           setCropOpen(false);
