@@ -66,9 +66,9 @@ Carregando…
     // canonical like: https://ganhavel.com/ganhavel/<slug>.html
     var path = new URL("${canonical}").pathname;        // "/ganhavel/<slug>.html"
     var slug = path.replace(/^\\/ganhavel\\//, '').replace(/\\.html$/i, '');
-    var spa = "/#/ganhavel/" + slug;                    // "/#/ganhavel/<slug>"
-    if (location.pathname + location.hash !== spa) {
-      location.replace(spa);
+    var spa = "/ganhavel/" + slug;                      // "/ganhavel/<slug>" (no hash)
+    if (location.pathname !== spa) {
+      location.href = spa;
     }
   })();
 </script>
@@ -137,7 +137,8 @@ serve(async (req) => {
 
     const slug = row.slug ?? row.id;
     const title = row.title ? `${row.title} — Ganhavel` : "Ganhavel";
-    const desc = (row.description || "Participe deste ganhavel. Transparente, simples e conectado à Loteria Federal.").trim();
+    const cta = row.title ? `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.` : "Participe deste ganhavel. Transparente, simples e conectado à Loteria Federal.";
+    const desc = (row.description || cta).trim();
     const canonical = `${SITE}/ganhavel/${slug}.html`;
     const ogUrl = canonical;
     const image = absoluteImage(row.image_url);
