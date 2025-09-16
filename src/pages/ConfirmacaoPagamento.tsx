@@ -61,12 +61,11 @@ function toComboString(input: unknown): string {
   }
 }
 
-// derive initial qty safely from URL hash (or pass location in if you prefer)
+// derive initial qty safely from URL search parameters
 function deriveInitialQty(): number {
   try {
-    const hash = window.location.hash || "";
-    const qs = hash.includes("?") ? hash.split("?")[1] : "";
-    const sp = new URLSearchParams(qs);
+    const search = window.location.search || "";
+    const sp = new URLSearchParams(search);
     const q = Number(sp.get("qty"));
     return Number.isFinite(q) && q > 0 ? q : 1;
   } catch {
