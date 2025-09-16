@@ -77,6 +77,15 @@ export default function Profile() {
       return;
     }
 
+    // Option 1: Direct upload (for testing)
+    if (window.confirm('Upload direto sem corte? (Clique OK) ou Cancelar para usar o cortador')) {
+      console.log('[Avatar] Direct upload chosen');
+      event.target.value = "";
+      await handleDirectAvatarUpload(file);
+      return;
+    }
+
+    // Option 2: Use cropper
     try {
       console.log('[Avatar] Starting file preparation...');
       setUploading(true);
@@ -107,6 +116,7 @@ export default function Profile() {
 
 
   const handleSave = async () => {
+    console.log('[Profile] handleSave called');
     try {
       console.log('[Profile] Starting save...', { 
         hasFormChanges: JSON.stringify(formData) !== JSON.stringify({
@@ -144,6 +154,32 @@ export default function Profile() {
       toast({
         title: 'Erro',
         description: saveError || error?.message || 'Erro ao salvar perfil.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Simple avatar upload without cropping for testing
+  const handleDirectAvatarUpload = async (file: File) => {
+    console.log('[Profile] Direct avatar upload started');
+    try {
+      const result = await saveProfile({
+        updates: formData,
+        avatarFile: file
+      });
+      
+      if (result) {
+        await refreshProfile();
+        toast({
+          title: 'Avatar atualizado',
+          description: 'Sua imagem foi salva com sucesso.',
+        });
+      }
+    } catch (error) {
+      console.error('[Profile] Direct upload error:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao fazer upload da imagem.',
         variant: 'destructive',
       });
     }
@@ -318,18 +354,15 @@ export default function Profile() {
           </div>
 
             <Button 
+              type="button"
               onClick={(e) => {
+                e.preventDefault();
                 console.log('[Profile] Save button clicked! Event:', e);
                 console.log('[Profile] Button disabled?', savingProfile);
                 console.log('[Profile] Form data:', formData);
                 console.log('[Profile] Has cropped blob?', !!croppedBlob);
                 
-                try {
-                  handleSave();
-                } catch (error) {
-                  console.error('[Profile] Immediate error in handleSave:', error);
-                  alert('Immediate error: ' + error.message);
-                }
+                handleSave();
               }} 
               disabled={savingProfile} 
               className="w-full" 
