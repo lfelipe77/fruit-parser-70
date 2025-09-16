@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import Navigation from "@/components/Navigation";
 import { 
   CheckCircle, 
-  Download, 
   Share2, 
   Home,
   Receipt,
@@ -312,13 +311,6 @@ export default function PagamentoSucesso() {
   // Transaction already created in ConfirmacaoPagamento - no need to call usePersistMock again
 
 
-  const handleDownloadReceipt = () => {
-    toast({
-      title: "Download iniciado",
-      description: "Seu comprovante está sendo gerado...",
-    });
-    // Here you would implement PDF generation
-  };
 
   const handleShare = () => {
     const shareTitle = `🍀 Participando do Ganhavel: ${paymentData.rifaTitle}`;
@@ -514,14 +506,6 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                   <CardTitle className="text-base">Ações Rápidas</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button 
-                    onClick={handleDownloadReceipt}
-                    variant="outline" 
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Baixar Comprovante
-                  </Button>
                   
                   <Button 
                     onClick={handleShare}
