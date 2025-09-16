@@ -4,32 +4,42 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 // Supabase Edge Functions must set CORS headers explicitly.
 // Docs: supabase.com/docs/guides/functions#cors
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-};
+function getCorsHeaders(origin: string | null) {
+  // Always allow production domains
+  const productionDomains = ['https://ganhavel.com', 'https://www.ganhavel.com'];
+  const isProduction = origin && productionDomains.includes(origin.toLowerCase());
+  
+  return {
+    "Access-Control-Allow-Origin": isProduction ? origin : "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 const ASAAS_API = "https://api.asaas.com/v3";
 
-function json(status: number, body: any) {
+function json(status: number, body: any, origin: string | null = null) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
   });
 }
 
 const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
 
   const MAINT = Deno.env.get("MAINTENANCE") === "true";
-  if (MAINT) return json(503, { ok: false, code: "MAINTENANCE" });
+  if (MAINT) return json(503, { ok: false, code: "MAINTENANCE" }, origin);
 
   let body: any;
-  try { body = await req.json(); } catch { return json(400, { error: "Invalid JSON body" }); }
+  try { body = await req.json(); } catch { return json(400, { error: "Invalid JSON body" }, origin); }
 
   const { provider, method, raffle_id, qty, amount, currency, reservation_id, debug, dryRun } = body ?? {};
   
@@ -48,7 +58,7 @@ serve(async (req) => {
     }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders }});
   }
   if (!provider || !raffle_id || !qty || typeof amount !== "number" || !currency) {
-    return json(400, { error: "Missing fields", required: ["provider", "raffle_id", "qty", "amount:number", "currency"] });
+    return json(400, { error: "Missing fields", required: ["provider", "raffle_id", "qty", "amount:number", "currency"] }, origin);
   }
 
   const fee_fixed = 2.0;
@@ -61,7 +71,7 @@ serve(async (req) => {
       minimum_charge_total: 5.0,
       received_subtotal: subtotal,
       received_charge_total: charge_total,
-    });
+    }, origin);
   }
 
   const SB_URL = Deno.env.get("SB_URL");
@@ -78,16 +88,16 @@ serve(async (req) => {
 
     if (provider === "asaas" && (method ?? "pix") === "pix") {
       const API_KEY = Deno.env.get("ASAAS_API_KEY");
-      if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" });
+      if (!API_KEY) return json(500, { error: "Missing ASAAS_API_KEY" }, origin);
 
       const customerId = "cus_000132351463"; // Static customer per business requirement
       if (!/^cus_/.test(customerId)) {
         console.error("[create-checkout] INVALID customerId:", customerId);
-        return json(500, { error: "Invalid Asaas customer id. Expected 'cus_...'", using: customerId });
+        return json(500, { error: "Invalid Asaas customer id. Expected 'cus_...'", using: customerId }, origin);
       }
       console.log("[create-checkout] using_customer:", customerId);
 
-      if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" });
+      if (!reservation_id) return json(400, { error: "Missing reservation_id (use your purchase_id)" }, origin);
       // DRY RUN: show payload without calling Asaas
       if (dryRun === true) {
         const subtotal = Number(amount ?? 0);
@@ -157,11 +167,11 @@ serve(async (req) => {
             trace_id: TRACE_ID,
             request: asaasPayload,
             details
-          });
+          }, origin);
         }
         const created = JSON.parse(raw);
         provider_payment_id = created?.id ?? null;
-        if (!provider_payment_id) return json(502, { error: "Asaas returned no payment id", raw: created });
+        if (!provider_payment_id) return json(502, { error: "Asaas returned no payment id", raw: created }, origin);
 
         // Fetch PIX QR code data for embedded payment - ALWAYS try to get PIX data
       }
@@ -247,10 +257,10 @@ pix_copy_paste = pixString;
       // PIX-specific data for embedded payment
       pix_qr_code,
       pix_copy_paste,
-    });
+    }, origin);
   } catch (e) {
     console.error("Create checkout error:", e);
-    return json(500, { error: "Internal Error", details: `${e?.message ?? e}` });
+    return json(500, { error: "Internal Error", details: `${e?.message ?? e}` }, origin);
   }
 });
 

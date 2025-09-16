@@ -18,6 +18,11 @@ function isAllowedOrigin(originHeader: string | null, allowed: string[]): boolea
   if (!originHeader) return true;              // non-browser/server-to-server
   if (allowed.length === 0) return true;       // preview/dev: allow all
   const origin = originHeader.toLowerCase();
+  
+  // Always allow production domains
+  const productionDomains = ['https://ganhavel.com', 'https://www.ganhavel.com'];
+  if (productionDomains.includes(origin)) return true;
+  
   return allowed.some(rule => wildcardMatch(rule, origin) || origin === rule);
 }
 

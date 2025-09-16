@@ -4,7 +4,11 @@ const ALLOWED = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
   .split(',').map(s => s.trim()).filter(Boolean);
 
 function cors(origin: string | null) {
-  const allow = origin && (ALLOWED.length === 0 || ALLOWED.includes(origin)) ? origin : '*';
+  // Always allow production domains
+  const productionDomains = ['https://ganhavel.com', 'https://www.ganhavel.com'];
+  const isProduction = origin && productionDomains.includes(origin.toLowerCase());
+  const allow = isProduction || (origin && (ALLOWED.length === 0 || ALLOWED.includes(origin))) ? origin : '*';
+  
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
