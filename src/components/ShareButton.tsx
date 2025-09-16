@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Share2, Copy, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { buildPrettyShareUrl, type RaffleLike } from "@/lib/shareUrl";
 
 interface ShareButtonProps {
   url?: string;
@@ -14,21 +15,25 @@ interface ShareButtonProps {
   description?: string;
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
+  raffle?: RaffleLike;
 }
 
 export default function ShareButton({ 
-  url = window.location.href, 
+  url, 
   title = "Participando do Ganhavel!",
   description = "Ganháveis justos e transparentes",
   variant = "outline",
-  size = "sm"
+  size = "sm",
+  raffle
 }: ShareButtonProps) {
   const { toast } = useToast();
   
-  // Convert hash-based URLs to SEO-friendly URLs for social sharing
-  const shareUrl = url.includes('/#/ganhavel/') 
-    ? url.replace('/#/ganhavel/', '/ganhavel/')
-    : url;
+  // Use pretty URL if raffle data is available, otherwise fallback to provided url or current location
+  const shareUrl = raffle 
+    ? buildPrettyShareUrl(raffle)
+    : (url || window.location.href).includes('/#/ganhavel/') 
+      ? (url || window.location.href).replace('/#/ganhavel/', '/ganhavel/')
+      : (url || window.location.href);
 
   const handleCopyLink = async () => {
     try {

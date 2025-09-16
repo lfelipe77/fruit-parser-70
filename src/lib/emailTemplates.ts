@@ -1,3 +1,5 @@
+import { buildPrettyShareUrl, type RaffleLike } from "./shareUrl";
+
 export type EmailParts = { subject: string; html: string; text: string };
 
 const BRAND = {

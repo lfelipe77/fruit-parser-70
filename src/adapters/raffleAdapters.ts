@@ -6,6 +6,7 @@ export type MoneyRow = {
   amount_raised: number; goal_amount: number; progress_pct_money: number; last_paid_at: string | null;
   created_at?: string | null; // novo (veio da view)
   location_display?: string | null;
+  slug?: string | null; // Add slug support
 };
 
 export type RaffleExtras = {
@@ -50,5 +51,6 @@ export function toRaffleView(m: Partial<MoneyRow>, e?: Partial<RaffleExtras>) {
     winningNumbers: e?.winning_numbers ?? null,
     winners: e?.winners ?? null,
     completedAt: e?.completed_at ?? null,
+    slug: m.slug ?? null, // Add slug to the output
   };
 }

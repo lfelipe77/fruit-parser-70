@@ -1,14 +1,14 @@
 import { useMemo, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import { buildPrettyShareUrl, type RaffleLike } from "@/lib/shareUrl";
 
-type Props = { raffleId: string; size?: number; className?: string };
+type Props = { raffle: RaffleLike; size?: number; className?: string };
 
-export default function CompartilheRifa({ raffleId, size = 168, className }: Props) {
+export default function CompartilheRifa({ raffle, size = 168, className }: Props) {
   const qrRef = useRef<HTMLCanvasElement | null>(null);
   const url = useMemo(() => {
-    if (typeof window === "undefined") return `https://ganhavel.com/ganhavel/${raffleId}`;
-    return `${window.location.origin}/ganhavel/${raffleId}`;
-  }, [raffleId]);
+    return buildPrettyShareUrl(raffle);
+  }, [raffle]);
 
   const copyLink = async () => {
     try {

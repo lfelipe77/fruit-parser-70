@@ -18,6 +18,7 @@ import SEOHead from "@/components/SEOHead";
 import { getProductSchema } from "@/utils/structuredData";
 import { formatBRL as formatBRLUtils } from "@/utils/money";
 import { useRaffleWinner } from "@/hooks/useRaffleWinner";
+import { buildPrettyShareUrl } from "@/lib/shareUrl";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -61,7 +62,7 @@ function buildShareMeta(raffle: any, origin: string) {
   const goal  = raffle?.goal_amount ?? raffle?.goal;
   const title = raffle?.title ?? "Ganhavel";
   const draw  = raffle?.draw_label ?? raffle?.drawLabel ?? "Sorteio pela Loteria Federal";
-  const url   = `${origin}/#/ganhavel/${raffle.id}`;
+  const url   = buildPrettyShareUrl({ id: raffle.id, slug: raffle.slug });
   
   // ✅ FIX: Ensure absolute URL for social media sharing
   let img = raffle?.image_url ?? raffle?.img ?? "/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png";
@@ -485,7 +486,7 @@ export default function GanhaveisDetail() {
           {/* Share section */}
           {raffle?.id && (
             <div className="mt-4 pt-4 border-t border-emerald-200">
-              <CompartilheRifa raffleId={raffle.id} className="" />
+              <CompartilheRifa raffle={{ id: raffle.id, slug: raffle.slug }} className="" />
             </div>
           )}
 

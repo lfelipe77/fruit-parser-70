@@ -3,6 +3,7 @@ import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
+import { buildPrettyShareUrl } from "@/lib/shareUrl";
 
 type Row = {
   transaction_id: string;
@@ -19,10 +20,11 @@ type Row = {
   progress_pct_money: number;
   draw_date?: string | null;         // via view
   winner_ticket_id?: string | null;  // via raffles
+  raffle_slug?: string | null;       // Add slug support
 };
 
 export default function MyTicketCard({ row }: { row: Row }) {
-  const url = `${window.location.origin}/#/ganhavel/${row.raffle_id}`;
+  const url = buildPrettyShareUrl({ id: row.raffle_id, slug: row.raffle_slug });
   const [open, setOpen] = useState(false);
 
   const combos = useMemo(() => {
