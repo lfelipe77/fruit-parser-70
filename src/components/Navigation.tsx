@@ -105,7 +105,7 @@ export default function Navigation() {
               {/* Mobile Menu - Simplified */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm" className="lg:hidden">
+                  <Button variant="ghost" size="sm" className="lg:hidden ml-auto">
                     <Menu className="w-4 h-4" />
                   </Button>
                 </SheetTrigger>
@@ -217,11 +217,10 @@ export default function Navigation() {
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="ghost" 
-                      className="flex items-center gap-2"
+                      size="sm"
+                      className="flex items-center"
                     >
                       <Shield className="h-4 w-4" />
-                      Admin
-                      <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
