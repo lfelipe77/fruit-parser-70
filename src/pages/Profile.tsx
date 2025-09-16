@@ -8,15 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, User, ExternalLink, Plus, Search, Users, UserCheck, Home } from 'lucide-react';
+import { Upload, User, ExternalLink, Plus, Search, Home } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import AvatarCropper from '@/components/AvatarCropper';
-import { fileToDataUrl } from '@/lib/cropImage';
-import { useProfileSave, handleAvatarSave } from '@/hooks/useProfileSave';
+import { useProfileSave } from '@/hooks/useProfileSave';
 import { getAvatarSrc } from '@/lib/avatarUtils';
 import { useUnifiedProfile } from '@/hooks/useUnifiedProfile';
 import { useProfileStats } from '@/hooks/useProfileStats';
-import ProfileErrorState from '@/components/ProfileErrorState';
 import { ProfileStats } from '@/components/ProfileStats';
 
 export default function Profile() {
@@ -33,13 +30,6 @@ export default function Profile() {
     location: ''
   });
   const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
-  const [cropOpen, setCropOpen] = useState(false);
-  const [pendingFileExt, setPendingFileExt] = useState<string>("webp");
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
-  const [savingAvatar, setSavingAvatar] = useState(false);
-  
 
   // Initialize form data when profile loads
   useEffect(() => {
@@ -78,31 +68,28 @@ export default function Profile() {
     }
 
     // Direct upload without cropping
-    console.log('[Avatar] Direct upload chosen');
+    console.log('[Avatar] Direct upload started');
     event.target.value = "";
-    await handleDirectAvatarUpload(file);
-    return;
+    setUploading(true);
+    
     try {
-      console.log('[Avatar] Starting file preparation...');
-      setUploading(true);
+      const result = await saveProfile({
+        updates: formData,
+        avatarFile: file
+      });
       
-      // Open cropper
-      const dataUrl = await fileToDataUrl(file);
-      console.log('[Avatar] File converted to data URL');
-      
-      setPendingFileExt("webp"); // we will export to webp
-      setCropSrc(dataUrl);
-      setCropOpen(true);
-      
-      // Clear file input
-      event.target.value = "";
-      
-      console.log('[Avatar] Cropper opened successfully');
+      if (result) {
+        await refreshProfile();
+        toast({
+          title: 'Avatar atualizado',
+          description: 'Sua imagem foi salva com sucesso.',
+        });
+      }
     } catch (error) {
-      console.error('[Avatar] Error preparing file for crop:', error);
+      console.error('[Avatar] Upload error:', error);
       toast({
         title: 'Erro',
-        description: 'Erro ao preparar imagem para corte.',
+        description: 'Erro ao fazer upload da imagem.',
         variant: 'destructive',
       });
     } finally {
@@ -120,13 +107,11 @@ export default function Profile() {
           username: profile?.username || '',
           bio: profile?.bio || '',
           location: profile?.location || ''
-        }),
-        hasCroppedBlob: !!croppedBlob 
+        })
       });
 
       const result = await saveProfile({
-        updates: formData,
-        avatarFile: croppedBlob ? new File([croppedBlob], 'avatar.webp', { type: 'image/webp' }) : undefined
+        updates: formData
       });
 
       console.log('[Profile] Save result:', result);
@@ -141,8 +126,6 @@ export default function Profile() {
           description: 'Suas informações foram salvas com sucesso.',
         });
         
-        // Clear avatar state after successful save
-        setCroppedBlob(null);
         console.log('[Profile] Save completed successfully');
       }
     } catch (error) {
@@ -155,31 +138,6 @@ export default function Profile() {
     }
   };
 
-  // Simple avatar upload without cropping for testing
-  const handleDirectAvatarUpload = async (file: File) => {
-    console.log('[Profile] Direct avatar upload started');
-    try {
-      const result = await saveProfile({
-        updates: formData,
-        avatarFile: file
-      });
-      
-      if (result) {
-        await refreshProfile();
-        toast({
-          title: 'Avatar atualizado',
-          description: 'Sua imagem foi salva com sucesso.',
-        });
-      }
-    } catch (error) {
-      console.error('[Profile] Direct upload error:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao fazer upload da imagem.',
-        variant: 'destructive',
-      });
-    }
-  };
 
   if (loading) {
     return (
@@ -353,10 +311,9 @@ export default function Profile() {
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('[Profile] Save button clicked! Event:', e);
+                console.log('[Profile] Save button clicked!');
                 console.log('[Profile] Button disabled?', savingProfile);
                 console.log('[Profile] Form data:', formData);
-                console.log('[Profile] Has cropped blob?', !!croppedBlob);
                 
                 handleSave();
               }} 
@@ -366,40 +323,10 @@ export default function Profile() {
             >
               {savingProfile ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
-            
-            {/* Show preview of cropped avatar if available */}
-            {croppedBlob && (
-              <div className="mt-4 p-4 border rounded-lg bg-muted/50">
-                <p className="text-sm text-muted-foreground mb-2">Avatar pronto para salvar:</p>
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={URL.createObjectURL(croppedBlob)} data-testid="avatar-preview" />
-                  <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
-                </Avatar>
-              </div>
-            )}
           </CardContent>
         </Card>
         </div>
       </div>
-
-      <AvatarCropper
-        src={cropSrc ?? ""}
-        open={cropOpen}
-        onClose={() => {
-          setCropOpen(false);
-          setCroppedBlob(null);
-        }}
-        onCropped={(blob) => {
-          console.log('[Avatar] Cropping completed, blob size:', blob.size);
-          // Just store the cropped blob for later save
-          setCroppedBlob(blob);
-          setCropOpen(false);
-          toast({
-            title: 'Avatar preparado',
-            description: 'Avatar cortado. Clique em "Salvar Alterações" para finalizar.',
-          });
-        }}
-      />
     </div>
   );
 }
