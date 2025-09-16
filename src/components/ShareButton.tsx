@@ -130,8 +130,8 @@ export default function ShareButton({
           variant={variant} 
           size={size}
           className={variant === "default" && size === "lg" ? 
-            "bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-8 py-3 text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-200" : 
-            undefined
+            "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold px-8 py-3 text-lg rounded-lg shadow-lg hover:shadow-xl active:shadow-md active:scale-95 transition-all duration-150" : 
+            "active:scale-95 transition-transform duration-150"
           }
         >
           <Share2 className="h-4 w-4" />
