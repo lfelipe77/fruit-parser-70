@@ -90,25 +90,6 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
           />
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-4 border-t">
-          <a
-            href={`/#/perfil/${organizer?.username ?? organizer?.id}`}
-            className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50 flex-1 text-center"
-          >
-            Ver Perfil
-          </a>
-          <button
-            type="button"
-            className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
-            onClick={() => {
-              const url = window.location.origin + `/#/perfil/${organizer?.username ?? organizer?.id}`;
-              navigator.clipboard?.writeText?.(url);
-            }}
-          >
-            Compartilhar
-          </button>
-        </div>
       </CardContent>
     </Card>
   );
