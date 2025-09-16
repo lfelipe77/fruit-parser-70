@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
-import { buildPrettyShareUrl } from "@/lib/shareUrl";
+import { buildPrettyShareUrl, buildPrettyShareUrlSync } from "@/lib/shareUrl";
+import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
   transaction_id: string;
@@ -24,8 +25,27 @@ type Row = {
 };
 
 export default function MyTicketCard({ row }: { row: Row }) {
-  const url = buildPrettyShareUrl({ id: row.raffle_id, slug: row.raffle_slug });
+  const [url, setUrl] = useState<string>(() => 
+    buildPrettyShareUrlSync({ id: row.raffle_id, slug: row.raffle_slug })
+  );
   const [open, setOpen] = useState(false);
+
+  // Fetch the proper URL with slug asynchronously
+  useEffect(() => {
+    const fetchUrl = async () => {
+      try {
+        const properUrl = await buildPrettyShareUrl(
+          { id: row.raffle_id, slug: row.raffle_slug }, 
+          supabase
+        );
+        setUrl(properUrl);
+      } catch (error) {
+        console.warn("Failed to fetch slug for share URL:", error);
+        // Keep the sync fallback URL
+      }
+    };
+    fetchUrl();
+  }, [row.raffle_id, row.raffle_slug]);
 
   const combos = useMemo(() => {
     if (!row.purchased_numbers) return [];
@@ -45,23 +65,29 @@ export default function MyTicketCard({ row }: { row: Row }) {
 
   async function onShare() {
     try {
+      // Ensure we have the latest URL with slug
+      const shareUrl = await buildPrettyShareUrl(
+        { id: row.raffle_id, slug: row.raffle_slug }, 
+        supabase
+      );
+      
       if (navigator.share) {
         await navigator.share({
           title: row.raffle_title,
           text: "Participe comigo deste Ganhavel!",
-          url,
+          url: shareUrl,
         });
         return;
       }
       // Fallback → copy link
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(shareUrl);
         alert("Link copiado!");
         return;
       }
       // Last‑resort fallback (older browsers)
       const ta = document.createElement("textarea");
-      ta.value = url;
+      ta.value = shareUrl;
       ta.style.position = "fixed";
       ta.style.left = "-9999px";
       document.body.appendChild(ta);

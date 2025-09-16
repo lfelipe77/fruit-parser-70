@@ -1,22 +1,38 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { buildPrettyShareUrl, type RaffleLike } from "@/lib/shareUrl";
+import { buildPrettyShareUrl, buildPrettyShareUrlSync, type RaffleLike } from "@/lib/shareUrl";
+import { supabase } from "@/integrations/supabase/client";
 
 type Props = { raffle: RaffleLike; size?: number; className?: string };
 
 export default function CompartilheRifa({ raffle, size = 168, className }: Props) {
   const qrRef = useRef<HTMLCanvasElement | null>(null);
-  const url = useMemo(() => {
-    return buildPrettyShareUrl(raffle);
+  const [url, setUrl] = useState<string>(() => buildPrettyShareUrlSync(raffle));
+
+  // Fetch the proper URL with slug asynchronously
+  useEffect(() => {
+    const fetchUrl = async () => {
+      try {
+        const properUrl = await buildPrettyShareUrl(raffle, supabase);
+        setUrl(properUrl);
+      } catch (error) {
+        console.warn("Failed to fetch slug for share URL:", error);
+        // Keep the sync fallback URL
+      }
+    };
+    fetchUrl();
   }, [raffle]);
 
   const copyLink = async () => {
     try {
+      // Ensure we have the latest URL with slug
+      const shareUrl = await buildPrettyShareUrl(raffle, supabase);
+      
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(shareUrl);
       } else {
         const ta = document.createElement("textarea");
-        ta.value = url; document.body.appendChild(ta);
+        ta.value = shareUrl; document.body.appendChild(ta);
         ta.select(); document.execCommand("copy");
         document.body.removeChild(ta);
       }

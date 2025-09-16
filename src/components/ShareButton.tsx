@@ -7,7 +7,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Share2, Copy, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { buildPrettyShareUrl, type RaffleLike } from "@/lib/shareUrl";
+import { buildPrettyShareUrl, buildPrettyShareUrlSync, type RaffleLike } from "@/lib/shareUrl";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ShareButtonProps {
   url?: string;
@@ -28,15 +29,20 @@ export default function ShareButton({
 }: ShareButtonProps) {
   const { toast } = useToast();
   
-  // Use pretty URL if raffle data is available, otherwise fallback to provided url or current location
-  const shareUrl = raffle 
-    ? buildPrettyShareUrl(raffle)
+  // Use sync version for initial render, will be updated async
+  const fallbackUrl = raffle 
+    ? buildPrettyShareUrlSync(raffle)
     : (url || window.location.href).includes('/#/ganhavel/') 
       ? (url || window.location.href).replace('/#/ganhavel/', '/ganhavel/')
       : (url || window.location.href);
 
   const handleCopyLink = async () => {
     try {
+      // Use async version for actual sharing to ensure slug is fetched
+      const shareUrl = raffle 
+        ? await buildPrettyShareUrl(raffle, supabase)
+        : fallbackUrl;
+        
       await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copiado!",
@@ -51,7 +57,12 @@ export default function ShareButton({
     }
   };
 
-  const handleShare = (platform: string) => {
+  const handleShare = async (platform: string) => {
+    // Use async version for sharing to ensure slug is fetched
+    const shareUrl = raffle 
+      ? await buildPrettyShareUrl(raffle, supabase)
+      : fallbackUrl;
+      
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedTitle = encodeURIComponent(title);
     const encodedDescription = encodeURIComponent(description);

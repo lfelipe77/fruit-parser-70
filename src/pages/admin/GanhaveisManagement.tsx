@@ -30,7 +30,7 @@ import { AdminRaffleRow } from "@/components/AdminRaffleRow";
 import FederalLotteryManager from "@/components/admin/FederalLotteryManager";
 import { sendAppEmail } from "@/lib/sendAppEmail";
 import { launchEmail } from "@/lib/emailTemplates";
-import { buildPrettyShareUrl } from "@/lib/shareUrl";
+import { buildPrettyShareUrlSync } from "@/lib/shareUrl";
 
 
 const PAUSE_TO = "archived"; // toggle policy: active <-> archived
@@ -302,7 +302,7 @@ export default function GanhaveisManagement() {
       }
 
       try {
-        const raffleUrl = buildPrettyShareUrl({ id: raffle.id, slug: raffle.slug });
+        const raffleUrl = buildPrettyShareUrlSync({ id: raffle.id, slug: raffle.slug });
         const parts = launchEmail({
           raffleTitle: raffle.title,
           raffleUrl,
