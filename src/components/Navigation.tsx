@@ -102,15 +102,6 @@ export default function Navigation() {
             </div>
             
             <div className="flex items-center space-x-2 md:space-x-4">
-              {/* Mobile search only */}
-              <div className="lg:hidden">
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/descobrir" className="text-xs">
-                    <Search className="w-4 h-4" />
-                  </Link>
-                </Button>
-              </div>
-              
               {/* Mobile Menu - Simplified */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -267,10 +258,10 @@ export default function Navigation() {
               {user ? (
                 <Link 
                   to="/dashboard" 
-                  className="inline-flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  className="inline-flex items-center cursor-pointer hover:opacity-80 transition-opacity ml-2"
                   data-testid="avatar-link"
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarImage 
                       src={getAvatarSrc({ avatar_url: me?.avatar_url }, me?.id)} 
                       alt={me?.username ?? 'profile'} 
