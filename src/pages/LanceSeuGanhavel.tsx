@@ -331,35 +331,43 @@ export default function LanceSeuGanhavel() {
   // Page is now protected by RequireAuth wrapper, no need for manual auth checks here
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-6">
       <header className="mb-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold">Lance seu Ganhavel</h1>
-            <p className="text-gray-700 mt-1">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+          <div className="flex-1">
+            <h1 className="text-2xl md:text-3xl font-bold">Lance seu Ganhavel</h1>
+            <p className="text-gray-700 mt-1 text-sm md:text-base">
               Transforme seus sonhos em realidade e ajude outros a realizarem os deles
             </p>
-            <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-600">
-              <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">✅ 100% Seguro</span>
-              <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">👥 +50.000 Criadores</span>
-              <span className="inline-flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">⏱️ Análise em 24h</span>
+            <div className="flex flex-wrap gap-2 md:gap-3 mt-3 text-xs md:text-sm text-gray-600">
+              <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                ✅ 100% Seguro
+              </span>
+              <span className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
+                👥 +50.000 Criadores
+              </span>
+              <span className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+                ⏱️ Análise em 24h
+              </span>
             </div>
           </div>
 
-          <div className="shrink-0 flex gap-2">
+          <div className="shrink-0 flex gap-2 mt-4 lg:mt-0">
             <Link
               to="/"
-              className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+              className="inline-flex items-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
               title="Voltar para a home"
             >
-              <span className="mr-2">🏠</span> Home
+              <span className="mr-2">🏠</span> 
+              <span className="hidden sm:inline">Home</span>
             </Link>
             <Link
               to="/dashboard"
-              className="inline-flex items-center rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+              className="inline-flex items-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
               title="Ir para Dashboard"
             >
-              📊 Dashboard
+              <span className="mr-2">📊</span>
+              <span className="hidden sm:inline">Dashboard</span>
             </Link>
           </div>
         </div>
