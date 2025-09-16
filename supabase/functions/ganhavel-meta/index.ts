@@ -62,15 +62,12 @@ ${priceMeta}
 <body>
 Carregando…
 <script>
-  (function () {
-    // Extract slug from current URL
-    var currentPath = location.pathname;  // "/ganhavel/<slug>.html"
-    var slug = currentPath.replace(/^\\/ganhavel\\//, '').replace(/\\.html$/i, '');
-    var targetPath = "/ganhavel/" + slug;  // "/ganhavel/<slug>"
-    
-    // Only redirect if we're not already on the target path
-    if (currentPath !== targetPath && currentPath.includes('.html')) {
-      location.replace(targetPath);
+  // Immediate redirect to the app route
+  (function() {
+    var path = location.pathname;
+    if (path.includes('.html')) {
+      var slug = path.replace(/^\\/ganhavel\\//, '').replace(/\\.html$/i, '');
+      window.location.href = '/ganhavel/' + slug;
     }
   })();
 </script>
@@ -137,13 +134,13 @@ serve(async (req) => {
     const row = await fetchRaffle(key);
     if (!row) return new Response("Not found", { status: 404 });
 
-    const slug = row.slug ?? row.id;
-    const title = row.title ? `${row.title} — Ganhavel` : "Ganhavel";
-    const cta = row.title ? `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.` : "Participe deste ganhavel. Transparente, simples e conectado à Loteria Federal.";
-    const desc = (row.description || cta).trim();
-    const canonical = `${SITE}/ganhavel/${slug}.html`;
-    const ogUrl = canonical;
-    const image = absoluteImage(row.image_url);
+  const slug = row.slug ?? row.id;
+  const title = row.title ? `${row.title} — Ganhavel` : "Ganhavel";
+  const cta = row.title ? `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.` : "Participe deste ganhavel. Transparente, simples e conectado à Loteria Federal.";
+  const desc = cta; // Always use CTA as description for social sharing
+  const canonical = `${SITE}/ganhavel/${slug}`;
+  const ogUrl = `${SITE}/ganhavel/${slug}.html`;
+  const image = absoluteImage(row.image_url);
 
     const body = html({
       title,
