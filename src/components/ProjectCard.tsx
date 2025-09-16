@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { MapPin } from "lucide-react";
+import { appUrlFor } from "@/lib/urlHelpers";
 
 interface ProjectCardProps {
   title: string;
@@ -20,6 +21,7 @@ interface ProjectCardProps {
   status?: string; // Add status to determine button text
   raffleStatus?: string; // Raw raffle status from DB
   progress_pct_money?: number; // Progress percentage from DB
+  slug?: string; // Add slug support
 }
 
 export default function ProjectCard({
@@ -37,6 +39,7 @@ export default function ProjectCard({
   status,
   raffleStatus,
   progress_pct_money,
+  slug,
 }: ProjectCardProps) {
   // Use progress_pct_money if available, otherwise calculate from raised/goal
   const percentage = progress_pct_money !== undefined ? 
@@ -65,7 +68,7 @@ export default function ProjectCard({
   const isCompleted = actualStatus === 'completed' || actualStatus === 'premiado';
 
   return (
-    <Link to={`/ganhavel/${ganhaveisId}`} className="block">
+    <Link to={appUrlFor({ id: ganhaveisId, slug })} className="block">
       <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in" data-testid="raffle-card">
       <div className="relative overflow-hidden rounded-t-lg">
         <img
