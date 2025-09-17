@@ -66,17 +66,40 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Hash to clean URL redirect for legacy links -->
+    <!-- Hash to clean URL redirect for shared links -->
     <script>
     (function() {
-      // If someone opens /#/ganhavel/<id or slug>, convert it to /ganhavel/<...>
+      // Handle various hash-based URL patterns for ganhavel
       var h = location.hash || "";
+      var pathname = location.pathname || "";
+      
+      // Case 1: /#ganhavel/slug.html or /#ganhavel/slug
+      if (h.startsWith("#ganhavel/")) {
+        var target = "/" + h.slice(1); // add leading slash, remove '#'
+        target = target.replace(/\.html$/i, ""); // remove .html extension
+        console.log('[URL-FIX] Converting hash URL:', location.href, '->', target);
+        history.replaceState(null, "", target);
+        window.location.reload();
+        return;
+      }
+      
+      // Case 2: /#/ganhavel/slug (with extra slash)
       if (h.startsWith("#/ganhavel/")) {
         var target = h.slice(1); // remove '#'
-        // Use replace to avoid adding to browser history
+        target = target.replace(/\.html$/i, ""); // remove .html extension
+        console.log('[URL-FIX] Converting hash URL with slash:', location.href, '->', target);
         history.replaceState(null, "", target);
-        // Force reload to ensure proper routing
         window.location.reload();
+        return;
+      }
+      
+      // Case 3: /ganhavel/slug.html (direct .html access)
+      if (pathname.startsWith("/ganhavel/") && pathname.endsWith(".html")) {
+        var target = pathname.replace(/\.html$/i, "");
+        console.log('[URL-FIX] Converting .html URL:', location.href, '->', target);
+        history.replaceState(null, "", target);
+        window.location.reload();
+        return;
       }
     })();
     </script>
