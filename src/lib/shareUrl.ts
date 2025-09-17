@@ -3,8 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type RaffleLike = { id: string; slug?: string | null; title?: string | null };
 
 function toPrettyPath(key: string) {
-  // Always send crawlers to the meta worker (.html)
-  return `/ganhavel/${encodeURIComponent(key)}.html`;
+  // Use clean URLs for sharing instead of .html
+  return `/ganhavel/${encodeURIComponent(key)}`;
 }
 
 // New clean URL without .html for app navigation

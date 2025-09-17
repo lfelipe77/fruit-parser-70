@@ -16,5 +16,5 @@ export const appUrlFor = (raffle: RaffleLike): string => {
 export const shareUrlFor = (raffle: RaffleLike): string => {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://ganhavel.com';
   const base = origin.includes('ganhavel.com') ? 'https://ganhavel.com' : origin;
-  return `${base}/ganhavel/${raffle.slug || raffle.id}.html`;
+  return `${base}/ganhavel/${raffle.slug || raffle.id}`;
 };

@@ -24,7 +24,9 @@ export default async function handler(req: Request) {
         "Authorization": `Bearer ${anon}`,
         "apikey": anon,
         "Accept": "text/html, */*;q=0.8",
-        "User-Agent": req.headers.get("user-agent") ?? ""
+        "User-Agent": req.headers.get("user-agent") ?? "",
+        "X-Forwarded-For": req.headers.get("x-forwarded-for") ?? "",
+        "X-Real-IP": req.headers.get("x-real-ip") ?? ""
       },
       redirect: "manual" // Don't follow redirects, let browser handle them
     });
