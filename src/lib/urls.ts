@@ -1,6 +1,7 @@
-export function shareUrlForRaffle(raffle: { slug: string; updated_at?: string; updatedAt?: string; id: string }) {
+export function shareUrlForRaffle(raffle: { slug?: string | null; updated_at?: string; updatedAt?: string; id: string }) {
   const v = raffle.id; // Clean cache buster using raffle ID
-  return `https://ganhavel.com/ganhavel/${raffle.slug}.html?v=${v}`;
+  const key = raffle.slug && raffle.slug.trim() ? raffle.slug : raffle.id;
+  return `https://ganhavel.com/ganhavel/${key}.html?v=${v}`;
 }
 
 export function openUrlForRaffle(raffle: { slug: string }) {
