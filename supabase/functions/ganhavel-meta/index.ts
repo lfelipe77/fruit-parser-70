@@ -24,14 +24,19 @@ type RaffleRow = {
 function absoluteImage(url?: string | null, version?: string) {
   if (!url) return FALLBACK_IMG;
   let finalUrl = url;
-  if (!/^https?:\/\//i.test(url)) {
+  const isAbsoluteUrl = /^https?:\/\//i.test(url);
+  
+  if (!isAbsoluteUrl) {
     finalUrl = `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
+    // Only add version parameter to relative URLs (our own images)
+    if (version) {
+      const separator = finalUrl.includes('?') ? '&' : '?';
+      finalUrl += `${separator}v=${encodeURIComponent(version)}`;
+    }
   }
-  // Add version parameter for cache busting
-  if (version) {
-    const separator = finalUrl.includes('?') ? '&' : '?';
-    finalUrl += `${separator}v=${encodeURIComponent(version)}`;
-  }
+  // For absolute URLs (like Supabase storage), don't add version parameter
+  // as it may break the URL
+  
   return finalUrl;
 }
 
