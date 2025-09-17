@@ -9,6 +9,9 @@ const SITE = "https://ganhavel.com";
 const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// simple bot detector
+const BOT_UA = /(facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|pinterest)/i;
+
 type RaffleRow = {
   id: string;
   slug: string | null;
@@ -18,7 +21,7 @@ type RaffleRow = {
   ticket_price?: number | null;
 };
 
-function absoluteImage(url?: string | null): string {
+function absoluteImage(url?: string | null) {
   if (!url) return FALLBACK_IMG;
   if (/^https?:\/\//i.test(url)) return url;
   return `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
@@ -56,35 +59,26 @@ ${priceMeta}
 <meta name="twitter:image" content="${image}">
 
 <noscript>
-  <meta http-equiv="refresh" content="0; url=/ganhavel/${canonical.split('/').pop()?.replace(/\\.html$/i, '')}">
+  <meta http-equiv="refresh" content="0; url=${canonical}">
 </noscript>
 </head>
 <body>
-<div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
-  <h2>Carregando...</h2>
-  <p>Se você não for redirecionado automaticamente, <a id="redirectLink" href="#" style="color: #10b981;">clique aqui</a>.</p>
-</div>
-<script>
-  (function() {
-    try {
-      var path = location.pathname;
-      var cleanPath = path.replace(/\.html$/i, '');
-      
-      // Set the manual link
-      document.getElementById('redirectLink').href = cleanPath;
-      
-      // Auto redirect after a brief delay
-      setTimeout(function() {
-        window.location.href = cleanPath;
-      }, 100);
-      
-    } catch (e) {
-      console.error('Redirect error:', e);
-      // Fallback: set manual link to home if path parsing fails
-      document.getElementById('redirectLink').href = '/';
-    }
-  })();
-</script>
+  <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+    <h2>Carregando...</h2>
+    <p>Se você não for redirecionado automaticamente, <a id="redirectLink" href="${canonical}" style="color: #10b981;">clique aqui</a>.</p>
+  </div>
+  <script>
+    (function () {
+      try {
+        var target = ${JSON.stringify(canonical)};
+        var a = document.getElementById('redirectLink');
+        if (a) a.href = target;
+        // use replace() to avoid back history to .html
+        setTimeout(function(){ window.location.replace(target); }, 60);
+      } catch (e) { /* swallow */ }
+    })();
+  </script>
+</body>
 </html>`;
 }
 
@@ -116,11 +110,10 @@ async function fetchRaffle(key: string) {
   const row2 = rows2?.[0] ?? null;
   return {
     id: row1.id,
-    slug: row1.slug ?? null,
-    title: row1.title ?? null,
+    slug: row1.slug ?? row1.id,
+    title: row1.title ?? "Ganhavel",
     image_url: row2?.image_url ?? null,
-    ticket_price: row2?.ticket_price ?? null,
-    description: row2?.description ?? null
+    ticket_price: row2?.ticket_price ?? null
   };
 }
 
@@ -144,39 +137,31 @@ serve(async (req) => {
     const row = await fetchRaffle(key);
     if (!row) return new Response("Not found", { status: 404 });
 
-    const slug = row.slug ?? row.id;
-    const title = row.title ? `${row.title} — Ganhavel` : "Ganhavel";
-    const cta = row.title
-      ? `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`
-      : "Participe deste ganhavel. Transparente, simples e conectado à Loteria Federal.";
+    const slug = row.slug;
+    const title = `${row.title} — Ganhavel`;
+    const cta = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
     const canonical = `${SITE}/ganhavel/${slug}`;
     const ogUrl = `${SITE}/ganhavel/${slug}.html`;
     const image = absoluteImage(row.image_url);
 
-    // 🔎 Debug mode for QA: return JSON (no HTML) when ?debug=1
+    // Debug JSON
     if (url.searchParams.get("debug") === "1") {
       return new Response(
-        JSON.stringify(
-          { title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null, slug, id: row.id },
-          null,
-          2
-        ),
+        JSON.stringify({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null, slug, id: row.id }, null, 2),
         { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } }
       );
     }
 
-    const body = html({
-      title,
-      description: cta,
-      image,
-      ogUrl,
-      canonical,
-      price: row.ticket_price ?? null
-    });
+    const ua = req.headers.get("user-agent") || "";
+    // Humans → 302 to SPA; Bots → OG HTML
+    if (!BOT_UA.test(ua)) {
+      return Response.redirect(canonical, 302);
+    }
 
+    const body = html({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
     return new Response(body, {
       status: 200,
-      headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=1800" } // 30 min
+      headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=1800" }
     });
   } catch (e) {
     return new Response(`Error: ${e}`, { status: 500 });
