@@ -21,7 +21,7 @@ import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { sendAppEmail } from "@/lib/sendAppEmail";
 import { receiptEmail } from "@/lib/emailTemplates";
 import { pushNotification } from "@/lib/notify";
-import { buildPrettyShareUrlSync } from "@/lib/shareUrl";
+import { shareUrlForRaffle } from "@/lib/urls";
 interface PaymentSuccessData {
   raffleId?: string;
   txId?: string;
@@ -209,7 +209,7 @@ export default function PagamentoSucesso() {
         try {
           const parts = receiptEmail({
             raffleTitle: raffle.title,
-            raffleUrl: buildPrettyShareUrlSync({ id: raffle.id, slug: raffle.slug }),
+            raffleUrl: shareUrlForRaffle({ id: raffle.id, slug: raffle.slug || raffle.id }),
             tickets: ticketNumbers,
             myTicketsUrl: `${window.location.origin}/#/minha-conta?tab=bilhetes`,
             resultsUrl: `${window.location.origin}/#/resultados`,
@@ -335,7 +335,7 @@ export default function PagamentoSucesso() {
 
 Participe você também e concorra a este prêmio incrível! 🚀`;
     
-    const shareUrl = buildPrettyShareUrlSync({ id: paymentData.rifaId, slug: raffleSlug });
+    const shareUrl = shareUrlForRaffle({ id: paymentData.rifaId, slug: raffleSlug || paymentData.rifaId });
 
     if (navigator.share) {
       navigator.share({
