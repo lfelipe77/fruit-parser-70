@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { Share2 } from "lucide-react";
-import { shareUrlForRaffle } from "@/lib/urls";
+import { shareUrlForRaffle, copyUrlForRaffle } from "@/lib/urls";
 import { type RaffleLike } from "@/lib/shareUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";

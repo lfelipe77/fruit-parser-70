@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Share2, Copy, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { shareUrlForRaffle } from "@/lib/urls";
+import { shareUrlForRaffle, copyUrlForRaffle } from "@/lib/urls";
 import { supabase } from "@/integrations/supabase/client";
 
 type RaffleLike = { id: string; slug?: string | null; title?: string; description?: string; updated_at?: string; updatedAt?: string };
@@ -69,12 +69,10 @@ export default function ShareButton({
 
   const handleCopyLink = async () => {
     try {
-      // Use async version for actual sharing to ensure slug is fetched
-      const shareUrl = raffle 
-        ? await getUpdatedShareUrl(raffle)
-        : fallbackUrl;
-        
-      await navigator.clipboard.writeText(shareUrl);
+      // Use clean copy URL for humans when copying
+      const copyUrl = raffle ? copyUrlForRaffle(raffle) : fallbackUrl;
+      const fullUrl = copyUrl.startsWith('http') ? copyUrl : window.location.origin + copyUrl;
+      await navigator.clipboard.writeText(fullUrl);
       toast({
         title: "Link copiado!",
         description: "O link foi copiado para sua área de transferência.",
@@ -90,7 +88,7 @@ export default function ShareButton({
 
   const handleNativeShare = async () => {
     try {
-      // Use async version for sharing to ensure slug is fetched
+      // Use .html share URL for social sharing
       const shareUrl = raffle 
         ? await getUpdatedShareUrl(raffle)
         : fallbackUrl;
@@ -109,7 +107,7 @@ export default function ShareButton({
         return;
       }
       
-      // Fallback to copy link
+      // Fallback to copy clean link for humans
       await handleCopyLink();
     } catch (error) {
       // User cancelled share or error occurred, fallback to copy

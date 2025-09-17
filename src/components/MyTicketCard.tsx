@@ -3,7 +3,7 @@ import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
-import { shareUrlForRaffle, openUrlForRaffle } from "@/lib/urls";
+import { shareUrlForRaffle, openUrlForRaffle, copyUrlForRaffle } from "@/lib/urls";
 import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
@@ -79,30 +79,31 @@ export default function MyTicketCard({ row }: { row: Row }) {
 
   async function onShare() {
     try {
-      // Use the current URL (already .html)
-      const shareUrl = url;
-      
       // Build CTA-first share text
       const cta = `✨ Participe você também deste Ganhavel e concorra a ${row.raffle_title}!`;
-      const shareText = cta; // No additional description available in this context
+      const shareText = cta;
       
       if (navigator.share) {
+        // Use the .html URL for social sharing
         await navigator.share({
           title: row.raffle_title,
           text: shareText,
-          url: shareUrl,
+          url: url, // This is already the .html?v=... URL
         });
         return;
       }
-      // Fallback → copy link
+      // Fallback → copy clean URL for humans
+      const copyUrl = copyUrlForRaffle({ slug: row.raffle_slug ?? row.raffle_id });
+      const fullCopyUrl = window.location.origin + copyUrl;
+      
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(fullCopyUrl);
         alert("Link copiado!");
         return;
       }
       // Last‑resort fallback (older browsers)
       const ta = document.createElement("textarea");
-      ta.value = shareUrl;
+      ta.value = fullCopyUrl;
       ta.style.position = "fixed";
       ta.style.left = "-9999px";
       document.body.appendChild(ta);

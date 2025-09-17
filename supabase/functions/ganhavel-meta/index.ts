@@ -171,8 +171,8 @@ serve(async (req) => {
     const slug = row.slug;
     const title = `${row.title} — Ganhavel`;
     const cta = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
-    const canonical = `${SITE}/ganhavel/${slug}`;             // SEO
-    const ogUrl = `${SITE}/ganhavel/${slug}.html`;            // EXACT page bots fetched
+    const canonical = `${SITE}/ganhavel/${slug}`;             // Clean SPA URL
+    const ogUrl = url.toString();                              // EXACT URL that was requested (with .html?v=...)
     const image = absoluteImage(row.image_url);
 
     // Debug JSON
@@ -192,10 +192,11 @@ serve(async (req) => {
       const body = botHtml({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
       return new Response(body, {
         status: 200,
-        headers: new Headers({
+        headers: {
           "content-type": "text/html; charset=utf-8",
-          "cache-control": "public, max-age=1800"
-        })
+          "cache-control": "public, max-age=1800",
+          "Vary": "User-Agent"
+        }
       });
     }
 
