@@ -13,10 +13,12 @@ export default async function handler(req: Request) {
 
     // Pass query params to Supabase function
     const upstreamUrl = new URL(`${base}/ganhavel-meta/${encodeURIComponent(key)}`);
-    // Copy query params (like ?debug=1) from original request
-    url.searchParams.forEach((value, paramKey) => {
-      if (paramKey !== 'key') upstreamUrl.searchParams.set(paramKey, value);
-    });
+    // Copy ALL query params from original request (including debug)
+    for (const [paramKey, value] of url.searchParams.entries()) {
+      if (paramKey !== 'key') {
+        upstreamUrl.searchParams.set(paramKey, value);
+      }
+    }
     const upstream = await fetch(upstreamUrl, {
       headers: {
         "Authorization": `Bearer ${anon}`,

@@ -59,20 +59,27 @@ ${priceMeta}
   <meta http-equiv="refresh" content="0; url=/ganhavel/${canonical.split('/').pop()?.replace(/\\.html$/i, '')}">
 </noscript>
 </head>
-<body>Carregando…</body>
+<body>
+<div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+  <h2>Carregando...</h2>
+  <p>Se você não for redirecionado automaticamente, <a href="#" onclick="goToCleanUrl()" style="color: #10b981;">clique aqui</a>.</p>
+</div>
 <script>
   // Redirect .html -> clean SPA route immediately
-  (function() {
+  function goToCleanUrl() {
     try {
       var path = location.pathname;
       if (path.toLowerCase().endsWith('.html')) {
         var cleanPath = path.slice(0, -5); // Remove .html
-        window.location.replace(cleanPath);
+        window.location.href = cleanPath;
       }
     } catch (e) {
       console.error('Redirect error:', e);
     }
-  })();
+  }
+  
+  // Auto-redirect on page load
+  goToCleanUrl();
 </script>
 </html>`;
 }
