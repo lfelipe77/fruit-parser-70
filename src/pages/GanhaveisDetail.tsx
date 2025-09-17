@@ -1,6 +1,14 @@
 import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+
+// Debug logging for URL issues
+console.log('[GanhaveisDetail] Component loaded:', { 
+  pathname: window.location.pathname, 
+  search: window.location.search,
+  hash: window.location.hash,
+  href: window.location.href 
+});
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatBRL, formatDateBR } from "@/lib/formatters";
