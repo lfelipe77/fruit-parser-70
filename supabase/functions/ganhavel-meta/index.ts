@@ -6,59 +6,36 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const SITE = "https://ganhavel.com";
-const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png`;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-// simple bot detector
+const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png";
 const BOT_UA = /(facebookexternalhit|whatsapp|WhatsApp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|pinterest)/i;
 
-type RaffleRow = {
-  id: string;
-  slug: string | null;
-  title: string | null;
-  description?: string | null;
-  image_url?: string | null;
-  ticket_price?: number | null;
-};
-
-function absoluteImage(url?: string | null, version?: string) {
+function absoluteImage(url?: string | null) {
   if (!url) return FALLBACK_IMG;
-  let finalUrl = url;
-  const isAbsoluteUrl = /^https?:\/\//i.test(url);
-  
-  if (!isAbsoluteUrl) {
-    finalUrl = `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
-    // Only add version parameter to relative URLs (our own images)
-    if (version) {
-      const separator = finalUrl.includes('?') ? '&' : '?';
-      finalUrl += `${separator}v=${encodeURIComponent(version)}`;
-    }
-  }
-  // For absolute URLs (like Supabase storage), don't add version parameter
-  // as it may break the URL
-  
-  return finalUrl;
+  if (/^https?:\/\//i.test(url)) return url;        // already absolute
+  return `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 function botHtml(tags: {
-  title: string; description: string; image: string; ogUrl: string; canonical: string; price: number | null;
+  title: string;
+  description: string;
+  image: string;
+  ogUrl: string;
+  canonical: string;
+  price: number | null;
 }) {
   const { title, description, image, ogUrl, canonical, price } = tags;
   const priceMeta = price !== null
     ? `<meta property="product:price:amount" content="${price.toFixed(2)}" />
-<meta property="product:price:currency" content="BRL" />`
+       <meta property="product:price:currency" content="BRL" />`
     : "";
   return `<!doctype html>
 <html lang="pt-br">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="x-ua-compatible" content="ie=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>${title}</title>
 <meta name="description" content="${description}">
-<link rel="canonical" href="${canonical}" />
-
+<link rel="canonical" href="${canonical}">
 <meta property="og:type" content="product">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
@@ -69,44 +46,36 @@ function botHtml(tags: {
 <meta property="og:url" content="${ogUrl}">
 <meta property="og:site_name" content="Ganhavel">
 ${priceMeta}
-
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${image}">
 <meta name="twitter:site" content="@ganhavel">
-</head>
-<body></body>
-</html>`;
+</head><body></body></html>`;
 }
 
 async function fetchJson(u: URL) {
-  const apiKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const baseHeaders = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
-  const res = await fetch(u.toString(), { headers: baseHeaders });
+  const apiKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const res = await fetch(u.toString(), { headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}` } });
   if (!res.ok) return null;
   return await res.json();
 }
 
 async function fetchRaffle(key: string) {
+  if (!key || key.includes("<") || key.includes(">") || key.length < 3) return null;
+
   const baseUrl = Deno.env.get("SUPABASE_URL")!;
   const apiKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const headers = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
 
-  // Skip malformed/placeholder keys early
-  if (!key || key.includes('<') || key.includes('>') || key.length < 3) {
-    console.log(`Skipping malformed key: ${key}`);
-    return null;
-  }
-
   async function getOne(u: URL) {
-    const res = await fetch(u.toString(), { headers });
-    if (!res.ok) return null;
-    const j = await res.json();
-    return (Array.isArray(j) && j.length) ? j[0] : null;
+    const r = await fetch(u.toString(), { headers });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return Array.isArray(j) && j[0] ? j[0] : null;
   }
 
-  // 1) slug exact
+  // (1) slug exact
   {
     const u = new URL(`${baseUrl}/rest/v1/raffles`);
     u.searchParams.set("select", "id,slug,title");
@@ -115,8 +84,7 @@ async function fetchRaffle(key: string) {
     const row = await getOne(u);
     if (row) return await hydrate(row);
   }
-
-  // 2) slug case-insensitive
+  // (2) slug ilike
   {
     const u = new URL(`${baseUrl}/rest/v1/raffles`);
     u.searchParams.set("select", "id,slug,title");
@@ -125,8 +93,7 @@ async function fetchRaffle(key: string) {
     const row = await getOne(u);
     if (row) return await hydrate(row);
   }
-
-  // 3) id/uuid
+  // (3) id
   {
     const u = new URL(`${baseUrl}/rest/v1/raffles`);
     u.searchParams.set("select", "id,slug,title");
@@ -135,7 +102,6 @@ async function fetchRaffle(key: string) {
     const row = await getOne(u);
     if (row) return await hydrate(row);
   }
-
   return null;
 
   async function hydrate(row1: any) {
@@ -160,21 +126,14 @@ async function fetchRaffle(key: string) {
 serve(async (req) => {
   try {
     const url = new URL(req.url);
-    const path = url.pathname;
-    const parts = path.split("/").filter(Boolean);
-    const keyPart = parts[1] || ""; // /ganhavel/:key(.html)
+    const parts = url.pathname.split("/").filter(Boolean); // ["ganhavel","<key>[.html]"]
+    const keyPart = parts[1] || "";
     const key = keyPart.replace(/\.html$/i, "");
-    const hasHtmlExtension = keyPart.endsWith('.html');
     if (!key) return new Response("Missing key", { status: 400 });
 
-    // Enhanced bot detection - check user agent
-    const userAgent = req.headers.get("user-agent") || "";
-    const isBot = BOT_UA.test(userAgent);
-    
-    // Log the user agent for debugging
-    console.log(`Request from UA: ${userAgent}, isBot: ${isBot}, key: ${key}`);
+    const ua = req.headers.get("user-agent") || "";
+    const isBot = BOT_UA.test(ua);
 
-    // Env checks
     for (const k of ["SUPABASE_URL", "SUPABASE_ANON_KEY"]) {
       if (!Deno.env.get(k)) return new Response(`${k} not configured`, { status: 500 });
     }
@@ -184,45 +143,37 @@ serve(async (req) => {
 
     const slug = row.slug;
     const title = `${row.title} — Ganhavel`;
-    const cta = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
-    const canonical = `${SITE}/ganhavel/${slug}`;             // Clean SPA URL
-    
-    // For OG URL: if request was clean URL, use .html for better social sharing
-    const ogUrl = hasHtmlExtension 
-      ? url.toString()  // Keep exact .html?v=... URL if that's what was requested
-      : `${SITE}/ganhavel/${slug}.html?v=${row.id}`; // Convert clean URL to .html for OG
-    
-    const image = absoluteImage(row.image_url, row.id);
+    const cta   = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
+    const canonical = `${SITE}/ganhavel/${slug}`;
+    const ogUrl     = url.toString(); // exactly what was requested (keeps .html?v=...)
 
-    // Debug JSON
+    // Build image safely: if already absolute (Supabase Storage), keep as-is.
+    let img = absoluteImage(row.image_url);
+    // If you ever serve local images (e.g., /og/xxx.jpg), you can version them like:
+    // if (img.startsWith(SITE)) img += (img.includes("?") ? "&" : "?") + "v=" + encodeURIComponent(row.id);
+
     if (url.searchParams.get("debug") === "1") {
-      return new Response(
-        JSON.stringify({ 
-          title, description: cta, image, ogUrl, canonical, 
-          price: row.ticket_price ?? null, slug, id: row.id,
-          userAgent, isBot, imageUrl: row.image_url 
-        }, null, 2),
-        { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } }
-      );
+      return new Response(JSON.stringify({
+        title, description: cta, image: img, ogUrl, canonical,
+        price: row.ticket_price ?? null, slug, id: row.id, userAgent: ua, isBot
+      }, null, 2), { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
     }
 
-    // Bots → serve pure OG page (no redirects of any kind)
     if (isBot) {
-      const body = botHtml({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
+      const body = botHtml({ title, description: cta, image: img, ogUrl, canonical, price: row.ticket_price ?? null });
       return new Response(body, {
         status: 200,
         headers: {
           "content-type": "text/html; charset=utf-8",
           "cache-control": "public, max-age=1800",
-          "Vary": "User-Agent"
+          "Vary": "User-Agent" // important so CF separates bot/human cache
         }
       });
     }
 
-    // Humans → send straight to SPA clean URL
+    // humans → clean URL
     return Response.redirect(canonical, 302);
   } catch (e) {
-    console.error("Meta function error:", e);
     return new Response(`Error: ${e}`, { status: 500 });
   }
 });
