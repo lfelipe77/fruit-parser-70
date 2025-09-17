@@ -64,7 +64,8 @@ export default function GerenciarRifa() {
   const netRevenue = totalRevenue - platformFee;
 
   const handleCopyLink = () => {
-    const ganhavelUrl = `${window.location.origin}${appUrlFor({ id: String(rifa.id), slug: (rifa as any).slug })}`;
+    // Use .html URL for sharing (better for WhatsApp/social media previews)
+    const ganhavelUrl = buildPrettyShareUrlSync({ id: String(rifa.id), slug: (rifa as any).slug });
     navigator.clipboard.writeText(ganhavelUrl);
     setCopied(true);
     toast({

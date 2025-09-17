@@ -42,7 +42,7 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
     ? [city, state].join(" • ")
     : (city || state);
 
-  // Generate clean URL
+  // Generate clean URL for internal navigation
   const raffleUrl = appUrlFor({ id: data.id, slug: data.slug });
 
   // Navigate to ganhavel detail page

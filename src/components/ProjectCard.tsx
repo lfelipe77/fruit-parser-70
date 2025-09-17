@@ -51,7 +51,7 @@ export default function ProjectCard({
   const minutesAgo = Math.floor(Math.random() * 30) + 1;
   const lastPurchaseText = `${minutesAgo}min`;
 
-  // Use clean URL helper
+  // Use clean URL for internal navigation
   const raffleUrl = raffleId ? appUrlFor({ id: raffleId, slug: raffleSlug }) : '#';
 
   // Dev safety checks

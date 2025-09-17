@@ -171,14 +171,13 @@ const AppContent = () => {
             <LanceSeuGanhavel />
           </RequireAuth>
         } />
+        {/* Ganhavel routes - MUST be before other routes to prevent conflicts */}
+        <Route path="/ganhavel/:slug" element={<GanhaveisDetail />} />
         <Route path="/descobrir" element={<DiscoverRaffles />} />
         <Route path="/resultados" element={<Resultados />} />
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/categorias/:categorySlug" element={<CategoryDetailPage />} />
         <Route path="/categorias/:categorySlug/:subSlug" element={<SubcategoryDetailPage />} />
-        {/* Ganhavel routes - slug first, then UUID with redirect */}
-        <Route path="/ganhavel/:slug" element={<GanhaveisDetail />} />
-        <Route path="/ganhavel/:id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})" element={<GanhaveisDetail />} />
         {/* Optional alias/redirect for legacy URLs */}
         <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
         <Route path="/ganhavel/:id/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />

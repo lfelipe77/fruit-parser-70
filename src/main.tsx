@@ -14,7 +14,7 @@ if (import.meta.env.VITE_DEBUG_BLINK === 'true') {
 }
 
 function parseFragmentParams(href: string) {
-  // HashRouter yields "/#/auth-callback#access_token=..."
+  // OAuth callbacks may have hash fragments with tokens
   const parts = href.split('#');
   const fragment = parts.length >= 3 ? parts[2] : parts[1] || '';
   return new URLSearchParams(fragment);
@@ -54,14 +54,14 @@ async function oauthEarly() {
     // Clean URL without reloading; restore to home instead of forcing dashboard
     const lastPath = sessionStorage.getItem("lastPath");
     const restoreTo = lastPath && lastPath !== "/login" && lastPath !== "/auth/callback" ? lastPath : "/";
-    // Use replaceState synchronously to avoid layout flash - only if different
-    const currentPath = `${window.location.origin}/#${restoreTo}`;
+    // Use clean URLs - no more hash routing
+    const currentPath = `${window.location.origin}${restoreTo}`;
     if (window.location.href !== currentPath) {
       history.replaceState(null, '', currentPath);
     }
   } catch (e) {
     console.error('[oauth-early] failed', e);
-    history.replaceState(null, '', `${window.location.origin}/#/login`);
+    history.replaceState(null, '', `${window.location.origin}/login`);
   }
 }
 
