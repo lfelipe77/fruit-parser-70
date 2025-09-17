@@ -120,10 +120,8 @@ serve(async (req) => {
     const key = keyPart.replace(/\.html$/i, "");
     if (!key) return new Response("Missing key", { status: 400 });
 
-    // ✅ Guard: if hit without .html, force .html to avoid meta<->SPA loops
-    if (!path.toLowerCase().endsWith(".html")) {
-      return Response.redirect(`${SITE}/ganhavel/${key}.html`, 302);
-    }
+    // Note: No guard redirect here since this function is called by our API proxy
+    // The routing logic is handled by vercel.json: only .html URLs reach this function
 
     // Env checks
     for (const k of ["SUPABASE_URL", "SUPABASE_ANON_KEY"]) {

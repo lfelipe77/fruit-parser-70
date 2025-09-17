@@ -11,11 +11,11 @@ export default async function handler(req: Request) {
     const anon = process.env.SUPABASE_ANON_KEY;
     if (!anon) return new Response("Missing SUPABASE_ANON_KEY", { status: 500 });
 
-    // Pass the original URL with .html to Supabase function + query params
-    const upstreamUrl = new URL(`${base}/ganhavel-meta/${encodeURIComponent(key)}.html`);
+    // Pass query params to Supabase function
+    const upstreamUrl = new URL(`${base}/ganhavel-meta/${encodeURIComponent(key)}`);
     // Copy query params (like ?debug=1) from original request
-    url.searchParams.forEach((value, key) => {
-      if (key !== 'key') upstreamUrl.searchParams.set(key, value);
+    url.searchParams.forEach((value, paramKey) => {
+      if (paramKey !== 'key') upstreamUrl.searchParams.set(paramKey, value);
     });
     const upstream = await fetch(upstreamUrl, {
       headers: {
