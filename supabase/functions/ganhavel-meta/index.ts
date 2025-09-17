@@ -177,7 +177,7 @@ serve(async (req) => {
     const title = `${row.title} — Ganhavel`;
     const cta = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
     const canonical = `${SITE}/ganhavel/${slug}`;
-    const ogUrl = `${SITE}/ganhavel/${slug}.html`;
+    const ogUrl = `${SITE}/ganhavel/${slug}`;
     const image = absoluteImage(row.image_url);
 
     // Debug JSON

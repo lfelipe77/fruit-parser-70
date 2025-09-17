@@ -5,7 +5,8 @@
   "rewrites": [
     { "source": "/api/:match*", "destination": "/api/:match*" },
     { "source": "/ganhavel/:key(.+).html", "destination": "/api/meta?key=:key" },
-    { "source": "/((?!api/|ganhavel/.+\\.html).*)", "destination": "/index.html" }
+    { "source": "/ganhavel/:key(.+)", "destination": "/api/meta?key=:key", "has": [{"type": "header", "key": "user-agent", "value": "(facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|pinterest)"}] },
+    { "source": "/((?!api/|ganhavel/).*)", "destination": "/index.html" }
   ],
   "env": {
     "SUPABASE_URL": "https://whqxpuyjxoiufzhvqneg.supabase.co",
