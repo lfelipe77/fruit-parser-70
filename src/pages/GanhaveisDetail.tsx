@@ -507,20 +507,21 @@ export default function GanhaveisDetail() {
                 </div>
               </div>
 
-              <button
+              <Button
                 onClick={() => navigate(toConfirm(raffle.id, adjustedQty))}
                 disabled={!isActive}
-                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                size="lg"
+                className="w-full"
               >
                 Comprar {adjustedQty} bilhetes
-              </button>
+              </Button>
             </div>
           )}
 
           {/* Share section */}
           {raffle?.id && (
             <div className="mt-4 pt-4 border-t border-emerald-200">
-              <CompartilheRifa raffle={{ id: raffle.id, slug: raffle.slug }} className="" />
+              <CompartilheRifa raffle={{ id: raffle.id, slug: raffle.slug }} className="w-full" />
             </div>
           )}
 

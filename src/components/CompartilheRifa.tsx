@@ -5,6 +5,7 @@ import { shareUrlForRaffle } from "@/lib/urls";
 import { type RaffleLike } from "@/lib/shareUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 type Props = { raffle: RaffleLike; size?: number; className?: string };
 
@@ -80,14 +81,15 @@ export default function CompartilheRifa({ raffle, size = 168, className }: Props
           <QRCodeCanvas value={url} size={100} includeMargin ref={qrRef as any} />
         </div>
 
-        <button
+        <Button
           onClick={handleShare}
-          className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 shadow-md active:scale-[0.99] transition flex items-center justify-center gap-2"
+          size="lg"
+          className="w-full flex items-center justify-center gap-2"
           aria-label="Compartilhar Ganhavel"
         >
           <Share2 className="h-4 w-4" />
           Compartilhar
-        </button>
+        </Button>
       </div>
     </div>
   );
