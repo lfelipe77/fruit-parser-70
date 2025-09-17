@@ -80,6 +80,12 @@ async function fetchRaffle(key: string) {
   const apiKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const headers = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
 
+  // Skip malformed/placeholder keys early
+  if (!key || key.includes('<') || key.includes('>') || key.length < 3) {
+    console.log(`Skipping malformed key: ${key}`);
+    return null;
+  }
+
   async function getOne(u: URL) {
     const res = await fetch(u.toString(), { headers });
     if (!res.ok) return null;
