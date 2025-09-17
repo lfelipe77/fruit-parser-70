@@ -66,10 +66,12 @@ ${priceMeta}
     try {
       var path = location.pathname;
       if (path.toLowerCase().endsWith('.html')) {
-        var slug = path.replace(/^\\/ganhavel\\//i, '').replace(/\\.html$/i, '');
+        var slug = path.replace(/^\/ganhavel\//i, '').replace(/\.html$/i, '');
         window.location.replace('/ganhavel/' + slug);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Redirect error:', e);
+    }
   })();
 </script>
 </html>`;
