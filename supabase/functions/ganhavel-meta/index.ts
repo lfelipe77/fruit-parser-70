@@ -21,10 +21,18 @@ type RaffleRow = {
   ticket_price?: number | null;
 };
 
-function absoluteImage(url?: string | null) {
+function absoluteImage(url?: string | null, version?: string) {
   if (!url) return FALLBACK_IMG;
-  if (/^https?:\/\//i.test(url)) return url;
-  return `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
+  let finalUrl = url;
+  if (!/^https?:\/\//i.test(url)) {
+    finalUrl = `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
+  }
+  // Add version parameter for cache busting
+  if (version) {
+    const separator = finalUrl.includes('?') ? '&' : '?';
+    finalUrl += `${separator}v=${encodeURIComponent(version)}`;
+  }
+  return finalUrl;
 }
 
 function botHtml(tags: {
@@ -179,7 +187,7 @@ serve(async (req) => {
       ? url.toString()  // Keep exact .html?v=... URL if that's what was requested
       : `${SITE}/ganhavel/${slug}.html?v=${row.id}`; // Convert clean URL to .html for OG
     
-    const image = absoluteImage(row.image_url);
+    const image = absoluteImage(row.image_url, row.id);
 
     // Debug JSON
     if (url.searchParams.get("debug") === "1") {
