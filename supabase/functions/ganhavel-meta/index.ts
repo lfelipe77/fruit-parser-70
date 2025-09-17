@@ -186,7 +186,10 @@ serve(async (req) => {
       const body = botHtml({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
       return new Response(body, {
         status: 200,
-        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=1800" }
+        headers: new Headers({
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "public, max-age=1800"
+        })
       });
     }
 
