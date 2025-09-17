@@ -6,13 +6,16 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const SITE = "https://ganhavel.com";
-const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png";
+const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png`;
 const BOT_UA = /(facebookexternalhit|whatsapp|WhatsApp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|pinterest)/i;
 
 function absoluteImage(url?: string | null) {
   if (!url) return FALLBACK_IMG;
   if (/^https?:\/\//i.test(url)) return url;        // already absolute
-  return `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
+  
+  // Build relative URL properly
+  const prefix = url.startsWith("/") ? "" : "/";
+  return `${SITE}${prefix}${url}`;
 }
 
 function botHtml(tags: {
