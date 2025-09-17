@@ -115,6 +115,14 @@ export default function GanhaveisDetail() {
   const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
   const isUUID = UUID_RE.test(key);
   const [normalizedOnce, setNormalizedOnce] = React.useState(false);
+  
+  console.log('[GanhaveisDetail] Debug params:', { 
+    params, 
+    key, 
+    isUUID, 
+    pathname: location.pathname,
+    search: location.search 
+  });
 
   // ---- Hooks (always first)
   const [moneyRow, setMoneyRow] = React.useState<MoneyRow | null>(null);
@@ -157,6 +165,13 @@ export default function GanhaveisDetail() {
         await query.eq('id', key).maybeSingle() :
         await query.eq('slug', key).maybeSingle();
         
+      console.log('[GanhaveisDetail] Query result:', { 
+        key, 
+        isUUID, 
+        data: v, 
+        error: moneyError 
+      });
+        
       if (moneyError) console.warn("money error", moneyError);
       if (v) {
         setMoneyRow(v as unknown as MoneyRow);
@@ -181,6 +196,7 @@ export default function GanhaveisDetail() {
           }
         }
       } else {
+        console.warn('[GanhaveisDetail] No raffle found for key:', key);
         setMoneyRow(null);
       }
       
@@ -290,7 +306,18 @@ export default function GanhaveisDetail() {
 
   // ---- Render
   if (loading) return <div className="p-6">Carregando…</div>;
-  if (!raffle) return <div className="p-6">Ganhavel não encontrado.</div>;
+  if (!raffle) {
+    console.error('[GanhaveisDetail] Raffle not found:', { 
+      key, 
+      isUUID, 
+      moneyRow, 
+      extrasRow, 
+      loading,
+      params,
+      pathname: location.pathname 
+    });
+    return <div className="p-6">Ganhavel não encontrado.</div>;
+  }
 
   const pageUrl = `${origin}/ganhavel/${raffle.slug || raffle.id}`;
 
