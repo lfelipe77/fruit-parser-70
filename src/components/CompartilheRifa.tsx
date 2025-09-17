@@ -11,7 +11,17 @@ type Props = { raffle: RaffleLike; size?: number; className?: string };
 
 export default function CompartilheRifa({ raffle, size = 168, className }: Props) {
   const qrRef = useRef<HTMLCanvasElement | null>(null);
-  const [url, setUrl] = useState<string>(() => shareUrlForRaffle(raffle.slug ?? raffle.id));
+  const [url, setUrl] = useState<string>(() => {
+    if (raffle.slug) {
+      return shareUrlForRaffle({ 
+        slug: raffle.slug, 
+        id: raffle.id,
+        updated_at: (raffle as any).updated_at,
+        updatedAt: (raffle as any).updatedAt
+      });
+    }
+    return `https://ganhavel.com/ganhavel/${raffle.id}.html?v=${raffle.id}`;
+  });
   const { toast } = useToast();
 
   // Async fetch for better URL with slug
@@ -21,12 +31,17 @@ export default function CompartilheRifa({ raffle, size = 168, className }: Props
         // Get latest slug if available
         const { data } = await supabase
           .from("raffles")
-          .select("slug")
+          .select("slug, updated_at")
           .eq("id", raffle.id)
           .maybeSingle();
         
-        const slug = data?.slug ?? raffle.slug ?? raffle.id;
-        setUrl(shareUrlForRaffle(slug));
+        if (data?.slug) {
+          setUrl(shareUrlForRaffle({
+            slug: data.slug,
+            id: raffle.id,
+            updated_at: data.updated_at
+          }));
+        }
       } catch (error) {
         console.warn("Failed to fetch slug URL:", error);
       }

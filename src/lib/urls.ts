@@ -1,7 +1,8 @@
-export function shareUrlForRaffle(slugOrId: string, origin = "https://ganhavel.com") {
-  return `${origin}/ganhavel/${slugOrId}`;
+export function shareUrlForRaffle(raffle: { slug: string; updated_at?: string; updatedAt?: string; id: string }) {
+  const v = encodeURIComponent(raffle.updated_at ?? raffle.updatedAt ?? raffle.id);
+  return `https://ganhavel.com/ganhavel/${raffle.slug}.html?v=${v}`;
 }
 
-export function appUrlForRaffle(slugOrId: string, origin = "https://ganhavel.com") {
-  return `${origin}/ganhavel/${slugOrId}`;
+export function openUrlForRaffle(raffle: { slug: string }) {
+  return `https://ganhavel.com/ganhavel/${raffle.slug}`;
 }

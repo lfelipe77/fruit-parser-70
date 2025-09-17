@@ -3,7 +3,7 @@ import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
-import { shareUrlForRaffle, appUrlForRaffle } from "@/lib/urls";
+import { shareUrlForRaffle, openUrlForRaffle } from "@/lib/urls";
 import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
@@ -25,9 +25,16 @@ type Row = {
 };
 
 export default function MyTicketCard({ row }: { row: Row }) {
-  const [url, setUrl] = useState<string>(() => 
-    shareUrlForRaffle(row.raffle_slug ?? row.raffle_id)
-  );
+  const [url, setUrl] = useState<string>(() => {
+    if (row.raffle_slug) {
+      return shareUrlForRaffle({ 
+        slug: row.raffle_slug, 
+        id: row.raffle_id,
+        updated_at: (row as any).updated_at
+      });
+    }
+    return `https://ganhavel.com/ganhavel/${row.raffle_id}.html?v=${row.raffle_id}`;
+  });
   const [open, setOpen] = useState(false);
 
   // Async fetch for better URL with slug
@@ -36,12 +43,17 @@ export default function MyTicketCard({ row }: { row: Row }) {
       try {
         const { data } = await supabase
           .from("raffles")
-          .select("slug")
+          .select("slug, updated_at")
           .eq("id", row.raffle_id)
           .maybeSingle();
         
-        const slug = data?.slug ?? row.raffle_slug ?? row.raffle_id;
-        setUrl(shareUrlForRaffle(slug));
+        if (data?.slug) {
+          setUrl(shareUrlForRaffle({
+            slug: data.slug,
+            id: row.raffle_id,
+            updated_at: data.updated_at
+          }));
+        }
       } catch (error) {
         console.warn("Failed to fetch slug URL:", error);
       }
@@ -222,7 +234,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
             Compartilhar
           </button>
           <a
-            href={appUrlForRaffle(row.raffle_slug ?? row.raffle_id).replace('https://ganhavel.com', '')}
+            href={openUrlForRaffle({ slug: row.raffle_slug ?? row.raffle_id }).replace('https://ganhavel.com', '')}
             className="inline-flex items-center justify-center text-xs px-2 py-1 rounded border hover:bg-gray-50 w-full sm:w-auto"
             aria-label="Ver Ganhavel"
           >
