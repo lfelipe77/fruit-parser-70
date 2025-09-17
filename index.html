@@ -69,6 +69,11 @@
     <!-- Hash to clean URL redirect for shared links -->
     <script>
     (function() {
+      // Prevent infinite loops by checking if we've already converted
+      if (sessionStorage.getItem('url-converted')) {
+        return;
+      }
+      
       // Handle various hash-based URL patterns for ganhavel
       var h = location.hash || "";
       var pathname = location.pathname || "";
@@ -78,6 +83,7 @@
         var target = "/" + h.slice(1); // add leading slash, remove '#'
         target = target.replace(/\.html$/i, ""); // remove .html extension
         console.log('[URL-FIX] Converting hash URL:', location.href, '->', target);
+        sessionStorage.setItem('url-converted', 'true');
         history.replaceState(null, "", target);
         window.location.reload();
         return;
@@ -88,6 +94,7 @@
         var target = h.slice(1); // remove '#'
         target = target.replace(/\.html$/i, ""); // remove .html extension
         console.log('[URL-FIX] Converting hash URL with slash:', location.href, '->', target);
+        sessionStorage.setItem('url-converted', 'true');
         history.replaceState(null, "", target);
         window.location.reload();
         return;
@@ -97,10 +104,14 @@
       if (pathname.startsWith("/ganhavel/") && pathname.endsWith(".html")) {
         var target = pathname.replace(/\.html$/i, "");
         console.log('[URL-FIX] Converting .html URL:', location.href, '->', target);
+        sessionStorage.setItem('url-converted', 'true');
         history.replaceState(null, "", target);
         window.location.reload();
         return;
       }
+      
+      // Clear the flag for next visit if no conversion was needed
+      sessionStorage.removeItem('url-converted');
     })();
     </script>
   </body>
