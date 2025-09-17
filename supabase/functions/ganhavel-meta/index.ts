@@ -62,24 +62,28 @@ ${priceMeta}
 <body>
 <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
   <h2>Carregando...</h2>
-  <p>Se você não for redirecionado automaticamente, <a href="#" onclick="goToCleanUrl()" style="color: #10b981;">clique aqui</a>.</p>
+  <p>Se você não for redirecionado automaticamente, <a id="redirectLink" href="#" style="color: #10b981;">clique aqui</a>.</p>
 </div>
 <script>
-  // Redirect .html -> clean SPA route immediately
-  function goToCleanUrl() {
+  (function() {
     try {
       var path = location.pathname;
-      if (path.toLowerCase().endsWith('.html')) {
-        var cleanPath = path.slice(0, -5); // Remove .html
+      var cleanPath = path.replace(/\.html$/i, '');
+      
+      // Set the manual link
+      document.getElementById('redirectLink').href = cleanPath;
+      
+      // Auto redirect after a brief delay
+      setTimeout(function() {
         window.location.href = cleanPath;
-      }
+      }, 100);
+      
     } catch (e) {
       console.error('Redirect error:', e);
+      // Fallback: set manual link to home if path parsing fails
+      document.getElementById('redirectLink').href = '/';
     }
-  }
-  
-  // Auto-redirect on page load
-  goToCleanUrl();
+  })();
 </script>
 </html>`;
 }

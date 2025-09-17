@@ -5,7 +5,7 @@
   "rewrites": [
     { "source": "/api/:match*", "destination": "/api/:match*" },
     { "source": "/ganhavel/:key(.+).html", "destination": "/api/meta?key=:key" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|ganhavel/.+\\.html).*)", "destination": "/index.html" }
   ],
   "env": {
     "SUPABASE_URL": "https://whqxpuyjxoiufzhvqneg.supabase.co",
