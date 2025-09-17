@@ -27,20 +27,20 @@ function absoluteImage(url?: string | null) {
   return `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-function html(tags: { title: string; description: string; image: string; ogUrl: string; canonical: string; price: number | null }) {
+function botHtml(tags: {
+  title: string; description: string; image: string; ogUrl: string; canonical: string; price: number | null;
+}) {
   const { title, description, image, ogUrl, canonical, price } = tags;
-  const priceMeta =
-    price !== null
-      ? `<meta property="product:price:amount" content="${price.toFixed(2)}" />
+  const priceMeta = price !== null
+    ? `<meta property="product:price:amount" content="${price.toFixed(2)}" />
 <meta property="product:price:currency" content="BRL" />`
-      : "";
-
+    : "";
   return `<!doctype html>
 <html lang="pt-br">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>${title}</title>
 <meta name="description" content="${description}">
@@ -62,28 +62,8 @@ ${priceMeta}
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${image}">
 <meta name="twitter:site" content="@ganhavel">
-
-<noscript>
-  <meta http-equiv="refresh" content="0; url=${canonical}">
-</noscript>
 </head>
-<body>
-  <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
-    <h2>Carregando...</h2>
-    <p>Se você não for redirecionado automaticamente, <a id="redirectLink" href="${canonical}" style="color: #10b981;">clique aqui</a>.</p>
-  </div>
-  <script>
-    (function () {
-      try {
-        var target = ${JSON.stringify(canonical)};
-        var a = document.getElementById('redirectLink');
-        if (a) a.href = target;
-        // use replace() to avoid back history to .html
-        setTimeout(function(){ window.location.replace(target); }, 60);
-      } catch (e) { /* swallow */ }
-    })();
-  </script>
-</body>
+<body></body>
 </html>`;
 }
 
@@ -201,17 +181,17 @@ serve(async (req) => {
       );
     }
 
-    // Always serve meta tags for social media bots OR if user agent indicates bot
+    // Bots → serve pure OG page (no redirects of any kind)
     if (isBot) {
-      const body = html({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
+      const body = botHtml({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
       return new Response(body, {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=1800" }
       });
-    } else {
-      // Humans → 302 to SPA
-      return Response.redirect(canonical, 302);
     }
+
+    // Humans → send straight to SPA clean URL
+    return Response.redirect(canonical, 302);
   } catch (e) {
     console.error("Meta function error:", e);
     return new Response(`Error: ${e}`, { status: 500 });
