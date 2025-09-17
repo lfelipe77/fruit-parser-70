@@ -167,8 +167,12 @@ serve(async (req) => {
     const key = keyPart.replace(/\.html$/i, "");
     if (!key) return new Response("Missing key", { status: 400 });
 
-    // Note: No guard redirect here since this function is called by our API proxy
-    // The routing logic is handled by vercel.json: only .html URLs reach this function
+    // Enhanced bot detection - check user agent
+    const userAgent = req.headers.get("user-agent") || "";
+    const isBot = BOT_UA.test(userAgent);
+    
+    // Log the user agent for debugging
+    console.log(`Request from UA: ${userAgent}, isBot: ${isBot}, key: ${key}`);
 
     // Env checks
     for (const k of ["SUPABASE_URL", "SUPABASE_ANON_KEY"]) {
@@ -188,23 +192,28 @@ serve(async (req) => {
     // Debug JSON
     if (url.searchParams.get("debug") === "1") {
       return new Response(
-        JSON.stringify({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null, slug, id: row.id }, null, 2),
+        JSON.stringify({ 
+          title, description: cta, image, ogUrl, canonical, 
+          price: row.ticket_price ?? null, slug, id: row.id,
+          userAgent, isBot, imageUrl: row.image_url 
+        }, null, 2),
         { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } }
       );
     }
 
-    const ua = req.headers.get("user-agent") || "";
-    // Humans → 302 to SPA; Bots → OG HTML
-    if (!BOT_UA.test(ua)) {
+    // Always serve meta tags for social media bots OR if user agent indicates bot
+    if (isBot) {
+      const body = html({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
+      return new Response(body, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=1800" }
+      });
+    } else {
+      // Humans → 302 to SPA
       return Response.redirect(canonical, 302);
     }
-
-    const body = html({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
-    return new Response(body, {
-      status: 200,
-      headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=1800" }
-    });
   } catch (e) {
+    console.error("Meta function error:", e);
     return new Response(`Error: ${e}`, { status: 500 });
   }
 });
