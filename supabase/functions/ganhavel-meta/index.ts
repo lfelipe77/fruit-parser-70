@@ -151,6 +151,7 @@ serve(async (req) => {
     const parts = path.split("/").filter(Boolean);
     const keyPart = parts[1] || ""; // /ganhavel/:key(.html)
     const key = keyPart.replace(/\.html$/i, "");
+    const hasHtmlExtension = keyPart.endsWith('.html');
     if (!key) return new Response("Missing key", { status: 400 });
 
     // Enhanced bot detection - check user agent
@@ -172,7 +173,12 @@ serve(async (req) => {
     const title = `${row.title} — Ganhavel`;
     const cta = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
     const canonical = `${SITE}/ganhavel/${slug}`;             // Clean SPA URL
-    const ogUrl = url.toString();                              // EXACT URL that was requested (with .html?v=...)
+    
+    // For OG URL: if request was clean URL, use .html for better social sharing
+    const ogUrl = hasHtmlExtension 
+      ? url.toString()  // Keep exact .html?v=... URL if that's what was requested
+      : `${SITE}/ganhavel/${slug}.html?v=${row.id}`; // Convert clean URL to .html for OG
+    
     const image = absoluteImage(row.image_url);
 
     // Debug JSON
