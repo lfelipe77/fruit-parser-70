@@ -73,7 +73,10 @@
       var h = location.hash || "";
       if (h.startsWith("#/ganhavel/")) {
         var target = h.slice(1); // remove '#'
+        // Use replace to avoid adding to browser history
         history.replaceState(null, "", target);
+        // Force reload to ensure proper routing
+        window.location.reload();
       }
     })();
     </script>
