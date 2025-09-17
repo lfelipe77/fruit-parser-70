@@ -10,7 +10,7 @@ const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe5060
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // simple bot detector
-const BOT_UA = /(facebookexternalhit|whatsapp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|pinterest)/i;
+const BOT_UA = /(facebookexternalhit|whatsapp|WhatsApp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|pinterest)/i;
 
 type RaffleRow = {
   id: string;
@@ -50,13 +50,18 @@ function html(tags: { title: string; description: string; image: string; ogUrl: 
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
 <meta property="og:image" content="${image}">
+<meta property="og:image:secure_url" content="${image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="${ogUrl}">
+<meta property="og:site_name" content="Ganhavel">
 ${priceMeta}
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${image}">
+<meta name="twitter:site" content="@ganhavel">
 
 <noscript>
   <meta http-equiv="refresh" content="0; url=${canonical}">
