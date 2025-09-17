@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { Share2 } from "lucide-react";
-import { buildPrettyShareUrl, buildPrettyShareUrlSync, type RaffleLike } from "@/lib/shareUrl";
+import { shareUrlForRaffle } from "@/lib/urls";
+import { type RaffleLike } from "@/lib/shareUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,35 +10,45 @@ type Props = { raffle: RaffleLike; size?: number; className?: string };
 
 export default function CompartilheRifa({ raffle, size = 168, className }: Props) {
   const qrRef = useRef<HTMLCanvasElement | null>(null);
-  const [url, setUrl] = useState<string>(() => buildPrettyShareUrlSync(raffle));
+  const [url, setUrl] = useState<string>(() => shareUrlForRaffle(raffle.slug ?? raffle.id));
   const { toast } = useToast();
 
-  // Fetch the proper URL with slug asynchronously
+  // Async fetch for better URL with slug
   useEffect(() => {
-    const fetchUrl = async () => {
+    async function fetchSlugUrl() {
       try {
-        const properUrl = await buildPrettyShareUrl(raffle, supabase);
-        setUrl(properUrl);
+        // Get latest slug if available
+        const { data } = await supabase
+          .from("raffles")
+          .select("slug")
+          .eq("id", raffle.id)
+          .maybeSingle();
+        
+        const slug = data?.slug ?? raffle.slug ?? raffle.id;
+        setUrl(shareUrlForRaffle(slug));
       } catch (error) {
-        console.warn("Failed to fetch slug for share URL:", error);
-        // Keep the sync fallback URL
+        console.warn("Failed to fetch slug URL:", error);
       }
-    };
-    fetchUrl();
+    }
+    fetchSlugUrl();
   }, [raffle]);
 
   const handleShare = async () => {
     try {
-      // Ensure we have the latest URL with slug
-      const shareUrl = await buildPrettyShareUrl(raffle, supabase);
+      // Use the current URL (already .html)
+      const shareUrl = url;
       
       if (navigator.share) {
         await navigator.share({
-          title: `Ganhavel - ${raffle.id}`,
+          title: `Participe da rifa: ${raffle.title || 'Ganhavel'}`,
+          text: `Concorra a ${raffle.title || 'este prêmio incrível'}!`,
           url: shareUrl,
         });
+        toast({
+          title: "Compartilhado com sucesso!"
+        });
       } else {
-        // Fallback to copy to clipboard
+        // Fallback: copy to clipboard
         if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(shareUrl);
         } else {
@@ -71,7 +82,7 @@ export default function CompartilheRifa({ raffle, size = 168, className }: Props
 
         <button
           onClick={handleShare}
-          className="w-full max-w-xs rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 py-3 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+          className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 shadow-md active:scale-[0.99] transition flex items-center justify-center gap-2"
           aria-label="Compartilhar Ganhavel"
         >
           <Share2 className="h-4 w-4" />

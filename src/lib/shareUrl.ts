@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type RaffleLike = { id: string; slug?: string | null };
+export type RaffleLike = { id: string; slug?: string | null; title?: string | null };
 
 function toPrettyPath(key: string) {
   // Always send crawlers to the meta worker (.html)

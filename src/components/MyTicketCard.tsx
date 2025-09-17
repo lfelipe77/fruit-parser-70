@@ -3,7 +3,7 @@ import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
-import { buildPrettyShareUrl, buildPrettyShareUrlSync, buildAppUrlSync } from "@/lib/shareUrl";
+import { shareUrlForRaffle, appUrlForRaffle } from "@/lib/urls";
 import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
@@ -26,25 +26,27 @@ type Row = {
 
 export default function MyTicketCard({ row }: { row: Row }) {
   const [url, setUrl] = useState<string>(() => 
-    buildPrettyShareUrlSync({ id: row.raffle_id, slug: row.raffle_slug })
+    shareUrlForRaffle(row.raffle_slug ?? row.raffle_id)
   );
   const [open, setOpen] = useState(false);
 
-  // Fetch the proper URL with slug asynchronously
+  // Async fetch for better URL with slug
   useEffect(() => {
-    const fetchUrl = async () => {
+    async function fetchSlugUrl() {
       try {
-        const properUrl = await buildPrettyShareUrl(
-          { id: row.raffle_id, slug: row.raffle_slug }, 
-          supabase
-        );
-        setUrl(properUrl);
+        const { data } = await supabase
+          .from("raffles")
+          .select("slug")
+          .eq("id", row.raffle_id)
+          .maybeSingle();
+        
+        const slug = data?.slug ?? row.raffle_slug ?? row.raffle_id;
+        setUrl(shareUrlForRaffle(slug));
       } catch (error) {
-        console.warn("Failed to fetch slug for share URL:", error);
-        // Keep the sync fallback URL
+        console.warn("Failed to fetch slug URL:", error);
       }
-    };
-    fetchUrl();
+    }
+    fetchSlugUrl();
   }, [row.raffle_id, row.raffle_slug]);
 
   const combos = useMemo(() => {
@@ -65,11 +67,8 @@ export default function MyTicketCard({ row }: { row: Row }) {
 
   async function onShare() {
     try {
-      // Ensure we have the latest URL with slug
-      const shareUrl = await buildPrettyShareUrl(
-        { id: row.raffle_id, slug: row.raffle_slug }, 
-        supabase
-      );
+      // Use the current URL (already .html)
+      const shareUrl = url;
       
       // Build CTA-first share text
       const cta = `✨ Participe você também deste Ganhavel e concorra a ${row.raffle_title}!`;
@@ -223,7 +222,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
             Compartilhar
           </button>
           <a
-            href={buildAppUrlSync({ id: row.raffle_id, slug: row.raffle_slug })}
+            href={appUrlForRaffle(row.raffle_slug ?? row.raffle_id).replace('https://ganhavel.com', '')}
             className="inline-flex items-center justify-center text-xs px-2 py-1 rounded border hover:bg-gray-50 w-full sm:w-auto"
             aria-label="Ver Ganhavel"
           >
