@@ -185,8 +185,8 @@ serve(async (req) => {
     const slug = row.slug;
     const title = `${row.title} — Ganhavel`;
     const cta = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
-    const canonical = `${SITE}/ganhavel/${slug}`;
-    const ogUrl = `${SITE}/ganhavel/${slug}`;
+    const canonical = `${SITE}/ganhavel/${slug}`;             // SEO
+    const ogUrl = `${SITE}/ganhavel/${slug}.html`;            // EXACT page bots fetched
     const image = absoluteImage(row.image_url);
 
     // Debug JSON
