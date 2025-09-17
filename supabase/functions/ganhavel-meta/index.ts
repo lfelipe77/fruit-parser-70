@@ -91,30 +91,66 @@ async function fetchJson(u: URL) {
 }
 
 async function fetchRaffle(key: string) {
-  const isUUID = UUID_RE.test(key);
   const baseUrl = Deno.env.get("SUPABASE_URL")!;
-  // 1) Identity
-  const q1 = new URL(`${baseUrl}/rest/v1/raffles`);
-  q1.searchParams.set("select", "id,slug,title");
-  q1.searchParams.set(isUUID ? "id" : "slug", `eq.${key}`);
-  q1.searchParams.set("limit", "1");
-  const rows1 = await fetchJson(q1);
-  const row1 = rows1?.[0];
-  if (!row1) return null;
-  // 2) Public fields
-  const q2 = new URL(`${baseUrl}/rest/v1/raffles_public_money_ext`);
-  q2.searchParams.set("select", "id,image_url,ticket_price,description");
-  q2.searchParams.set("id", `eq.${row1.id}`);
-  q2.searchParams.set("limit", "1");
-  const rows2 = await fetchJson(q2);
-  const row2 = rows2?.[0] ?? null;
-  return {
-    id: row1.id,
-    slug: row1.slug ?? row1.id,
-    title: row1.title ?? "Ganhavel",
-    image_url: row2?.image_url ?? null,
-    ticket_price: row2?.ticket_price ?? null
-  };
+  const apiKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const headers = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
+
+  async function getOne(u: URL) {
+    const res = await fetch(u.toString(), { headers });
+    if (!res.ok) return null;
+    const j = await res.json();
+    return (Array.isArray(j) && j.length) ? j[0] : null;
+  }
+
+  // 1) slug exact
+  {
+    const u = new URL(`${baseUrl}/rest/v1/raffles`);
+    u.searchParams.set("select", "id,slug,title");
+    u.searchParams.set("slug", `eq.${key}`);
+    u.searchParams.set("limit", "1");
+    const row = await getOne(u);
+    if (row) return await hydrate(row);
+  }
+
+  // 2) slug case-insensitive
+  {
+    const u = new URL(`${baseUrl}/rest/v1/raffles`);
+    u.searchParams.set("select", "id,slug,title");
+    u.searchParams.set("slug", `ilike.${key}`);
+    u.searchParams.set("limit", "1");
+    const row = await getOne(u);
+    if (row) return await hydrate(row);
+  }
+
+  // 3) id/uuid
+  {
+    const u = new URL(`${baseUrl}/rest/v1/raffles`);
+    u.searchParams.set("select", "id,slug,title");
+    u.searchParams.set("id", `eq.${key}`);
+    u.searchParams.set("limit", "1");
+    const row = await getOne(u);
+    if (row) return await hydrate(row);
+  }
+
+  return null;
+
+  async function hydrate(row1: any) {
+    const u2 = new URL(`${baseUrl}/rest/v1/raffles_public_money_ext`);
+    u2.searchParams.set("select", "id,image_url,ticket_price,description");
+    u2.searchParams.set("id", `eq.${row1.id}`);
+    u2.searchParams.set("limit", "1");
+    const r2 = await fetch(u2.toString(), { headers });
+    const j2 = r2.ok ? await r2.json() : [];
+    const row2 = Array.isArray(j2) && j2[0] ? j2[0] : null;
+    return {
+      id: row1.id,
+      slug: row1.slug ?? row1.id,
+      title: row1.title ?? "Ganhavel",
+      image_url: row2?.image_url ?? null,
+      ticket_price: row2?.ticket_price ?? null,
+      description: row2?.description ?? null
+    };
+  }
 }
 
 serve(async (req) => {
