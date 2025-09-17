@@ -7,38 +7,45 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const SITE = "https://ganhavel.com";
 const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png`;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// simple bot detector
 const BOT_UA = /(facebookexternalhit|whatsapp|WhatsApp|twitterbot|linkedinbot|telegrambot|discordbot|slackbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|pinterest)/i;
+
+type RaffleRow = {
+  id: string;
+  slug: string | null;
+  title: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  ticket_price?: number | null;
+};
 
 function absoluteImage(url?: string | null) {
   if (!url) return FALLBACK_IMG;
-  if (/^https?:\/\//i.test(url)) return url;        // already absolute
-  
-  // Build relative URL properly
-  const prefix = url.startsWith("/") ? "" : "/";
-  return `${SITE}${prefix}${url}`;
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${SITE}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-function botHtml(tags: {
-  title: string;
-  description: string;
-  image: string;
-  ogUrl: string;
-  canonical: string;
-  price: number | null;
-}) {
+function html(tags: { title: string; description: string; image: string; ogUrl: string; canonical: string; price: number | null }) {
   const { title, description, image, ogUrl, canonical, price } = tags;
-  const priceMeta = price !== null
-    ? `<meta property="product:price:amount" content="${price.toFixed(2)}" />
-       <meta property="product:price:currency" content="BRL" />`
-    : "";
+  const priceMeta =
+    price !== null
+      ? `<meta property="product:price:amount" content="${price.toFixed(2)}" />
+<meta property="product:price:currency" content="BRL" />`
+      : "";
+
   return `<!doctype html>
 <html lang="pt-br">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
 <title>${title}</title>
 <meta name="description" content="${description}">
-<link rel="canonical" href="${canonical}">
+<link rel="canonical" href="${canonical}" />
+
 <meta property="og:type" content="product">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
@@ -49,36 +56,58 @@ function botHtml(tags: {
 <meta property="og:url" content="${ogUrl}">
 <meta property="og:site_name" content="Ganhavel">
 ${priceMeta}
+
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${image}">
 <meta name="twitter:site" content="@ganhavel">
-</head><body></body></html>`;
+
+<noscript>
+  <meta http-equiv="refresh" content="0; url=${canonical}">
+</noscript>
+</head>
+<body>
+  <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+    <h2>Carregando...</h2>
+    <p>Se você não for redirecionado automaticamente, <a id="redirectLink" href="${canonical}" style="color: #10b981;">clique aqui</a>.</p>
+  </div>
+  <script>
+    (function () {
+      try {
+        var target = ${JSON.stringify(canonical)};
+        var a = document.getElementById('redirectLink');
+        if (a) a.href = target;
+        // use replace() to avoid back history to .html
+        setTimeout(function(){ window.location.replace(target); }, 60);
+      } catch (e) { /* swallow */ }
+    })();
+  </script>
+</body>
+</html>`;
 }
 
 async function fetchJson(u: URL) {
-  const apiKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const res = await fetch(u.toString(), { headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}` } });
+  const apiKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const baseHeaders = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
+  const res = await fetch(u.toString(), { headers: baseHeaders });
   if (!res.ok) return null;
   return await res.json();
 }
 
 async function fetchRaffle(key: string) {
-  if (!key || key.includes("<") || key.includes(">") || key.length < 3) return null;
-
   const baseUrl = Deno.env.get("SUPABASE_URL")!;
   const apiKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const headers = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
 
   async function getOne(u: URL) {
-    const r = await fetch(u.toString(), { headers });
-    if (!r.ok) return null;
-    const j = await r.json();
-    return Array.isArray(j) && j[0] ? j[0] : null;
+    const res = await fetch(u.toString(), { headers });
+    if (!res.ok) return null;
+    const j = await res.json();
+    return (Array.isArray(j) && j.length) ? j[0] : null;
   }
 
-  // (1) slug exact
+  // 1) slug exact
   {
     const u = new URL(`${baseUrl}/rest/v1/raffles`);
     u.searchParams.set("select", "id,slug,title");
@@ -87,7 +116,8 @@ async function fetchRaffle(key: string) {
     const row = await getOne(u);
     if (row) return await hydrate(row);
   }
-  // (2) slug ilike
+
+  // 2) slug case-insensitive
   {
     const u = new URL(`${baseUrl}/rest/v1/raffles`);
     u.searchParams.set("select", "id,slug,title");
@@ -96,7 +126,8 @@ async function fetchRaffle(key: string) {
     const row = await getOne(u);
     if (row) return await hydrate(row);
   }
-  // (3) id
+
+  // 3) id/uuid
   {
     const u = new URL(`${baseUrl}/rest/v1/raffles`);
     u.searchParams.set("select", "id,slug,title");
@@ -105,6 +136,7 @@ async function fetchRaffle(key: string) {
     const row = await getOne(u);
     if (row) return await hydrate(row);
   }
+
   return null;
 
   async function hydrate(row1: any) {
@@ -129,14 +161,16 @@ async function fetchRaffle(key: string) {
 serve(async (req) => {
   try {
     const url = new URL(req.url);
-    const parts = url.pathname.split("/").filter(Boolean); // ["ganhavel","<key>[.html]"]
-    const keyPart = parts[1] || "";
+    const path = url.pathname;
+    const parts = path.split("/").filter(Boolean);
+    const keyPart = parts[1] || ""; // /ganhavel/:key(.html)
     const key = keyPart.replace(/\.html$/i, "");
     if (!key) return new Response("Missing key", { status: 400 });
 
-    const ua = req.headers.get("user-agent") || "";
-    const isBot = BOT_UA.test(ua);
+    // Note: No guard redirect here since this function is called by our API proxy
+    // The routing logic is handled by vercel.json: only .html URLs reach this function
 
+    // Env checks
     for (const k of ["SUPABASE_URL", "SUPABASE_ANON_KEY"]) {
       if (!Deno.env.get(k)) return new Response(`${k} not configured`, { status: 500 });
     }
@@ -146,36 +180,30 @@ serve(async (req) => {
 
     const slug = row.slug;
     const title = `${row.title} — Ganhavel`;
-    const cta   = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
+    const cta = `Participe deste ganhavel e concorra a ${row.title}! Transparente, simples e conectado à Loteria Federal.`;
     const canonical = `${SITE}/ganhavel/${slug}`;
-    const ogUrl     = url.toString(); // exactly what was requested (keeps .html?v=...)
+    const ogUrl = `${SITE}/ganhavel/${slug}`;
+    const image = absoluteImage(row.image_url);
 
-    // Build image safely: if already absolute (Supabase Storage), keep as-is.
-    let img = absoluteImage(row.image_url);
-    // If you ever serve local images (e.g., /og/xxx.jpg), you can version them like:
-    // if (img.startsWith(SITE)) img += (img.includes("?") ? "&" : "?") + "v=" + encodeURIComponent(row.id);
-
+    // Debug JSON
     if (url.searchParams.get("debug") === "1") {
-      return new Response(JSON.stringify({
-        title, description: cta, image: img, ogUrl, canonical,
-        price: row.ticket_price ?? null, slug, id: row.id, userAgent: ua, isBot
-      }, null, 2), { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
+      return new Response(
+        JSON.stringify({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null, slug, id: row.id }, null, 2),
+        { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } }
+      );
     }
 
-    if (isBot) {
-      const body = botHtml({ title, description: cta, image: img, ogUrl, canonical, price: row.ticket_price ?? null });
-      return new Response(body, {
-        status: 200,
-        headers: {
-          "content-type": "text/html; charset=utf-8",
-          "cache-control": "public, max-age=1800",
-          "Vary": "User-Agent" // important so CF separates bot/human cache
-        }
-      });
+    const ua = req.headers.get("user-agent") || "";
+    // Humans → 302 to SPA; Bots → OG HTML
+    if (!BOT_UA.test(ua)) {
+      return Response.redirect(canonical, 302);
     }
 
-    // humans → clean URL
-    return Response.redirect(canonical, 302);
+    const body = html({ title, description: cta, image, ogUrl, canonical, price: row.ticket_price ?? null });
+    return new Response(body, {
+      status: 200,
+      headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=1800" }
+    });
   } catch (e) {
     return new Response(`Error: ${e}`, { status: 500 });
   }

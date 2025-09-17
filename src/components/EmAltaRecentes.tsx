@@ -28,7 +28,7 @@ export default function EmAltaRecentesSection() {
     let cancelled = false;
     
     const RAFFLE_CARD_SELECT =
-      "id,title,description,image_url,status,slug," +
+      "id,title,description,image_url,status," +
       "ticket_price,goal_amount,amount_raised,progress_pct_money," +
       "last_paid_at,created_at,draw_date," +
       "category_name,subcategory_name," +
@@ -57,15 +57,12 @@ export default function EmAltaRecentesSection() {
           if (emAlta.error) throw emAlta.error;
           if (recentes.error) throw recentes.error;
           
-          console.log('[Raffles] Em Alta data:', emAlta.data?.length, 'items');
-          console.log('[Raffles] Recent data:', recentes.data?.length, 'items');
-          console.log('[Raffles] Sample row:', emAlta.data?.[0]);
+          console.debug('[Raffles] sample row', emAlta.data?.[0]);
           
           setTop(((emAlta.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
           setRecent(((recentes.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
         }
       } catch (e: any) {
-        console.error('[Raffles] Error loading data:', e);
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");
       } finally {
         if (!cancelled) setLoading(false);

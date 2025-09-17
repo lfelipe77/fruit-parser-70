@@ -7,10 +7,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Share2, Copy, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { shareUrlForRaffle, copyUrlForRaffle } from "@/lib/urls";
+import { buildPrettyShareUrl, buildPrettyShareUrlSync, type RaffleLike } from "@/lib/shareUrl";
 import { supabase } from "@/integrations/supabase/client";
-
-type RaffleLike = { id: string; slug?: string | null; title?: string; description?: string; updated_at?: string; updatedAt?: string };
 
 interface ShareButtonProps {
   url?: string;
@@ -30,49 +28,22 @@ export default function ShareButton({
   raffle
 }: ShareButtonProps) {
   const { toast } = useToast();
-
+  
   // Use sync version for initial render, will be updated async
-  const fallbackUrl = raffle && raffle.slug
-    ? shareUrlForRaffle({ 
-        slug: raffle.slug, 
-        id: raffle.id, 
-        updated_at: raffle.updated_at,
-        updatedAt: raffle.updatedAt 
-      })
-    : (url || window.location.href);
-
-  const getUpdatedShareUrl = async (raffle: RaffleLike) => {
-    try {
-      const { data } = await supabase
-        .from("raffles")
-        .select("slug, updated_at")
-        .eq("id", raffle.id)
-        .maybeSingle();
-      
-      if (data?.slug) {
-        return shareUrlForRaffle({
-          slug: data.slug,
-          id: raffle.id,
-          updated_at: data.updated_at
-        });
-      }
-      return shareUrlForRaffle({
-        slug: raffle.slug || raffle.id,
-        id: raffle.id,
-        updated_at: raffle.updated_at,
-        updatedAt: raffle.updatedAt
-      });
-    } catch {
-      return fallbackUrl;
-    }
-  };
+  const fallbackUrl = raffle 
+    ? buildPrettyShareUrlSync(raffle)
+    : (url || window.location.href).includes('/#/ganhavel/') 
+      ? (url || window.location.href).replace('/#/ganhavel/', '/ganhavel/')
+      : (url || window.location.href);
 
   const handleCopyLink = async () => {
     try {
-      // Use clean copy URL for humans when copying
-      const copyUrl = raffle ? copyUrlForRaffle(raffle) : fallbackUrl;
-      const fullUrl = copyUrl.startsWith('http') ? copyUrl : window.location.origin + copyUrl;
-      await navigator.clipboard.writeText(fullUrl);
+      // Use async version for actual sharing to ensure slug is fetched
+      const shareUrl = raffle 
+        ? await buildPrettyShareUrl(raffle, supabase)
+        : fallbackUrl;
+        
+      await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copiado!",
         description: "O link foi copiado para sua área de transferência.",
@@ -88,9 +59,9 @@ export default function ShareButton({
 
   const handleNativeShare = async () => {
     try {
-      // Use .html share URL for social sharing
+      // Use async version for sharing to ensure slug is fetched
       const shareUrl = raffle 
-        ? await getUpdatedShareUrl(raffle)
+        ? await buildPrettyShareUrl(raffle, supabase)
         : fallbackUrl;
         
       // Build CTA-first share text
@@ -107,7 +78,7 @@ export default function ShareButton({
         return;
       }
       
-      // Fallback to copy clean link for humans
+      // Fallback to copy link
       await handleCopyLink();
     } catch (error) {
       // User cancelled share or error occurred, fallback to copy
@@ -118,7 +89,7 @@ export default function ShareButton({
   const handleShare = async (platform: string) => {
     // Use async version for sharing to ensure slug is fetched
     const shareUrl = raffle 
-      ? await getUpdatedShareUrl(raffle)
+      ? await buildPrettyShareUrl(raffle, supabase)
       : fallbackUrl;
       
     const encodedUrl = encodeURIComponent(shareUrl);

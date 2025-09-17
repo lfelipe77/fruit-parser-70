@@ -22,10 +22,6 @@
     worker-src 'self' blob:;
     base-uri 'self';
 
-# Dynamic meta tags for social sharing - both clean URLs and .html URLs
+# Dynamic meta tags for social sharing
 /ganhavel/*
-  X-Robots-Tag: index, follow
-  
-# Ensure clean URLs also get meta processing for social crawlers
-/ganhavel/:slug
   X-Robots-Tag: index, follow

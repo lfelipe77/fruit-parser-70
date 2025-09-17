@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { Share2 } from "lucide-react";
-import { shareUrlForRaffle, copyUrlForRaffle } from "@/lib/urls";
+import { shareUrlForRaffle } from "@/lib/urls";
 import { type RaffleLike } from "@/lib/shareUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,17 +11,7 @@ type Props = { raffle: RaffleLike; size?: number; className?: string };
 
 export default function CompartilheRifa({ raffle, size = 168, className }: Props) {
   const qrRef = useRef<HTMLCanvasElement | null>(null);
-  const [url, setUrl] = useState<string>(() => {
-    if (raffle.slug) {
-      return shareUrlForRaffle({ 
-        slug: raffle.slug, 
-        id: raffle.id,
-        updated_at: (raffle as any).updated_at,
-        updatedAt: (raffle as any).updatedAt
-      });
-    }
-    return `https://ganhavel.com/ganhavel/${raffle.id}.html?v=${raffle.id}`;
-  });
+  const [url, setUrl] = useState<string>(() => shareUrlForRaffle(raffle.slug ?? raffle.id));
   const { toast } = useToast();
 
   // Async fetch for better URL with slug
@@ -31,17 +21,12 @@ export default function CompartilheRifa({ raffle, size = 168, className }: Props
         // Get latest slug if available
         const { data } = await supabase
           .from("raffles")
-          .select("slug, updated_at")
+          .select("slug")
           .eq("id", raffle.id)
           .maybeSingle();
         
-        if (data?.slug) {
-          setUrl(shareUrlForRaffle({
-            slug: data.slug,
-            id: raffle.id,
-            updated_at: data.updated_at
-          }));
-        }
+        const slug = data?.slug ?? raffle.slug ?? raffle.id;
+        setUrl(shareUrlForRaffle(slug));
       } catch (error) {
         console.warn("Failed to fetch slug URL:", error);
       }

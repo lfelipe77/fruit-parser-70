@@ -3,7 +3,7 @@ import QRCode from "react-qr-code";
 import { brl, shortDateTime, statusLabel } from "@/lib/format";
 import { toFiveSingles, formatFiveSingles } from "@/lib/numberFormat";
 import { Share2, TicketIcon, ChevronDown } from "lucide-react";
-import { shareUrlForRaffle, openUrlForRaffle, copyUrlForRaffle } from "@/lib/urls";
+import { shareUrlForRaffle, appUrlForRaffle } from "@/lib/urls";
 import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
@@ -25,16 +25,9 @@ type Row = {
 };
 
 export default function MyTicketCard({ row }: { row: Row }) {
-  const [url, setUrl] = useState<string>(() => {
-    if (row.raffle_slug) {
-      return shareUrlForRaffle({ 
-        slug: row.raffle_slug, 
-        id: row.raffle_id,
-        updated_at: (row as any).updated_at
-      });
-    }
-    return `https://ganhavel.com/ganhavel/${row.raffle_id}.html?v=${row.raffle_id}`;
-  });
+  const [url, setUrl] = useState<string>(() => 
+    shareUrlForRaffle(row.raffle_slug ?? row.raffle_id)
+  );
   const [open, setOpen] = useState(false);
 
   // Async fetch for better URL with slug
@@ -43,17 +36,12 @@ export default function MyTicketCard({ row }: { row: Row }) {
       try {
         const { data } = await supabase
           .from("raffles")
-          .select("slug, updated_at")
+          .select("slug")
           .eq("id", row.raffle_id)
           .maybeSingle();
         
-        if (data?.slug) {
-          setUrl(shareUrlForRaffle({
-            slug: data.slug,
-            id: row.raffle_id,
-            updated_at: data.updated_at
-          }));
-        }
+        const slug = data?.slug ?? row.raffle_slug ?? row.raffle_id;
+        setUrl(shareUrlForRaffle(slug));
       } catch (error) {
         console.warn("Failed to fetch slug URL:", error);
       }
@@ -79,31 +67,30 @@ export default function MyTicketCard({ row }: { row: Row }) {
 
   async function onShare() {
     try {
+      // Use the current URL (already .html)
+      const shareUrl = url;
+      
       // Build CTA-first share text
       const cta = `✨ Participe você também deste Ganhavel e concorra a ${row.raffle_title}!`;
-      const shareText = cta;
+      const shareText = cta; // No additional description available in this context
       
       if (navigator.share) {
-        // Use the .html URL for social sharing
         await navigator.share({
           title: row.raffle_title,
           text: shareText,
-          url: url, // This is already the .html?v=... URL
+          url: shareUrl,
         });
         return;
       }
-      // Fallback → copy clean URL for humans
-      const copyUrl = copyUrlForRaffle({ slug: row.raffle_slug ?? row.raffle_id });
-      const fullCopyUrl = window.location.origin + copyUrl;
-      
+      // Fallback → copy link
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(fullCopyUrl);
+        await navigator.clipboard.writeText(shareUrl);
         alert("Link copiado!");
         return;
       }
       // Last‑resort fallback (older browsers)
       const ta = document.createElement("textarea");
-      ta.value = fullCopyUrl;
+      ta.value = shareUrl;
       ta.style.position = "fixed";
       ta.style.left = "-9999px";
       document.body.appendChild(ta);
@@ -235,7 +222,7 @@ export default function MyTicketCard({ row }: { row: Row }) {
             Compartilhar
           </button>
           <a
-            href={openUrlForRaffle({ slug: row.raffle_slug ?? row.raffle_id }).replace('https://ganhavel.com', '')}
+            href={appUrlForRaffle(row.raffle_slug ?? row.raffle_id).replace('https://ganhavel.com', '')}
             className="inline-flex items-center justify-center text-xs px-2 py-1 rounded border hover:bg-gray-50 w-full sm:w-auto"
             aria-label="Ver Ganhavel"
           >

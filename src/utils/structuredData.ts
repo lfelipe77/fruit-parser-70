@@ -40,7 +40,7 @@ export const getProductSchema = (ganhavel: any) => {
       "price": price,
       "priceCurrency": "BRL",
       "availability": "https://schema.org/InStock",
-      "url": `https://ganhavel.com/ganhavel/${ganhavel.slug || ganhavel.id}`,
+      "url": `https://ganhavel.com/#/ganhavel/${ganhavel.id}`,
       "seller": {
         "@type": "Organization",
         "name": "Ganhavel"
