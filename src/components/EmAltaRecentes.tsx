@@ -71,11 +71,25 @@ export default function EmAltaRecentesSection() {
 
     fetchData();
 
-    // Listen for raffle updates to invalidate and re-fetch
+    // Listen for raffle updates to invalidate and re-fetch - throttled
+    let fetchInFlight = false;
+    const safeFetchData = async () => {
+      if (fetchInFlight || cancelled) {
+        console.log('[EmAltaRecentes] skipping fetch - in flight or cancelled');
+        return;
+      }
+      fetchInFlight = true;
+      try {
+        await fetchData();
+      } finally {
+        fetchInFlight = false;
+      }
+    };
+
     const handleRaffleUpdate = (event?: any) => {
       console.log('[EmAltaRecentes] Received raffleUpdated event:', event?.detail);
       if (!cancelled) {
-        fetchData();
+        safeFetchData();
       }
     };
 
@@ -83,18 +97,20 @@ export default function EmAltaRecentesSection() {
     const handleRaffleCompletion = (event?: any) => {
       console.log('[EmAltaRecentes] Received raffleCompleted event:', event?.detail);
       if (!cancelled) {
-        fetchData(); // Refresh to show in completed section
+        safeFetchData(); // Refresh to show in completed section
       }
     };
 
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
     window.addEventListener('raffleCompleted', handleRaffleCompletion);
     
-    // Also set up an interval to refresh data periodically
+    // Auto-refresh with visibility check - don't poll when hidden
     const interval = setInterval(() => {
-      if (!cancelled) {
+      if (!cancelled && document.visibilityState === 'visible') {
         console.log('[EmAltaRecentes] Auto-refreshing data...');
-        fetchData();
+        safeFetchData();
+      } else if (!cancelled) {
+        console.log('[EmAltaRecentes] Skipping refresh - tab hidden');
       }
     }, 30000); // Refresh every 30 seconds
     

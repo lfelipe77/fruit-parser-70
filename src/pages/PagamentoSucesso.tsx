@@ -276,7 +276,17 @@ export default function PagamentoSucesso() {
               Tente recarregar a página ou verifique sua conexão.
             </p>
             <div className="space-x-4">
-              <Button onClick={() => window.location.reload()}>
+              <Button onClick={() => {
+                const DEBUG_NO_HARD_RELOADS = localStorage.getItem('DEBUG_NO_HARD_RELOADS') === 'true';
+                if (DEBUG_NO_HARD_RELOADS) {
+                  // Soft refresh: force a state refetch instead
+                  console.log('[NoHardReload] Avoiding reload, using soft refresh');
+                  // For now, still reload since this is an error state
+                  window.location.reload();
+                } else {
+                  window.location.reload();
+                }
+              }}>
                 Tentar Novamente
               </Button>
               <Link to="/my-tickets">

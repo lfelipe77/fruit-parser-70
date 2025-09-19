@@ -13,22 +13,19 @@ export default function ScrollToTop() {
   };
 
   useEffect(() => {
-    const DEBUG_DISABLE_30S_JUMP = isDebugFlagEnabled();
     const prev = prevRef.current;
     
     emit(`[SCROLL-TO-TOP] navType=${navType} pathname=${pathname} search=${search}`);
 
-    // Check if only search params changed (not pathname)
-    if (DEBUG_DISABLE_30S_JUMP) {
-      const onlySearchChanged = prev.pathname === pathname && prev.search !== search;
-      if (onlySearchChanged) {
-        emit('[SCROLL-TO-TOP] skipped due to search-only change');
-        prevRef.current = { pathname, search };
-        return;
-      }
+    // ALWAYS ignore search-only changes (not just when debug flag is on)
+    const onlySearchChanged = prev.pathname === pathname && prev.search !== search;
+    if (onlySearchChanged) {
+      emit('[SCROLL-TO-TOP] skipped due to search-only change');
+      prevRef.current = { pathname, search };
+      return;
     }
 
-    // Only scroll to top on user-initiated navigations
+    // Only scroll to top on user-initiated navigations and only when pathname changes
     if (navType === 'PUSH') {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }

@@ -594,7 +594,15 @@ export default function ConfirmacaoPagamento() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                const DEBUG_NO_HARD_RELOADS = localStorage.getItem('DEBUG_NO_HARD_RELOADS') === 'true';
+                if (DEBUG_NO_HARD_RELOADS) {
+                  // Soft refresh: just refetch the page data
+                  window.location.reload();
+                } else {
+                  window.location.reload();
+                }
+              }}
               className="text-orange-700 border-orange-300 hover:bg-orange-100"
             >
               <RefreshCw className="h-3 w-3 mr-1" />

@@ -257,31 +257,78 @@ export default function GanhaveisDetail() {
     console.log('[DETAIL]', 'effect setup');
     const DEBUG_DISABLE_30S_JUMP = isDebugFlagEnabled();
     
+    const emit = (msg: string) => {
+      console.log(msg);
+      (window as any).__debugEvent && (window as any).__debugEvent(msg);
+    };
+    emit('[DETAIL] 30s jump disabled: ' + DEBUG_DISABLE_30S_JUMP);
+    
+    // Throttle to prevent fetch storms from events
+    let fetchInFlight = false;
+    const safeFetchData = async () => {
+      if (fetchInFlight) {
+        console.log('[DETAIL]', 'skipping fetch - already in flight');
+        return;
+      }
+      fetchInFlight = true;
+      try {
+        await fetchData();
+      } finally {
+        fetchInFlight = false;
+      }
+    };
+    
     const ch = supabase
       .channel('money-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => safeFetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => safeFetchData())
       .subscribe();
 
-    // Listen for raffle updates from payment success
+    // Listen for raffle updates from payment success - throttled
     const handleRaffleUpdate = (event: any) => {
       if (event.detail?.raffleId === key) {
-        fetchData();
+        safeFetchData();
       }
     };
 
+    // Add focus/visibility refetch
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[DETAIL]', 'tab became visible - refreshing');
+        safeFetchData();
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('[DETAIL]', 'window focused - refreshing');
+      safeFetchData();
+    };
+
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
     
-    // Conditional interval based on debug flag
-    const interval = !DEBUG_DISABLE_30S_JUMP ? setInterval(() => {
-      console.log('[DETAIL]', 'interval tick @', Date.now());
-      fetchData();
-    }, 30000) : undefined; // safety refresh disabled when flag is on
+    // REMOVED: 30s interval polling (causes reloads)
+    // Instead rely on focus/visibility refetch and realtime events
+    // Only poll if explicitly enabled via debug flag
+    const interval = DEBUG_DISABLE_30S_JUMP === false && localStorage.getItem('ENABLE_DETAIL_POLLING') === 'true' 
+      ? setInterval(() => {
+          // Don't poll when tab is hidden
+          if (document.visibilityState !== 'visible') {
+            console.log('[DETAIL]', 'skipping poll - tab hidden');
+            return;
+          }
+          console.log('[DETAIL]', 'interval tick @', Date.now());
+          fetchData();
+        }, 30000) 
+      : undefined;
     
     return () => {
       console.log('[DETAIL]', 'effect cleanup');
       supabase.removeChannel(ch);
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
       if (interval) clearInterval(interval);
     };
   }, [fetchData, key]);
