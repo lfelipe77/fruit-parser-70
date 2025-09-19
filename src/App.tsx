@@ -83,6 +83,8 @@ import { DebugBanner } from '@/components/DebugBanner';
 import DiagnosticsPage from '@/pages/DiagnosticsPage';
 import EmailTest from '@/pages/admin/EmailTest';
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics';
+import { resolveDebugFlags } from '@/utils/debugGate';
+import { DebugHud } from '@/components/DebugHud';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -110,21 +112,26 @@ const queryClient = new QueryClient();
 // ============= INSTRUMENTATION FOR 30S JUMP DEBUG =============
 // A. Navigation / reload detection (root, once)
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => console.log('[NAV]', 'beforeunload'));
-  document.addEventListener('visibilitychange', () => console.log('[VISIBILITY]', document.visibilityState));
+  const emit = (msg: string) => {
+    console.log(msg);
+    (window as any).__debugEvent && (window as any).__debugEvent(msg);
+  };
+
+  window.addEventListener('beforeunload', () => emit('[NAV] beforeunload'));
+  document.addEventListener('visibilitychange', () => emit(`[VISIBILITY] ${document.visibilityState}`));
   
   // Reports every 5s so we see when 30s hits
   setInterval(() => {
     const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
     const navType = navEntries[0]?.type;
-    console.log('[HEARTBEAT]', new Date().toISOString(), 'url=', window.location.href, 'navType=', navType);
+    emit(`[HEARTBEAT] ${new Date().toISOString()} url=${window.location.href} navType=${navType}`);
   }, 5000);
 
   // URL churn watcher
   let lastHref = window.location.href;
   setInterval(() => {
     if (lastHref !== window.location.href) {
-      console.log('[URL-CHANGE]', 'from=', lastHref, 'to=', window.location.href);
+      emit(`[URL-CHANGE] from=${lastHref} to=${window.location.href}`);
       lastHref = window.location.href;
     }
   }, 1000);
@@ -173,6 +180,9 @@ const AppContent = () => {
   const { session } = useAuthContext();
   const isAuthenticated = !!session;
   
+  // Resolve debug flags from URL params and localStorage
+  const debugFlags = resolveDebugFlags();
+  
   // Google Analytics tracking - check for duplicate injection
   if (import.meta.env.VITE_DISABLE_GA !== 'true') {
     useGoogleAnalytics('G-E7V14RLKKV');
@@ -186,6 +196,7 @@ const AppContent = () => {
       <VisitLogger />
       <GlobalRaffleCompletionMonitor />
       <ScrollToTop />
+      <DebugHud show={debugFlags.SHOW_DEBUG_HUD} />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth/callback" element={<AuthCallback />} />

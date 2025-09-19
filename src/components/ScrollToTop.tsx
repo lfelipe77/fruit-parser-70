@@ -7,17 +7,22 @@ export default function ScrollToTop() {
   const navType = useNavigationType();
   const prevRef = useRef({ pathname: '', search: '' });
 
+  const emit = (msg: string) => {
+    console.log(msg);
+    (window as any).__debugEvent && (window as any).__debugEvent(msg);
+  };
+
   useEffect(() => {
     const DEBUG_DISABLE_30S_JUMP = isDebugFlagEnabled();
     const prev = prevRef.current;
     
-    console.log('[SCROLL-TO-TOP]', 'navType=', navType, 'pathname=', pathname, 'search=', search);
+    emit(`[SCROLL-TO-TOP] navType=${navType} pathname=${pathname} search=${search}`);
 
     // Check if only search params changed (not pathname)
     if (DEBUG_DISABLE_30S_JUMP) {
       const onlySearchChanged = prev.pathname === pathname && prev.search !== search;
       if (onlySearchChanged) {
-        console.log('[SCROLL-TO-TOP]', 'skipped due to search-only change');
+        emit('[SCROLL-TO-TOP] skipped due to search-only change');
         prevRef.current = { pathname, search };
         return;
       }
