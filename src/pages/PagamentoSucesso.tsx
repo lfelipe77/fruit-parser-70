@@ -277,11 +277,11 @@ export default function PagamentoSucesso() {
             </p>
             <div className="space-x-4">
               <Button onClick={() => {
-                const DEBUG_NO_HARD_RELOADS = localStorage.getItem('DEBUG_NO_HARD_RELOADS') === 'true';
+                const DEBUG_NO_HARD_RELOADS = localStorage.getItem('DEBUG_NO_HARD_RELOADS') !== 'false';
                 if (DEBUG_NO_HARD_RELOADS) {
                   // Soft refresh: force a state refetch instead
                   console.log('[NoHardReload] Avoiding reload, using soft refresh');
-                  // For now, still reload since this is an error state
+                  // Since this is an error state, still reload for now but log the behavior
                   window.location.reload();
                 } else {
                   window.location.reload();

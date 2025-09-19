@@ -229,16 +229,32 @@ export default function GanhaveisDetail() {
 
       // URL normalization - redirect to canonical slug if needed
       if (baseData && !normalizedOnce) {
+        const DEBUG_NO_HARD_RELOADS = localStorage.getItem('DEBUG_NO_HARD_RELOADS') !== 'false';
+        
         if (isUUID && baseData.slug && !location.pathname.endsWith(`/ganhavel/${baseData.slug}`)) {
           setNormalizedOnce(true);
-          navigate(`/ganhavel/${baseData.slug}`, { replace: true });
+          if (DEBUG_NO_HARD_RELOADS) {
+            // Use history.replaceState to avoid navigation/remount
+            const canonicalUrl = `/ganhavel/${baseData.slug}`;
+            window.history.replaceState(window.history.state, '', canonicalUrl);
+            console.log('[GanhaveisDetail] Soft URL normalization to:', canonicalUrl);
+          } else {
+            navigate(`/ganhavel/${baseData.slug}`, { replace: true });
+          }
           return;
         }
         
         // If we arrived by slug but it's different in DB, normalize
         if (!isUUID && baseData.slug && key !== baseData.slug) {
           setNormalizedOnce(true);
-          navigate(`/ganhavel/${baseData.slug}`, { replace: true });
+          if (DEBUG_NO_HARD_RELOADS) {
+            // Use history.replaceState to avoid navigation/remount
+            const canonicalUrl = `/ganhavel/${baseData.slug}`;
+            window.history.replaceState(window.history.state, '', canonicalUrl);
+            console.log('[GanhaveisDetail] Soft URL normalization to:', canonicalUrl);
+          } else {
+            navigate(`/ganhavel/${baseData.slug}`, { replace: true });
+          }
           return;
         }
       }
@@ -308,20 +324,9 @@ export default function GanhaveisDetail() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
     
-    // REMOVED: 30s interval polling (causes reloads)
-    // Instead rely on focus/visibility refetch and realtime events
-    // Only poll if explicitly enabled via debug flag
-    const interval = DEBUG_DISABLE_30S_JUMP === false && localStorage.getItem('ENABLE_DETAIL_POLLING') === 'true' 
-      ? setInterval(() => {
-          // Don't poll when tab is hidden
-          if (document.visibilityState !== 'visible') {
-            console.log('[DETAIL]', 'skipping poll - tab hidden');
-            return;
-          }
-          console.log('[DETAIL]', 'interval tick @', Date.now());
-          fetchData();
-        }, 30000) 
-      : undefined;
+    // REMOVED: 30s interval polling permanently - it causes reloads
+    // Instead rely ONLY on focus/visibility refetch and realtime events
+    // This is now the default behavior for all users
     
     return () => {
       console.log('[DETAIL]', 'effect cleanup');
@@ -329,7 +334,6 @@ export default function GanhaveisDetail() {
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
-      if (interval) clearInterval(interval);
     };
   }, [fetchData, key]);
 

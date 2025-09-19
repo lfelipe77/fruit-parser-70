@@ -151,6 +151,12 @@ export function useRaffleCompletionDetector({
   useEffect(() => {
     if (!enabled) return;
 
+    // Skip if tab is hidden
+    if (document.visibilityState !== 'visible') {
+      console.log('[CompletionDetector] Skipping - tab hidden');
+      return;
+    }
+
     // Initial check
     if (raffleId) {
       checkRaffleCompletion(raffleId);
@@ -160,6 +166,12 @@ export function useRaffleCompletionDetector({
 
     // Set up interval
     intervalRef.current = setInterval(() => {
+      // Don't poll when tab is hidden
+      if (document.visibilityState !== 'visible') {
+        console.log('[CompletionDetector] Skipping interval - tab hidden');
+        return;
+      }
+      
       if (raffleId) {
         checkRaffleCompletion(raffleId);
       } else {

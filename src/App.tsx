@@ -110,31 +110,39 @@ function RouteBadge() {
 const queryClient = new QueryClient();
 
 // ============= INSTRUMENTATION FOR 30S JUMP DEBUG =============
-// A. Navigation / reload detection (root, once)
+// Only start debug instrumentation when HUD is explicitly enabled
 if (typeof window !== 'undefined') {
-  const emit = (msg: string) => {
-    console.log(msg);
-    (window as any).__debugEvent && (window as any).__debugEvent(msg);
+  const startDebugInstrumentation = () => {
+    const debugFlags = resolveDebugFlags();
+    if (!debugFlags.SHOW_DEBUG_HUD) return;
+    
+    const emit = (msg: string) => {
+      console.log(msg);
+      (window as any).__debugEvent && (window as any).__debugEvent(msg);
+    };
+
+    window.addEventListener('beforeunload', () => emit('[NAV] beforeunload'));
+    document.addEventListener('visibilitychange', () => emit(`[VISIBILITY] ${document.visibilityState}`));
+    
+    // Reports every 5s so we see when 30s hits
+    setInterval(() => {
+      const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+      const navType = navEntries[0]?.type;
+      emit(`[HEARTBEAT] ${new Date().toISOString()} url=${window.location.href} navType=${navType}`);
+    }, 5000);
+
+    // URL churn watcher
+    let lastHref = window.location.href;
+    setInterval(() => {
+      if (lastHref !== window.location.href) {
+        emit(`[URL-CHANGE] from=${lastHref} to=${window.location.href}`);
+        lastHref = window.location.href;
+      }
+    }, 1000);
   };
-
-  window.addEventListener('beforeunload', () => emit('[NAV] beforeunload'));
-  document.addEventListener('visibilitychange', () => emit(`[VISIBILITY] ${document.visibilityState}`));
   
-  // Reports every 5s so we see when 30s hits
-  setInterval(() => {
-    const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
-    const navType = navEntries[0]?.type;
-    emit(`[HEARTBEAT] ${new Date().toISOString()} url=${window.location.href} navType=${navType}`);
-  }, 5000);
-
-  // URL churn watcher
-  let lastHref = window.location.href;
-  setInterval(() => {
-    if (lastHref !== window.location.href) {
-      emit(`[URL-CHANGE] from=${lastHref} to=${window.location.href}`);
-      lastHref = window.location.href;
-    }
-  }, 1000);
+  // Start on next tick to allow debugGate to resolve first
+  setTimeout(startDebugInstrumentation, 0);
 }
 
 // Legacy Debug Banner - kept for backward compatibility

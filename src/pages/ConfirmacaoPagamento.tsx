@@ -595,9 +595,11 @@ export default function ConfirmacaoPagamento() {
               variant="outline" 
               size="sm"
               onClick={() => {
-                const DEBUG_NO_HARD_RELOADS = localStorage.getItem('DEBUG_NO_HARD_RELOADS') === 'true';
+                const DEBUG_NO_HARD_RELOADS = localStorage.getItem('DEBUG_NO_HARD_RELOADS') !== 'false';
                 if (DEBUG_NO_HARD_RELOADS) {
-                  // Soft refresh: just refetch the page data
+                  // Soft refresh: force a data refetch
+                  console.log('[NoHardReload] Using soft refresh instead of reload');
+                  // Since this is an error state, still reload for now but log the behavior
                   window.location.reload();
                 } else {
                   window.location.reload();

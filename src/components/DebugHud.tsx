@@ -34,7 +34,7 @@ export function DebugHud({ show }: { show: boolean }) {
       <div style={{ overflowWrap: 'anywhere' }}>URL: {url}</div>
       <div id="debug-hud-last">Last: {lastEventRef.current}</div>
       <div>Flag no30s: {localStorage.getItem('DEBUG_DISABLE_30S_JUMP') === 'true' ? 'ON' : 'OFF'}</div>
-      <div>Flag nohard: {localStorage.getItem('DEBUG_NO_HARD_RELOADS') === 'true' ? 'ON' : 'OFF'}</div>
+      <div>Flag nohard: {localStorage.getItem('DEBUG_NO_HARD_RELOADS') !== 'false' ? 'ON' : 'OFF'}</div>
       <div>ScrollY: {Math.round(window.scrollY)}</div>
     </div>
   );
