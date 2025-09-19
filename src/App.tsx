@@ -107,6 +107,29 @@ function RouteBadge() {
 
 const queryClient = new QueryClient();
 
+// ============= INSTRUMENTATION FOR 30S JUMP DEBUG =============
+// A. Navigation / reload detection (root, once)
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => console.log('[NAV]', 'beforeunload'));
+  document.addEventListener('visibilitychange', () => console.log('[VISIBILITY]', document.visibilityState));
+  
+  // Reports every 5s so we see when 30s hits
+  setInterval(() => {
+    const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    const navType = navEntries[0]?.type;
+    console.log('[HEARTBEAT]', new Date().toISOString(), 'url=', window.location.href, 'navType=', navType);
+  }, 5000);
+
+  // URL churn watcher
+  let lastHref = window.location.href;
+  setInterval(() => {
+    if (lastHref !== window.location.href) {
+      console.log('[URL-CHANGE]', 'from=', lastHref, 'to=', window.location.href);
+      lastHref = window.location.href;
+    }
+  }, 1000);
+}
+
 // Legacy Debug Banner - kept for backward compatibility
 const LegacyDebugBanner = () => {
   const showBanner = import.meta.env.VITE_DEBUG_BANNER === 'true';

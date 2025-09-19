@@ -1,6 +1,7 @@
 import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { isDebugFlagEnabled } from "@/config/debugFlags";
 
 // Debug logging for URL issues
 console.log('[GanhaveisDetail] Component loaded:', { 
@@ -106,6 +107,7 @@ function buildShareMeta(raffle: any, origin: string) {
 
 
 export default function GanhaveisDetail() {
+  console.log('[DETAIL]', 'mount');
   const params = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -139,6 +141,7 @@ export default function GanhaveisDetail() {
 
   // ---- Data fetching function
   const fetchData = React.useCallback(async () => {
+    console.log('[DETAIL]', 'fetchData run');
     if (!key) return;
     
     try {
@@ -251,6 +254,9 @@ export default function GanhaveisDetail() {
 
   // ---- Realtime updates
   React.useEffect(() => {
+    console.log('[DETAIL]', 'effect setup');
+    const DEBUG_DISABLE_30S_JUMP = isDebugFlagEnabled();
+    
     const ch = supabase
       .channel('money-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchData())
@@ -265,12 +271,18 @@ export default function GanhaveisDetail() {
     };
 
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
-    const interval = setInterval(fetchData, 30000); // safety refresh
+    
+    // Conditional interval based on debug flag
+    const interval = !DEBUG_DISABLE_30S_JUMP ? setInterval(() => {
+      console.log('[DETAIL]', 'interval tick @', Date.now());
+      fetchData();
+    }, 30000) : undefined; // safety refresh disabled when flag is on
     
     return () => {
+      console.log('[DETAIL]', 'effect cleanup');
       supabase.removeChannel(ch);
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
     };
   }, [fetchData, key]);
 
@@ -287,6 +299,19 @@ export default function GanhaveisDetail() {
   // SEO Meta data
   const origin = typeof window !== "undefined" ? window.location.origin : "https://ganhavel.com";
   const meta = raffle ? buildShareMeta(raffle, origin) : null;
+
+  // ---- Scroll preservation during updates (belt & suspenders)
+  React.useLayoutEffect(() => {
+    const DEBUG_DISABLE_30S_JUMP = isDebugFlagEnabled();
+    if (!DEBUG_DISABLE_30S_JUMP) return;
+    
+    const y = window.scrollY;
+    return () => {
+      // restore on unmount-remount cases
+      console.log('[DETAIL]', 'preserving scroll position:', y);
+      window.scrollTo({ top: y, behavior: 'auto' });
+    };
+  }, [key]); // key that would cause remount if any
 
   // ---- Render
   if (loading) return <div className="p-6">Carregando…</div>;
