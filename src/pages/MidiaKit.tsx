@@ -257,7 +257,7 @@ export default function MidiaKit() {
                         </div>
                         <ProgressBar value={80} showLabel={false} className="mb-2" />
                         <div className="flex justify-between text-xs text-gray-500">
-                          <span>680/850 bilhetes</span>
+                          <span>1359 vendido de 1699</span>
                           <span>80% concluído</span>
                         </div>
                       </div>
