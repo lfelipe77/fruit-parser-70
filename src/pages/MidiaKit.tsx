@@ -1,7 +1,7 @@
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Target, TrendingUp, Users, Zap, Check, ArrowRight, Trophy, Ticket, Sparkles, Award, Shield } from "lucide-react";
+import { ExternalLink, Target, TrendingUp, Users, Zap, Check, ArrowRight, Trophy, Ticket, Sparkles, Award, Shield, Phone, Mail, Instagram, Minus } from "lucide-react";
 import ProgressBar from "@/components/ui/progress-bar";
 import ganhavelLogo from "@/assets/ganhavel-logo.png";
 
@@ -50,82 +50,82 @@ export default function MidiaKit() {
       />
       
       <div className="min-h-screen bg-white relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-br from-red-50/30 via-white to-blue-50/30"></div>
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-red-100/20 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-br from-blue-100/20 to-transparent rounded-full blur-3xl"></div>
         
         {/* Hero Section */}
-        <section className="relative py-16 px-4 border-b border-gray-100">
+        <section className="relative py-20 px-4 border-b border-gray-200">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-8">
+            <div className="mb-12">
               {/* Logo */}
-              <div className="flex justify-center mb-6">
+              <div className="flex justify-center mb-8">
                 <img 
                   src={ganhavelLogo} 
                   alt="Ganhavel Logo" 
-                  className="w-20 h-20 drop-shadow-lg"
+                  className="w-24 h-24 drop-shadow-lg"
                 />
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 relative">
+              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 relative">
                 Ganhavel
-                <Sparkles className="absolute -top-2 -right-8 h-6 w-6 text-yellow-500" />
+                <Sparkles className="absolute -top-2 -right-10 h-8 w-8 text-yellow-500" />
               </h1>
-              <div className="w-24 h-1 bg-gradient-to-r from-red-600 to-blue-600 mx-auto mb-6"></div>
+              <div className="w-32 h-1 bg-gradient-to-r from-red-600 to-blue-600 mx-auto mb-8"></div>
             </div>
             
-            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-4">
-              Marketplace de Ganháveis – Transparente, Tecnológico e Inovador
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 leading-tight">
+              Kit de Mídia Oficial
             </h2>
             
-            <p className="text-lg text-gray-800 max-w-3xl mx-auto flex items-center justify-center gap-2">
-              <Shield className="h-5 w-5 text-green-600" />
+            <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6">
+              Marketplace de Ganháveis – Transparente, Tecnológico e Inovador
+            </h3>
+            
+            <p className="text-lg text-gray-900 max-w-3xl mx-auto flex items-center justify-center gap-2 font-medium">
+              <Shield className="h-6 w-6 text-green-600" />
               O primeiro marketplace coletivo e gamificado de prêmios, auditável pela Loteria Federal.
             </p>
           </div>
         </section>
 
         {/* About Ganhavel */}
-        <section className="relative py-16 px-4 border-b border-gray-100">
+        <section className="relative py-20 px-4 border-b border-gray-200 bg-gray-50">
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="flex items-center justify-center gap-4 mb-12">
               <Award className="h-8 w-8 text-blue-600" />
-              <h3 className="text-2xl font-bold text-gray-900 text-center">
+              <h3 className="text-3xl font-bold text-gray-900 text-center">
                 Sobre o Ganhavel
               </h3>
               <Award className="h-8 w-8 text-red-600" />
             </div>
             
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-900">
-                    <strong>Plataforma democratizada:</strong> Qualquer pessoa pode lançar um Ganhável com links de afiliados e parcerias estratégicas.
+            <div className="grid md:grid-cols-2 gap-12">
+              <div className="space-y-8">
+                <div className="flex items-start space-x-4">
+                  <div className="w-3 h-3 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-gray-900 text-lg leading-relaxed">
+                    <strong className="text-gray-900">Plataforma democratizada:</strong> Qualquer pessoa pode lançar um Ganhável com links de afiliados e parcerias estratégicas.
                   </p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-900">
-                    <strong>Transparência absoluta:</strong> Todos os sorteios são auditáveis e vinculados à Loteria Federal.
+                <div className="flex items-start space-x-4">
+                  <div className="w-3 h-3 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-gray-900 text-lg leading-relaxed">
+                    <strong className="text-gray-900">Transparência absoluta:</strong> Todos os sorteios são auditáveis e vinculados à Loteria Federal.
                   </p>
                 </div>
               </div>
               
-              <div className="space-y-6">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-900">
-                    <strong>Segurança tecnológica:</strong> Plataforma robusta com sistemas de pagamento seguros e conformidade regulatória.
+              <div className="space-y-8">
+                <div className="flex items-start space-x-4">
+                  <div className="w-3 h-3 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-gray-900 text-lg leading-relaxed">
+                    <strong className="text-gray-900">Segurança tecnológica:</strong> Plataforma robusta com sistemas de pagamento seguros e conformidade regulatória.
                   </p>
                 </div>
                 
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-900">
-                    <strong>Modelo sustentável:</strong> O sorteio só acontece quando 100% do valor do Ganhável é arrecadado.
+                <div className="flex items-start space-x-4">
+                  <div className="w-3 h-3 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <p className="text-gray-900 text-lg leading-relaxed">
+                    <strong className="text-gray-900">Modelo sustentável:</strong> O sorteio só acontece quando 100% do valor do Ganhável é arrecadado.
                   </p>
                 </div>
               </div>
@@ -133,81 +133,72 @@ export default function MidiaKit() {
           </div>
         </section>
 
-        {/* Gamificação & Oportunidades - Minimal Gaming Style */}
-        <section className="relative py-16 px-4 border-b border-gray-100 bg-gray-50">
-          {/* Subtle Background Elements */}
-          <div className="absolute inset-0 overflow-hidden">
-            {/* Minimal floating elements */}
-            <div className="absolute top-20 left-20 opacity-20 animate-pulse">
-              <Ticket className="h-8 w-8 text-blue-600 rotate-12" />
-            </div>
-            <div className="absolute bottom-20 right-20 opacity-20 animate-pulse delay-500">
-              <Ticket className="h-6 w-6 text-red-600 -rotate-12" />
-            </div>
-            <div className="absolute top-1/2 left-10 opacity-15 animate-bounce">
-              <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-            </div>
-            <div className="absolute bottom-1/3 right-10 opacity-15 animate-bounce delay-700">
-              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-            </div>
-          </div>
-          
-          <div className="relative max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <Zap className="h-6 w-6 text-blue-600" />
+        {/* Gamificação & Oportunidades - Clean Minimal */}
+        <section className="relative py-20 px-4 border-b border-gray-200 bg-white">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-4 mb-12">
+              <div className="p-3 bg-blue-50 rounded-full">
+                <Zap className="h-7 w-7 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">
+              <h3 className="text-3xl font-bold text-gray-900">
                 Gamificação & Oportunidades
               </h3>
-              <div className="p-2 bg-red-100 rounded-full">
-                <Target className="h-6 w-6 text-red-600" />
+              <div className="p-3 bg-red-50 rounded-full">
+                <Target className="h-7 w-7 text-red-600" />
               </div>
             </div>
             
-            <div className="max-w-3xl mx-auto space-y-6">
-              <p className="text-lg text-gray-900">
+            <div className="max-w-3xl mx-auto space-y-8">
+              <p className="text-xl text-gray-900 leading-relaxed">
                 No Ganhavel, qualquer pessoa pode criar Ganháveis e lucrar através de afiliações e parcerias. 
                 Nossa plataforma oferece um ambiente gamificado e viral que maximiza o engajamento.
               </p>
               
-              <p className="text-lg text-gray-900">
+              <p className="text-xl text-gray-900 leading-relaxed">
                 Marcas ganham visibilidade massiva e engajamento autêntico através de um ecossistema 
                 inovador que transforma promoções tradicionais em experiências interativas e transparentes.
               </p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+                <p className="text-lg text-gray-900 font-medium">
+                  💡 <strong>Versatilidade:</strong> Esse modelo pode ser utilizado também como uma vaquinha virtual para campanhas específicas.
+                </p>
+              </div>
             </div>
             
-            {/* Minimal stats */}
-            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="text-blue-600 text-xl font-bold mb-1">🎯</div>
-                <div className="text-sm text-gray-600">Engajamento</div>
+            {/* Clean benefits grid */}
+            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <Target className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+                <div className="text-gray-900 font-semibold text-sm">Engajamento</div>
               </div>
-              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="text-green-600 text-xl font-bold mb-1">💰</div>
-                <div className="text-sm text-gray-600">Monetização</div>
+              <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <TrendingUp className="h-8 w-8 text-green-600 mx-auto mb-3" />
+                <div className="text-gray-900 font-semibold text-sm">Monetização</div>
               </div>
-              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="text-red-600 text-xl font-bold mb-1">🚀</div>
-                <div className="text-sm text-gray-600">Crescimento</div>
+              <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <Zap className="h-8 w-8 text-red-600 mx-auto mb-3" />
+                <div className="text-gray-900 font-semibold text-sm">Crescimento</div>
               </div>
-              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="text-purple-600 text-xl font-bold mb-1">🏆</div>
-                <div className="text-sm text-gray-600">Resultados</div>
+              <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <Trophy className="h-8 w-8 text-purple-600 mx-auto mb-3" />
+                <div className="text-gray-900 font-semibold text-sm">Resultados</div>
               </div>
             </div>
           </div>
         </section>
 
         {/* How Ganhavel Works - Visual Interface */}
-        <section className="py-20 px-4 border-b border-gray-100">
+        <section className="py-20 px-4 border-b border-gray-200 bg-gray-50">
           <div className="max-w-6xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-              Como Funciona o Ganhavel
-            </h3>
-            <p className="text-gray-800 text-center mb-12 max-w-2xl mx-auto">
-              Interface real da plataforma - Sistema transparente e auditável
-            </p>
+            <div className="text-center mb-16">
+              <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                Como Funciona o Ganhavel
+              </h3>
+              <p className="text-xl text-gray-800 max-w-2xl mx-auto">
+                Interface real da plataforma - Sistema transparente e auditável
+              </p>
+            </div>
             
             {/* Real Ganhável Interface Mockup */}
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 mb-12">
@@ -234,12 +225,12 @@ export default function MidiaKit() {
                         <span className="font-semibold text-gray-900">R$ 2,00</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Participantes:</span>
+                        <span className="text-gray-600">Número de participantes:</span>
                         <span className="font-semibold text-gray-900">327 pessoas</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Última compra:</span>
-                        <span className="font-semibold text-gray-900">há 2 min</span>
+                        <span className="text-gray-600">Última compra há:</span>
+                        <span className="font-semibold text-gray-900">2 min</span>
                       </div>
                     </div>
                     
@@ -422,171 +413,26 @@ export default function MidiaKit() {
             <div className="grid md:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600 mb-2">100%</div>
-                <div className="text-sm text-gray-600">Transparência nos sorteios</div>
+                <div className="text-sm text-gray-800">Transparência nos sorteios</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600 mb-2">0%</div>
-                <div className="text-sm text-gray-600">Taxa de manipulação</div>
+                <div className="text-sm text-gray-800">Taxa de manipulação</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-red-600 mb-2">24/7</div>
-                <div className="text-sm text-gray-600">Disponibilidade</div>
+                <div className="text-sm text-gray-800">Disponibilidade</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600 mb-2">∞</div>
-                <div className="text-sm text-gray-600">Escalabilidade</div>
+                <div className="text-sm text-gray-800">Escalabilidade</div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Examples Section */}
-        <section className="py-16 px-4 border-b border-gray-100">
-          <div className="max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-              Exemplos de Ganháveis
-            </h3>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              {examples.map((example, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow duration-300 border border-gray-200">
-                  <CardContent className="p-6">
-                    <h4 className="font-semibold text-gray-900 mb-4">
-                      {example.title}
-                    </h4>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full border-gray-300 hover:border-blue-600 hover:text-blue-600"
-                      onClick={() => window.open(example.url, '_blank')}
-                    >
-                      Ver Ganhável
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* Partnership Benefits */}
-        <section className="relative py-16 px-4 border-b border-gray-100 bg-gray-50">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <Zap className="h-8 w-8 text-yellow-500" />
-              <h3 className="text-2xl font-bold text-gray-900 text-center">
-                Benefícios de Parceria
-              </h3>
-              <Zap className="h-8 w-8 text-green-500" />
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              {benefits.map((benefit, index) => (
-                <Card key={index} className="border border-gray-200 hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <div className="p-3 bg-gradient-to-br from-red-100 to-blue-100 rounded-lg">
-                        <benefit.icon className="h-6 w-6 text-gray-700" />
-                      </div>
-                      
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-2">
-                          {benefit.title}
-                        </h4>
-                        <p className="text-gray-600 text-sm">
-                          {benefit.description}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        {/* Contact Section */}
-        <section className="relative py-16 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <Users className="h-8 w-8 text-blue-600" />
-              <h3 className="text-2xl font-bold text-gray-900">
-                Contato para Parcerias
-              </h3>
-              <Users className="h-8 w-8 text-red-600" />
-            </div>
-            
-            <Card className="max-w-2xl mx-auto border border-gray-200">
-              <CardContent className="p-8">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 text-lg mb-2">
-                      Felipe Ribeiro
-                    </h4>
-                    <p className="text-gray-600">Founder & CEO</p>
-                  </div>
-                  
-                  <div className="pt-4 border-t border-gray-100 space-y-3">
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="font-medium text-gray-700">Email:</span>
-                      <a 
-                        href="mailto:suporte@ganhavel.com" 
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        suporte@ganhavel.com
-                      </a>
-                    </div>
-                    
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="font-medium text-gray-700">WhatsApp:</span>
-                      <a 
-                        href="https://wa.me/447747922946" 
-                        className="text-blue-600 hover:text-blue-800"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        +44 7747922946
-                      </a>
-                    </div>
-                    
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="font-medium text-gray-700">Instagram:</span>
-                      <a 
-                        href="https://www.instagram.com/ganhavel.premios/"
-                        className="text-blue-600 hover:text-blue-800"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        @ganhavel.premios
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="mt-8 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 relative overflow-hidden">
-              {/* Decorative elements */}
-              <div className="absolute top-2 right-2">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Sparkles className="h-5 w-5 text-yellow-500" />
-                <span className="text-sm font-medium text-gray-700">Espaço Futuro</span>
-                <Sparkles className="h-5 w-5 text-yellow-500" />
-              </div>
-              <p className="text-sm text-gray-500">
-                Espaço reservado para logos de parceiros, gráficos de crescimento e menções na imprensa.
-              </p>
-            </div>
-          </div>
-        </section>
       </div>
     </>
   );
