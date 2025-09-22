@@ -1,8 +1,9 @@
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Target, TrendingUp, Users, Zap, Check, ArrowRight, Trophy, Ticket } from "lucide-react";
+import { ExternalLink, Target, TrendingUp, Users, Zap, Check, ArrowRight, Trophy, Ticket, Sparkles, Award, Shield } from "lucide-react";
 import ProgressBar from "@/components/ui/progress-bar";
+import ganhavelLogo from "@/assets/ganhavel-logo.png";
 
 export default function MidiaKit() {
   const examples = [
@@ -48,13 +49,28 @@ export default function MidiaKit() {
         noindex={true}
       />
       
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-50/30 via-white to-blue-50/30"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-red-100/20 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-br from-blue-100/20 to-transparent rounded-full blur-3xl"></div>
+        
         {/* Hero Section */}
-        <section className="py-16 px-4 border-b border-gray-100">
+        <section className="relative py-16 px-4 border-b border-gray-100">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-8">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <img 
+                  src={ganhavelLogo} 
+                  alt="Ganhavel Logo" 
+                  className="w-20 h-20 drop-shadow-lg"
+                />
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 relative">
                 Ganhavel
+                <Sparkles className="absolute -top-2 -right-8 h-6 w-6 text-yellow-500" />
               </h1>
               <div className="w-24 h-1 bg-gradient-to-r from-red-600 to-blue-600 mx-auto mb-6"></div>
             </div>
@@ -63,18 +79,23 @@ export default function MidiaKit() {
               Marketplace de Ganháveis – Transparente, Tecnológico e Inovador
             </h2>
             
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto flex items-center justify-center gap-2">
+              <Shield className="h-5 w-5 text-green-600" />
               O primeiro marketplace coletivo e gamificado de prêmios, auditável pela Loteria Federal.
             </p>
           </div>
         </section>
 
         {/* About Ganhavel */}
-        <section className="py-16 px-4 border-b border-gray-100">
+        <section className="relative py-16 px-4 border-b border-gray-100">
           <div className="max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-              Sobre o Ganhavel
-            </h3>
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <Award className="h-8 w-8 text-blue-600" />
+              <h3 className="text-2xl font-bold text-gray-900 text-center">
+                Sobre o Ganhavel
+              </h3>
+              <Award className="h-8 w-8 text-red-600" />
+            </div>
             
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-6">
@@ -405,11 +426,15 @@ export default function MidiaKit() {
         </section>
 
         {/* Partnership Benefits */}
-        <section className="py-16 px-4 border-b border-gray-100 bg-gray-50">
+        <section className="relative py-16 px-4 border-b border-gray-100 bg-gray-50">
           <div className="max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-              Benefícios de Parceria
-            </h3>
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <Zap className="h-8 w-8 text-yellow-500" />
+              <h3 className="text-2xl font-bold text-gray-900 text-center">
+                Benefícios de Parceria
+              </h3>
+              <Zap className="h-8 w-8 text-green-500" />
+            </div>
             
             <div className="grid md:grid-cols-2 gap-8">
               {benefits.map((benefit, index) => (
@@ -437,11 +462,15 @@ export default function MidiaKit() {
         </section>
 
         {/* Contact Section */}
-        <section className="py-16 px-4">
+        <section className="relative py-16 px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8">
-              Contato para Parcerias
-            </h3>
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <Users className="h-8 w-8 text-blue-600" />
+              <h3 className="text-2xl font-bold text-gray-900">
+                Contato para Parcerias
+              </h3>
+              <Users className="h-8 w-8 text-red-600" />
+            </div>
             
             <Card className="max-w-2xl mx-auto border border-gray-200">
               <CardContent className="p-8">
@@ -492,7 +521,21 @@ export default function MidiaKit() {
               </CardContent>
             </Card>
             
-            <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+            <div className="mt-8 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200 relative overflow-hidden">
+              {/* Decorative elements */}
+              <div className="absolute top-2 right-2">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                <span className="text-sm font-medium text-gray-700">Espaço Futuro</span>
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+              </div>
               <p className="text-sm text-gray-500">
                 Espaço reservado para logos de parceiros, gráficos de crescimento e menções na imprensa.
               </p>
