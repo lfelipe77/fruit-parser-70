@@ -133,116 +133,67 @@ export default function MidiaKit() {
           </div>
         </section>
 
-        {/* Gamificação & Oportunidades - Gaming Style */}
-        <section className="relative py-20 px-4 border-b border-gray-100 overflow-hidden">
-          {/* Animated Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-green-900"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-          
-          {/* Floating Game Elements */}
+        {/* Gamificação & Oportunidades - Minimal Gaming Style */}
+        <section className="relative py-16 px-4 border-b border-gray-100 bg-gray-50">
+          {/* Subtle Background Elements */}
           <div className="absolute inset-0 overflow-hidden">
-            {/* Flying Tickets */}
-            <div className="absolute top-10 left-10 animate-bounce">
-              <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-lg shadow-lg text-black font-bold text-xs rotate-12">
-                🎫 BILHETE #001
-              </div>
+            {/* Minimal floating elements */}
+            <div className="absolute top-20 left-20 opacity-20 animate-pulse">
+              <Ticket className="h-8 w-8 text-blue-600 rotate-12" />
             </div>
-            <div className="absolute top-20 right-20 animate-pulse">
-              <div className="bg-gradient-to-r from-green-400 to-blue-500 p-2 rounded-lg shadow-lg text-white font-bold text-xs -rotate-12">
-                🎫 BILHETE #247
-              </div>
+            <div className="absolute bottom-20 right-20 opacity-20 animate-pulse delay-500">
+              <Ticket className="h-6 w-6 text-red-600 -rotate-12" />
             </div>
-            <div className="absolute bottom-20 left-20 animate-bounce delay-300">
-              <div className="bg-gradient-to-r from-pink-400 to-red-500 p-2 rounded-lg shadow-lg text-white font-bold text-xs rotate-45">
-                🎫 BILHETE #589
-              </div>
+            <div className="absolute top-1/2 left-10 opacity-15 animate-bounce">
+              <div className="w-3 h-3 bg-green-600 rounded-full"></div>
             </div>
-            
-            {/* Spinning Money */}
-            <div className="absolute top-32 right-10 animate-spin">
-              <div className="text-4xl">💰</div>
-            </div>
-            <div className="absolute bottom-32 right-32 animate-spin delay-500">
-              <div className="text-3xl">💎</div>
-            </div>
-            <div className="absolute top-1/2 left-10 animate-spin delay-1000">
-              <div className="text-2xl">🪙</div>
-            </div>
-            
-            {/* Dream Elements */}
-            <div className="absolute top-16 left-1/3 animate-pulse">
-              <div className="text-2xl">🏠</div>
-            </div>
-            <div className="absolute bottom-16 right-1/3 animate-pulse delay-700">
-              <div className="text-2xl">🚗</div>
-            </div>
-            <div className="absolute top-1/3 right-16 animate-pulse delay-1000">
-              <div className="text-2xl">📱</div>
-            </div>
-            
-            {/* Sparkle Effects */}
-            <div className="absolute top-10 left-1/2 animate-ping">
-              <div className="text-yellow-400">✨</div>
-            </div>
-            <div className="absolute bottom-10 left-1/4 animate-ping delay-500">
-              <div className="text-yellow-400">⭐</div>
-            </div>
-            <div className="absolute top-1/2 right-1/4 animate-ping delay-1000">
-              <div className="text-yellow-400">🌟</div>
+            <div className="absolute bottom-1/3 right-10 opacity-15 animate-bounce delay-700">
+              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
             </div>
           </div>
           
-          <div className="relative max-w-4xl mx-auto text-center z-10">
-            <div className="mb-8">
-              <div className="inline-flex items-center gap-3 mb-4">
-                <div className="text-4xl animate-bounce">🎮</div>
-                <h3 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                  Gamificação & Oportunidades
-                </h3>
-                <div className="text-4xl animate-bounce delay-300">🎯</div>
+          <div className="relative max-w-4xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Zap className="h-6 w-6 text-blue-600" />
               </div>
-              
-              {/* Game-style subtitle */}
-              <div className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg">
-                🚀 LEVEL UP YOUR DREAMS! 🚀
+              <h3 className="text-2xl font-bold text-gray-900">
+                Gamificação & Oportunidades
+              </h3>
+              <div className="p-2 bg-red-100 rounded-full">
+                <Target className="h-6 w-6 text-red-600" />
               </div>
             </div>
             
             <div className="max-w-3xl mx-auto space-y-6">
-              <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-2xl">
-                <p className="text-xl text-white leading-relaxed">
-                  <span className="text-yellow-400 font-bold">🎲 No Ganhavel</span>, qualquer pessoa pode criar Ganháveis e 
-                  <span className="text-green-400 font-bold"> lucrar através de afiliações e parcerias</span>. 
-                  Nossa plataforma oferece um <span className="text-pink-400 font-bold">ambiente gamificado e viral</span> que maximiza o engajamento.
-                </p>
-              </div>
+              <p className="text-lg text-gray-700">
+                No Ganhavel, qualquer pessoa pode criar Ganháveis e lucrar através de afiliações e parcerias. 
+                Nossa plataforma oferece um ambiente gamificado e viral que maximiza o engajamento.
+              </p>
               
-              <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-2xl">
-                <p className="text-xl text-white leading-relaxed">
-                  <span className="text-blue-400 font-bold">🏆 Marcas ganham</span> visibilidade massiva e engajamento autêntico através de um 
-                  <span className="text-yellow-400 font-bold">ecossistema inovador</span> que transforma promoções tradicionais em 
-                  <span className="text-green-400 font-bold">experiências interativas e transparentes</span>.
-                </p>
-              </div>
+              <p className="text-lg text-gray-700">
+                Marcas ganham visibilidade massiva e engajamento autêntico através de um ecossistema 
+                inovador que transforma promoções tradicionais em experiências interativas e transparentes.
+              </p>
             </div>
             
-            {/* Game Stats Display */}
+            {/* Minimal stats */}
             <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-b from-yellow-400 to-orange-500 rounded-lg p-4 text-black shadow-lg">
-                <div className="text-2xl font-bold">∞</div>
-                <div className="text-sm font-medium">SONHOS</div>
+              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className="text-blue-600 text-xl font-bold mb-1">🎯</div>
+                <div className="text-sm text-gray-600">Engajamento</div>
               </div>
-              <div className="bg-gradient-to-b from-green-400 to-emerald-500 rounded-lg p-4 text-black shadow-lg">
-                <div className="text-2xl font-bold">💯</div>
-                <div className="text-sm font-medium">CHANCES</div>
+              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className="text-green-600 text-xl font-bold mb-1">💰</div>
+                <div className="text-sm text-gray-600">Monetização</div>
               </div>
-              <div className="bg-gradient-to-b from-blue-400 to-cyan-500 rounded-lg p-4 text-black shadow-lg">
-                <div className="text-2xl font-bold">🎮</div>
-                <div className="text-sm font-medium">DIVERSÃO</div>
+              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className="text-red-600 text-xl font-bold mb-1">🚀</div>
+                <div className="text-sm text-gray-600">Crescimento</div>
               </div>
-              <div className="bg-gradient-to-b from-pink-400 to-rose-500 rounded-lg p-4 text-black shadow-lg">
-                <div className="text-2xl font-bold">🏆</div>
-                <div className="text-sm font-medium">VITÓRIAS</div>
+              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className="text-purple-600 text-xl font-bold mb-1">🏆</div>
+                <div className="text-sm text-gray-600">Resultados</div>
               </div>
             </div>
           </div>
