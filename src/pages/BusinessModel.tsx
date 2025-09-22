@@ -309,53 +309,30 @@ const BusinessModel: React.FC = () => {
               </div>
             </div>
 
+            {/* Financial Institution Notice */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200/50">
+              <div className="text-sm text-blue-700 dark:text-blue-300">
+                <span className="font-semibold">Taxas financeiras:</span> R$2 por transação e 2% do valor arrecadado é cobrado pela instituição financeira que garante a segurança dos fundos e liberações
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
-                  <DollarSign className="w-5 h-5 text-primary mt-0.5" />
-                  <div className="text-sm text-foreground/90">
-                    <span className="font-semibold">Taxa fixa por transação:</span> R$2,00 por venda confirmada
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
-                  <TrendingUp className="w-5 h-5 text-primary mt-0.5" />
-                  <div className="text-sm text-foreground/90">
-                    <span className="font-semibold">Margem sobre valor do prêmio:</span> 2% inicial, com possibilidade de aumento até 8–15% conforme escala
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-accent/30">
-                  <Badge variant="outline" className="border-accent/40 text-accent mt-1">Produtos próprios & Afiliados</Badge>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-accent/30">
-                  <Users className="w-5 h-5 text-accent mt-0.5" />
-                  <div className="text-sm text-foreground/90">
-                    <span className="font-semibold">Rede Social de Ganhadores:</span> Comunidade gamificada com rankings, interações e engajamento social
+              <div className="flex items-start gap-3 p-6 rounded-lg bg-white/60 dark:bg-black/20 border border-accent/30">
+                <Trophy className="w-6 h-6 text-accent mt-0.5" />
+                <div>
+                  <div className="font-semibold text-accent mb-2">Afiliados</div>
+                  <div className="text-sm text-foreground/80">
+                    Produtos afiliados próprios integrados à plataforma
                   </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
-                  <Trophy className="w-5 h-5 text-primary mt-0.5" />
-                  <div className="text-sm text-foreground/90">
-                    <span className="font-semibold">Prêmios e produtos afiliados:</span> Produtos afiliados integrados à plataforma
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
-                  <TrendingUp className="w-5 h-5 text-primary mt-0.5" />
-                  <div className="text-sm text-foreground/90">
-                    <span className="font-semibold">Destaques e promoções internas:</span> Posição privilegiada nas páginas e vitrines
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
-                  <Handshake className="w-5 h-5 text-primary mt-0.5" />
-                  <div className="text-sm text-foreground/90">
-                    <span className="font-semibold">Comissões de parceiros (conformidade legal):</span> Parcerias legalizadas
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
-                  <Share2 className="w-5 h-5 text-primary mt-0.5" />
-                  <div className="text-sm text-foreground/90">
-                    <span className="font-semibold">Marketing viral:</span> Monetização via conteúdos e campanhas
+              
+              <div className="flex items-start gap-3 p-6 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+                <Handshake className="w-6 h-6 text-primary mt-0.5" />
+                <div>
+                  <div className="font-semibold text-primary mb-2">Comissão de Parceiros Estratégicos</div>
+                  <div className="text-sm text-foreground/80">
+                    Parcerias legalizadas e em conformidade legal
                   </div>
                 </div>
               </div>
