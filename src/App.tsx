@@ -82,6 +82,7 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import { DebugBanner } from '@/components/DebugBanner';
 import DiagnosticsPage from '@/pages/DiagnosticsPage';
 import EmailTest from '@/pages/admin/EmailTest';
+import MidiaKit from '@/pages/MidiaKit';
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics';
 import { resolveDebugFlags } from '@/utils/debugGate';
 import { DebugHud } from '@/components/DebugHud';
@@ -244,6 +245,7 @@ const AppContent = () => {
         <Route path="/investment" element={<Investment />} />
         <Route path="/proposta-de-investimento" element={<Investment />} />
         <Route path="/business-model" element={<BusinessModel />} />
+        <Route path="/midia-kit" element={<MidiaKit />} />
         {/* Hash route compatibility for direct hash access */}
         <Route path="business-model" element={<BusinessModel />} />
         <Route path="investment" element={<Investment />} />
