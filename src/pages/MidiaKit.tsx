@@ -1,7 +1,8 @@
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Target, TrendingUp, Users, Zap } from "lucide-react";
+import { ExternalLink, Target, TrendingUp, Users, Zap, Check, ArrowRight, Trophy, Ticket } from "lucide-react";
+import ProgressBar from "@/components/ui/progress-bar";
 
 export default function MidiaKit() {
   const examples = [
@@ -128,6 +129,181 @@ export default function MidiaKit() {
                 Marcas ganham visibilidade massiva e engajamento autêntico através de um ecossistema 
                 inovador que transforma promoções tradicionais em experiências interativas e transparentes.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* How Ganhavel Works - Visual Explanation */}
+        <section className="py-20 px-4 border-b border-gray-100">
+          <div className="max-w-6xl mx-auto">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+              Como Funciona o Ganhavel
+            </h3>
+            <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+              Sistema transparente e auditável que garante fairness em todos os sorteios
+            </p>
+            
+            {/* Step by Step Visual Flow */}
+            <div className="grid lg:grid-cols-3 gap-8 mb-16">
+              {/* Step 1: Ganhável Creation */}
+              <Card className="border border-gray-200 hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Target className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">1. Criação do Ganhável</h4>
+                  </div>
+                  
+                  {/* Mock Ganhável Card */}
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 mb-4">
+                    <div className="w-full h-24 bg-gray-300 rounded-md mb-3 flex items-center justify-center">
+                      <span className="text-xs text-gray-500">iPhone 15 Pro</span>
+                    </div>
+                    <h5 className="font-semibold text-sm text-gray-800 mb-2">iPhone 15 Pro 256GB</h5>
+                    <div className="flex justify-between text-xs text-gray-600 mb-2">
+                      <span>Meta: R$ 6.000</span>
+                      <span>R$ 15/bilhete</span>
+                    </div>
+                    <div className="text-xs text-gray-500">400 bilhetes total</div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600">
+                    Organizador define o prêmio, valor-meta e preço por bilhete
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Step 2: Participation */}
+              <Card className="border border-gray-200 hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Users className="h-6 w-6 text-green-600" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">2. Participação</h4>
+                  </div>
+                  
+                  {/* Progress Visualization */}
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 mb-4">
+                    <div className="flex justify-between text-xs text-gray-600 mb-2">
+                      <span>Arrecadado: R$ 4.800</span>
+                      <span>80% concluído</span>
+                    </div>
+                    <ProgressBar value={80} showLabel={false} className="mb-3" />
+                    <div className="text-xs text-gray-500 mb-2">320/400 bilhetes vendidos</div>
+                    
+                    {/* Sample Tickets */}
+                    <div className="grid grid-cols-3 gap-1 mb-2">
+                      <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded text-center">023</div>
+                      <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded text-center">156</div>
+                      <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded text-center">289</div>
+                    </div>
+                    <div className="text-xs text-gray-500">Seus números: 3 bilhetes</div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600">
+                    Usuários compram bilhetes e recebem números únicos
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Step 3: Draw */}
+              <Card className="border border-gray-200 hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Trophy className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h4 className="font-bold text-gray-900 mb-2">3. Sorteio</h4>
+                  </div>
+                  
+                  {/* Completed State */}
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 mb-4 border border-green-200">
+                    <div className="flex items-center justify-center mb-3">
+                      <Check className="h-6 w-6 text-green-600 mr-2" />
+                      <span className="font-semibold text-green-800">100% CONCLUÍDO</span>
+                    </div>
+                    <ProgressBar value={100} showLabel={false} className="mb-3" />
+                    <div className="text-center">
+                      <div className="text-sm font-semibold text-gray-800 mb-1">Número sorteado:</div>
+                      <div className="bg-white border-2 border-red-300 rounded-lg p-2 text-center">
+                        <span className="text-lg font-bold text-red-600">07.156</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">Loteria Federal: 25.156</div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600">
+                    Sorteio acontece quando meta é 100% atingida
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Number Matching Explanation */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 mb-8">
+              <h4 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Sistema de Correspondência de Números
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="text-sm text-gray-600 mb-2">Resultado Loteria Federal:</div>
+                      <div className="text-2xl font-bold text-center text-gray-800">25.156</div>
+                    </div>
+                    
+                    <div className="flex items-center justify-center">
+                      <ArrowRight className="h-6 w-6 text-gray-400" />
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="text-sm text-gray-600 mb-2">Últimos 5 dígitos:</div>
+                      <div className="text-2xl font-bold text-center text-red-600">07.156</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-gray-700 mb-4">
+                    <strong>Transparência total:</strong> Utilizamos os últimos 5 dígitos do resultado 
+                    oficial da Loteria Federal para determinar o ganhador.
+                  </p>
+                  <p className="text-gray-700 mb-4">
+                    Este sistema garante que o sorteio seja completamente auditável e impossível de manipular.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                    onClick={() => window.open('/como-funciona', '_blank')}
+                  >
+                    Ver detalhes completos
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Key Statistics */}
+            <div className="grid md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">100%</div>
+                <div className="text-sm text-gray-600">Transparência nos sorteios</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">0%</div>
+                <div className="text-sm text-gray-600">Taxa de manipulação</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-red-600 mb-2">24/7</div>
+                <div className="text-sm text-gray-600">Disponibilidade</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-2">∞</div>
+                <div className="text-sm text-gray-600">Escalabilidade</div>
+              </div>
             </div>
           </div>
         </section>
