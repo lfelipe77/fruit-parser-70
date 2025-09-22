@@ -133,153 +133,215 @@ export default function MidiaKit() {
           </div>
         </section>
 
-        {/* How Ganhavel Works - Visual Explanation */}
+        {/* How Ganhavel Works - Visual Interface */}
         <section className="py-20 px-4 border-b border-gray-100">
           <div className="max-w-6xl mx-auto">
             <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
               Como Funciona o Ganhavel
             </h3>
             <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-              Sistema transparente e auditável que garante fairness em todos os sorteios
+              Interface real da plataforma - Sistema transparente e auditável
             </p>
             
-            {/* Step by Step Visual Flow */}
-            <div className="grid lg:grid-cols-3 gap-8 mb-16">
-              {/* Step 1: Ganhável Creation */}
-              <Card className="border border-gray-200 hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="text-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Target className="h-6 w-6 text-blue-600" />
+            {/* Real Ganhável Interface Mockup */}
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 mb-12">
+              <div className="grid lg:grid-cols-5 gap-8 items-start">
+                {/* Left: Product & Details */}
+                <div className="lg:col-span-2">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    {/* Product Image */}
+                    <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg mb-4 flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">Smart TV 43" AIWA</span>
                     </div>
-                    <h4 className="font-bold text-gray-900 mb-2">1. Criação do Ganhável</h4>
-                  </div>
-                  
-                  {/* Mock Ganhável Card */}
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 mb-4">
-                    <div className="w-full h-24 bg-gray-300 rounded-md mb-3 flex items-center justify-center">
-                      <span className="text-xs text-gray-500">iPhone 15 Pro</span>
-                    </div>
-                    <h5 className="font-semibold text-sm text-gray-800 mb-2">iPhone 15 Pro 256GB</h5>
-                    <div className="flex justify-between text-xs text-gray-600 mb-2">
-                      <span>Meta: R$ 6.000</span>
-                      <span>R$ 15/bilhete</span>
-                    </div>
-                    <div className="text-xs text-gray-500">400 bilhetes total</div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600">
-                    Organizador define o prêmio, valor-meta e preço por bilhete
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Step 2: Participation */}
-              <Card className="border border-gray-200 hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="text-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Users className="h-6 w-6 text-green-600" />
-                    </div>
-                    <h4 className="font-bold text-gray-900 mb-2">2. Participação</h4>
-                  </div>
-                  
-                  {/* Progress Visualization */}
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 mb-4">
-                    <div className="flex justify-between text-xs text-gray-600 mb-2">
-                      <span>Arrecadado: R$ 4.800</span>
-                      <span>80% concluído</span>
-                    </div>
-                    <ProgressBar value={80} showLabel={false} className="mb-3" />
-                    <div className="text-xs text-gray-500 mb-2">320/400 bilhetes vendidos</div>
                     
-                    {/* Sample Tickets */}
-                    <div className="grid grid-cols-3 gap-1 mb-2">
-                      <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded text-center">023</div>
-                      <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded text-center">156</div>
-                      <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded text-center">289</div>
-                    </div>
-                    <div className="text-xs text-gray-500">Seus números: 3 bilhetes</div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600">
-                    Usuários compram bilhetes e recebem números únicos
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Step 3: Draw */}
-              <Card className="border border-gray-200 hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="text-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Trophy className="h-6 w-6 text-red-600" />
-                    </div>
-                    <h4 className="font-bold text-gray-900 mb-2">3. Sorteio</h4>
-                  </div>
-                  
-                  {/* Completed State */}
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 mb-4 border border-green-200">
-                    <div className="flex items-center justify-center mb-3">
-                      <Check className="h-6 w-6 text-green-600 mr-2" />
-                      <span className="font-semibold text-green-800">100% CONCLUÍDO</span>
-                    </div>
-                    <ProgressBar value={100} showLabel={false} className="mb-3" />
-                    <div className="text-center">
-                      <div className="text-sm font-semibold text-gray-800 mb-1">Número sorteado:</div>
-                      <div className="bg-white border-2 border-red-300 rounded-lg p-2 text-center">
-                        <span className="text-lg font-bold text-red-600">07.156</span>
+                    {/* Product Title */}
+                    <h4 className="font-bold text-lg text-gray-900 mb-2">Smart TV 43" AIWA da Americanas</h4>
+                    
+                    {/* Pricing Info */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Meta:</span>
+                        <span className="font-semibold text-gray-900">R$ 1.699,00</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-2">Loteria Federal: 25.156</div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600">
-                    Sorteio acontece quando meta é 100% atingida
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Number Matching Explanation */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 mb-8">
-              <h4 className="text-xl font-bold text-gray-900 mb-4 text-center">
-                Sistema de Correspondência de Números
-              </h4>
-              
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div>
-                  <div className="space-y-4">
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <div className="text-sm text-gray-600 mb-2">Resultado Loteria Federal:</div>
-                      <div className="text-2xl font-bold text-center text-gray-800">25.156</div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Preço por bilhete:</span>
+                        <span className="font-semibold text-gray-900">R$ 2,00</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total de bilhetes:</span>
+                        <span className="font-semibold text-gray-900">850</span>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center justify-center">
-                      <ArrowRight className="h-6 w-6 text-gray-400" />
-                    </div>
-                    
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <div className="text-sm text-gray-600 mb-2">Últimos 5 dígitos:</div>
-                      <div className="text-2xl font-bold text-center text-red-600">07.156</div>
+                    {/* Arrow & Label */}
+                    <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 hidden lg:flex items-center">
+                      <div className="bg-blue-600 text-white px-3 py-1 rounded-l-lg text-sm font-medium">
+                        Produto & Detalhes
+                      </div>
+                      <ArrowRight className="h-6 w-6 text-blue-600" />
                     </div>
                   </div>
                 </div>
                 
+                {/* Center: Progress & Actions */}
+                <div className="lg:col-span-2 relative">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    {/* Progress Section */}
+                    <div className="mb-6">
+                      <h5 className="font-semibold text-gray-900 mb-2">Progresso da Campanha</h5>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Arrecadado:</span>
+                          <span className="font-semibold text-green-600">R$ 1.359,00</span>
+                        </div>
+                        <ProgressBar value={80} showLabel={false} className="mb-2" />
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>680/850 bilhetes</span>
+                          <span>80% concluído</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Purchase Section */}
+                    <div className="border-t border-gray-100 pt-4">
+                      <h5 className="font-semibold text-gray-900 mb-3">Comprar Bilhetes</h5>
+                      <div className="flex gap-2 mb-3">
+                        <input 
+                          type="number" 
+                          defaultValue="2" 
+                          className="w-20 px-3 py-2 border border-gray-300 rounded-md text-center"
+                          disabled
+                        />
+                        <div className="flex-1 bg-green-600 text-white rounded-md px-4 py-2 text-center font-medium">
+                          Comprar 2 bilhetes
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 text-center">
+                        Total a pagar: <strong>R$ 4,00</strong>
+                      </div>
+                    </div>
+                    
+                    {/* Arrow & Label */}
+                    <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 hidden lg:flex items-center">
+                      <div className="bg-green-600 text-white px-3 py-1 rounded-l-lg text-sm font-medium">
+                        Participação
+                      </div>
+                      <ArrowRight className="h-6 w-6 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right: Tickets */}
+                <div className="lg:col-span-1 relative">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h5 className="font-semibold text-gray-900 mb-3">Seus Números</h5>
+                    
+                    {/* Sample Ticket Numbers - 5 pairs format */}
+                    <div className="space-y-3">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="text-xs text-green-600 mb-1">Bilhete #1</div>
+                        <div className="font-mono font-bold text-green-800 text-sm">
+                          23-44-51-53-65
+                        </div>
+                      </div>
+                      
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="text-xs text-green-600 mb-1">Bilhete #2</div>
+                        <div className="font-mono font-bold text-green-800 text-sm">
+                          12-38-47-62-89
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs text-gray-500 text-center mt-2">
+                        💡 Números gerados aleatoriamente
+                      </div>
+                    </div>
+                    
+                    {/* Arrow & Label */}
+                    <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 lg:hidden flex flex-col items-center">
+                      <ArrowRight className="h-6 w-6 text-red-600 rotate-90" />
+                      <div className="bg-red-600 text-white px-3 py-1 rounded-lg text-sm font-medium mt-2">
+                        Seus Bilhetes
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Completion & Draw Result */}
+            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-8 mb-8 border border-red-200">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-600 rounded-full mb-4">
+                  <Trophy className="h-8 w-8 text-white" />
+                </div>
+                <h4 className="text-xl font-bold text-gray-900 mb-2">Ganhável Finalizado - 100% Atingido!</h4>
+                <p className="text-gray-700">O sorteio acontece automaticamente quando a meta é atingida</p>
+              </div>
+              
+              {/* Final Progress */}
+              <div className="max-w-md mx-auto mb-6">
+                <ProgressBar value={100} showLabel={false} className="mb-2" />
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>850/850 bilhetes vendidos</span>
+                  <span>R$ 1.699,00 arrecadados</span>
+                </div>
+              </div>
+              
+              {/* Draw Result */}
+              <div className="bg-white rounded-lg p-6 max-w-md mx-auto text-center">
+                <h5 className="font-semibold text-gray-900 mb-3">Resultado do Sorteio</h5>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">Loteria Federal (último sorteio):</div>
+                    <div className="text-2xl font-bold text-gray-800">92.565</div>
+                  </div>
+                  
+                  <ArrowRight className="h-6 w-6 text-gray-400 mx-auto" />
+                  
+                  <div>
+                    <div className="text-sm text-gray-600 mb-1">Número ganhador:</div>
+                    <div className="bg-red-100 border-2 border-red-300 rounded-lg p-3">
+                      <div className="text-xl font-bold text-red-600 font-mono">23-44-51-53-65</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="text-sm font-semibold text-green-800">🎉 Bilhete #1 é o ganhador!</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* How Numbers Match - Simplified */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 mb-8">
+              <h4 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                Sistema de Correspondência Transparente
+              </h4>
+              
+              <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
                   <p className="text-gray-700 mb-4">
-                    <strong>Transparência total:</strong> Utilizamos os últimos 5 dígitos do resultado 
-                    oficial da Loteria Federal para determinar o ganhador.
+                    <strong>100% Auditável:</strong> Utilizamos os resultados oficiais da Loteria Federal 
+                    para determinar o ganhador de cada Ganhável.
                   </p>
                   <p className="text-gray-700 mb-4">
-                    Este sistema garante que o sorteio seja completamente auditável e impossível de manipular.
+                    Cada bilhete possui números únicos de 5 pares que são comparados com o resultado oficial, 
+                    garantindo total transparência e impossibilidade de manipulação.
                   </p>
+                  <p className="text-gray-700 mb-4">
+                    <strong>Modelo versátil:</strong> Esse modelo pode ser utilizado também como uma 
+                    "vaquinha virtual" para campanhas específicas.
+                  </p>
+                </div>
+                
+                <div className="text-center">
                   <Button 
                     variant="outline" 
                     className="border-blue-600 text-blue-600 hover:bg-blue-50"
                     onClick={() => window.open('/como-funciona', '_blank')}
                   >
-                    Ver detalhes completos
+                    Ver Como Funciona - Detalhes Completos
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
