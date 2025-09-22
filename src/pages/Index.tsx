@@ -14,6 +14,8 @@ const Index = () => {
         title="Ganhavel – Ganhe prêmios reais com transparência e sorte oficial"
         description="Ganhavel: participe ou lance rifas com prêmios reais, transparência total e sorteios auditáveis pela Loteria Federal. Crie, compartilhe e ganhe."
         canonical="https://ganhavel.com"
+        ogImage="https://ganhavel.com/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png"
+        ogImageAlt="Ganhavel plataforma de rifas online - pessoas celebrando prêmios de carros, dinheiro, viagens e tecnologia com transparência total"
         structuredData={structuredData}
       />
       <CrowdfundingHome />

@@ -145,8 +145,12 @@ export default function HeroSection() {
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img
                   src={heroImage}
-                  alt="Ganhavel – amigos comemorando prêmios reais: carros, viagens e tecnologia"
+                  alt="Ganhavel plataforma de rifas online - pessoas celebrando prêmios de carros, dinheiro, viagens e tecnologia com transparência total"
                   className="w-full h-[250px] md:h-[300px] object-cover"
+                  loading="eager"
+                  fetchPriority="high"
+                  width="400"
+                  height="300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
               </div>
@@ -227,8 +231,12 @@ export default function HeroSection() {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <img
                 src={heroImage}
-                alt="Ganhavel – amigos comemorando prêmios reais: carros, viagens e tecnologia"
+                alt="Ganhavel plataforma de rifas online - pessoas celebrando prêmios de carros, dinheiro, viagens e tecnologia com transparência total"
                 className="w-full h-[500px] object-cover"
+                loading="eager"
+                fetchPriority="high"
+                width="600"
+                height="500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
