@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Rocket, Target, LineChart, Users, Shield, TrendingUp, DollarSign, Share2, Zap, Globe2, Handshake } from 'lucide-react';
+import { Rocket, Target, LineChart, Users, Shield, TrendingUp, DollarSign, Share2, Zap, Globe2, Handshake, BarChart3, AlertTriangle, Trophy, Calendar, Building } from 'lucide-react';
 
 const ogImage = '/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png';
 
@@ -80,30 +80,169 @@ const BusinessModel: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-green-700 dark:text-green-400 text-2xl">
               <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse" />
-              Visão Geral
+              Visão Geral — MVP Pronto
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-lg leading-relaxed text-foreground/90">
-              Ganhavel é uma plataforma onde qualquer pessoa pode lançar, participar e promover sorteios de prêmios reais ("ganhaveis"),
-              conectando produtos físicos, digitais, afiliados e virais a um ecossistema transparente e validado.
+              Ganhavel é uma plataforma onde qualquer pessoa pode lançar, participar e promover sorteios de prêmios reais ("ganhaveis").
+              Oferecemos produtos diversos: físicos, digitais, afiliados, próprios, alheios e virais.
             </p>
             <div className="bg-white/60 dark:bg-black/20 p-4 rounded-lg">
-              <div className="text-sm">Nosso modelo é simples: <span className="font-semibold">Publica → Compartilha → Vende → Sorteia → Entrega</span></div>
-              <div className="text-sm text-muted-foreground">Sempre com validação pela Loteria Federal e segurança total no fluxo de entrega.</div>
+              <div className="text-sm">Modelo simples: <span className="font-semibold">Publica → Vende → Sorteia → Entrega</span></div>
+              <div className="text-sm text-muted-foreground">Pagamento seguro: liberado somente com confirmação de entrega</div>
             </div>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
                 <Shield className="w-6 h-6 text-green-600" />
-                <span className="text-sm">Validação via Loteria Federal</span>
+                <span className="text-sm">Segurança total com validação via Loteria Federal</span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
                 <Users className="w-6 h-6 text-green-600" />
-                <span className="text-sm">Comunidade e afiliados</span>
+                <span className="text-sm">Produtos afiliados próprios, links próprios</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
+                <DollarSign className="w-6 h-6 text-green-600" />
+                <span className="text-sm">Infinitas fontes de renda e marketing viral</span>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/20 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-green-600" />
                 <span className="text-sm">Escalável e transparente</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Análise de Mercado */}
+        <Card className="mb-12 overflow-hidden bg-gradient-to-br from-orange-50/80 to-red-50/60 dark:from-orange-950/30 dark:to-red-950/20 border-orange-200/50 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-orange-700 dark:text-orange-400 text-2xl">
+              <div className="p-2 bg-orange-500/20 rounded-lg">
+                <BarChart3 className="w-6 h-6 text-orange-600" />
+              </div>
+              Análise de Mercado
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-lg leading-relaxed text-foreground/90">
+              O mercado de jogos de azar no Brasil é explosivo, com uma demanda reprimida por opções legais e seguras. 
+              Ganhavel posiciona-se para capturar usuários de rifas ilegais e jogos como o "Tigrinho", oferecendo uma plataforma regulada, transparente e com viralidade orgânica.
+            </p>
+            <div className="overflow-x-auto">
+              <div className="min-w-full bg-white/60 dark:bg-black/20 rounded-lg p-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left p-2 font-semibold">Modalidade</th>
+                      <th className="text-left p-2 font-semibold">Legalidade</th>
+                      <th className="text-left p-2 font-semibold">Faturamento 2025 (Estimado)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2">Rifas (pessoa física/online)</td>
+                      <td className="p-2">
+                        <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                          Ilegal (exceto beneficentes)
+                        </Badge>
+                      </td>
+                      <td className="p-2 font-semibold">R$5-10 bilhões</td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2">Tigrinho e slots online</td>
+                      <td className="p-2">
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          Regulamentado em 2025; fraudes comuns
+                        </Badge>
+                      </td>
+                      <td className="p-2 font-semibold">R$50-100 bilhões</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 font-semibold">Total Jogos de Azar</td>
+                      <td className="p-2">
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                          Misto
+                        </Badge>
+                      </td>
+                      <td className="p-2 font-bold text-primary">R$400-500 bilhões (legal + ilegal)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-4 rounded-lg border border-primary/20">
+              <p className="text-sm">
+                <span className="font-semibold">Demanda e Potencial:</span> A regulamentação de 2025 (Lei 14.790) abre espaço para plataformas legais como Ganhavel, 
+                que pode migrar usuários de mercados ilegais (R$100B TAM estimado para rifas + slots) para um modelo validado pela Loteria Federal, 
+                com segurança e escalabilidade via marketing viral e comunidade gamificada.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Concorrentes e Diferenciais */}
+        <Card className="mb-12 overflow-hidden bg-gradient-to-br from-blue-50/80 to-indigo-50/60 dark:from-blue-950/30 dark:to-indigo-950/20 border-blue-200/50 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-blue-700 dark:text-blue-400 text-2xl">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Trophy className="w-6 h-6 text-blue-600" />
+              </div>
+              Concorrentes e Diferenciais
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-lg leading-relaxed text-foreground/90">
+              Plataformas como 123Rifas, Rifa Tech, Rife-me e Rifa 321 dominam as rifas online no Brasil, 
+              porém atuam em zona cinzenta legal, com prêmios limitados e pouca automação. A Ganhavel resolve esses pontos com validação pela Loteria Federal e fluxo 100% automatizado.
+            </p>
+            <div className="overflow-x-auto">
+              <div className="min-w-full bg-white/60 dark:bg-black/20 rounded-lg p-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left p-2 font-semibold">Aspecto</th>
+                      <th className="text-left p-2 font-semibold">Plataformas Existentes</th>
+                      <th className="text-left p-2 font-semibold text-primary">Ganhavel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Legal</td>
+                      <td className="p-2">Frequentemente sem SPA/MF; risco.</td>
+                      <td className="p-2 text-primary font-medium">Validação Loteria Federal + pagamento só após entrega.</td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Prêmios</td>
+                      <td className="p-2">Principalmente físicos/beneficentes.</td>
+                      <td className="p-2 text-primary font-medium">Físicos, digitais, afiliados e virais — sem estoque.</td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Receita</td>
+                      <td className="p-2">Taxas fixas ou comissões altas.</td>
+                      <td className="p-2 text-primary font-medium">Taxa + % afiliados + rifas de créditos de mídia.</td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Transparência</td>
+                      <td className="p-2">Baseada na confiança, sem prova.</td>
+                      <td className="p-2 text-primary font-medium">Comprovantes, confirmação de entrega, validação por loteria.</td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Automação</td>
+                      <td className="p-2">Pagamentos básicos.</td>
+                      <td className="p-2 text-primary font-medium">Onboarding no‑code, IA e antifraude integrados.</td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Mercado</td>
+                      <td className="p-2">Foco Brasil.</td>
+                      <td className="p-2 text-primary font-medium">Pronta para BRL/USD/EUR e multi‑idiomas.</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 font-medium">Marketing</td>
+                      <td className="p-2">Divulgação por organizador.</td>
+                      <td className="p-2 text-primary font-medium">Viralização, rifas de afiliados e recompensas sociais.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </CardContent>
@@ -160,22 +299,40 @@ const BusinessModel: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
-              <DollarSign className="w-5 h-5 text-primary mt-0.5" />
-              <div className="text-sm text-foreground/90">
-                <span className="font-semibold">Destaque:</span> Não retemos qualquer valor sobre os valores ou prêmios. Contamos com parceiro regulamentado que recebe: taxa por transação, taxa do valor / API money release — 2% (com potencial de ajuste no futuro).
-                <div className="mt-2">
-                  <Badge variant="outline" className="border-accent/40 text-accent">Produtos próprios & Afiliados</Badge>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+                  <DollarSign className="w-5 h-5 text-primary mt-0.5" />
+                  <div className="text-sm text-foreground/90">
+                    <span className="font-semibold">Taxa fixa por transação:</span> R$2,00 por venda confirmada
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+                  <TrendingUp className="w-5 h-5 text-primary mt-0.5" />
+                  <div className="text-sm text-foreground/90">
+                    <span className="font-semibold">Margem sobre valor do prêmio:</span> 2% inicial, com possibilidade de aumento até 8–15% conforme escala
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-accent/30">
+                  <Badge variant="outline" className="border-accent/40 text-accent mt-1">Produtos próprios & Afiliados</Badge>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-accent/30">
+                  <Users className="w-5 h-5 text-accent mt-0.5" />
+                  <div className="text-sm text-foreground/90">
+                    <span className="font-semibold">Rede Social de Ganhadores:</span> Comunidade gamificada com rankings, interações e engajamento social
+                  </div>
                 </div>
               </div>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                'Taxa por transação confirmada',
                 'Prêmios e produtos afiliados',
                 'Destaques e promoções internas',
-                'Comissões de parceiros (em conformidade legal)',
-                'Marketing viral e gamificação na comunidade de ganhadores',
+                'Comissões de parceiros (conformidade legal)',
+                'Marketing viral',
+                'Monetização via conteúdos e campanhas',
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-border/50">
                   <TrendingUp className="w-5 h-5 text-primary" />
@@ -186,28 +343,158 @@ const BusinessModel: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Oportunidade de Viralidade */}
+        {/* Projeções e Valuações */}
+        <Card className="mb-12 overflow-hidden border-green-200/50 bg-gradient-to-br from-green-50/80 to-emerald-50/60 dark:from-green-950/30 dark:to-emerald-950/20 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-green-700 dark:text-green-400 text-2xl">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <BarChart3 className="w-6 h-6 text-green-600" />
+              </div>
+              Projeções e Valuações
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-lg leading-relaxed text-foreground/90">
+              Projeções de Crescimento (3 anos) — Baseado em TAM de R$100B (rifas + slots online), 
+              com receita média de 10% do GTV (R$2/trans + 2% prêmio) e múltiplo de valuação 10x receita no Ano 3.
+            </p>
+            <div className="overflow-x-auto">
+              <div className="min-w-full bg-white/60 dark:bg-black/20 rounded-lg p-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left p-2 font-semibold">Cenário</th>
+                      <th className="text-left p-2 font-semibold">Captura Mercado (Ano 3)</th>
+                      <th className="text-left p-2 font-semibold">Receita Ano 1</th>
+                      <th className="text-left p-2 font-semibold">Receita Ano 2</th>
+                      <th className="text-left p-2 font-semibold">Receita Ano 3</th>
+                      <th className="text-left p-2 font-semibold">Valuação (Ano 3)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Conservador</td>
+                      <td className="p-2">5% (R$5B GTV)</td>
+                      <td className="p-2">R$100M</td>
+                      <td className="p-2">R$200M</td>
+                      <td className="p-2">R$500M</td>
+                      <td className="p-2 font-bold text-green-600">R$5 bilhões</td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="p-2 font-medium">Moderado</td>
+                      <td className="p-2">15% (R$15B GTV)</td>
+                      <td className="p-2">R$200M</td>
+                      <td className="p-2">R$600M</td>
+                      <td className="p-2">R$1.5B</td>
+                      <td className="p-2 font-bold text-blue-600">R$15 bilhões</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2 font-medium">Agressivo</td>
+                      <td className="p-2">30% (R$30B GTV)</td>
+                      <td className="p-2">R$400M</td>
+                      <td className="p-2">R$1.2B</td>
+                      <td className="p-2">R$3B</td>
+                      <td className="p-2 font-bold text-primary">R$30 bilhões</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 p-4 rounded-lg border border-green-300/50">
+                <div className="text-sm text-green-800 dark:text-green-200">
+                  <span className="font-semibold">Se capturarmos 5% do mercado</span><br />
+                  Valuação de R$5 bilhões em 3 anos
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 p-4 rounded-lg border border-blue-300/50">
+                <div className="text-sm text-blue-800 dark:text-blue-200">
+                  <span className="font-semibold">Se capturarmos 15% do mercado</span><br />
+                  Valuação de R$15 bilhões em 3 anos
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-primary/20 to-accent/20 p-4 rounded-lg border border-primary/30">
+                <div className="text-sm text-primary">
+                  <span className="font-semibold">Se capturarmos 30% do mercado</span><br />
+                  Valuação de R$30 bilhões em 3 anos
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Oportunidade de Marketing e Viralidade */}
         <Card className="mb-12 overflow-hidden border-accent/20 bg-gradient-to-br from-accent/5 to-accent/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-2xl">
               <div className="p-2 bg-accent/20 rounded-lg">
                 <Share2 className="w-6 h-6 text-accent" />
               </div>
-              Oportunidade de Viralidade
+              Oportunidade de Marketing e Viralidade
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 grid md:grid-cols-2 gap-4">
-            {[
-              'Quem lança → compartilha para vender',
-              'Quem compra → compartilha para que o sorteio aconteça',
-              'Expansão natural via redes sociais, influenciadores e afiliados',
-              'Pacotes especiais com experiências e prêmios virais',
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-border/50">
-                <Globe2 className="w-5 h-5 text-accent" />
-                <span className="text-sm">{item}</span>
+          <CardContent className="p-8 space-y-6">
+            <p className="text-lg leading-relaxed text-foreground/90">
+              Transformamos a plataforma em uma rede social de sorteios honestos, com suporte e engajamento comunitário.
+            </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                'Quem lança o ganhavel (link ou produto) → compartilha para vender',
+                'Quem compra → compartilha para que o sorteio aconteça → viralidade orgânica',
+                'Potencial de expansão via marketing de influência e afiliados massivos',
+                'Pacotes de marketing envolvendo influencers, jatinhos, cruzeiros e prêmios virais para grande alcance orgânico',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-border/50">
+                  <Globe2 className="w-5 h-5 text-accent" />
+                  <span className="text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Missão */}
+        <Card className="mb-12 overflow-hidden border-purple-200/50 bg-gradient-to-br from-purple-50/80 to-violet-50/60 dark:from-purple-950/30 dark:to-violet-950/20 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-purple-700 dark:text-purple-400 text-2xl">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Target className="w-6 h-6 text-purple-600" />
               </div>
-            ))}
+              Missão
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-lg leading-relaxed text-foreground/90">
+              Transformar milhões em protagonistas da própria renda, permitindo que, de forma responsável e segura, 
+              lancem prêmios — inclusive de afiliados — e alcancem novas oportunidades de ganho e conexão.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Blindagem e Observações Legais */}
+        <Card className="mb-12 overflow-hidden border-yellow-200/50 bg-gradient-to-br from-yellow-50/80 to-amber-50/60 dark:from-yellow-950/30 dark:to-amber-950/20 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-yellow-700 dark:text-yellow-400 text-2xl">
+              <div className="p-2 bg-yellow-500/20 rounded-lg">
+                <Shield className="w-6 h-6 text-yellow-600" />
+              </div>
+              Blindagem e Observações Legais
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                'Não retemos dinheiro de sorteios (fundos ficam com o organizador)',
+                'Sorteios validados pela Caixa Econômica / Loteria Federal',
+                'Não recebemos valores diretamente do sorteio — atuamos como facilitadora tecnológica e de marketing',
+                'Modelo estruturado para minimizar riscos regulatórios e fiscais',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-yellow-300/50">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                  <span className="text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -237,25 +524,71 @@ const BusinessModel: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Roadmap */}
+        {/* Roadmap de Execução */}
         <Card className="mb-12 overflow-hidden border-primary/20">
           <CardHeader>
-            <CardTitle className="text-2xl">Roadmap</CardTitle>
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Calendar className="w-6 h-6 text-primary" />
+              </div>
+              Roadmap de Execução
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 grid md:grid-cols-2 gap-4">
-            {[
-              'MVP funcional validado',
-              'Conclusão técnica e ajustes',
-              'Ativação de afiliados e parcerias estratégicas',
-              'Crescimento com base em comunidade, marketing e tecnologia',
-            ].map((item) => (
-              <div key={item} className="p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-border/50">
-                <div className="flex items-center gap-3">
-                  <Rocket className="w-5 h-5 text-primary" />
-                  <span className="text-sm">{item}</span>
+          <CardContent className="p-8 space-y-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-lg bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 border border-green-300/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full" />
+                  <span className="text-sm font-semibold text-green-800 dark:text-green-200">MVP funcional: ✅</span>
                 </div>
               </div>
-            ))}
+              <div className="p-4 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-300/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">Finalização do back-end em 3/5 dias</span>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-300/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <Rocket className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-semibold text-purple-800 dark:text-purple-200">Lançamento oficial até 10/14 dias (fingers crossed)</span>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Ativação de afiliados: mês 1–2</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-6 rounded-lg border border-primary/20">
+              <p className="text-lg font-semibold text-primary mb-2">Validação de mercado imediata: mês 1/2 (fingers crossed)</p>
+              <p className="text-sm text-muted-foreground">Crescimento baseado em comunidade, marketing viral e tecnologia avançada.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Estrutura do Investimento */}
+        <Card className="mb-12 overflow-hidden border-indigo-200/50 bg-gradient-to-br from-indigo-50/80 to-blue-50/60 dark:from-indigo-950/30 dark:to-blue-950/20 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-indigo-700 dark:text-indigo-400 text-2xl">
+              <div className="p-2 bg-indigo-500/20 rounded-lg">
+                <Building className="w-6 h-6 text-indigo-600" />
+              </div>
+              Estrutura do Investimento
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white/60 dark:bg-black/20 p-6 rounded-lg border border-indigo-200/50">
+                <h4 className="font-semibold text-indigo-700 dark:text-indigo-400 mb-2">Exclusividade transações x tempo</h4>
+                <p className="text-sm text-muted-foreground">A definir em comum acordo (parceria estratégica).</p>
+              </div>
+              <div className="bg-white/60 dark:bg-black/20 p-6 rounded-lg border border-indigo-200/50">
+                <h4 className="font-semibold text-indigo-700 dark:text-indigo-400 mb-2">Shares</h4>
+                <p className="text-sm text-muted-foreground">A discutir conforme aporte, metas e avaliações futuras.</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </main>
