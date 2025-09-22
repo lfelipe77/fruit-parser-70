@@ -261,7 +261,7 @@ const BusinessModel: React.FC = () => {
           <CardContent className="p-8">
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 p-6 rounded-xl border border-blue-200/50">
-                <h3 className="text-xl font-bold text-blue-700 dark:text-blue-300 mb-2">Fase 1 – Desenvolvimento e Preparação</h3>
+                <h3 className="text-xl font-bold text-blue-700 dark:text-blue-300 mb-2">Fase 1 – Desenvolvimento e Preparação ✅ COMPLETA</h3>
                 <ul className="list-disc pl-5 space-y-1 text-sm text-blue-800 dark:text-blue-200">
                   <li>Finalização de funcionalidades e back-end</li>
                   <li>Estrutura de integrações com marketplaces e ferramentas SaaS</li>
