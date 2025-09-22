@@ -168,8 +168,12 @@ export default function MidiaKit() {
                         <span className="font-semibold text-gray-900">R$ 2,00</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Total de bilhetes:</span>
-                        <span className="font-semibold text-gray-900">850</span>
+                        <span className="text-gray-600">Participantes:</span>
+                        <span className="font-semibold text-gray-900">327 pessoas</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Última compra:</span>
+                        <span className="font-semibold text-gray-900">há 2 min</span>
                       </div>
                     </div>
                     
@@ -294,7 +298,7 @@ export default function MidiaKit() {
                 <div className="space-y-3">
                   <div>
                     <div className="text-sm text-gray-600 mb-1">Loteria Federal (último sorteio):</div>
-                    <div className="text-2xl font-bold text-gray-800">92.565</div>
+                    <div className="text-2xl font-bold text-gray-800 font-mono">23-44-51-53-65</div>
                   </div>
                   
                   <ArrowRight className="h-6 w-6 text-gray-400 mx-auto" />
