@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Rocket, Target, LineChart, Users, Shield, TrendingUp, DollarSign, Share2, Zap, Globe2, Handshake, BarChart3, AlertTriangle, Trophy, Calendar, Building } from 'lucide-react';
+import { Rocket, Target, LineChart, Users, Shield, TrendingUp, DollarSign, Share2, Zap, Globe2, Handshake, BarChart3, AlertTriangle, Trophy, Calendar, Building, CheckCircle } from 'lucide-react';
 
 const ogImage = '/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png';
 
@@ -517,6 +517,29 @@ const BusinessModel: React.FC = () => {
             </div>
             <div className="bg-white/60 dark:bg-black/20 p-6 rounded-xl border border-border/50">
               <p className="text-sm"><span className="font-semibold">Win–Win:</span> Cada parceria gera valor para ambos os lados, fortalecendo a rede e ampliando o alcance da plataforma.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Fase 1 desenvolvimento - Completa */}
+        <Card className="mb-12 overflow-hidden border-green-200/50 bg-gradient-to-br from-green-50/80 to-emerald-50/60 dark:from-green-950/30 dark:to-emerald-950/20 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-green-700 dark:text-green-400 text-2xl">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              Fase 1 desenvolvimento - Completa
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 p-6 rounded-lg border border-green-300/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-4 h-4 bg-green-500 rounded-full" />
+                <span className="text-lg font-semibold text-green-800 dark:text-green-200">MVP Funcional Finalizado</span>
+              </div>
+              <p className="text-sm text-green-700 dark:text-green-300">
+                Plataforma completa com funcionalidades core implementadas, validação pela Loteria Federal integrada e sistema de pagamentos seguro.
+              </p>
             </div>
           </CardContent>
         </Card>
