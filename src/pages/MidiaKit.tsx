@@ -363,7 +363,7 @@ export default function MidiaKit() {
                   <div>
                     <div className="text-sm text-gray-600 mb-1">Número ganhador:</div>
                     <div className="bg-red-100 border-2 border-red-300 rounded-lg p-3">
-                      <div className="text-xl font-bold text-red-600 font-mono">23-44-51-53-65</div>
+                      <div className="text-xl font-bold text-red-600 font-mono">23-44-51-53-71</div>
                     </div>
                   </div>
                 </div>
