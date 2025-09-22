@@ -1,7 +1,7 @@
 import SEOHead from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Target, TrendingUp, Users, Zap, Check, ArrowRight, Trophy, Ticket, Sparkles, Award, Shield, Phone, Mail, Instagram, Minus } from "lucide-react";
+import { ExternalLink, Target, TrendingUp, Users, Zap, Check, ArrowRight, Trophy, Ticket, Sparkles, Award, Shield, Phone, Mail, Instagram, Minus, User, Globe } from "lucide-react";
 import ProgressBar from "@/components/ui/progress-bar";
 import ganhavelLogo from "@/assets/ganhavel-logo.png";
 
@@ -431,7 +431,47 @@ export default function MidiaKit() {
           </div>
         </section>
 
+        {/* Sobre o Fundador */}
+        <section className="py-20 px-4 border-b border-gray-200 bg-gray-50">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center gap-4 mb-12">
+              <div className="p-3 bg-blue-50 rounded-full">
+                <User className="h-7 w-7 text-blue-600" />
+              </div>
+              <h3 className="text-3xl font-bold text-gray-900 text-center">
+                Sobre o Fundador
+              </h3>
+            </div>
+            
+            <div className="max-w-3xl mx-auto text-center">
+              <p className="text-xl text-gray-900 leading-relaxed">
+                Felipe Ribeiro – Profissional de automação com experiência internacional, idealizou há anos um marketplace de sorteios justo e transparente. 
+                Após planejamento e dedicação, concluiu o MVP da Ganhavel, desenvolvido com atenção máxima à qualidade, segurança e funcionalidade.
+              </p>
+            </div>
+          </div>
+        </section>
 
+        {/* Objetivo Estratégico */}
+        <section className="py-20 px-4 border-b border-gray-200 bg-white">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center gap-4 mb-12">
+              <div className="p-3 bg-green-50 rounded-full">
+                <Globe className="h-7 w-7 text-green-600" />
+              </div>
+              <h3 className="text-3xl font-bold text-gray-900 text-center">
+                Objetivo Estratégico
+              </h3>
+            </div>
+            
+            <div className="max-w-3xl mx-auto text-center">
+              <p className="text-xl text-gray-900 leading-relaxed">
+                A Ganhavel nasce como uma solução inovadora e coletiva, mas com visão global de expansão. 
+                Estamos abertos a parcerias estratégicas para crescimento conjunto, assim como oportunidades de incorporação ou fusão com grandes players que compartilhem os mesmos valores de transparência, tecnologia e impacto coletivo.
+              </p>
+            </div>
+          </div>
+        </section>
 
       </div>
     </>
