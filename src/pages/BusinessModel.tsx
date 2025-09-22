@@ -298,7 +298,17 @@ const BusinessModel: React.FC = () => {
               Fontes de Receita
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-8 space-y-8">
+            {/* Important Notice */}
+            <div className="text-center p-6 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/20 rounded-xl border border-emerald-200/50">
+              <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300 mb-2">
+                A Ganhavel não recebe qualquer valor sobre o valor do ganhavel
+              </div>
+              <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                Fontes de Renda - Afiliados próprios e parcerias legalizadas
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
@@ -313,8 +323,6 @@ const BusinessModel: React.FC = () => {
                     <span className="font-semibold">Margem sobre valor do prêmio:</span> 2% inicial, com possibilidade de aumento até 8–15% conforme escala
                   </div>
                 </div>
-              </div>
-              <div className="space-y-4">
                 <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-accent/30">
                   <Badge variant="outline" className="border-accent/40 text-accent mt-1">Produtos próprios & Afiliados</Badge>
                 </div>
@@ -325,20 +333,32 @@ const BusinessModel: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                'Prêmios e produtos afiliados',
-                'Destaques e promoções internas',
-                'Comissões de parceiros (conformidade legal)',
-                'Marketing viral',
-                'Monetização via conteúdos e campanhas',
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-border/50">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  <span className="text-sm">{item}</span>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+                  <Trophy className="w-5 h-5 text-primary mt-0.5" />
+                  <div className="text-sm text-foreground/90">
+                    <span className="font-semibold">Prêmios e produtos afiliados:</span> Produtos afiliados integrados à plataforma
+                  </div>
                 </div>
-              ))}
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+                  <TrendingUp className="w-5 h-5 text-primary mt-0.5" />
+                  <div className="text-sm text-foreground/90">
+                    <span className="font-semibold">Destaques e promoções internas:</span> Posição privilegiada nas páginas e vitrines
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+                  <Handshake className="w-5 h-5 text-primary mt-0.5" />
+                  <div className="text-sm text-foreground/90">
+                    <span className="font-semibold">Comissões de parceiros (conformidade legal):</span> Parcerias legalizadas
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-black/20 border border-primary/30">
+                  <Share2 className="w-5 h-5 text-primary mt-0.5" />
+                  <div className="text-sm text-foreground/90">
+                    <span className="font-semibold">Marketing viral:</span> Monetização via conteúdos e campanhas
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
