@@ -79,7 +79,7 @@ export default function MidiaKit() {
               Marketplace de Ganháveis – Transparente, Tecnológico e Inovador
             </h2>
             
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto flex items-center justify-center gap-2">
+            <p className="text-lg text-gray-800 max-w-3xl mx-auto flex items-center justify-center gap-2">
               <Shield className="h-5 w-5 text-green-600" />
               O primeiro marketplace coletivo e gamificado de prêmios, auditável pela Loteria Federal.
             </p>
@@ -101,14 +101,14 @@ export default function MidiaKit() {
               <div className="space-y-6">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-900">
                     <strong>Plataforma democratizada:</strong> Qualquer pessoa pode lançar um Ganhável com links de afiliados e parcerias estratégicas.
                   </p>
                 </div>
                 
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-900">
                     <strong>Transparência absoluta:</strong> Todos os sorteios são auditáveis e vinculados à Loteria Federal.
                   </p>
                 </div>
@@ -117,14 +117,14 @@ export default function MidiaKit() {
               <div className="space-y-6">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-900">
                     <strong>Segurança tecnológica:</strong> Plataforma robusta com sistemas de pagamento seguros e conformidade regulatória.
                   </p>
                 </div>
                 
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-900">
                     <strong>Modelo sustentável:</strong> O sorteio só acontece quando 100% do valor do Ganhável é arrecadado.
                   </p>
                 </div>
@@ -166,12 +166,12 @@ export default function MidiaKit() {
             </div>
             
             <div className="max-w-3xl mx-auto space-y-6">
-              <p className="text-lg text-gray-700">
+              <p className="text-lg text-gray-900">
                 No Ganhavel, qualquer pessoa pode criar Ganháveis e lucrar através de afiliações e parcerias. 
                 Nossa plataforma oferece um ambiente gamificado e viral que maximiza o engajamento.
               </p>
               
-              <p className="text-lg text-gray-700">
+              <p className="text-lg text-gray-900">
                 Marcas ganham visibilidade massiva e engajamento autêntico através de um ecossistema 
                 inovador que transforma promoções tradicionais em experiências interativas e transparentes.
               </p>
@@ -205,7 +205,7 @@ export default function MidiaKit() {
             <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">
               Como Funciona o Ganhavel
             </h3>
-            <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+            <p className="text-gray-800 text-center mb-12 max-w-2xl mx-auto">
               Interface real da plataforma - Sistema transparente e auditável
             </p>
             
@@ -346,7 +346,7 @@ export default function MidiaKit() {
                   <Trophy className="h-8 w-8 text-white" />
                 </div>
                 <h4 className="text-xl font-bold text-gray-900 mb-2">Ganhável Finalizado - 100% Atingido!</h4>
-                <p className="text-gray-700">O sorteio acontece automaticamente quando a meta é atingida</p>
+                <p className="text-gray-900">O sorteio acontece automaticamente quando a meta é atingida</p>
               </div>
               
               {/* Final Progress */}
@@ -391,15 +391,15 @@ export default function MidiaKit() {
               
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
-                  <p className="text-gray-700 mb-4">
+                  <p className="text-gray-900 mb-4">
                     <strong>100% Auditável:</strong> Utilizamos os resultados oficiais da Loteria Federal 
                     para determinar o ganhador de cada Ganhável.
                   </p>
-                  <p className="text-gray-700 mb-4">
+                  <p className="text-gray-900 mb-4">
                     Cada bilhete possui números únicos de 5 pares que são comparados com o resultado oficial, 
                     garantindo total transparência e impossibilidade de manipulação.
                   </p>
-                  <p className="text-gray-700 mb-4">
+                  <p className="text-gray-900 mb-4">
                     <strong>Modelo versátil:</strong> Esse modelo pode ser utilizado também como uma 
                     "vaquinha virtual" para campanhas específicas.
                   </p>
