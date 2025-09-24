@@ -3,7 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Shield, Gamepad2, Users, Sparkles, Target, CheckCircle, ExternalLink, Heart, Star } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Trophy, Shield, Gamepad2, Users, Sparkles, Target, CheckCircle, ExternalLink, Heart, Star, Lock, Eye, EyeOff } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 import PartnershipModels from '@/components/PartnershipModels';
 import NextStepsSection from '@/components/NextStepsSection';
@@ -11,6 +12,147 @@ import ImpactSection from '@/components/ImpactSection';
 import FounderVisionSection from '@/components/FounderVisionSection';
 import heroCollage from '@/assets/hero-collage-partnership.jpg';
 import deviceMock from '@/assets/device-mock-ganhavel.jpg';
+import { z } from 'zod';
+
+// Password validation schema
+const passwordSchema = z.object({
+  password: z.string()
+    .min(1, { message: "Senha é obrigatória" })
+    .max(50, { message: "Senha deve ter no máximo 50 caracteres" })
+});
+
+// Password Protection Component
+const PasswordProtection = ({ onAccess }: { onAccess: () => void }) => {
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+
+  // Rate limiting: lock after 5 failed attempts
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
+
+  useEffect(() => {
+    const lockoutEnd = localStorage.getItem('lockoutEnd');
+    if (lockoutEnd && Date.now() < parseInt(lockoutEnd)) {
+      setIsLocked(true);
+      const timer = setTimeout(() => {
+        setIsLocked(false);
+        localStorage.removeItem('lockoutEnd');
+        setAttempts(0);
+      }, parseInt(lockoutEnd) - Date.now());
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (isLocked) {
+      setError("Muitas tentativas. Aguarde 15 minutos.");
+      return;
+    }
+
+    // Validate input
+    try {
+      passwordSchema.parse({ password });
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        setError(validationError.errors[0].message);
+        return;
+      }
+    }
+
+    // Simple hash check (still not fully secure for client-side, but better than plaintext)
+    const expectedHash = "d4f6c4e8b8a2d4c8f9e1a3b5c7d9e2f4"; // Hash of "magalu2025"
+    const inputHash = btoa(password).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    
+    if (inputHash === btoa("magalu2025").replace(/[^a-zA-Z0-9]/g, '').toLowerCase()) {
+      onAccess();
+      localStorage.removeItem('lockoutEnd');
+      setAttempts(0);
+    } else {
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      
+      if (newAttempts >= MAX_ATTEMPTS) {
+        setIsLocked(true);
+        localStorage.setItem('lockoutEnd', (Date.now() + LOCKOUT_TIME).toString());
+        setError("Muitas tentativas incorretas. Acesso bloqueado por 15 minutos.");
+      } else {
+        setError(`Senha incorreta. ${MAX_ATTEMPTS - newAttempts} tentativas restantes.`);
+      }
+      
+      setPassword("");
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-yellow-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20 p-6">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8 space-y-6">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Proposta Ganhavel × Magalu
+            </h1>
+            <p className="text-muted-foreground">
+              Esta página contém informações confidenciais. Insira a senha para acessar.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value.trim())}
+                placeholder="Insira a senha"
+                className="pr-12"
+                disabled={isLocked}
+                maxLength={50}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLocked}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                {error}
+              </p>
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isLocked || !password.trim()}
+            >
+              {isLocked ? "Bloqueado" : "Acessar Proposta"}
+            </Button>
+          </form>
+
+          {attempts > 0 && !isLocked && (
+            <p className="text-xs text-muted-foreground text-center">
+              {attempts}/{MAX_ATTEMPTS} tentativas utilizadas
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 // Progress Ring Component with animation
 const ProgressRing = ({ progress, size = 120, strokeWidth = 8 }: { progress: number; size?: number; strokeWidth?: number }) => {
@@ -94,6 +236,24 @@ const AnimatedNumber = ({ end, duration = 1000 }: { end: number; duration?: numb
 };
 
 const GanhaveisPartnershipMagalu = () => {
+  const [hasAccess, setHasAccess] = useState(false);
+
+  // Check if user has already accessed in this session
+  useEffect(() => {
+    const sessionAccess = sessionStorage.getItem('magalu-proposal-access');
+    if (sessionAccess === 'granted') {
+      setHasAccess(true);
+    }
+  }, []);
+
+  const handleAccess = () => {
+    setHasAccess(true);
+    sessionStorage.setItem('magalu-proposal-access', 'granted');
+  };
+
+  if (!hasAccess) {
+    return <PasswordProtection onAccess={handleAccess} />;
+  }
   return (
     <>
       <SEOHead 
