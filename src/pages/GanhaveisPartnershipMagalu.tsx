@@ -12,7 +12,7 @@ import ImpactSection from '@/components/ImpactSection';
 import FounderVisionSection from '@/components/FounderVisionSection';
 import heroCollage from '@/assets/hero-collage-partnership.jpg';
 import deviceMock from '@/assets/device-mock-ganhavel.jpg';
-import meetingImage from '@/assets/meeting-partnership.jpg';
+import meetingImage from '@/assets/meeting-symbolic.jpg';
 import { z } from 'zod';
 
 // Password validation schema
