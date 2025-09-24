@@ -38,6 +38,21 @@ export default function EmAltaRecentesSection() {
       setLoading(true);
       setErr(null);
       try {
+        console.log('[EmAltaRecentes] Starting data fetch...');
+        
+        // Test simple connection first
+        const testQuery = await supabase
+          .from("raffles_public_money_ext")
+          .select("id, title")
+          .limit(1);
+          
+        console.log('[EmAltaRecentes] Test query result:', testQuery);
+        
+        if (testQuery.error) {
+          console.error('[EmAltaRecentes] Test query failed:', testQuery.error);
+          throw testQuery.error;
+        }
+        
         const [emAlta, recentes] = await Promise.all([
           supabase
             .from("raffles_public_money_ext")
@@ -53,17 +68,28 @@ export default function EmAltaRecentesSection() {
             .limit(24)
         ]);
         
+        console.log('[EmAltaRecentes] Em alta result:', emAlta);
+        console.log('[EmAltaRecentes] Recentes result:', recentes);
+        
         if (!cancelled) {
-          if (emAlta.error) throw emAlta.error;
-          if (recentes.error) throw recentes.error;
+          if (emAlta.error) {
+            console.error('[EmAltaRecentes] Em alta error:', emAlta.error);
+            throw emAlta.error;
+          }
+          if (recentes.error) {
+            console.error('[EmAltaRecentes] Recentes error:', recentes.error);
+            throw recentes.error;
+          }
           
           console.debug('[Raffles] sample row', emAlta.data?.[0]);
+          console.log('[EmAltaRecentes] Setting data - Em alta:', emAlta.data?.length, 'Recentes:', recentes.data?.length);
           
           setTop(((emAlta.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
           setRecent(((recentes.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
         }
       } catch (e: any) {
-        if (!cancelled) setErr(e?.message ?? "Falha ao carregar");
+        console.error('[EmAltaRecentes] Database error:', e);
+        if (!cancelled) setErr(`Erro ao carregar dados: ${e?.message ?? "Falha desconhecida"}`);
       } finally {
         if (!cancelled) setLoading(false);
       }
