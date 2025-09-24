@@ -37,23 +37,24 @@ export default function HeroSection() {
 
   async function fetchStats(): Promise<{ src: 'cache'|'live', data: HomeStats|null }> {
     try {
-      // Get real statistics from the database
-      const [activeRaffles, participantsData, winnersData] = await Promise.all([
+      console.log('[HeroSection] Fetching stats...');
+      
+      // Get real statistics from the database using correct table names
+      const [activeRaffles, participantsData] = await Promise.all([
         supabase
-          .from('raffles')
+          .from('raffles_public_money_ext')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'active'),
+          .in('status', ['active']),
         supabase
           .from('transactions')
-          .select('user_id', { count: 'exact', head: true })
-          .eq('status', 'paid'),
-        supabase
-          .from('winners')
-          .select('*', { count: 'exact', head: true })
+          .select('buyer_user_id', { count: 'exact', head: true })
+          .eq('status', 'paid')
       ]);
 
-      if (activeRaffles.error || participantsData.error || winnersData.error) {
-        console.error('Error fetching stats:', { activeRaffles: activeRaffles.error, participantsData: participantsData.error, winnersData: winnersData.error });
+      console.log('[HeroSection] Query results:', { activeRaffles, participantsData });
+
+      if (activeRaffles.error || participantsData.error) {
+        console.error('Error fetching stats:', { activeRaffles: activeRaffles.error, participantsData: participantsData.error });
         return { src: 'live', data: null };
       }
 
@@ -68,6 +69,7 @@ export default function HeroSection() {
         recent_transactions: 0
       };
 
+      console.log('[HeroSection] Final stats:', statsData);
       return { src: 'live', data: statsData };
     } catch (error) {
       console.error('Failed to fetch stats:', error);
