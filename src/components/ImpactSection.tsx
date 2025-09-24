@@ -6,7 +6,7 @@ import { ExternalLink, Heart, Star, Play, Users } from 'lucide-react';
 const ImpactSection = () => {
   const stories = [
     {
-      category: "🐶 Doguinhos & Gatinhos Milionários",
+      category: "🐶 Adoções Milionárias",
       items: [
         {
           title: "Doriana",
@@ -122,36 +122,6 @@ const ImpactSection = () => {
           ))}
         </div>
 
-        {/* Impact Metrics */}
-        <Card className="mt-16 p-8 bg-gradient-to-r from-green-500 to-emerald-600 text-white">
-          <CardContent>
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold mb-4">Métricas de Impacto</h3>
-              <p className="text-green-100">
-                Resultados reais de engajamento e alcance orgânico
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-4 gap-8 text-center">
-              <div>
-                <div className="text-3xl font-bold mb-2">100k+</div>
-                <div className="text-sm text-green-100">Visualizações totais</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold mb-2">85%</div>
-                <div className="text-sm text-green-100">Taxa de engajamento</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold mb-2">4.8★</div>
-                <div className="text-sm text-green-100">Avaliação média</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold mb-2">25k</div>
-                <div className="text-sm text-green-100">Compartilhamentos</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </section>
   );

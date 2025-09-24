@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Globe, Zap, Users, Target, Lightbulb, Briefcase } from 'lucide-react';
+import founderPhoto from '@/assets/founder-felipe.png';
 
 const FounderVisionSection = () => {
   const founderHighlights = [
@@ -85,8 +86,12 @@ const FounderVisionSection = () => {
           <Card className="p-8 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/10 dark:to-purple-900/10 border-blue-200">
             <CardContent>
               <div className="text-center">
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-4xl font-bold text-white">FR</span>
+                <div className="w-32 h-32 rounded-full mx-auto mb-6 overflow-hidden border-4 border-white shadow-lg">
+                  <img 
+                    src={founderPhoto} 
+                    alt="Felipe Ribeiro, Fundador da Ganhavel" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <blockquote className="text-lg italic text-muted-foreground leading-relaxed">
                   "A tecnologia deve servir para conectar pessoas e criar experiências genuínas. 
@@ -111,7 +116,7 @@ const FounderVisionSection = () => {
               <CardContent>
                 <h3 className="text-2xl font-bold mb-6">Temos a intenção de ser mais que uma plataforma de sorteios.</h3>
                 <p className="text-lg leading-relaxed opacity-95">
-                  É um novo canal de vendas, engajamento e conteúdo, capaz de consolidar a Magalu 
+                  Um novo canal de vendas, engajamento e conteúdo, capaz de consolidar a Magalu 
                   como pioneira em um modelo transparente, gamificado e acessível, abrindo caminho 
                   para explorar um mercado bilionário com inovação, impacto e confiança.
                 </p>

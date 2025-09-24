@@ -51,7 +51,7 @@ const NextStepsSection = () => {
     <section className="py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-6 text-foreground">Próximos Passos — Como Avançar</h2>
+          <h2 className="text-4xl font-bold mb-6 text-foreground">Sugestão dos Próximos Passos</h2>
           <p className="text-xl text-muted-foreground">
             Um roadmap claro para iniciar nossa parceria
           </p>
@@ -112,7 +112,7 @@ const NextStepsSection = () => {
             <CardContent>
               <h3 className="text-2xl font-bold mb-4">Adoraríamos saber a opinião do time Magalu</h3>
               <p className="text-lg opacity-90 mb-6">
-                e agendar uma conversa para discutir qual modelo de parceria pode fazer mais sentido para iniciar.
+                Agendar uma conversa para discutir detalhes de uma possível parceria.
               </p>
               <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
                 <CheckCircle className="w-5 h-5 mr-2" />

@@ -381,7 +381,6 @@ const GanhaveisPartnershipMagalu = () => {
                     'Participação', 
                     'Alvo atingido',
                     'Sorteio',
-                    'Verificação',
                     'Entrega'
                   ].map((step, index) => (
                     <React.Fragment key={step}>
@@ -409,7 +408,7 @@ const GanhaveisPartnershipMagalu = () => {
         <section className="py-20 px-4 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-900/5 dark:to-blue-900/5">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-6 text-foreground">Oportunidades para a Magalu</h2>
+              <h2 className="text-4xl font-bold mb-6 text-foreground">Oportunidades Potenciais para a Magalu</h2>
               <p className="text-xl text-muted-foreground">
                 Com a Ganhavel, temos como objetivo gerar as seguintes oportunidades:
               </p>
@@ -523,21 +522,16 @@ const GanhaveisPartnershipMagalu = () => {
         {/* Final CTA Section */}
         <section className="py-20 px-4 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800">
           <div className="max-w-4xl mx-auto text-center text-white">
-            <h2 className="text-4xl font-bold mb-6">Vamos Construir o Futuro Juntos</h2>
-            <p className="text-xl opacity-90 mb-8 leading-relaxed">
-              A Ganhavel está pronta para ser o parceiro ideal da Magalu nesta jornada de inovação, 
-              transparência e crescimento. Juntos, podemos revolucionar como os brasileiros interagem 
-              com produtos e marcas.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
-                <Target className="w-5 h-5 mr-2" />
-                Agendar Reunião
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-                <ExternalLink className="w-5 h-5 mr-2" />
-                Explorar Plataforma
-              </Button>
+            <h2 className="text-4xl font-bold mb-6">Inovar é Criar o que Ainda Não Existe</h2>
+            <div className="space-y-6 text-xl opacity-95 leading-relaxed mb-8">
+              <p>A verdadeira inovação nasce quando temos coragem de arriscar.</p>
+              <p>Com a Ganhavel e a Magalu, podemos abrir um novo capítulo para milhões de brasileiros: um modelo transparente, gamificado e inspirador, que une tecnologia, sonhos e impacto real.</p>
+              <p>O futuro não é um destino — é algo que construímos juntos, passo a passo.</p>
+            </div>
+            <div className="p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
+              <p className="text-xl font-medium">
+                Adoraríamos ouvir a visão do time Magalu e explorar juntos qual caminho de parceria pode fazer mais sentido para iniciar.
+              </p>
             </div>
           </div>
         </section>
