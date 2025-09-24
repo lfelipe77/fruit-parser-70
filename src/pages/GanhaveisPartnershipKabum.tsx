@@ -47,7 +47,7 @@ const PasswordProtection: React.FC<PasswordProtectionProps> = ({ onAccess }) => 
       }
 
       // Check password
-      if (password === 'ganhavel2024' || password === 'kabum2024') {
+      if (password === 'ganhavel2024' || password === 'kabum2024' || password === 'kabum2025') {
         onAccess();
       } else {
         setAttempts(prev => prev + 1);
