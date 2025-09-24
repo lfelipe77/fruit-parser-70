@@ -11,7 +11,7 @@ const ImpactSection = () => {
         {
           title: "Doriana",
           subtitle: "A cadela que traz calma, alegria e futuro brilhante",
-          url: "https://ganhavel.com/ganhavel/doriana-a-a-cadela-que-traz-calma-alegria-ea-futuro-brilhante",
+          url: "https://ganhavel.com/ganhavel/doriana-a-cadela-que-traz-calma-alegria-e-futuro-brilhante",
           image: "🐕",
           description: "História emocionante de uma cadela que mudou vidas",
           engagement: "15.2k visualizações"
@@ -19,7 +19,7 @@ const ImpactSection = () => {
         {
           title: "Sushi",
           subtitle: "O gato zen que pode mudar destinos", 
-          url: "https://ganhavel.com/ganhavel/a-sushi-a-o-gato-zen-que-pode-mudar-destinos",
+          url: "https://ganhavel.com/ganhavel/sushi-o-gato-zen-que-pode-mudar-destinos",
           image: "🐱",
           description: "A jornada zen de um gato especial",
           engagement: "12.8k visualizações"
@@ -32,7 +32,7 @@ const ImpactSection = () => {
         {
           title: "Collab Moda Sustentável",
           subtitle: "Com Camila Coutinho - Viagem Internacional",
-          url: "https://ganhavel.com/ganhavel/collab-de-moda-sustenta-vel-com-camila-coutinho-viagem-internacional-a-ganhavel-1-milhalo",
+          url: "https://ganhavel.com/ganhavel/collab-moda-sustentavel-camila-coutinho-viagem-internacional-1-milhao",
           image: "👗",
           description: "Parceria exclusiva focada em sustentabilidade",
           engagement: "28.5k visualizações"
@@ -40,7 +40,7 @@ const ImpactSection = () => {
         {
           title: "Live Especial Gaming",
           subtitle: "Com Davi Geek Games - Streaming",
-          url: "https://ganhavel.com/ganhavel/live-especial-com-davi-geek-games-streaming-a-ganhavel-1-milhalo",
+          url: "https://ganhavel.com/ganhavel/live-especial-davi-geek-games-streaming-1-milhao",
           image: "🎮",
           description: "Evento gaming ao vivo com grande engajamento",
           engagement: "45.7k visualizações"
