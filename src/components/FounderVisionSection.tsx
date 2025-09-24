@@ -59,9 +59,7 @@ const FounderVisionSection = () => {
                 Fundador da Ganhavel
               </p>
               <p className="text-lg leading-relaxed text-muted-foreground">
-                Profissional de automação, empreendedor em múltiplas empresas e startups.
-                Viveu cerca de 20 anos fora do Brasil (Reino Unido, EUA, França, Espanha).
-                Apaixonado pela revolução da IA e pela execução rápida e eficiente de projetos antes impensáveis.
+                Profissional de automação, inspirado pela revolução de IA.
               </p>
             </div>
 
