@@ -297,7 +297,7 @@ const GanhaveisPartnershipKabum = () => {
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold mb-6 text-foreground">O que é a Ganhavel</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Uma plataforma de rifas online que conecta criadores de conteúdo, influenciadores e marcas 
+                Marketplace de ganháveis que conecta criadores de conteúdo, influenciadores e marcas 
                 através de experiências gamificadas e engajamento autêntico.
               </p>
             </div>
