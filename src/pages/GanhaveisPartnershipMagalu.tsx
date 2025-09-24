@@ -1,0 +1,389 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Trophy, Shield, Gamepad2, Users, Sparkles, Target, CheckCircle, ExternalLink, Heart, Star } from 'lucide-react';
+import SEOHead from '@/components/SEOHead';
+import PartnershipModels from '@/components/PartnershipModels';
+import NextStepsSection from '@/components/NextStepsSection';
+import ImpactSection from '@/components/ImpactSection';
+import FounderVisionSection from '@/components/FounderVisionSection';
+import heroCollage from '@/assets/hero-collage-partnership.jpg';
+import deviceMock from '@/assets/device-mock-ganhavel.jpg';
+
+// Progress Ring Component with animation
+const ProgressRing = ({ progress, size = 120, strokeWidth = 8 }: { progress: number; size?: number; strokeWidth?: number }) => {
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = `${circumference} ${circumference}`;
+  const strokeDashoffset = circumference - (animatedProgress / 100) * circumference;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimatedProgress(progress), 300);
+    return () => clearTimeout(timer);
+  }, [progress]);
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg
+        className="transform -rotate-90"
+        width={size}
+        height={size}
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="hsl(var(--muted))"
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="hsl(var(--primary))"
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute text-lg font-bold text-foreground">
+        {Math.round(animatedProgress)}%
+      </div>
+    </div>
+  );
+};
+
+// Animated Number Counter
+const AnimatedNumber = ({ end, duration = 1000 }: { end: number; duration?: number }) => {
+  const [count, setCount] = useState(0);
+  const countRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!countRef.current) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          let start = 0;
+          const increment = end / (duration / 16);
+          const timer = setInterval(() => {
+            start += increment;
+            if (start > end) {
+              start = end;
+              clearInterval(timer);
+            }
+            setCount(Math.floor(start));
+          }, 16);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(countRef.current);
+    return () => observer.disconnect();
+  }, [end, duration]);
+
+  return <span ref={countRef}>{count.toLocaleString()}</span>;
+};
+
+const GanhaveisPartnershipMagalu = () => {
+  return (
+    <>
+      <SEOHead 
+        title="Proposta de Parceria – Ganhavel x Magalu"
+        description="Um novo canal de vendas, engajamento e gamificação transparente. Construindo juntos um modelo honesto, transparente e inovador para milhões de brasileiros."
+        canonical="https://ganhavel.com/ganhavel-magalu"
+      />
+
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-yellow-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20">
+        
+        {/* Hero Section */}
+        <section className="relative overflow-hidden py-20 px-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 opacity-10" />
+          <div className="relative max-w-7xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent leading-tight">
+                    Proposta de Parceria
+                  </h1>
+                  <h2 className="text-4xl lg:text-5xl font-bold text-foreground">
+                    Ganhavel × Magalu
+                  </h2>
+                  <p className="text-xl text-muted-foreground">
+                    Um novo canal de vendas, engajamento e gamificação transparente
+                  </p>
+                </div>
+
+                <div className="p-6 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl border border-yellow-200 dark:border-yellow-700">
+                  <p className="text-lg font-medium text-foreground">
+                    "Construindo juntos um modelo honesto, transparente e inovador para milhões de brasileiros."
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Badge variant="secondary" className="px-4 py-2 text-base bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Transparente
+                  </Badge>
+                  <Badge variant="secondary" className="px-4 py-2 text-base bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Auditável
+                  </Badge>
+                  <Badge variant="secondary" className="px-4 py-2 text-base bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+                    <Gamepad2 className="w-4 h-4 mr-2" />
+                    Gamificado
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <img 
+                  src={heroCollage} 
+                  alt="Ilustração de gamificação com tickets, produtos aspiracionais e influenciadores"
+                  className="w-full rounded-3xl shadow-2xl"
+                />
+                <div className="absolute -bottom-6 -right-6 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+                  <img 
+                    src={deviceMock}
+                    alt="Mock de dispositivo mostrando tela de ganhável"
+                    className="w-24 h-auto rounded-lg mb-4"
+                  />
+                  <ProgressRing progress={85} size={80} strokeWidth={6} />
+                  <p className="text-sm font-medium mt-2 text-center">Meta atingida!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Separator */}
+        <div className="h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent mx-auto w-3/4" />
+
+        {/* O que é a Ganhavel */}
+        <section className="py-20 px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold mb-6 text-foreground">O que é a Ganhavel</h2>
+              <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+                A Ganhavel é a primeira plataforma de sorteios de prêmios 100% honesta, transparente e gamificada.
+                O sorteio só acontece quando o valor total do prêmio é atingido, e todo o processo é seguro, 
+                auditável e vinculado à Loteria Federal.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 mb-16">
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 border-green-200">
+                <CardContent className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto">
+                    <Shield className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">Transparência</h3>
+                  <p className="text-muted-foreground">Processo 100% auditável e verificável</p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/10 dark:to-violet-900/10 border-purple-200">
+                <CardContent className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto">
+                    <Gamepad2 className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">Gamificação</h3>
+                  <p className="text-muted-foreground">Experiência interativa e engajante</p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 border-yellow-200">
+                <CardContent className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto">
+                    <Trophy className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">Premiação</h3>
+                  <p className="text-muted-foreground">Sorteios justos e entrega garantida</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Process Flow */}
+            <Card className="p-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/10 dark:to-purple-900/10">
+              <CardContent>
+                <h3 className="text-2xl font-bold text-center mb-8 text-foreground">Como Funciona</h3>
+                <div className="flex flex-wrap justify-center items-center gap-4 text-center">
+                  {[
+                    'Cadastro',
+                    'Participação', 
+                    'Alvo atingido',
+                    'Sorteio',
+                    'Verificação',
+                    'Entrega'
+                  ].map((step, index) => (
+                    <React.Fragment key={step}>
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold">
+                          {index + 1}
+                        </div>
+                        <span className="text-sm font-medium text-foreground">{step}</span>
+                      </div>
+                      {index < 5 && (
+                        <div className="hidden sm:block w-8 h-px bg-gradient-to-r from-blue-500 to-purple-600" />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Separator */}
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto w-3/4" />
+
+        {/* Oportunidades para a Magalu */}
+        <section className="py-20 px-4 bg-gradient-to-br from-purple-50/50 to-blue-50/50 dark:from-purple-900/5 dark:to-blue-900/5">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold mb-6 text-foreground">Oportunidades para a Magalu</h2>
+              <p className="text-xl text-muted-foreground">
+                Com a Ganhavel, temos como objetivo gerar as seguintes oportunidades:
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 mb-12">
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                      <Gamepad2 className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">Engajamento gamificado</h3>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Sorteios como experiências interativas com métricas de participação e tempo de tela elevados.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
+                      <Users className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">Novas audiências</h3>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Marketplace aberto, ampliando alcance via influenciadores e parceiros estratégicos.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">Acessibilidade percebida</h3>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Produtos de maior valor se tornam viáveis via dinâmica gamificada de sorteios.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+                      <Target className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">Conteúdo viral</h3>
+                  </div>
+                  <p className="text-muted-foreground">
+                    Emoção da premiação + campanhas de influenciadores = conteúdo orgânico e compartilhável.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Example Card */}
+            <Card className="p-8 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white">
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-4">Exemplo Prático</h3>
+                    <div className="space-y-2">
+                      <p className="text-lg">iPhone de R$ 8.000</p>
+                      <p className="text-3xl font-bold">8.000 chances de R$ 1</p>
+                      <Badge className="bg-white/20 text-white border-white/30">
+                        Sorteio justo e auditável
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-4xl font-bold mb-2">
+                      R$ <AnimatedNumber end={8000} />
+                    </div>
+                    <p className="text-lg opacity-90">Valor do prêmio</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Partnership Models Section */}
+        <PartnershipModels />
+
+        {/* Separator */}
+        <div className="h-px bg-gradient-to-r from-transparent via-yellow-500 to-transparent mx-auto w-3/4" />
+
+        {/* Next Steps Section */}
+        <NextStepsSection />
+
+        {/* Separator */}
+        <div className="h-px bg-gradient-to-r from-transparent via-green-500 to-transparent mx-auto w-3/4" />
+
+        {/* Impact & Inspiration Section */}
+        <ImpactSection />
+
+        {/* Separator */}
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto w-3/4" />
+
+        {/* Founder & Vision Section */}
+        <FounderVisionSection />
+
+        {/* Final CTA Section */}
+        <section className="py-20 px-4 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800">
+          <div className="max-w-4xl mx-auto text-center text-white">
+            <h2 className="text-4xl font-bold mb-6">Vamos Construir o Futuro Juntos</h2>
+            <p className="text-xl opacity-90 mb-8 leading-relaxed">
+              A Ganhavel está pronta para ser o parceiro ideal da Magalu nesta jornada de inovação, 
+              transparência e crescimento. Juntos, podemos revolucionar como os brasileiros interagem 
+              com produtos e marcas.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
+                <Target className="w-5 h-5 mr-2" />
+                Agendar Reunião
+              </Button>
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                <ExternalLink className="w-5 h-5 mr-2" />
+                Explorar Plataforma
+              </Button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
+  );
+};
+
+export default GanhaveisPartnershipMagalu;
