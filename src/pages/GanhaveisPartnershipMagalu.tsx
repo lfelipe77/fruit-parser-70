@@ -6,10 +6,10 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Trophy, Shield, Gamepad2, Users, Sparkles, Target, CheckCircle, ExternalLink, Heart, Star, Lock, Eye, EyeOff } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
-import PartnershipModelsMagalu from '@/components/PartnershipModelsMagalu';
-import NextStepsSectionMagalu from '@/components/NextStepsSectionMagalu';
+import PartnershipModels from '@/components/PartnershipModels';
+import NextStepsSection from '@/components/NextStepsSection';
 import ImpactSection from '@/components/ImpactSection';
-import FounderVisionSectionMagalu from '@/components/FounderVisionSectionMagalu';
+import FounderVisionSection from '@/components/FounderVisionSection';
 import heroCollage from '@/assets/hero-collage-partnership.jpg';
 import deviceMock from '@/assets/device-mock-ganhavel.jpg';
 import meetingImage from '@/assets/meeting-symbolic.jpg';
@@ -500,13 +500,13 @@ const GanhaveisPartnershipMagalu = () => {
         </section>
 
         {/* Partnership Models Section */}
-        <PartnershipModelsMagalu />
+        <PartnershipModels />
 
         {/* Separator */}
         <div className="h-px bg-gradient-to-r from-transparent via-yellow-500 to-transparent mx-auto w-3/4" />
 
         {/* Next Steps Section */}
-        <NextStepsSectionMagalu />
+        <NextStepsSection />
 
         {/* Separator */}
         <div className="h-px bg-gradient-to-r from-transparent via-green-500 to-transparent mx-auto w-3/4" />
@@ -518,7 +518,7 @@ const GanhaveisPartnershipMagalu = () => {
         <div className="h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent mx-auto w-3/4" />
 
         {/* Founder & Vision Section */}
-        <FounderVisionSectionMagalu />
+        <FounderVisionSection />
 
         {/* Final CTA Section */}
         <section className="py-24 px-4">

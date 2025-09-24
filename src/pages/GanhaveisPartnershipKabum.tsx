@@ -47,7 +47,7 @@ const PasswordProtection: React.FC<PasswordProtectionProps> = ({ onAccess }) => 
       }
 
       // Check password
-      if (password === 'ganhavel2024' || password === 'kabum2024' || password === 'kabum2025') {
+      if (password === 'ganhavel2024' || password === 'kabum2024') {
         onAccess();
       } else {
         setAttempts(prev => prev + 1);
@@ -297,7 +297,7 @@ const GanhaveisPartnershipKabum = () => {
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold mb-6 text-foreground">O que é a Ganhavel</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Marketplace de ganháveis que conecta criadores de conteúdo, influenciadores e marcas 
+                Uma plataforma de rifas online que conecta criadores de conteúdo, influenciadores e marcas 
                 através de experiências gamificadas e engajamento autêntico.
               </p>
             </div>
@@ -334,6 +334,36 @@ const GanhaveisPartnershipKabum = () => {
               </Card>
             </div>
 
+            <Card className="p-8 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
+              <CardContent>
+                <div className="grid md:grid-cols-4 gap-8 text-center">
+                  <div>
+                    <div className="text-3xl font-bold mb-2">
+                      <AnimatedNumber end={50} suffix="+" />
+                    </div>
+                    <p className="text-blue-100">Criadores Ativos</p>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold mb-2">
+                      <AnimatedNumber end={500} suffix="+" />
+                    </div>
+                    <p className="text-purple-100">Rifas Realizadas</p>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold mb-2">
+                      <AnimatedNumber end={1} suffix="M+" />
+                    </div>
+                    <p className="text-pink-100">Bilhetes Vendidos</p>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold mb-2">
+                      <AnimatedNumber end={95} suffix="%" />
+                    </div>
+                    <p className="text-blue-100">Satisfação</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </section>
 

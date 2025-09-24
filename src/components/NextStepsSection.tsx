@@ -9,7 +9,7 @@ const NextStepsSection = () => {
       number: 1,
       icon: PlayCircle,
       title: "Testar o Ganhavel",
-      description: "Gostaria de convidar o time da Kabum para lançarem um ganhável simples (R$ 9–10), comprarem bilhetes e conferirem o funcionamento. Qualquer gasto, faço questão de reembolsar imediatamente. 🙂",
+      description: "Gostaria de convidar o time da Magalu para lançarem um ganhável simples (R$ 9–10), comprarem bilhetes e conferirem o funcionamento. Qualquer gasto, faço questão de reembolsar imediatamente. 🙂",
       color: "from-green-500 to-emerald-600",
       bgColor: "from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10"
     },
@@ -24,8 +24,8 @@ const NextStepsSection = () => {
     {
       number: 3,
       icon: Rocket,
-      title: "Piloto com produto Kabum",
-      description: "Ativar influenciadores e acompanhar a dinâmica gamificada com produto real da Kabum.",
+      title: "Piloto com produto Magalu",
+      description: "Ativar influenciadores e acompanhar a dinâmica gamificada com produto real da Magalu.",
       color: "from-purple-500 to-violet-600",
       bgColor: "from-purple-50 to-violet-50 dark:from-purple-900/10 dark:to-violet-900/10"
     },
@@ -110,7 +110,7 @@ const NextStepsSection = () => {
         <div className="mt-16 text-center">
           <Card className="p-8 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white">
             <CardContent>
-              <h3 className="text-2xl font-bold mb-4">Adoraríamos saber a opinião do time Kabum</h3>
+              <h3 className="text-2xl font-bold mb-4">Adoraríamos saber a opinião do time Magalu</h3>
               <p className="text-lg opacity-90 mb-6">
                 Agendar uma conversa para discutir detalhes de uma possível parceria.
               </p>

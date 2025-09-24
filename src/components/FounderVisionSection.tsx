@@ -114,7 +114,7 @@ const FounderVisionSection = () => {
               <CardContent>
                 <h3 className="text-2xl font-bold mb-6">Temos a intenção de ser mais que uma plataforma de sorteios.</h3>
                 <p className="text-lg leading-relaxed opacity-95">
-                  Um novo canal de vendas, engajamento e conteúdo, capaz de consolidar a Kabum 
+                  Um novo canal de vendas, engajamento e conteúdo, capaz de consolidar a Magalu 
                   como pioneira em um modelo transparente, gamificado e acessível, abrindo caminho 
                   para explorar um mercado bilionário com inovação, impacto e confiança.
                 </p>

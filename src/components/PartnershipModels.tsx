@@ -12,7 +12,7 @@ const PartnershipModels = () => {
       color: "from-green-500 to-emerald-600",
       bgColor: "from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10",
       borderColor: "border-green-200",
-      description: "Continuar listando produtos Kabum como ganháveis (junto a outros parceiros).",
+      description: "Continuar listando produtos Magalu como ganháveis (junto a outros parceiros).",
       details: "Sem qualquer adaptação, ideal para validar tração inicial.",
       highlight: "Risco zero"
     },
@@ -23,8 +23,8 @@ const PartnershipModels = () => {
       color: "from-blue-500 to-cyan-600",
       bgColor: "from-blue-50 to-cyan-50 dark:from-blue-900/10 dark:to-cyan-900/10", 
       borderColor: "border-blue-200",
-      description: "Kabum integra o Ganhavel.com à sua rede de influenciadores e parceiros estratégicos.",
-      details: "Influenciadores promovem produtos Kabum como ganháveis, unindo conteúdo + gamificação + venda fracionada por sorteio.",
+      description: "Magalu integra o Ganhavel.com à sua rede de influenciadores e parceiros estratégicos.",
+      details: "Influenciadores promovem produtos Magalu como ganháveis, unindo conteúdo + gamificação + venda fracionada por sorteio.",
       highlight: "Alcance orgânico"
     },
     {
@@ -34,7 +34,7 @@ const PartnershipModels = () => {
       color: "from-purple-500 to-violet-600",
       bgColor: "from-purple-50 to-violet-50 dark:from-purple-900/10 dark:to-violet-900/10",
       borderColor: "border-purple-200",
-      description: "\"Ganhavel by Kabum\": total exclusividade, controle e decisões estratégicas alinhadas à marca/produtos.",
+      description: "\"Ganhavel by Magalu\": total exclusividade, controle e decisões estratégicas alinhadas à marca/produtos.",
       details: "Time dedicado para explorar o potencial completo: growth, gamificação, conteúdo, dados.",
       highlight: "Potencial máximo"
     }
@@ -139,7 +139,7 @@ const PartnershipModels = () => {
             <div className="text-center">
               <h3 className="text-2xl font-bold mb-4">Sorteios dos Sonhos</h3>
               <p className="text-lg opacity-90 mb-6">
-                Casa completa Kabum + collabs exclusivos com visual aspiracional
+                Casa completa Magalu + collabs exclusivos com visual aspiracional
               </p>
               <div className="flex justify-center items-center space-x-4">
                 <div className="text-3xl font-bold">🏡</div>
