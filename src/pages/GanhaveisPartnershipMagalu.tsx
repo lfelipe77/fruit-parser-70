@@ -521,29 +521,74 @@ const GanhaveisPartnershipMagalu = () => {
         <FounderVisionSection />
 
         {/* Final CTA Section */}
-        <section className="py-20 px-4 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800">
+        <section className="py-24 px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="text-white">
-                <h2 className="text-4xl font-bold mb-6">Inovar é Criar o que Ainda Não Existe</h2>
-                <div className="space-y-6 text-xl opacity-95 leading-relaxed mb-8">
-                  <p>A verdadeira inovação nasce quando temos coragem de arriscar.</p>
-                  <p>Com a Ganhavel e a Magalu, podemos abrir um novo capítulo para milhões de brasileiros: um modelo transparente, gamificado e inspirador, que une tecnologia, sonhos e impacto real.</p>
-                  <p>O futuro não é um destino — é algo que construímos juntos, passo a passo.</p>
-                </div>
-                <div className="p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
-                  <p className="text-xl font-medium">
-                    Adoraríamos ouvir a visão do time Magalu e explorar juntos qual caminho de parceria pode fazer mais sentido para iniciar.
+            {/* Main Content */}
+            <div className="text-center mb-16">
+              <div className="max-w-4xl mx-auto">
+                <h2 className="text-5xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+                  Inovar é Criar o que Ainda Não Existe
+                </h2>
+                
+                <div className="space-y-8 text-xl text-muted-foreground leading-relaxed mb-12">
+                  <p className="text-2xl font-medium text-foreground">
+                    A verdadeira inovação nasce quando temos coragem de arriscar.
+                  </p>
+                  <p>
+                    Com a Ganhavel e a Magalu, podemos abrir um novo capítulo para milhões de brasileiros: 
+                    um modelo transparente, gamificado e inspirador, que une tecnologia, sonhos e impacto real.
+                  </p>
+                  <p className="text-lg italic">
+                    O futuro não é um destino — é algo que construímos juntos, passo a passo.
                   </p>
                 </div>
               </div>
-              <div className="lg:text-right">
-                <div className="inline-block bg-white/10 rounded-3xl p-2 backdrop-blur-sm">
-                  <img 
-                    src={meetingImage} 
-                    alt="Equipes conversando sobre parceria e inovação"
-                    className="w-full h-80 object-cover rounded-2xl shadow-2xl"
-                  />
+            </div>
+
+            {/* Visual Separator */}
+            <div className="flex items-center justify-center mb-16">
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent w-full max-w-md" />
+              <div className="px-6">
+                <div className="w-3 h-3 bg-purple-500 rounded-full" />
+              </div>
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent w-full max-w-md" />
+            </div>
+
+            {/* Call to Action with Image */}
+            <div className="grid lg:grid-cols-5 gap-12 items-center">
+              <div className="lg:col-span-3">
+                <Card className="p-8 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800">
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                        Convite para Conversa
+                      </span>
+                    </div>
+                    
+                    <p className="text-2xl font-semibold text-foreground leading-relaxed">
+                      Adoraríamos ouvir a visão do time Magalu e explorar juntos qual caminho de parceria pode fazer mais sentido para iniciar.
+                    </p>
+                    
+                    <div className="pt-4 border-t border-border">
+                      <p className="text-muted-foreground">
+                        Uma conversa informal, sem compromissos — apenas para entender melhor as possibilidades e alinhar expectativas.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-2">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-3xl blur-xl transform rotate-3" />
+                  <div className="relative bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-2xl transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+                    <img 
+                      src={meetingImage} 
+                      alt="Simbolizando conversas e parcerias"
+                      className="w-full h-64 object-cover rounded-2xl"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
