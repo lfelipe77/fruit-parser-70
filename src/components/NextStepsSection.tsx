@@ -8,7 +8,7 @@ const NextStepsSection = () => {
     {
       number: 1,
       icon: PlayCircle,
-      title: "Testar a plataforma",
+      title: "Testar o Ganhavel",
       description: "Gostaria de convidar o time da Magalu para lançarem um ganhável simples (R$ 9–10), comprarem bilhetes e conferirem o funcionamento. Qualquer gasto, faço questão de reembolsar imediatamente. 🙂",
       color: "from-green-500 to-emerald-600",
       bgColor: "from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10"
