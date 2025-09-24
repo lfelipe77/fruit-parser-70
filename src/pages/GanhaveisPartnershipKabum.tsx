@@ -334,36 +334,6 @@ const GanhaveisPartnershipKabum = () => {
               </Card>
             </div>
 
-            <Card className="p-8 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white">
-              <CardContent>
-                <div className="grid md:grid-cols-4 gap-8 text-center">
-                  <div>
-                    <div className="text-3xl font-bold mb-2">
-                      <AnimatedNumber end={50} suffix="+" />
-                    </div>
-                    <p className="text-blue-100">Criadores Ativos</p>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold mb-2">
-                      <AnimatedNumber end={500} suffix="+" />
-                    </div>
-                    <p className="text-purple-100">Rifas Realizadas</p>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold mb-2">
-                      <AnimatedNumber end={1} suffix="M+" />
-                    </div>
-                    <p className="text-pink-100">Bilhetes Vendidos</p>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold mb-2">
-                      <AnimatedNumber end={95} suffix="%" />
-                    </div>
-                    <p className="text-blue-100">Satisfação</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </section>
 
