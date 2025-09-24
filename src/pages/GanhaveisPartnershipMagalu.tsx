@@ -60,7 +60,7 @@ const PasswordProtection = ({ onAccess }: { onAccess: () => void }) => {
       passwordSchema.parse({ password });
     } catch (validationError) {
       if (validationError instanceof z.ZodError) {
-        setError(validationError.errors[0].message);
+        setError(validationError.issues[0].message);
         return;
       }
     }

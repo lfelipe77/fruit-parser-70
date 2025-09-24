@@ -109,7 +109,7 @@ const FounderVisionSection = () => {
           <div className="max-w-4xl mx-auto">
             <Card className="p-8 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-800 text-white">
               <CardContent>
-                <h3 className="text-2xl font-bold mb-6">A Ganhavel é mais que uma plataforma de sorteios.</h3>
+                <h3 className="text-2xl font-bold mb-6">Temos a intenção de ser mais que uma plataforma de sorteios.</h3>
                 <p className="text-lg leading-relaxed opacity-95">
                   É um novo canal de vendas, engajamento e conteúdo, capaz de consolidar a Magalu 
                   como pioneira em um modelo transparente, gamificado e acessível, abrindo caminho 
@@ -138,28 +138,6 @@ const FounderVisionSection = () => {
           })}
         </div>
 
-        {/* Market Opportunity */}
-        <Card className="mt-16 p-8 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 border-green-200">
-          <CardContent>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold mb-4 text-foreground">Oportunidade de Mercado</h3>
-              <div className="grid md:grid-cols-3 gap-8 mt-8">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600 mb-2">R$ 50B</div>
-                  <div className="text-sm text-muted-foreground">Mercado de e-commerce BR</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-2">85%</div>
-                  <div className="text-sm text-muted-foreground">Crescimento em gamificação</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">120M</div>
-                  <div className="text-sm text-muted-foreground">Usuários ativos online</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </section>
   );

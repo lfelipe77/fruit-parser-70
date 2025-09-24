@@ -43,8 +43,8 @@ const PartnershipModels = () => {
   const revenueStreams = [
     {
       icon: DollarSign,
-      title: "Taxa por transação",
-      description: "R$ 2 por transação + 2% escrow (atual), com possibilidade de elevar para 10–15%",
+      title: "Taxa de transação",
+      description: "Cobrado atualmente pela Asaas: R$ 2 por transação + 2% escrow, com possibilidade de elevar para 10–15% ao consolidar o serviço de garantia de entrega.",
       color: "text-green-600"
     },
     {
@@ -55,8 +55,8 @@ const PartnershipModels = () => {
     },
     {
       icon: Zap,
-      title: "Marketing embutido",
-      description: "Redistribuição para influenciadores em modelo de competição saudável",
+      title: "Marketing agregado",
+      description: "Adição de valores promocionais aos ganháveis e redistribuição para influenciadores, em modelo gamificado e competitivo.",
       color: "text-purple-600"
     }
   ];

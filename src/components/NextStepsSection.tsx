@@ -9,7 +9,7 @@ const NextStepsSection = () => {
       number: 1,
       icon: PlayCircle,
       title: "Testar a plataforma",
-      description: "Convite para acessar e lançar um ganhável piloto. Posso transferir um Pix para viabilizar o teste; se comprarem bilhetes de teste, faço reembolso imediato.",
+      description: "Gostaria de convidar o time da Magalu para lançarem um ganhável simples (R$ 9–10), comprarem bilhetes e conferirem o funcionamento. Qualquer gasto, faço questão de reembolsar imediatamente. 🙂",
       color: "from-green-500 to-emerald-600",
       bgColor: "from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10"
     },
@@ -17,7 +17,7 @@ const NextStepsSection = () => {
       number: 2,
       icon: Settings,
       title: "Escolher o modelo de parceria",
-      description: "Definir a opção inicial (1, 2 ou 3) baseada nos objetivos e recursos disponíveis.",
+      description: "Definir a opção inicial (1, 2 ou 3).",
       color: "from-blue-500 to-cyan-600",
       bgColor: "from-blue-50 to-cyan-50 dark:from-blue-900/10 dark:to-cyan-900/10"
     },
@@ -110,9 +110,9 @@ const NextStepsSection = () => {
         <div className="mt-16 text-center">
           <Card className="p-8 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white">
             <CardContent>
-              <h3 className="text-2xl font-bold mb-4">Pronto para começar?</h3>
+              <h3 className="text-2xl font-bold mb-4">Adoraríamos saber a opinião do time Magalu</h3>
               <p className="text-lg opacity-90 mb-6">
-                Vamos agendar uma demonstração da plataforma e discutir qual modelo se adequa melhor aos objetivos da Magalu.
+                e agendar uma conversa para discutir qual modelo de parceria pode fazer mais sentido para iniciar.
               </p>
               <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
                 <CheckCircle className="w-5 h-5 mr-2" />
