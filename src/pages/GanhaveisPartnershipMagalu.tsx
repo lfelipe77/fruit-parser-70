@@ -12,6 +12,7 @@ import ImpactSection from '@/components/ImpactSection';
 import FounderVisionSection from '@/components/FounderVisionSection';
 import heroCollage from '@/assets/hero-collage-partnership.jpg';
 import deviceMock from '@/assets/device-mock-ganhavel.jpg';
+import meetingImage from '@/assets/meeting-partnership.jpg';
 import { z } from 'zod';
 
 // Password validation schema
@@ -521,17 +522,30 @@ const GanhaveisPartnershipMagalu = () => {
 
         {/* Final CTA Section */}
         <section className="py-20 px-4 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800">
-          <div className="max-w-4xl mx-auto text-center text-white">
-            <h2 className="text-4xl font-bold mb-6">Inovar é Criar o que Ainda Não Existe</h2>
-            <div className="space-y-6 text-xl opacity-95 leading-relaxed mb-8">
-              <p>A verdadeira inovação nasce quando temos coragem de arriscar.</p>
-              <p>Com a Ganhavel e a Magalu, podemos abrir um novo capítulo para milhões de brasileiros: um modelo transparente, gamificado e inspirador, que une tecnologia, sonhos e impacto real.</p>
-              <p>O futuro não é um destino — é algo que construímos juntos, passo a passo.</p>
-            </div>
-            <div className="p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
-              <p className="text-xl font-medium">
-                Adoraríamos ouvir a visão do time Magalu e explorar juntos qual caminho de parceria pode fazer mais sentido para iniciar.
-              </p>
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="text-white">
+                <h2 className="text-4xl font-bold mb-6">Inovar é Criar o que Ainda Não Existe</h2>
+                <div className="space-y-6 text-xl opacity-95 leading-relaxed mb-8">
+                  <p>A verdadeira inovação nasce quando temos coragem de arriscar.</p>
+                  <p>Com a Ganhavel e a Magalu, podemos abrir um novo capítulo para milhões de brasileiros: um modelo transparente, gamificado e inspirador, que une tecnologia, sonhos e impacto real.</p>
+                  <p>O futuro não é um destino — é algo que construímos juntos, passo a passo.</p>
+                </div>
+                <div className="p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
+                  <p className="text-xl font-medium">
+                    Adoraríamos ouvir a visão do time Magalu e explorar juntos qual caminho de parceria pode fazer mais sentido para iniciar.
+                  </p>
+                </div>
+              </div>
+              <div className="lg:text-right">
+                <div className="inline-block bg-white/10 rounded-3xl p-2 backdrop-blur-sm">
+                  <img 
+                    src={meetingImage} 
+                    alt="Equipes conversando sobre parceria e inovação"
+                    className="w-full h-80 object-cover rounded-2xl shadow-2xl"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
