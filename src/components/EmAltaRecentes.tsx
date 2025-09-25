@@ -43,7 +43,11 @@ export default function EmAltaRecentesSection() {
             .from("raffles_public_money_ext")
             .select(RAFFLE_CARD_SELECT)
             .in('status', ['active','completed','premiado'])
-            .order("last_paid_at", { ascending: false, nullsFirst: false }) // nulls last
+            .order('last_paid_at', { ascending: false, nullsFirst: false })
+            .order('participants_count', { ascending: false, nullsFirst: false })
+            .order('amount_raised', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true })
             .limit(12),
           supabase
             .from("raffles_public_money_ext")
@@ -57,7 +61,7 @@ export default function EmAltaRecentesSection() {
           if (emAlta.error) throw emAlta.error;
           if (recentes.error) throw recentes.error;
           
-          console.debug('[Raffles] sample row', emAlta.data?.[0]);
+          console.debug('[EmAlta] count=%d sample=%o', emAlta.data?.length ?? 0, emAlta.data?.slice(0,3)?.map((r: any) => r.id));
           
           setTop(((emAlta.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
           setRecent(((recentes.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));

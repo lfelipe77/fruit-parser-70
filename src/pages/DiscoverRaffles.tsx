@@ -90,30 +90,37 @@ export default function DiscoverRaffles() {
       switch (sortBy) {
         case "ending-soon": {
           query = query
-            .in('status', STATUS_FOR_ENDING_SOON)           // only things that can actually "end"
-            .not('draw_date', 'is', null)                   // must have date
-            .gt('draw_date', new Date().toISOString())      // in the future
-            .order('draw_date', { ascending: true, nullsFirst: true });
+            .in('status', STATUS_FOR_ENDING_SOON)
+            .not('draw_date', 'is', null)
+            .order('draw_date', { ascending: true, nullsFirst: false })
+            .order('last_paid_at', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true });
           break;
         }
         case "popularity": {
           query = query
             .in('status', STATUS_FOR_ALL)
-            // popularity = people + money; tie-break on money
             .order('participants_count', { ascending: false, nullsFirst: false })
-            .order('amount_raised', { ascending: false, nullsFirst: false });
+            .order('amount_raised', { ascending: false, nullsFirst: false })
+            .order('last_paid_at', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true });
           break;
         }
         case "goal":
           query = query
             .in('status', STATUS_FOR_ALL)
-            .order("goal_amount", { ascending: false });
+            .order("goal_amount", { ascending: false })
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true });
           break;
         case "newest":
         default: {
           query = query
             .in('status', STATUS_FOR_ALL)
-            .order('created_at', { ascending: false, nullsFirst: false });
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: true });
           break;
         }
       }
@@ -126,17 +133,20 @@ export default function DiscoverRaffles() {
 
       // Fallback for "ending soon" if no results (few raffles have draw_date)
       if (!error && rows.length === 0 && sortBy === "ending-soon") {
-        console.log('[Discover] No ending soon results, falling back to recent activity');
+        console.log('[Discover] No ending soon results, falling back to newest');
         const fallback = await supabase
           .from('raffles_public_money_ext')
           .select(RAFFLE_CARD_SELECT)
-          .in('status', ['active'])
-          .order('last_paid_at', { ascending: false, nullsFirst: true })
+          .in('status', STATUS_FOR_ALL)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: true })
           .limit(12);
         if (!fallback.error) {
           rows = (fallback.data as unknown as RaffleCardInfo[]) || [];
         }
       }
+      
+      console.debug('[Discover] sortBy=%s count=%d sample=%o', sortBy, rows?.length ?? 0, rows?.slice(0,3)?.map(r => r.id));
       
       if (!cancelled) {
         if (!error) {
