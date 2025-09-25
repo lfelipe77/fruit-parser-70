@@ -220,11 +220,11 @@ export default function GanhaveisDetail() {
       if (organizerId) {
         console.log('[GanhaveisDetail] Loading organizer for id:', organizerId);
         
-        // Use the public view directly (anon-safe with RLS policies)
+        // Use anon-safe organizer view (by raffle_id, safer than user_id)
         const { data: ownerData, error: ownerError } = await supabase
-          .from('user_profiles_public')
-          .select('id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
-          .eq('id', organizerId)
+          .from('v_organizer_public' as any)
+          .select('username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
+          .eq('raffle_id', key)
           .maybeSingle();
         if (ownerError) console.warn('owner error', ownerError);
         
