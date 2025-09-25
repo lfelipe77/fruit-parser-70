@@ -159,7 +159,7 @@ export default function EmAltaRecentesSection() {
   }
 
   return (
-    <section className="px-6 py-10 max-w-6xl mx-auto space-y-8">
+    <section className="px-6 pt-4 pb-10 max-w-6xl mx-auto space-y-8">
       <div>
         <div className="flex items-baseline justify-between">
           <h2 className="text-xl md:text-2xl font-semibold">🔥 Ganhavéis em alta</h2>

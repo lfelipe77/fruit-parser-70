@@ -128,7 +128,7 @@ export default function HeroSection() {
   };
   
   return (
-    <section className="relative bg-gradient-hero py-12 md:py-20 lg:py-32 overflow-hidden">
+    <section className="relative bg-gradient-hero py-12 md:py-16 lg:py-20 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="space-y-6 md:space-y-8 animate-fade-in text-center lg:text-left">
