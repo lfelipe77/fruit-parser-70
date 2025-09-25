@@ -19,7 +19,6 @@ type PublicWinnerCard = {
 
 export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCard[]> {
   // Try the new anon-safe view first
-  console.log('Fetching from v_public_winners_pubnames...');
   let q = supabase
     .from('v_public_winners_pubnames')
     .select('*')
@@ -28,16 +27,9 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
     .limit(50);
 
   let { data, error } = await q;
-  
-  if (error) {
-    console.log('Error from v_public_winners_pubnames:', error);
-  } else {
-    console.log('Success from v_public_winners_pubnames, sample data:', data?.slice(0, 2));
-  }
 
   // Fallback if migrating / local envs don't have the new view yet
   if (error && (error.code === '42P01' || /relation .* does not exist/i.test(error.message))) {
-    console.log('Falling back to v_public_winners...');
     const res = await supabase
       .from('v_public_winners')
       .select('*')
@@ -45,13 +37,10 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
       .order('logged_at', { ascending: false })
       .limit(50);
     data = res.data ?? [];
-    console.log('Fallback data sample:', data?.slice(0, 2));
   }
 
   // Normalize empty avatar strings
-  const result = (data ?? []).map(w => ({ ...w, avatar_url: w.avatar_url?.trim() ? w.avatar_url : null }));
-  console.log('Final processed data sample:', result?.slice(0, 2));
-  return result;
+  return (data ?? []).map(w => ({ ...w, avatar_url: w.avatar_url?.trim() ? w.avatar_url : null }));
 }
 
 export function usePublicWinners(limit = 50) {
