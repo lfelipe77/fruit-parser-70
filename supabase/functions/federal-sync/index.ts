@@ -120,13 +120,14 @@ serve(withCORS(async (req: Request) => {
       if (federalItem) {
         // For dry run, return immediately without DB writes
         if (dryRun) {
-          result = { 
-            ...federalItem, 
-            synced: false, 
-            source: 'caixa', 
-            ok: true,
-            prizes_raw: federalItem.prizes_raw || json
-          };
+           result = { 
+             ...federalItem, 
+             synced: false, 
+             source: 'caixa', 
+             ok: true,
+             debug: {},
+             prizes_raw: federalItem.prizes_raw || json
+           };
           return new Response(JSON.stringify(result), {
             headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
           });
@@ -134,7 +135,7 @@ serve(withCORS(async (req: Request) => {
         
         const success = await updateStoreIfChanged(supabase, federalItem, 'caixa');
         if (success) {
-          result = { ...federalItem, synced: true, source: 'caixa', ok: true };
+          result = { ...federalItem, synced: true, source: 'caixa', ok: true, debug: {} };
           if (autoPick) result.picked = 'deferred_to_trigger';
           return new Response(JSON.stringify(result), {
             headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -163,13 +164,14 @@ serve(withCORS(async (req: Request) => {
         if (federalItem) {
           // For dry run, return immediately without DB writes
           if (dryRun) {
-            result = { 
-              ...federalItem, 
-              synced: false, 
-              source: 'apiloterias', 
-              ok: true,
-              prizes_raw: federalItem.prizes_raw || json
-            };
+             result = { 
+               ...federalItem, 
+               synced: false, 
+               source: 'apiloterias', 
+               ok: true,
+               debug: {},
+               prizes_raw: federalItem.prizes_raw || json
+             };
             return new Response(JSON.stringify(result), {
               headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
             });
@@ -177,7 +179,7 @@ serve(withCORS(async (req: Request) => {
           
           const success = await updateStoreIfChanged(supabase, federalItem, 'apiloterias');
           if (success) {
-            result = { ...federalItem, synced: true, source: 'apiloterias', ok: true };
+            result = { ...federalItem, synced: true, source: 'apiloterias', ok: true, debug: {} };
             if (autoPick) result.picked = 'deferred_to_trigger';
             return new Response(JSON.stringify(result), {
               headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
@@ -258,7 +260,9 @@ serve(withCORS(async (req: Request) => {
       }
       
       if (debug && federalItem) {
-        result.debug[`${source}_parsed`] = federalItem;
+        if (result.debug) {
+          result.debug[`${source}_parsed`] = federalItem;
+        }
       }
       
       return federalItem;

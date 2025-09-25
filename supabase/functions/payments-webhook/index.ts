@@ -86,7 +86,7 @@ async function confirmAndLog(
         provider: provider,
         provider_payment_id: providerPaymentId,
         raw_payload: {
-          ...rawPayload,
+          ...(rawPayload || {}),
           // Include fee info for audit
           institutional_fee: uiState.institutional_fee ?? 2.00,
           charge_total: uiState.charge_total,
