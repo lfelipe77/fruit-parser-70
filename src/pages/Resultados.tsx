@@ -79,18 +79,17 @@ export default function Resultados() {
   // Complete raffles data - using new hook that excludes raffles with winners
   const { data: completeRaffles, isLoading: completeLoading, refetch: refetchComplete } = useCompletedUnpickedRaffles();
 
-  // Almost complete raffles data
+  // Almost complete raffles data - A) "Quase Completas"
   const { data: almostCompleteRaffles, isLoading: almostLoading, refetch: refetchAlmost } = useQuery({
     queryKey: ['almost_complete_raffles'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('raffles_public_money_ext')
-        .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price')
+        .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
         .eq('status', 'active')
         .gte('progress_pct_money', 80)
         .lt('progress_pct_money', 100)
-        .order('progress_pct_money', { ascending: false })
-        .limit(10);
+        .order('progress_pct_money', { ascending: false });
       if (error) throw error;
       return data || [];
     },

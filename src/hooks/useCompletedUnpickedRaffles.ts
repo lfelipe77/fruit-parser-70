@@ -17,10 +17,10 @@ export function useCompletedUnpickedRaffles() {
   return useQuery({
     queryKey: ['completed-unpicked'],
     queryFn: async (): Promise<CompletedRaffle[]> => {
-      // Get raffles that are drawing OR have reached goal, excluding premiados
+      // B) "Completas (aguardando sorteio)" — separation that works
       const { data: base, error } = await supabase
         .from('raffles_public_money_ext')
-        .select('id, title, image_url, status, amount_raised, goal_amount, last_paid_at, participants_count, draw_date, progress_pct_money')
+        .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
         .or('status.eq.drawing,amount_raised.gte.goal_amount')
         .neq('status', 'premiado')
         .order('last_paid_at', { ascending: false, nullsFirst: false });
@@ -30,14 +30,12 @@ export function useCompletedUnpickedRaffles() {
         throw error;
       }
       
-      // Get existing winners to filter out raffles that already have winners
-      const raffleIds = base.map(r => r.id);
+      // exclude anything that already has a public winner
       const { data: winners } = await supabase
-        .from('lottery_results')
-        .select('ganhavel_id')
-        .in('ganhavel_id', raffleIds);
+        .from('v_public_winners')
+        .select('raffle_id');
+      const winnerSet = new Set((winners ?? []).map(w => w.raffle_id));
       
-      const winnerSet = new Set((winners ?? []).map(w => w.ganhavel_id));
       const completas = (base ?? []).filter(r => !winnerSet.has(r.id));
       
       const filteredData = completas.map(raffle => ({
