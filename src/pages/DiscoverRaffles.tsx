@@ -83,33 +83,64 @@ export default function DiscoverRaffles() {
         }
       }
 
-      // Apply sorting - default to newest first
+      // Status filters and sorting logic
+      const STATUS_FOR_ALL = ['active','completed','premiado'];
+      const STATUS_FOR_ENDING_SOON = ['active'];
+
       switch (sortBy) {
-        case "ending-soon":
-          query = query.order("last_paid_at", { ascending: true });
+        case "ending-soon": {
+          query = query
+            .in('status', STATUS_FOR_ENDING_SOON)           // only things that can actually "end"
+            .not('draw_date', 'is', null)                   // must have date
+            .gt('draw_date', new Date().toISOString())      // in the future
+            .order('draw_date', { ascending: true, nullsFirst: true });
+          break;
+        }
+        case "popularity": {
+          query = query
+            .in('status', STATUS_FOR_ALL)
+            // popularity = people + money; tie-break on money
+            .order('participants_count', { ascending: false, nullsFirst: false })
+            .order('amount_raised', { ascending: false, nullsFirst: false });
+          break;
+        }
+        case "goal":
+          query = query
+            .in('status', STATUS_FOR_ALL)
+            .order("goal_amount", { ascending: false });
           break;
         case "newest":
-          query = query.order("created_at", { ascending: false });
+        default: {
+          query = query
+            .in('status', STATUS_FOR_ALL)
+            .order('created_at', { ascending: false, nullsFirst: false });
           break;
-        case "popularity":
-          query = query.order("progress_pct_money", { ascending: false });
-          break;
-        case "goal":
-          query = query.order("goal_amount", { ascending: false });
-          break;
-        default:
-          query = query.order("created_at", { ascending: false });
-          break;
+        }
       }
 
       const offset = currentPage * PAGE_SIZE;
       query = query.range(offset, offset + PAGE_SIZE - 1);
 
       const { data, error, count } = await query;
+      let rows = (data as unknown as RaffleCardInfo[]) || [];
+
+      // Fallback for "ending soon" if no results (few raffles have draw_date)
+      if (!error && rows.length === 0 && sortBy === "ending-soon") {
+        console.log('[Discover] No ending soon results, falling back to recent activity');
+        const fallback = await supabase
+          .from('raffles_public_money_ext')
+          .select(RAFFLE_CARD_SELECT)
+          .in('status', ['active'])
+          .order('last_paid_at', { ascending: false, nullsFirst: true })
+          .limit(12);
+        if (!fallback.error) {
+          rows = (fallback.data as unknown as RaffleCardInfo[]) || [];
+        }
+      }
       
       if (!cancelled) {
         if (!error) {
-          setRaffles((data as unknown as RaffleCardInfo[]) || []);
+          setRaffles(rows);
           setTotalCount(count || 0);
         }
         setLoading(false);
