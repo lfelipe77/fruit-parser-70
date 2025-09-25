@@ -198,7 +198,7 @@ export default function GanhaveisDetail() {
       // Load extras from base table
       const { data: baseData, error: baseError } = await supabase
         .from("raffles")
-        .select("user_id,description,direct_purchase_link,slug,id")
+        .select("user_id,organizer_id,description,direct_purchase_link,slug,id")
         .eq(isUUID ? "id" : "slug", key)
         .maybeSingle();
       if (baseError) console.warn("extras error", baseError);
@@ -215,18 +215,20 @@ export default function GanhaveisDetail() {
       }
 
       // Load organizer profile if available
-      if (baseData?.user_id) {
-        console.log('[GanhaveisDetail] Loading organizer for user_id:', baseData.user_id);
+      // Try organizer_id first, then fallback to user_id
+      const organizerId = baseData?.organizer_id || baseData?.user_id;
+      if (organizerId) {
+        console.log('[GanhaveisDetail] Loading organizer for id:', organizerId);
         const { data: ownerData, error: ownerError } = await supabase
           .from("user_profiles_public")
           .select("*")
-          .eq("id", baseData.user_id)
+          .eq("id", organizerId)
           .maybeSingle();
         if (ownerError) console.warn("owner error", ownerError);
         console.log('[GanhaveisDetail] Organizer data loaded:', ownerData);
         setOrganizerData(ownerData);
       } else {
-        console.log('[GanhaveisDetail] No user_id in baseData:', baseData);
+        console.log('[GanhaveisDetail] No organizer_id or user_id in baseData:', baseData);
         setOrganizerData(null);
       }
 
