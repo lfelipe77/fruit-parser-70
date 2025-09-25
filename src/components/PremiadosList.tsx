@@ -38,11 +38,9 @@ export default function PremiadosList() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((w) => {
-        // Ensure we're using winner_handle, not user_id for display
-        const handle = w.winner_handle && w.winner_handle.trim().length > 0 
-          ? w.winner_handle 
-          : 'Ganhador Anônimo';
-        const hasValidHandle = w.winner_handle && w.winner_handle.trim().length > 0;
+        // Improved user display logic - avoid showing UUID fragments
+        const hasValidHandle = w.winner_handle && w.winner_handle.length > 8;
+        const handle = hasValidHandle ? w.winner_handle : 'Ganhador Anônimo';
         const profileHref = hasValidHandle ? `/perfil/${encodeURIComponent(w.winner_handle!)}` : '#';
         const ticketHref = w.ticket_id ? `/ticket/${w.ticket_id}` : '#';
         const raffleHref = w.raffle_id ? `/ganhavel/${w.raffle_id}` : '#';
@@ -62,7 +60,7 @@ export default function PremiadosList() {
                 })()}
               </div>
               <div className="min-w-0">
-                <Link to={profileHref} className="block font-medium hover:underline text-sm">
+                <Link to={profileHref} className="block font-medium truncate hover:underline">
                   {handle}
                 </Link>
                 <Link to={raffleHref} className="block text-sm font-medium text-foreground/80 truncate hover:underline">
