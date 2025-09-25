@@ -55,7 +55,7 @@ function normalizeStatus(status: string): string {
   return statusMap[status?.toLowerCase()] || 'pending';
 }
 
-function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
+function consolidateByRaffleWithProgress(rows: any[], progressMap: Record<string, { amount_raised: number; progress_pct_money: number }>): ConsolidatedTicket[] {
   const raffleMap = new Map<string, ConsolidatedTicket>();
   
   for (const row of rows) {
@@ -66,10 +66,9 @@ function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
     const combos = Array.isArray(row.numbers) ? row.numbers : [];
     const ticketCount = combos.length || 1;
     
-    // Calculate progress percentage - simplified for now
+    // Get progress data from the progress map
+    const progress = progressMap[row.raffle_id] || { amount_raised: 0, progress_pct_money: 0 };
     const goalAmount = Number(raffle?.goal_amount) || 0;
-    const amountRaised = 0; // We don't have this data easily available
-    const progressPctMoney = 0; // Simplified for now
     
     if (!existing) {
       raffleMap.set(row.raffle_id, {
@@ -81,11 +80,11 @@ function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
         value: Number(row.amount) || 0,
         ticketCount: ticketCount,
         purchasedNumbers: combos,
-        progressPctMoney: progressPctMoney,
+        progressPctMoney: progress.progress_pct_money,
         drawDate: raffle?.draw_date || null,
         transactionId: row.id,
         goalAmount: goalAmount,
-        amountRaised: amountRaised
+        amountRaised: progress.amount_raised
       });
     } else {
       // Merge with existing
@@ -101,6 +100,10 @@ function consolidateByRaffle(rows: any[]): ConsolidatedTicket[] {
         existing.status = normalizeStatus(row.status);
         existing.transactionId = row.id;
       }
+      
+      // Progress data should be same for all transactions of same raffle
+      existing.progressPctMoney = progress.progress_pct_money;
+      existing.amountRaised = progress.amount_raised;
     }
   }
   
@@ -202,11 +205,38 @@ const handler = async (req: Request): Promise<Response> => {
     const hasMore = rows.length > limit;
     const dataRows = hasMore ? rows.slice(0, limit) : rows;
 
-    // Consolidate by raffle
-    const consolidated = consolidateByRaffle(dataRows);
-    
-    // Sort consolidated results by purchase date desc
-    consolidated.sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
+    // Get unique raffle IDs to fetch progress data
+    const uniqueRaffleIds = [...new Set(dataRows.map(row => row.raffle_id))];
+    console.log(`[my-tickets-get] Fetching progress for ${uniqueRaffleIds.length} unique raffles`);
+
+  // Fetch progress data for all raffles
+  let progressMap: Record<string, { amount_raised: number; progress_pct_money: number }> = {};
+  
+  if (uniqueRaffleIds.length > 0) {
+    const { data: progressData, error: progressError } = await supabaseClient
+      .from('raffles_public_money_ext')
+      .select('id, amount_raised, progress_pct_money')
+      .in('id', uniqueRaffleIds);
+
+    if (progressError) {
+      console.error('[my-tickets-get] Progress query error:', progressError);
+    } else if (progressData) {
+      progressMap = progressData.reduce((acc, item) => {
+        acc[item.id] = {
+          amount_raised: item.amount_raised || 0,
+          progress_pct_money: item.progress_pct_money || 0
+        };
+        return acc;
+      }, {} as Record<string, { amount_raised: number; progress_pct_money: number }>);
+      console.log(`[my-tickets-get] Progress data loaded for ${Object.keys(progressMap).length} raffles`);
+    }
+  }
+
+  // Consolidate by raffle with progress data
+  const consolidated = consolidateByRaffleWithProgress(dataRows, progressMap);
+  
+  // Sort consolidated results by purchase date desc
+  consolidated.sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
 
     // Generate next cursor
     let nextCursor = null;

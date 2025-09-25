@@ -86,11 +86,15 @@ export default function MyTicketsPage() {
     
     // Try edge function first, fallback to direct query
     try {
+      console.log('[MyTicketsPage] Calling edge function my-tickets-get...');
       const { data, error } = await supabase.functions.invoke('my-tickets-get', {
         body: { limit: 50 }
       });
       
+      console.log('[MyTicketsPage] Edge function response:', { data, error });
+      
       if (!error && data?.items) {
+        console.log('[MyTicketsPage] Sample edge function item:', data.items[0]);
         // Convert consolidated data to expected format
         const convertedData = data.items.map((item: any) => ({
           ...item,
@@ -108,13 +112,15 @@ export default function MyTicketsPage() {
           progress_pct_money: item.progressPctMoney,
           buyer_user_id: user.id
         }));
+        console.log('[MyTicketsPage] Converted data sample:', convertedData[0]);
         return { data: convertedData as TicketRow[], error: null };
       }
     } catch (edgeFunctionError) {
       console.warn('[MyTicketsPage] Edge function failed, falling back to direct query:', edgeFunctionError);
     }
     
-    // Fallback: Query transactions directly
+    // Fallback: Query transactions with raffle progress data
+    console.log('[MyTicketsPage] Falling back to direct query...');
     const { data, error } = await supabase
       .from('transactions')
       .select(`
@@ -136,23 +142,55 @@ export default function MyTicketsPage() {
       .order('created_at', { ascending: false })
       .limit(50);
 
+    console.log('[MyTicketsPage] Direct query response:', { dataLength: data?.length, error });
+
+    // Get progress data for each raffle
+    const raffleIds = [...new Set(data?.map(item => item.raffle_id) || [])];
+    console.log('[MyTicketsPage] Fetching progress for raffles:', raffleIds);
+    
+    let progressData: Record<string, { amount_raised: number; progress_pct_money: number }> = {};
+    
+    if (raffleIds.length > 0) {
+      const { data: progressRows, error: progressError } = await supabase
+        .from('raffles_public_money_ext')
+        .select('id, amount_raised, progress_pct_money')
+        .in('id', raffleIds);
+      
+      console.log('[MyTicketsPage] Progress query response:', { progressRows, progressError });
+      
+      if (progressRows) {
+        progressData = progressRows.reduce((acc, row) => {
+          acc[row.id] = {
+            amount_raised: row.amount_raised || 0,
+            progress_pct_money: row.progress_pct_money || 0
+          };
+          return acc;
+        }, {} as Record<string, { amount_raised: number; progress_pct_money: number }>);
+      }
+    }
+
     // Transform data to match expected format
-    const transformedData = data?.map((item: any) => ({
-      transaction_id: item.id,
-      raffle_id: item.raffle_id,
-      raffle_title: item.raffles?.title || 'Untitled',
-      raffle_image_url: item.raffles?.image_url,
-      purchase_date: item.created_at,
-      tx_status: item.status,
-      value: Number(item.amount) || 0,
-      purchased_numbers: item.numbers || [],
-      ticket_count: Array.isArray(item.numbers) ? item.numbers.length : 1,
-      goal_amount: Number(item.raffles?.goal_amount) || 0,
-      amount_raised: 0, // We'll calculate this separately if needed
-      progress_pct_money: 0, // We'll calculate this separately if needed
-      draw_date: item.raffles?.draw_date,
-      buyer_user_id: item.user_id
-    })) || [];
+    const transformedData = data?.map((item: any) => {
+      const progress = progressData[item.raffle_id] || { amount_raised: 0, progress_pct_money: 0 };
+      return {
+        transaction_id: item.id,
+        raffle_id: item.raffle_id,
+        raffle_title: item.raffles?.title || 'Untitled',
+        raffle_image_url: item.raffles?.image_url,
+        purchase_date: item.created_at,
+        tx_status: item.status,
+        value: Number(item.amount) || 0,
+        purchased_numbers: item.numbers || [],
+        ticket_count: Array.isArray(item.numbers) ? item.numbers.length : 1,
+        goal_amount: Number(item.raffles?.goal_amount) || 0,
+        amount_raised: progress.amount_raised,
+        progress_pct_money: progress.progress_pct_money,
+        draw_date: item.raffles?.draw_date,
+        buyer_user_id: item.user_id
+      };
+    }) || [];
+
+    console.log('[MyTicketsPage] Final transformed data sample:', transformedData[0]);
 
     return { data: transformedData as TicketRow[], error };
   };
