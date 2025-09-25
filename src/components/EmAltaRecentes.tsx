@@ -62,6 +62,13 @@ export default function EmAltaRecentesSection() {
           if (recentes.error) throw recentes.error;
           
           console.debug('[EmAlta] count=%d sample=%o', emAlta.data?.length ?? 0, emAlta.data?.slice(0,3)?.map((r: any) => r.id));
+          console.debug('[EmAlta] Full top 3 data:', emAlta.data?.slice(0,3)?.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            amount_raised: r.amount_raised,
+            participants_count: r.participants_count,
+            last_paid_at: r.last_paid_at
+          })));
           
           setTop(((emAlta.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
           setRecent(((recentes.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
