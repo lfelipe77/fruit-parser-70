@@ -27,7 +27,7 @@ export function usePublicWinners(limit = 50) {
       setLoading(true);
       // C) Premiados
       const { data, error } = await supabase
-        .from('v_public_winners_pubnames')
+        .from('v_public_winners')
         .select('raffle_id, raffle_title, winning_ticket, concurso_number, draw_date, logged_at, winner_handle, avatar_url, user_id, ticket_id, federal_target, winner_id')
         .order('draw_date', { ascending: false, nullsFirst: false })
         .order('logged_at', { ascending: false })
