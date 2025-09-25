@@ -214,26 +214,18 @@ export default function GanhaveisDetail() {
         setDirectLink(link || null);
       }
 
-      // Load organizer profile if available
-      // Try organizer_id first, then fallback to user_id
-      const organizerId = baseData?.organizer_id || baseData?.user_id;
-      if (organizerId) {
-        console.log('[GanhaveisDetail] Loading organizer for id:', organizerId);
-        
-        // Use anon-safe organizer view (by raffle_id, safer than user_id)
-        const { data: ownerData, error: ownerError } = await supabase
-          .from('v_organizer_public' as any)
-          .select('username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
-          .eq('raffle_id', key)
-          .maybeSingle();
-        if (ownerError) console.warn('owner error', ownerError);
-        
-        console.log('[GanhaveisDetail] Organizer data loaded:', ownerData);
-        setOrganizerData(ownerData);
-      } else {
-        console.log('[GanhaveisDetail] No organizer_id or user_id in baseData:', baseData);
-        setOrganizerData(null);
-      }
+      // Load organizer profile via raffle-scoped view (anon-safe)
+      console.log('[GanhaveisDetail] Loading organizer for raffle:', key);
+      
+      const { data: ownerData, error: ownerError } = await supabase
+        .from('v_organizer_public' as any)
+        .select('username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
+        .eq('raffle_id', key)
+        .maybeSingle();
+      
+      if (ownerError) console.warn('[GanhaveisDetail] Organizer fetch error:', ownerError);
+      console.log('[GanhaveisDetail] Organizer data (view):', ownerData);
+      setOrganizerData(ownerData);
 
       // URL normalization - redirect to canonical slug if needed
       if (baseData && !normalizedOnce) {
