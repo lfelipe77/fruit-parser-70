@@ -219,12 +219,15 @@ export default function GanhaveisDetail() {
       const organizerId = baseData?.organizer_id || baseData?.user_id;
       if (organizerId) {
         console.log('[GanhaveisDetail] Loading organizer for id:', organizerId);
+        
+        // Use the public view directly (anon-safe with RLS policies)
         const { data: ownerData, error: ownerError } = await supabase
-          .from("user_profiles_public")
-          .select("*")
-          .eq("id", organizerId)
+          .from('user_profiles_public')
+          .select('id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
+          .eq('id', organizerId)
           .maybeSingle();
-        if (ownerError) console.warn("owner error", ownerError);
+        if (ownerError) console.warn('owner error', ownerError);
+        
         console.log('[GanhaveisDetail] Organizer data loaded:', ownerData);
         setOrganizerData(ownerData);
       } else {
