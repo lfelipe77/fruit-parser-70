@@ -21,7 +21,7 @@ export function useCompletedUnpickedRaffles() {
       const { data, error } = await supabase
         .from('raffles_public_money_ext')
         .select('id, title, image_url, status, amount_raised, goal_amount, last_paid_at, participants_count, draw_date, progress_pct_money')
-        .or('status.eq.drawing,amount_raised.gte.goal_amount')
+        .in('status', ['drawing', 'funded', 'completed', 'premiado'])
         .order('last_paid_at', { ascending: false, nullsFirst: false });
       
       if (error) {

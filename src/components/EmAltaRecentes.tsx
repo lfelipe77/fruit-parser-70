@@ -42,7 +42,7 @@ export default function EmAltaRecentesSection() {
           supabase
             .from("raffles_public_money_ext")
             .select(RAFFLE_CARD_SELECT)
-            .or('status.in.(active,drawing,premiado,archived),amount_raised.gte.goal_amount')
+            .in('status', ['active', 'drawing', 'premiado', 'archived'])
             .order('last_paid_at', { ascending: false, nullsFirst: false })
             .order('participants_count', { ascending: false, nullsFirst: true })
             .order('amount_raised', { ascending: false, nullsFirst: true })
@@ -51,7 +51,7 @@ export default function EmAltaRecentesSection() {
           supabase
             .from("raffles_public_money_ext")
             .select(RAFFLE_CARD_SELECT)
-            .or('status.in.(active,drawing,premiado,archived),amount_raised.gte.goal_amount')
+            .in('status', ['active', 'drawing', 'premiado', 'archived'])
             .order("created_at", { ascending: false })
             .limit(24)
         ]);
