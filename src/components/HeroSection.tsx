@@ -7,7 +7,7 @@ import { FadeText } from "@/components/FadeText";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { usePublicWinners } from "@/hooks/usePublicWinners";
+import { usePublicWinners, type PublicWinnerCard } from "@/hooks/usePublicWinners";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
 
 type HomeStats = {

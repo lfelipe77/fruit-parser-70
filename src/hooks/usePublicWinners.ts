@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Local type so we don't block on codegen
-type PublicWinnerCard = {
+export type PublicWinnerCard = {
   winner_id: number;
   raffle_id: string;
   raffle_title: string | null;
@@ -18,7 +18,7 @@ type PublicWinnerCard = {
 };
 
 export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCard[]> {
-  // Try the new anon-safe view first
+  // 1) anon-safe enriched view
   let { data, error } = await supabase
     .from('v_public_winners_pubnames')
     .select('*')
@@ -26,19 +26,22 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
     .order('logged_at', { ascending: false })
     .limit(50);
 
-  // Fallback to old view if new one doesn't exist
+  // 2) fallback to legacy view if the new one doesn't exist (dev/stage)
   if (error && (error.code === '42P01' || /does not exist/i.test(error.message))) {
-    ({ data } = await supabase
+    console.warn('[Premiados] Falling back to v_public_winners due to', error);
+    const res = await supabase
       .from('v_public_winners')
       .select('*')
       .order('draw_date', { ascending: false, nullsFirst: false })
       .order('logged_at', { ascending: false })
-      .limit(50));
+      .limit(50);
+    error = res.error;
+    data = res.data ?? [];
   }
 
-  if (error && data === undefined) {
+  if (error) {
     console.error('[Premiados] fetch error', error);
-    return [];
+    throw error;
   }
 
   // Normalize for UI
@@ -50,14 +53,16 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
 }
 
 export function usePublicWinners(limit = 50) {
-  const [data, setData] = useState<PublicWinnerCard[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<PublicWinnerCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<null | { code?: string; message: string }>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setError(null);
+      
       try {
         const winners = await fetchPublicWinners(supabase);
         if (!cancelled) {
@@ -66,7 +71,11 @@ export function usePublicWinners(limit = 50) {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Unknown error');
+          setError({
+            code: (err as any)?.code,
+            message: err instanceof Error ? err.message : 'Unknown error'
+          });
+          setData([]);
         }
       } finally {
         if (!cancelled) {

@@ -23,14 +23,14 @@ export default function PremiadosList() {
   if (error) {
     return (
       <div className="p-6 text-sm text-destructive">
-        Erro ao carregar vencedores: {error}
+        Não foi possível carregar ganhadores (erro {error.code || 'desconhecido'}: {error.message})
       </div>
     );
   }
   if (!data || data.length === 0) {
     return (
       <div className="p-6 text-sm text-muted-foreground">
-        Ainda não há ganhadores publicados. Volte após o próximo sorteio.
+        Ainda sem ganhadores públicos.
       </div>
     );
   }
