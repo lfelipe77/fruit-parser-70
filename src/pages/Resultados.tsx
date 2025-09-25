@@ -194,14 +194,14 @@ export default function Resultados() {
               </div>
               
               <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                {almostCompleteRaffles.length === 0 ? (
+                {!almostCompleteRaffles || almostCompleteRaffles.length === 0 ? (
                   <Card className="p-8 text-center lg:col-span-2 xl:col-span-3">
                     <div className="text-muted-foreground">
                       <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum ganhavel próximo de completar.</p>
                     </div>
                   </Card>
-                ) : almostCompleteRaffles.map((draw) => {
+                ) : (almostCompleteRaffles || []).map((draw) => {
                   const percentage = draw.progress_pct_money || 0;
                   const raised = draw.amount_raised || 0;
                   const goal = draw.goal_amount || 0;
@@ -277,14 +277,14 @@ export default function Resultados() {
               </div>
               
               <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                {completeRaffles.length === 0 ? (
+                {!completeRaffles || completeRaffles.length === 0 ? (
                   <Card className="p-8 text-center lg:col-span-2 xl:col-span-3">
                     <div className="text-muted-foreground">
                       <CheckCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum ganhavel completo aguardando sorteio.</p>
                     </div>
                   </Card>
-                 ) : completeRaffles.map((draw) => {
+                 ) : (completeRaffles || []).map((draw) => {
                    // Dev-only safety logs
                    if (import.meta.env.DEV) {
                      console.debug('[Resultados/Completas] nextDraw=', nextFederalDrawDate().toISOString());
