@@ -17,11 +17,11 @@ export function useCompletedUnpickedRaffles() {
   return useQuery({
     queryKey: ['completed-unpicked'],
     queryFn: async (): Promise<CompletedRaffle[]> => {
-      // Filter by status to show "completed by money" awaiting draw/pick
+      // Step 1: base funded/drawing set (tolerant to status drift)
       const { data, error } = await supabase
         .from('raffles_public_money_ext')
         .select('id, title, image_url, status, amount_raised, goal_amount, last_paid_at, participants_count, draw_date, progress_pct_money')
-        .in('status', ['funded', 'drawing'])
+        .or('status.eq.drawing,amount_raised.gte.goal_amount')
         .order('last_paid_at', { ascending: false, nullsFirst: false });
       
       if (error) {
@@ -29,7 +29,7 @@ export function useCompletedUnpickedRaffles() {
         throw error;
       }
       
-      // Filter out raffles that already have winners in lottery_results
+      // Step 2: filter out those that already have winners (client-side)
       if (data && data.length > 0) {
         const raffleIds = data.map(r => r.id);
         const { data: existingResults } = await supabase
