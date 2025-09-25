@@ -72,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Backward-compat: support legacy template + variables
     if (!emailHtml && body?.template) {
-      emailHtml = buildTemplateHtml(body.template, body.variables);
+      emailHtml = buildTemplateHtml(body.template, body.variables) || '';
     }
 
     if (!to || !subject || !emailHtml) {

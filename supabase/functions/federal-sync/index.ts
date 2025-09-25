@@ -259,11 +259,7 @@ serve(withCORS(async (req: Request) => {
         }
       }
       
-      if (debug && federalItem) {
-        if (result.debug) {
-          result.debug[`${source}_parsed`] = federalItem;
-        }
-      }
+      // Debug logging removed to fix build error
       
       return federalItem;
     } catch (e) {

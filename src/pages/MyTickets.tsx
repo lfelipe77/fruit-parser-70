@@ -87,11 +87,59 @@ export default function MyTicketsPage() {
     // Preferred: use public join view (no RLS issues)
     try {
       console.log('[MyTicketsPage] Trying my_transactions_public view...');
-      const { data, error } = await supabase
-        .from('my_transactions_public')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+    // Fallback to two-step fetch since my_transactions_public view doesn't exist in types
+    const { data: txs, error: txError } = await supabase
+      .from('transactions')
+      .select('id, raffle_id, amount, status, numbers, created_at')
+      .eq('buyer_user_id', user.id)
+      .in('status', ['paid','settled','confirmed','approved'])
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (txError) {
+      console.error('Error fetching transactions:', txError);
+      return;
+    }
+
+    if (!txs || txs.length === 0) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch raffle details from public view
+    const raffleIds = [...new Set(txs.map(t => t.raffle_id))];
+    const { data: raffles, error: raffleError } = await supabase
+      .from('raffles_public_money_ext')
+      .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,draw_date')
+      .in('id', raffleIds);
+
+    if (raffleError) {
+      console.error('Error fetching raffles:', raffleError);
+      return;
+    }
+
+    // Merge data client-side
+    const mergedData = txs.map(tx => {
+      const raffle = raffles?.find(r => r.id === tx.raffle_id);
+      return {
+        id: tx.id,
+        raffle_id: tx.raffle_id,
+        amount: tx.amount,
+        status: tx.status,
+        numbers: tx.numbers,
+        created_at: tx.created_at,
+        title: raffle?.title,
+        image_url: raffle?.image_url,
+        goal_amount: raffle?.goal_amount,
+        amount_raised: raffle?.amount_raised,
+        progress_pct_money: raffle?.progress_pct_money,
+        draw_date: raffle?.draw_date
+      };
+    });
+
+    const data = mergedData;
+    const error = null;
       
       if (!error && data) {
         console.log('[MyTicketsPage] Public view success:', { count: data.length, sample: data[0] });

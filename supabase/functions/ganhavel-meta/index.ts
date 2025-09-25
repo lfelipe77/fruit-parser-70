@@ -89,7 +89,10 @@ ${priceMeta}
 
 async function fetchJson(u: URL) {
   const apiKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const baseHeaders = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
+  const baseHeaders: Record<string, string> = { 
+    apikey: apiKey || '', 
+    Authorization: `Bearer ${apiKey || ''}` 
+  };
   const res = await fetch(u.toString(), { headers: baseHeaders });
   if (!res.ok) return null;
   return await res.json();
@@ -98,7 +101,10 @@ async function fetchJson(u: URL) {
 async function fetchRaffle(key: string) {
   const baseUrl = Deno.env.get("SUPABASE_URL")!;
   const apiKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const headers = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
+  const headers: Record<string, string> = { 
+    apikey: apiKey || '', 
+    Authorization: `Bearer ${apiKey || ''}` 
+  };
 
   async function getOne(u: URL) {
     const res = await fetch(u.toString(), { headers });

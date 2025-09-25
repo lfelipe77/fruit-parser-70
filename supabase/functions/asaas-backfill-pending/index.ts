@@ -74,8 +74,9 @@ serve(async (req) => {
       return json(200, { processed: 0, successes: 0, failures: 0, items: [], message: "No pending payments to backfill" });
     }
 
-    const successesArr: any[] = [];
-    const failuresArr: any[] = [];
+    const results: any[] = [];
+    let successes = 0;
+    let failures = 0;
 
     for (const row of pendingRows) {
       const { reservation_id, amount } = row;
@@ -119,11 +120,12 @@ serve(async (req) => {
           
           console.error(`[backfill] Asaas error for ${reservation_id}:`, { status: res.status, details });
           
-          failuresArr.push({
+          results.push({
             reservation_id,
             error: `Asaas API error: ${res.status}`,
             details
           });
+          failures++;
           continue;
         }
 
@@ -132,11 +134,12 @@ serve(async (req) => {
         
         if (!asaas_payment_id) {
           console.error(`[backfill] No payment ID returned for ${reservation_id}:`, created);
-          failuresArr.push({
+          results.push({
             reservation_id,
             error: "No payment ID in Asaas response",
             asaas_response: created
           });
+          failures++;
           continue;
         }
 

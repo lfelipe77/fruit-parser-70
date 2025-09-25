@@ -189,8 +189,8 @@ serve(withCORS(async (req: Request) => {
   } catch (e) {
     const totalDuration = Date.now() - startTime;
     console.error("Unexpected error in verify-turnstile:", {
-      error: e.message,
-      stack: e.stack,
+      error: e instanceof Error ? e.message : 'Unknown error',
+      stack: e instanceof Error ? e.stack : undefined,
       totalDuration,
       timestamp: new Date().toISOString()
     });
