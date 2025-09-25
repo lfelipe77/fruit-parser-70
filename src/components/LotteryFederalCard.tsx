@@ -93,11 +93,6 @@ export default function LotteryFederalCard() {
                 })()}
               </span>
             </div>
-            {lastUpdated && (
-              <div className="mt-2 text-xs opacity-60">
-                Atualizado agora
-              </div>
-            )}
           </>
         )}
       </div>
