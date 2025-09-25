@@ -22,7 +22,7 @@ export function useCompletedUnpickedRaffles() {
         supabase
           .from('raffles_public_money_ext')
           .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
-          .or('status.eq.drawing,amount_raised.gte.goal_amount')
+          .eq('status', 'drawing')
           .neq('status', 'premiado')
           .order('last_paid_at', { ascending: false, nullsFirst: false }),
         supabase
@@ -38,8 +38,24 @@ export function useCompletedUnpickedRaffles() {
       // Create winner set for efficient filtering
       const winnerSet = new Set((winnersResult.data ?? []).map(w => w.raffle_id));
       
-      // Filter out raffles that already have winners
-      const completas = (baseResult.data ?? []).filter(r => !winnerSet.has(r.id));
+      // Filter out raffles that already have winners and add funded raffles
+      let completas = (baseResult.data ?? []).filter(r => !winnerSet.has(r.id));
+      
+      // Also fetch raffles that are funded (amount_raised >= goal_amount)
+      const { data: fundedRaffles } = await supabase
+        .from('raffles_public_money_ext')
+        .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
+        .gte('progress_pct_money', 100)
+        .neq('status', 'premiado')
+        .order('last_paid_at', { ascending: false, nullsFirst: false });
+      
+      // Combine and deduplicate
+      if (fundedRaffles) {
+        const fundedFiltered = fundedRaffles.filter(r => !winnerSet.has(r.id));
+        const existingIds = new Set(completas.map(r => r.id));
+        const newFunded = fundedFiltered.filter(r => !existingIds.has(r.id));
+        completas = [...completas, ...newFunded];
+      }
       
       const filteredData = completas.map(raffle => ({
         id: raffle.id,
