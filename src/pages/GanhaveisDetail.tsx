@@ -226,6 +226,7 @@ export default function GanhaveisDetail() {
         console.log('[GanhaveisDetail] Organizer data loaded:', ownerData);
         setOrganizerData(ownerData);
       } else {
+        console.log('[GanhaveisDetail] No user_id in baseData:', baseData);
         setOrganizerData(null);
       }
 
