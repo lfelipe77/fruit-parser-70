@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getLaunchedWithProgress, RaffleWithProgress } from '@/data/raffles';
 import RaffleCard from '@/components/RaffleCard';
@@ -34,9 +34,9 @@ export default function MyLaunched() {
       <div className="mx-auto max-w-6xl px-3 py-4 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Ganháveis que Lancei</h1>
         <div className="flex gap-2">
-          <a className="px-3 py-1.5 rounded-md border" href="/#/">Início</a>
-          <a className="px-3 py-1.5 rounded-md border" href="/#/lance-seu-ganhavel">Criar Novo</a>
-          <a className="px-3 py-1.5 rounded-md border" href="/#/dashboard">Dashboard</a>
+          <Link to="/" className="px-3 py-1.5 rounded-md border">Início</Link>
+          <Link to="/lance-seu-ganhavel" className="px-3 py-1.5 rounded-md border">Criar Novo</Link>
+          <Link to="/dashboard" className="px-3 py-1.5 rounded-md border">Dashboard</Link>
         </div>
       </div>
 
