@@ -53,7 +53,18 @@ serve(withCORS(async (req: Request) => {
   try {
     const supabase = createClient(supabaseUrl, serviceKey);
   
-  let result = { 
+  let result: {
+    synced: boolean;
+    source: string;
+    concurso: string;
+    concurso_number: string;
+    draw_date: string;
+    numbers: string[];
+    debug: any;
+    prizes_raw: any;
+    ok: boolean;
+    picked?: string;
+  } = { 
     synced: false, 
     source: '', 
     concurso: '', 

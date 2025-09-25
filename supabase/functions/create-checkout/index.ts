@@ -260,7 +260,7 @@ pix_copy_paste = pixString;
     }, origin);
   } catch (e) {
     console.error("Create checkout error:", e);
-    return json(500, { error: "Internal Error", details: `${e?.message ?? e}` }, origin);
+    return json(500, { error: "Internal Error", details: `${(e as any)?.message ?? e}` }, origin);
   }
 });
 

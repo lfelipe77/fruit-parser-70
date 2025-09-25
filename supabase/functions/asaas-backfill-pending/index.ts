@@ -181,7 +181,7 @@ serve(async (req) => {
         results.push({
           reservation_id,
           ok: false,
-          error: error?.message || String(error)
+          error: (error as any)?.message || String(error)
         });
         failures++;
       }
@@ -198,7 +198,7 @@ serve(async (req) => {
     console.error("[backfill] Unexpected error:", error);
     return json(500, { 
       error: "Internal server error", 
-      details: error?.message || String(error) 
+      details: (error as any)?.message || String(error) 
     });
   }
 });
