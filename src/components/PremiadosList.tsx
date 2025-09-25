@@ -38,8 +38,8 @@ export default function PremiadosList() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((w) => {
-        // Improved user display logic - avoid showing UUID fragments
-        const hasValidHandle = w.winner_handle && w.winner_handle.length > 8;
+        // Display winner handle or fallback to anonymous
+        const hasValidHandle = w.winner_handle && w.winner_handle.trim().length > 0;
         const handle = hasValidHandle ? w.winner_handle : 'Ganhador Anônimo';
         const profileHref = hasValidHandle ? `/perfil/${encodeURIComponent(w.winner_handle!)}` : '#';
         const ticketHref = w.ticket_id ? `/ticket/${w.ticket_id}` : '#';
