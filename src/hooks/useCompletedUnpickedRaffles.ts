@@ -17,26 +17,29 @@ export function useCompletedUnpickedRaffles() {
   return useQuery({
     queryKey: ['completed-unpicked'],
     queryFn: async (): Promise<CompletedRaffle[]> => {
-      // B) "Completas (aguardando sorteio)" — separation that works
-      const { data: base, error } = await supabase
-        .from('raffles_public_money_ext')
-        .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
-        .or('status.eq.drawing,amount_raised.gte.goal_amount')
-        .neq('status', 'premiado')
-        .order('last_paid_at', { ascending: false, nullsFirst: false });
+      // Execute both queries in parallel for better performance
+      const [baseResult, winnersResult] = await Promise.all([
+        supabase
+          .from('raffles_public_money_ext')
+          .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
+          .or('status.eq.drawing,amount_raised.gte.goal_amount')
+          .neq('status', 'premiado')
+          .order('last_paid_at', { ascending: false, nullsFirst: false }),
+        supabase
+          .from('v_public_winners')
+          .select('raffle_id')
+      ]);
       
-      if (error) {
-        console.error('[Resultados] Error loading completed raffles:', error);
-        throw error;
+      if (baseResult.error) {
+        console.error('[Resultados] Error loading completed raffles:', baseResult.error);
+        throw baseResult.error;
       }
       
-      // exclude anything that already has a public winner
-      const { data: winners } = await supabase
-        .from('v_public_winners')
-        .select('raffle_id');
-      const winnerSet = new Set((winners ?? []).map(w => w.raffle_id));
+      // Create winner set for efficient filtering
+      const winnerSet = new Set((winnersResult.data ?? []).map(w => w.raffle_id));
       
-      const completas = (base ?? []).filter(r => !winnerSet.has(r.id));
+      // Filter out raffles that already have winners
+      const completas = (baseResult.data ?? []).filter(r => !winnerSet.has(r.id));
       
       const filteredData = completas.map(raffle => ({
         id: raffle.id,
