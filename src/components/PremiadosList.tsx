@@ -60,7 +60,7 @@ export default function PremiadosList() {
                 })()}
               </div>
               <div className="min-w-0">
-                <Link to={profileHref} className="block font-medium truncate hover:underline">
+                <Link to={profileHref} className="block font-medium hover:underline text-sm">
                   {handle}
                 </Link>
                 <Link to={raffleHref} className="block text-sm font-medium text-foreground/80 truncate hover:underline">
