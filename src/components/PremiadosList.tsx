@@ -38,9 +38,11 @@ export default function PremiadosList() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((w) => {
-        // Display winner handle or fallback to anonymous
+        // Ensure we're using winner_handle, not user_id for display
+        const handle = w.winner_handle && w.winner_handle.trim().length > 0 
+          ? w.winner_handle 
+          : 'Ganhador Anônimo';
         const hasValidHandle = w.winner_handle && w.winner_handle.trim().length > 0;
-        const handle = hasValidHandle ? w.winner_handle : 'Ganhador Anônimo';
         const profileHref = hasValidHandle ? `/perfil/${encodeURIComponent(w.winner_handle!)}` : '#';
         const ticketHref = w.ticket_id ? `/ticket/${w.ticket_id}` : '#';
         const raffleHref = w.raffle_id ? `/ganhavel/${w.raffle_id}` : '#';
