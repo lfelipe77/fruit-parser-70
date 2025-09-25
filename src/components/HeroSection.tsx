@@ -37,11 +37,28 @@ export default function HeroSection() {
 
   async function fetchStats(): Promise<{ src: 'cache'|'live', data: HomeStats|null }> {
     try {
-      // participants (distinct paid buyers)
-      const { count: participants } = await supabase
+      console.log('[HeroSection] Fetching stats...');
+      
+      // participants (distinct paid buyers) - proper query
+      const { data: participantsData, error: participantsError } = await supabase
         .from('transactions')
-        .select('buyer_user_id', { head: true, count: 'exact' })
-        .eq('status', 'paid');
+        .select('buyer_user_id')
+        .eq('status', 'paid')
+        .not('buyer_user_id', 'is', null);
+      
+      if (participantsError) {
+        console.error('[HeroSection] Participants query error:', participantsError);
+      }
+      
+      const distinctParticipants = participantsData 
+        ? new Set(participantsData.map(t => t.buyer_user_id)).size 
+        : 0;
+      
+      console.log('[HeroSection] Participants calculation:', {
+        totalTransactions: participantsData?.length || 0,
+        distinctParticipants,
+        sampleData: participantsData?.slice(0, 5)
+      });
 
       // active raffles
       const { count: active } = await supabase
@@ -49,10 +66,12 @@ export default function HeroSection() {
         .select('id', { head: true, count: 'exact' })
         .eq('status', 'active');
 
+      console.log('[HeroSection] Active raffles count:', active);
+
       const statsData: HomeStats = {
         total_raised: 0,
         total_prize_paid: 0,
-        total_participants: participants || 0,
+        total_participants: distinctParticipants,
         total_ganhaveis: active || 0,
         active_ganhaveis: active || 0,
         almost_complete_ganhaveis: 0,
@@ -60,6 +79,7 @@ export default function HeroSection() {
         recent_transactions: 0
       };
 
+      console.log('[HeroSection] Final stats data:', statsData);
       return { src: 'live', data: statsData };
     } catch (error) {
       console.error('Failed to fetch stats:', error);
