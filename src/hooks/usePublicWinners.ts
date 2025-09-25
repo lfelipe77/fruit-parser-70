@@ -18,15 +18,25 @@ type PublicWinnerCard = {
 };
 
 export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCard[]> {
-  // Use the anon-safe, enriched view
-  const { data, error } = await supabase
+  // Try the new anon-safe view first
+  let { data, error } = await supabase
     .from('v_public_winners_pubnames')
     .select('*')
     .order('draw_date', { ascending: false, nullsFirst: false })
     .order('logged_at', { ascending: false })
     .limit(50);
 
-  if (error) {
+  // Fallback to old view if new one doesn't exist
+  if (error && (error.code === '42P01' || /does not exist/i.test(error.message))) {
+    ({ data } = await supabase
+      .from('v_public_winners')
+      .select('*')
+      .order('draw_date', { ascending: false, nullsFirst: false })
+      .order('logged_at', { ascending: false })
+      .limit(50));
+  }
+
+  if (error && data === undefined) {
     console.error('[Premiados] fetch error', error);
     return [];
   }

@@ -25,6 +25,7 @@ interface DetalhesOrganizadorProps {
 }
 
 export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorProps) {
+  // Don't block rendering if stats fail to load (e.g., anonymous users)
   const { data: stats, isLoading, error, refetch } = useProfileStats(organizer?.id);
   return (
     <Card>
@@ -74,21 +75,23 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="py-4 border-t">
-          {(console.debug('[ProfileStats] rpc', stats), null)}
-          <ProfileStats 
-            stats={{
-              launched: stats?.launched ?? 0,
-              participated: stats?.participating ?? 0,
-              // completed: omitted temporarily (feature flag controlled)
-              won: stats?.wins ?? 0,
-            }}
-            isLoading={isLoading}
-            error={error}
-            onRetry={refetch}
-          />
-        </div>
+        {/* Stats Grid - Only show if we have data or are loading */}
+        {(stats || isLoading) && (
+          <div className="py-4 border-t">
+            {(console.debug('[ProfileStats] rpc', stats), null)}
+            <ProfileStats 
+              stats={{
+                launched: stats?.launched ?? 0,
+                participated: stats?.participating ?? 0,
+                // completed: omitted temporarily (feature flag controlled)
+                won: stats?.wins ?? 0,
+              }}
+              isLoading={isLoading}
+              error={error}
+              onRetry={refetch}
+            />
+          </div>
+        )}
 
       </CardContent>
     </Card>
