@@ -124,9 +124,6 @@ export default function CaixaLotterySection() {
               <div className="mt-2 text-xs opacity-60">
                 Quartas e sábados às 20:00 horas
               </div>
-              <div className="mt-1 text-xs opacity-60">
-                Atualizado agora
-              </div>
             </div>
           </div>
         )}
