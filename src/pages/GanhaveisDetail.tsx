@@ -442,20 +442,26 @@ export default function GanhaveisDetail() {
             </TabsContent>
           </Tabs>
 
-          {/* Organizer Profile Section - Hidden on mobile */}
-          <div className="mt-8 hidden md:block">
-            <DetalhesOrganizador 
-              organizer={{
-                id: organizerData?.id || "",
-                name: organizerData?.full_name || organizerData?.username || "Organizador",
-                username: organizerData?.username || "user",
-                bio: organizerData?.bio || "Organizador experiente na plataforma.",
-                location: organizerData?.location || "Brasil",
-                memberSince: "Janeiro 2023", // TODO: wire from created_at
-                avatar_url: organizerData?.avatar_url,
-                updated_at: organizerData?.updated_at
-              }}
-            />
+          {/* Organizer Profile Section - Now visible on all devices */}
+          <div className="mt-8">
+            {organizerData ? (
+              <DetalhesOrganizador 
+                organizer={{
+                  id: organizerData.id || "",
+                  name: organizerData.full_name || organizerData.username || "Organizador",
+                  username: organizerData.username || "user",
+                  bio: organizerData.bio || "Organizador experiente na plataforma.",
+                  location: organizerData.location || "Brasil",
+                  memberSince: "Janeiro 2023", // TODO: wire from created_at
+                  avatar_url: organizerData.avatar_url,
+                  updated_at: organizerData.updated_at
+                }}
+              />
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                Carregando informações do organizador...
+              </div>
+            )}
           </div>
         </div>
 
