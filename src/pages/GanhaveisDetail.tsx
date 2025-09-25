@@ -216,12 +216,14 @@ export default function GanhaveisDetail() {
 
       // Load organizer profile if available
       if (baseData?.user_id) {
+        console.log('[GanhaveisDetail] Loading organizer for user_id:', baseData.user_id);
         const { data: ownerData, error: ownerError } = await supabase
           .from("user_profiles_public")
           .select("*")
           .eq("id", baseData.user_id)
           .maybeSingle();
         if (ownerError) console.warn("owner error", ownerError);
+        console.log('[GanhaveisDetail] Organizer data loaded:', ownerData);
         setOrganizerData(ownerData);
       } else {
         setOrganizerData(null);
@@ -442,26 +444,20 @@ export default function GanhaveisDetail() {
             </TabsContent>
           </Tabs>
 
-          {/* Organizer Profile Section - Now visible on all devices */}
+          {/* Organizer Profile Section - Always visible */}
           <div className="mt-8">
-            {organizerData ? (
-              <DetalhesOrganizador 
-                organizer={{
-                  id: organizerData.id || "",
-                  name: organizerData.full_name || organizerData.username || "Organizador",
-                  username: organizerData.username || "user",
-                  bio: organizerData.bio || "Organizador experiente na plataforma.",
-                  location: organizerData.location || "Brasil",
-                  memberSince: "Janeiro 2023", // TODO: wire from created_at
-                  avatar_url: organizerData.avatar_url,
-                  updated_at: organizerData.updated_at
-                }}
-              />
-            ) : (
-              <div className="text-center py-4 text-muted-foreground">
-                Carregando informações do organizador...
-              </div>
-            )}
+            <DetalhesOrganizador 
+              organizer={{
+                id: organizerData?.id || "",
+                name: organizerData?.full_name || organizerData?.username || "Organizador",
+                username: organizerData?.username || "user",
+                bio: organizerData?.bio || "Organizador experiente na plataforma.",
+                location: organizerData?.location || "Brasil",
+                memberSince: "Janeiro 2023", // TODO: wire from created_at
+                avatar_url: organizerData?.avatar_url,
+                updated_at: organizerData?.updated_at
+              }}
+            />
           </div>
         </div>
 
@@ -649,20 +645,6 @@ export default function GanhaveisDetail() {
         </aside>
       </div>
 
-      {/* Organizer Profile Section - Mobile only */}
-      <div className="mt-8 md:hidden">
-        <DetalhesOrganizador 
-          organizer={{
-            id: organizerData?.id || "",
-            name: organizerData?.full_name || organizerData?.username || "Organizador",
-            username: organizerData?.username || "user",
-            bio: organizerData?.bio || "Organizador experiente na plataforma.",
-            location: organizerData?.location || "Brasil",
-            memberSince: "Janeiro 2023", // TODO: wire from created_at
-            avatar: organizerData?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-          }}
-        />
-      </div>
       
       {/* Completion Detection for this specific raffle */}
       {raffle?.id && (
