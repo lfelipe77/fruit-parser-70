@@ -25,9 +25,10 @@ export function usePublicWinners(limit = 50) {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data, error } = await (supabase as any)
+      // C) Premiados
+      const { data, error } = await supabase
         .from('v_public_winners')
-        .select('*')
+        .select('raffle_id, winning_ticket, concurso_number, draw_date, logged_at')
         .order('draw_date', { ascending: false, nullsFirst: false })
         .order('logged_at', { ascending: false })
         .limit(limit);
