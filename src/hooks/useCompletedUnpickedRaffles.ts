@@ -24,6 +24,7 @@ export function useCompletedUnpickedRaffles() {
           .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
           .eq('status', 'drawing')
           .neq('status', 'premiado')
+          .neq('status', 'archived')
           .order('last_paid_at', { ascending: false, nullsFirst: false }),
         supabase
           .from('v_public_winners')
@@ -47,6 +48,7 @@ export function useCompletedUnpickedRaffles() {
         .select('id,slug,title,image_url,status,goal_amount,amount_raised,progress_pct_money,participants_count,draw_date,ticket_price,last_paid_at')
         .gte('progress_pct_money', 100)
         .neq('status', 'premiado')
+        .neq('status', 'archived')
         .order('last_paid_at', { ascending: false, nullsFirst: false });
       
       // Combine and deduplicate
