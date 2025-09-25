@@ -835,7 +835,7 @@ export default function AdminGanhadores() {
                     variant="outline"
                     className="w-full justify-start"
                     onClick={() => {
-                      const handle = selectedWinnerDetail.winner_handle_fallback || selectedWinnerDetail.link_winner_user_id.slice(0, 8);
+                      const handle = selectedWinnerDetail.winner_handle_fallback || 'Ganhador Anônimo';
                       window.open(`/p/${encodeURIComponent(handle)}`, '_blank');
                     }}
                   >
