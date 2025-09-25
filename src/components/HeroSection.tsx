@@ -39,41 +39,38 @@ export default function HeroSection() {
     try {
       console.log('[HeroSection] Fetching stats...');
       
-      // participants (distinct paid buyers) - proper query
-      const { data: participantsData, error: participantsError } = await supabase
-        .from('transactions')
-        .select('buyer_user_id')
-        .eq('status', 'paid')
-        .not('buyer_user_id', 'is', null);
+      // participants (sum from public view - stable, no RLS surprises)
+      const { data: partRows, error: partErr } = await supabase
+        .from('raffles_public_money_ext')
+        .select('participants_count')
+        .in('status', ['active','completed','premiado'])
+        .limit(2000);
+
+      if (partErr) throw partErr;
+      const participants = (partRows ?? []).reduce((a, r) => a + (r.participants_count ?? 0), 0);
       
-      if (participantsError) {
-        console.error('[HeroSection] Participants query error:', participantsError);
-      }
-      
-      const distinctParticipants = participantsData 
-        ? new Set(participantsData.map(t => t.buyer_user_id)).size 
-        : 0;
-      
-      console.log('[HeroSection] Participants calculation:', {
-        totalTransactions: participantsData?.length || 0,
-        distinctParticipants,
-        sampleData: participantsData?.slice(0, 5)
+      console.log('[HeroSection] Participants from public view:', {
+        raffleCount: partRows?.length || 0,
+        totalParticipants: participants,
+        sampleData: partRows?.slice(0, 3)
       });
 
-      // active raffles
-      const { count: active } = await supabase
-        .from('raffles')
+      // active raffles (from public view too)
+      const { count: activeCount, error: activeErr } = await supabase
+        .from('raffles_public_money_ext')
         .select('id', { head: true, count: 'exact' })
         .eq('status', 'active');
 
-      console.log('[HeroSection] Active raffles count:', active);
+      if (activeErr) throw activeErr;
+
+      console.log('[HeroSection] Active raffles count:', activeCount);
 
       const statsData: HomeStats = {
         total_raised: 0,
         total_prize_paid: 0,
-        total_participants: distinctParticipants,
-        total_ganhaveis: active || 0,
-        active_ganhaveis: active || 0,
+        total_participants: participants,
+        total_ganhaveis: activeCount || 0,
+        active_ganhaveis: activeCount || 0,
         almost_complete_ganhaveis: 0,
         total_tickets_sold: 0,
         recent_transactions: 0

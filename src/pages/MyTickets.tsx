@@ -84,115 +84,92 @@ export default function MyTicketsPage() {
   const fetchV7 = async () => {
     if (!user?.id) throw new Error('No user ID');
     
-    // Try edge function first, fallback to direct query
+    // Preferred: use public join view (no RLS issues)
     try {
-      console.log('[MyTicketsPage] Calling edge function my-tickets-get...');
-      const { data, error } = await supabase.functions.invoke('my-tickets-get', {
-        body: { limit: 50 }
-      });
+      console.log('[MyTicketsPage] Trying my_transactions_public view...');
+      const { data, error } = await supabase
+        .from('my_transactions_public')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
       
-      console.log('[MyTicketsPage] Edge function response:', { data, error });
-      
-      if (!error && data?.items) {
-        console.log('[MyTicketsPage] Sample edge function item:', data.items[0]);
-        // Convert consolidated data to expected format
-        const convertedData = data.items.map((item: any) => ({
-          ...item,
-          purchase_date: item.purchaseDate,
-          raffle_id: item.raffleId,
-          raffle_title: item.raffleTitle,
-          raffle_image_url: item.raffleImageUrl,
+      if (!error && data) {
+        console.log('[MyTicketsPage] Public view success:', { count: data.length, sample: data[0] });
+        // Transform to expected format
+        const transformedData = data.map((item: any) => ({
+          transaction_id: item.id,
+          raffle_id: item.raffle_id,
+          raffle_title: item.title || 'Untitled',
+          raffle_image_url: item.image_url,
+          purchase_date: item.created_at,
           tx_status: item.status,
-          transaction_id: item.transactionId,
-          purchased_numbers: item.purchasedNumbers,
-          ticket_count: item.ticketCount,
-          value: item.value,
-          goal_amount: item.goalAmount,
-          amount_raised: item.amountRaised,
-          progress_pct_money: item.progressPctMoney,
-          buyer_user_id: user.id
+          value: Number(item.amount) || 0,
+          purchased_numbers: item.numbers || [],
+          ticket_count: Array.isArray(item.numbers) ? item.numbers.length : 1,
+          goal_amount: Number(item.goal_amount) || 0,
+          amount_raised: Number(item.amount_raised) || 0,
+          progress_pct_money: Number(item.progress_pct_money) || 0,
+          draw_date: item.draw_date,
+          buyer_user_id: item.buyer_user_id || user.id
         }));
-        console.log('[MyTicketsPage] Converted data sample:', convertedData[0]);
-        return { data: convertedData as TicketRow[], error: null };
+        return { data: transformedData as TicketRow[], error: null };
       }
-    } catch (edgeFunctionError) {
-      console.warn('[MyTicketsPage] Edge function failed, falling back to direct query:', edgeFunctionError);
+    } catch (viewError) {
+      console.warn('[MyTicketsPage] Public view unavailable, trying two-step fetch:', viewError);
     }
     
-    // Fallback: Query transactions with raffle progress data
-    console.log('[MyTicketsPage] Falling back to direct query...');
-    const { data, error } = await supabase
+    // Fallback: two-step fetch (no joins to base raffles)
+    console.log('[MyTicketsPage] Using two-step fetch...');
+    const { data: txs, error: txError } = await supabase
       .from('transactions')
-      .select(`
-        id,
-        raffle_id,
-        amount,
-        status,
-        numbers,
-        created_at,
-        user_id,
-        raffles!inner(
-          title,
-          image_url,
-          goal_amount,
-          draw_date
-        )
-      `)
+      .select('id, raffle_id, amount, status, numbers, created_at, user_id')
       .eq('user_id', user.id)
+      .in('status', ['paid','settled','confirmed','approved'])
       .order('created_at', { ascending: false })
       .limit(50);
 
-    console.log('[MyTicketsPage] Direct query response:', { dataLength: data?.length, error });
+    if (txError) throw txError;
 
-    // Get progress data for each raffle
-    const raffleIds = [...new Set(data?.map(item => item.raffle_id) || [])];
-    console.log('[MyTicketsPage] Fetching progress for raffles:', raffleIds);
+    const ids = [...new Set((txs ?? []).map(t => t.raffle_id))];
+    console.log('[MyTicketsPage] Fetching raffle details for:', ids);
     
-    let progressData: Record<string, { amount_raised: number; progress_pct_money: number }> = {};
-    
-    if (raffleIds.length > 0) {
-      const { data: progressRows, error: progressError } = await supabase
-        .from('raffles_public_money_ext')
-        .select('id, amount_raised, progress_pct_money')
-        .in('id', raffleIds);
-      
-      console.log('[MyTicketsPage] Progress query response:', { progressRows, progressError });
-      
-      if (progressRows) {
-        progressData = progressRows.reduce((acc, row) => {
-          acc[row.id] = {
-            amount_raised: row.amount_raised || 0,
-            progress_pct_money: row.progress_pct_money || 0
-          };
-          return acc;
-        }, {} as Record<string, { amount_raised: number; progress_pct_money: number }>);
-      }
+    const { data: raffles, error: raffleError } = await supabase
+      .from('raffles_public_money_ext')
+      .select('id,title,image_url,goal_amount,amount_raised,progress_pct_money,draw_date')
+      .in('id', ids);
+
+    if (raffleError) {
+      console.error('[MyTicketsPage] Raffle details error:', raffleError);
     }
 
-    // Transform data to match expected format
-    const transformedData = data?.map((item: any) => {
-      const progress = progressData[item.raffle_id] || { amount_raised: 0, progress_pct_money: 0 };
+    // Merge client-side
+    const raffleMap = (raffles || []).reduce((acc, r) => {
+      acc[r.id] = r;
+      return acc;
+    }, {} as any);
+
+    const transformedData = (txs || []).map((tx: any) => {
+      const raffle = raffleMap[tx.raffle_id] || {};
       return {
-        transaction_id: item.id,
-        raffle_id: item.raffle_id,
-        raffle_title: item.raffles?.title || 'Untitled',
-        raffle_image_url: item.raffles?.image_url,
-        purchase_date: item.created_at,
-        tx_status: item.status,
-        value: Number(item.amount) || 0,
-        purchased_numbers: item.numbers || [],
-        ticket_count: Array.isArray(item.numbers) ? item.numbers.length : 1,
-        goal_amount: Number(item.raffles?.goal_amount) || 0,
-        amount_raised: progress.amount_raised,
-        progress_pct_money: progress.progress_pct_money,
-        draw_date: item.raffles?.draw_date,
-        buyer_user_id: item.user_id
+        transaction_id: tx.id,
+        raffle_id: tx.raffle_id,
+        raffle_title: raffle.title || 'Untitled',
+        raffle_image_url: raffle.image_url,
+        purchase_date: tx.created_at,
+        tx_status: tx.status,
+        value: Number(tx.amount) || 0,
+        purchased_numbers: tx.numbers || [],
+        ticket_count: Array.isArray(tx.numbers) ? tx.numbers.length : 1,
+        goal_amount: Number(raffle.goal_amount) || 0,
+        amount_raised: Number(raffle.amount_raised) || 0,
+        progress_pct_money: Number(raffle.progress_pct_money) || 0,
+        draw_date: raffle.draw_date,
+        buyer_user_id: tx.user_id
       };
-    }) || [];
+    });
 
-    console.log('[MyTicketsPage] Final transformed data sample:', transformedData[0]);
-
-    return { data: transformedData as TicketRow[], error };
+    console.log('[MyTicketsPage] Final merged data sample:', transformedData[0]);
+    return { data: transformedData as TicketRow[], error: null };
   };
 
   const fetchTickets = async () => {

@@ -44,10 +44,9 @@ export default function EmAltaRecentesSection() {
             .select(RAFFLE_CARD_SELECT)
             .in('status', ['active','completed','premiado'])
             .order('last_paid_at', { ascending: false, nullsFirst: false })
-            .order('participants_count', { ascending: false, nullsFirst: false })
-            .order('amount_raised', { ascending: false, nullsFirst: false })
+            .order('participants_count', { ascending: false, nullsFirst: true })
+            .order('amount_raised', { ascending: false, nullsFirst: true })
             .order('created_at', { ascending: false })
-            .order('id', { ascending: true })
             .limit(12),
           supabase
             .from("raffles_public_money_ext")

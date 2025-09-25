@@ -90,22 +90,18 @@ export default function DiscoverRaffles() {
       switch (sortBy) {
         case "ending-soon": {
           query = query
-            .in('status', STATUS_FOR_ENDING_SOON)
+            .eq('status', 'active')
             .not('draw_date', 'is', null)
-            .order('draw_date', { ascending: true, nullsFirst: false })
-            .order('last_paid_at', { ascending: false, nullsFirst: false })
-            .order('created_at', { ascending: false })
-            .order('id', { ascending: true });
+            .gt('draw_date', new Date().toISOString())
+            .order('draw_date', { ascending: true, nullsFirst: false });
           break;
         }
         case "popularity": {
           query = query
             .in('status', STATUS_FOR_ALL)
-            .order('participants_count', { ascending: false, nullsFirst: false })
-            .order('amount_raised', { ascending: false, nullsFirst: false })
-            .order('last_paid_at', { ascending: false, nullsFirst: false })
-            .order('created_at', { ascending: false })
-            .order('id', { ascending: true });
+            .order('participants_count', { ascending: false, nullsFirst: true })
+            .order('amount_raised', { ascending: false, nullsFirst: true })
+            .order('last_paid_at', { ascending: false, nullsFirst: false });
           break;
         }
         case "goal":
@@ -131,15 +127,15 @@ export default function DiscoverRaffles() {
       const { data, error, count } = await query;
       let rows = (data as unknown as RaffleCardInfo[]) || [];
 
-      // Fallback for "ending soon" if no results (few raffles have draw_date)
+      // Fallback for "ending soon" if no results (show recent activity instead)
       if (!error && rows.length === 0 && sortBy === "ending-soon") {
-        console.log('[Discover] No ending soon results, falling back to newest');
+        console.log('[Discover] No ending soon results, falling back to recent activity');
         const fallback = await supabase
           .from('raffles_public_money_ext')
           .select(RAFFLE_CARD_SELECT)
           .in('status', STATUS_FOR_ALL)
+          .order('last_paid_at', { ascending: false, nullsFirst: false })
           .order('created_at', { ascending: false })
-          .order('id', { ascending: true })
           .limit(12);
         if (!fallback.error) {
           rows = (fallback.data as unknown as RaffleCardInfo[]) || [];
