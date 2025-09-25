@@ -8,7 +8,7 @@ type PublicWinnerCard = {
   raffle_title: string | null;
   ticket_id: string;
   user_id: string | null;
-  winner_handle: string;
+  winner_handle: string | null;   // <-- use this
   avatar_url: string | null;
   federal_target: string;
   winning_ticket: string;
@@ -39,8 +39,12 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
     data = res.data ?? [];
   }
 
-  // Normalize empty avatar strings
-  return (data ?? []).map(w => ({ ...w, avatar_url: w.avatar_url?.trim() ? w.avatar_url : null }));
+  // Normalize for UI
+  return (data ?? []).map(w => ({
+    ...w,
+    winner_handle: w.winner_handle?.trim() || 'Ganhador Anônimo',
+    avatar_url: w.avatar_url?.trim() || null,
+  }));
 }
 
 export function usePublicWinners(limit = 50) {

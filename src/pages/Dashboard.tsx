@@ -104,9 +104,9 @@ export default function Dashboard() {
           .order('created_at', { ascending: false })
           .limit(10),
 
-        // Get wins count from v_public_winners view
+        // Get wins count from v_public_winners_pubnames view
         supabase
-          .from('v_public_winners')
+          .from('v_public_winners_pubnames')
           .select('winner_id', { count: 'exact', head: true })
           .eq('user_id', uid)
       ]);

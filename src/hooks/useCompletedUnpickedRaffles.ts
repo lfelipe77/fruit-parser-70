@@ -27,7 +27,7 @@ export function useCompletedUnpickedRaffles() {
           .neq('status', 'archived')
           .order('last_paid_at', { ascending: false, nullsFirst: false }),
         supabase
-          .from('v_public_winners')
+          .from('v_public_winners_pubnames')
           .select('raffle_id')
       ]);
       
