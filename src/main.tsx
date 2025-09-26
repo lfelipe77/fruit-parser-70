@@ -74,6 +74,23 @@ if (import.meta.env.VITE_DEBUG_HARDRELOAD === '1') {
   installNavigationDebug();
 }
 
+// Service Worker quick kill
+if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(registration => registration.unregister());
+      if ((window as any).__DEBUG_EVENTS) {
+        (window as any).__DEBUG_EVENTS.push({
+          ts: Date.now(),
+          source: 'sw',
+          detail: { event: 'unregister', count: registrations.length }
+        });
+      }
+      console.log('[DebugKit] Unregistered', registrations.length, 'service workers due to ?nosw=1');
+    });
+  }
+}
+
 // Boot AFTER handling OAuth. Do not hard-redirect.
 (async () => {
   console.log('[MAIN] Starting app boot...');
@@ -81,6 +98,20 @@ if (import.meta.env.VITE_DEBUG_HARDRELOAD === '1') {
   try {
     await oauthEarly();
     console.log('[MAIN] OAuth early completed, rendering app...');
+    
+    // Boot breadcrumb for debug
+    if (typeof window !== 'undefined') {
+      const { isDebug } = await import('./debug/flag');
+      if (isDebug()) {
+        (window as any).__DEBUG_EVENTS = (window as any).__DEBUG_EVENTS || [];
+        (window as any).__DEBUG_EVENTS.push({
+          ts: Date.now(),
+          source: 'boot',
+          detail: { href: location.href, timestamp: new Date().toISOString() }
+        });
+      }
+    }
+    
     // existing React render here (unchanged):
     createRoot(document.getElementById("root")!).render(
       <AppErrorBoundary>

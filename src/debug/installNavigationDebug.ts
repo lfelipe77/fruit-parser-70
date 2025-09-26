@@ -1,9 +1,10 @@
 import { DebugBus } from './DebugBus';
+import { isDebug } from './flag';
 
 let isInstalled = false;
 
 export function installNavigationDebug() {
-  if (!DebugBus.isEnabled() || isInstalled) return;
+  if (!isDebug() || isInstalled) return;
   isInstalled = true;
 
   DebugBus.add({
