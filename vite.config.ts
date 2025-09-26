@@ -31,6 +31,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  esbuild: mode === 'production'
+    ? { pure: ['console.debug'], drop: ['debugger'] }
+    : {},
   build: {
     // Use default esbuild minifier (faster than terser)
     minify: 'esbuild',
