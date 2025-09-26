@@ -446,7 +446,8 @@ export default function GanhaveisDetail() {
           <div className="mt-8">
             <DetalhesOrganizador 
               organizer={{
-                id: organizerData?.id || "",
+                id: organizerData?.organizer_user_id || "",
+                organizer_user_id: organizerData?.organizer_user_id,
                 name: organizerData?.full_name || organizerData?.username || "Organizador",
                 username: organizerData?.username || "user",
                 bio: organizerData?.bio || "Organizador experiente na plataforma.",
