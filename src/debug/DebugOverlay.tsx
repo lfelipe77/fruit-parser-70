@@ -6,7 +6,7 @@ export function DebugOverlay() {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    if (!(window as any).__DEBUG_FLAG) return null;
+    if (!(window as any).__DEBUG_FLAG) return;
 
     // Update events periodically
     const interval = setInterval(() => {
