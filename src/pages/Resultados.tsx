@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { appUrlFor } from "@/lib/urlHelpers";
 import { supabase } from "@/integrations/supabase/client";
-import { timeAgo, formatCurrency } from "@/types/raffles";
+import { formatCurrency } from "@/types/raffles";
 import LotteryFederalTab from "@/components/LotteryFederalTab";
 import LotteryFederalCard from "@/components/LotteryFederalCard";
 import WinnersList from "@/components/WinnersList";

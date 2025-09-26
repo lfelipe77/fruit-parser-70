@@ -1,6 +1,7 @@
-import { brl, timeAgo, RaffleCardInfo } from "@/types/raffles";
+import { brl, RaffleCardInfo } from "@/types/raffles";
 import { Link, useNavigate } from "react-router-dom";
 import { appUrlFor } from "@/lib/urlHelpers";
+import { useRelativeTime } from "@/hooks/useRelativeTime";
 
 type RaffleCardProps = {
   r?: RaffleCardInfo;
@@ -28,6 +29,7 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
   
   // Use either r or raffle prop for backward compatibility
   const data = r || raffle;
+  const lastSaleTime = useRelativeTime(data?.last_paid_at, "pt-BR");
   if (!data?.id) return null;
 
   // Harden all numeric values with proper fallbacks
@@ -123,7 +125,7 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
         {/* Participants + last sale */}
         <div className="text-xs text-muted-foreground space-y-1">
           <div>{Number(data.participants_count || 0)} participantes</div>
-          <div>{data.last_paid_at ? `Última venda: ${timeAgo(data.last_paid_at)}` : "Sem vendas ainda"}</div>
+          <div>{data.last_paid_at ? `Última venda: ${lastSaleTime}` : "Sem vendas ainda"}</div>
         </div>
 
         {/* CTA */}

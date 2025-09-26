@@ -76,8 +76,7 @@ export type SubcategoryStats = {
 // Re-export utility functions that were previously in this file
 export { brl } from '@/lib/money';
 
-// Create placeholder functions if they don't exist
-export const timeAgo = (date: string | Date) => 'há 1 dia';
+// Utility functions for formatting
 export const formatCurrency = (value: number) => `R$ ${value.toFixed(2)}`;
 export const formatDate = (date: string | Date) => new Date(date).toLocaleDateString('pt-BR');
 export const getProgressPercent = (raised: number, goal: number) => Math.round((raised / goal) * 100);
