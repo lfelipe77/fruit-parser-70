@@ -136,7 +136,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      // Safe cleanup - check if unsubscribe method exists
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      } else {
+        console.warn('[AuthProvider] Unknown subscription cleanup method:', subscription);
+      }
       // Only reset flag in development/HMR; in production this should be permanent
       if (import.meta.env.DEV) {
         _authListenerBound = false;
@@ -145,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         DebugBus.add({
           ts: Date.now(),
           source: 'auth:listener-cleanup',
-          detail: { mounted: false, dev: import.meta.env.DEV }
+          detail: { mounted: false, dev: import.meta.env.DEV, hasUnsubscribe: !!subscription?.unsubscribe }
         });
       }
     };
