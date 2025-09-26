@@ -30,6 +30,11 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
   // Use either r or raffle prop for backward compatibility
   const data = r || raffle;
   const lastSaleTime = useRelativeTime(data?.last_paid_at, "pt-BR");
+  
+  // Debug logging for time issues
+  if (data?.last_paid_at) {
+    console.log(`[RaffleCard] ID: ${data.id}, last_paid_at: ${data.last_paid_at}, calculated time: ${lastSaleTime}`);
+  }
   if (!data?.id) return null;
 
   // Harden all numeric values with proper fallbacks
