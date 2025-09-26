@@ -71,3 +71,46 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Code Quality Notes
+
+This project follows modern TypeScript best practices with gentle quality improvements:
+
+### Environment Configuration
+- Centralized environment variables in `src/config/env.ts` with runtime validation
+- Development errors for missing required variables, graceful fallbacks in production
+
+### Logging
+- Production-safe logging utility in `src/utils/log.ts`
+- `log.debug()` calls are automatically stripped from production builds
+- Use `log.debug()` for verbose development logging, `log.info/warn/error()` for production logs
+
+### TypeScript Safety
+- Strict TypeScript configuration with readonly interfaces where appropriate
+- Type guards and safe unknown handling in `src/types/common.ts`
+- Enhanced error boundaries with proper typing
+
+### Performance
+- React.memo applied to stable leaf components like StatPill
+- Single shared Supabase client instance with centralized configuration
+- Terser configured to strip debug logs and optimize production builds
+
+### Accessibility
+- Added aria-labels to interactive elements without visible text
+- Proper button semantics and screen reader support
+- Alt attributes on images (empty alt for decorative images is acceptable)
+
+### Security
+- Single Supabase client instance prevents configuration drift
+- Environment variables centralized with validation
+- TODO comments mark areas requiring SQL injection review
+
+### Debug Features
+- Enhanced debug kit with URL-based activation (`?debug=1` or `#debug`)
+- Production-safe debug log stripping
+- Service Worker diagnostics and kill switch (`?nosw=1`)
+
+To toggle debug features:
+- Add `?debug=1` to any URL for temporary debugging
+- Add `VITE_DEBUG_HARDRELOAD=1` to `.env` for persistent debugging
+- Press `Ctrl+Alt+D` or `Shift+Alt+D` to toggle debug overlay

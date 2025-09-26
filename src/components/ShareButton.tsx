@@ -130,8 +130,9 @@ export default function ShareButton({
           variant={variant} 
           size={size}
           className={size === "lg" ? "w-full" : "active:scale-95 transition-transform duration-150"}
+          aria-label={`Compartilhar ${raffle?.title || title}`}
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-4 w-4" aria-hidden="true" />
           {size !== "sm" && <span className="ml-2">Compartilhar</span>}
         </Button>
       </DropdownMenuTrigger>

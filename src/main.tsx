@@ -12,8 +12,11 @@ import { installNavigationDebug } from '@/debug/installNavigationDebug'
 // --- EARLY OAUTH HANDLER (runs before router/guards) ---
 import { supabase } from '@/integrations/supabase/client';
 
+import { env } from '@/config/env';
+import { log } from '@/utils/log';
+
 // Debug blink diagnostics (preview only)
-if (import.meta.env.VITE_DEBUG_BLINK === 'true') {
+if (env.DEBUG_BLINK === 'true') {
   import('./debugBlink');
 }
 
@@ -35,23 +38,23 @@ async function oauthEarly() {
   const hasRT       = params.has('refresh_token');
   const hasCode     = href.includes('code=');
 
-  console.log('[oauth-early] href:', href, { hasCode, hasAT, cbHash: isHashCb, cbNonHash: isNonHashCb });
-  console.log('[oauth-early] exchanging code/token before app boot…');
+  log.info('[oauth-early] href:', href, { hasCode, hasAT, cbHash: isHashCb, cbNonHash: isNonHashCb });
+  log.info('[oauth-early] exchanging code/token before app boot…');
 
   try {
     if (hasAT && hasRT) {
       const access_token  = params.get('access_token')!;
       const refresh_token = params.get('refresh_token')!;
       const r = await supabase.auth.setSession({ access_token, refresh_token });
-      console.log('[oauth-early] setSession result', { error: r.error, user: r.data?.user?.id });
+      log.debug('[oauth-early] setSession result', { error: r.error, user: r.data?.user?.id });
       if (r.error) throw r.error;
 
       // Double-check we actually have a session now
       const s = await supabase.auth.getSession();
-      console.log('[oauth-early] session after set', { hasSession: !!s.data.session });
+      log.debug('[oauth-early] session after set', { hasSession: !!s.data.session });
     } else if (hasCode) {
       const r = await supabase.auth.exchangeCodeForSession(href);
-      console.log('[oauth-early] code exchange result', { error: r.error, user: r.data?.user?.id });
+      log.debug('[oauth-early] code exchange result', { error: r.error, user: r.data?.user?.id });
       if (r.error) throw r.error;
     }
 
@@ -64,13 +67,13 @@ async function oauthEarly() {
       history.replaceState(null, '', currentPath);
     }
   } catch (e) {
-    console.error('[oauth-early] failed', e);
+    log.error('[oauth-early] failed', e);
     history.replaceState(null, '', `${window.location.origin}/login`);
   }
 }
 
 // Install debug kit if enabled
-if (import.meta.env.VITE_DEBUG_HARDRELOAD === '1') {
+if (env.DEBUG_HARDRELOAD === '1') {
   installNavigationDebug();
 }
 
@@ -93,11 +96,11 @@ if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
 
 // Boot AFTER handling OAuth. Do not hard-redirect.
 (async () => {
-  console.log('[MAIN] Starting app boot...');
-  console.log('[MAIN] Current URL:', window.location.href);
+  log.info('[MAIN] Starting app boot...');
+  log.debug('[MAIN] Current URL:', window.location.href);
   try {
     await oauthEarly();
-    console.log('[MAIN] OAuth early completed, rendering app...');
+    log.info('[MAIN] OAuth early completed, rendering app...');
     
     // Boot breadcrumb for debug
     if (typeof window !== 'undefined') {
@@ -121,9 +124,9 @@ if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
         </HelmetProvider>
       </AppErrorBoundary>
     );
-    console.log('[MAIN] App rendered successfully');
+    log.info('[MAIN] App rendered successfully');
   } catch (error) {
-    console.error('[MAIN] App boot failed:', error);
+    log.error('[MAIN] App boot failed:', error);
     document.body.innerHTML = `<div style="padding: 20px; color: red;">App failed to start: ${error}</div>`;
   }
 })();

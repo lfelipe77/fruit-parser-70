@@ -42,6 +42,7 @@ export default function FollowButton({ profileUserId, compact, onChange }: Props
       onClick={handleClick}
       className={`${className} ${following ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground hover:bg-primary/90'} transition-colors`}
       aria-pressed={following}
+      aria-label={following ? `Deixar de seguir este usuário` : `Seguir este usuário`}
     >
       {loading ? '...' : label}
     </button>

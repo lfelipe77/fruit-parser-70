@@ -31,4 +31,14 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // Strip console.debug in production builds
+        drop_debugger: true,
+        pure_funcs: mode === 'production' ? ['console.debug'] : [],
+      },
+    },
+  },
 }));
