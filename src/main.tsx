@@ -5,9 +5,9 @@ import './index.css'
 import './i18n'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 
-// Debug kit for hard reload investigation
-import { DebugOverlay } from '@/debug/DebugOverlay'
-import { installNavigationDebug } from '@/debug/installNavigationDebug'
+// Debug kit for hard reload investigation - DISABLED
+// import { DebugOverlay } from '@/debug/DebugOverlay'
+// import { installNavigationDebug } from '@/debug/installNavigationDebug'
 
 // --- EARLY OAUTH HANDLER (runs before router/guards) ---
 import { supabase } from '@/integrations/supabase/client';
@@ -69,10 +69,10 @@ async function oauthEarly() {
   }
 }
 
-// Install debug kit if enabled
-if (import.meta.env.VITE_DEBUG_HARDRELOAD === '1') {
-  installNavigationDebug();
-}
+// Install debug kit if enabled - DISABLED
+// if (import.meta.env.VITE_DEBUG_HARDRELOAD === '1') {
+//   installNavigationDebug();
+// }
 
 // Boot AFTER handling OAuth. Do not hard-redirect.
 (async () => {
@@ -86,7 +86,6 @@ if (import.meta.env.VITE_DEBUG_HARDRELOAD === '1') {
       <AppErrorBoundary>
         <HelmetProvider>
           <App />
-          <DebugOverlay />
         </HelmetProvider>
       </AppErrorBoundary>
     );
