@@ -32,13 +32,14 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        // Strip console.debug in production builds
-        drop_debugger: true,
-        pure_funcs: mode === 'production' ? ['console.debug'] : [],
-      },
+    // Use default esbuild minifier (faster than terser)
+    minify: 'esbuild',
+    rollupOptions: {
+      // Optional: Configure esbuild to drop console.debug in production
+      ...(mode === 'production' && {
+        external: [],
+        plugins: [],
+      }),
     },
   },
 }));
