@@ -1,3 +1,4 @@
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App.tsx'
@@ -81,15 +82,29 @@ if (import.meta.env.VITE_DEBUG_HARDRELOAD === '1') {
   try {
     await oauthEarly();
     console.log('[MAIN] OAuth early completed, rendering app...');
-    // existing React render here (unchanged):
-    createRoot(document.getElementById("root")!).render(
-      <AppErrorBoundary>
-        <HelmetProvider>
-          <App />
-          <DebugOverlay />
-        </HelmetProvider>
-      </AppErrorBoundary>
-    );
+// Ensure single root mount - no StrictMode in production
+    const rootElement = document.getElementById("root")!;
+    if (!rootElement.hasChildNodes()) {
+      createRoot(rootElement).render(
+        import.meta.env.PROD ? (
+          <AppErrorBoundary>
+            <HelmetProvider>
+              <App />
+              <DebugOverlay />
+            </HelmetProvider>
+          </AppErrorBoundary>
+        ) : (
+          <React.StrictMode>
+            <AppErrorBoundary>
+              <HelmetProvider>
+                <App />
+                <DebugOverlay />
+              </HelmetProvider>
+            </AppErrorBoundary>
+          </React.StrictMode>
+        )
+      );
+    }
     console.log('[MAIN] App rendered successfully');
   } catch (error) {
     console.error('[MAIN] App boot failed:', error);

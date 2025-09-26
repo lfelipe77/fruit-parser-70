@@ -1,10 +1,14 @@
 import { DebugBus } from './DebugBus';
+import { installSWDebug } from './installSWDebug';
 
 let isInstalled = false;
 
 export function installNavigationDebug() {
   if (!DebugBus.isEnabled() || isInstalled) return;
   isInstalled = true;
+  
+  // Also install SW debugging
+  installSWDebug();
 
   DebugBus.add({
     ts: Date.now(),
