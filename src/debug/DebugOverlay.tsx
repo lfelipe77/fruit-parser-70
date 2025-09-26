@@ -5,9 +5,12 @@ export function DebugOverlay() {
   const [events, setEvents] = useState<DebugEvent[]>([]);
   const [isVisible, setIsVisible] = useState(true);
 
-  useEffect(() => {
-    if (!(window as any).__DEBUG_FLAG) return;
+  // Early return if debug is not enabled
+  if (typeof window === 'undefined' || !(window as any).__DEBUG_FLAG) {
+    return null;
+  }
 
+  useEffect(() => {
     // Update events periodically
     const interval = setInterval(() => {
       setEvents([...DebugBus.get()]);
@@ -29,7 +32,7 @@ export function DebugOverlay() {
     };
   }, []);
 
-  if (!(window as any).__DEBUG_FLAG || !isVisible) return null;
+  if (!isVisible) return null;
 
   const formatTime = (ts: number) => {
     const date = new Date(ts);
