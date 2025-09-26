@@ -81,14 +81,30 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
             className="h-full w-full object-cover" 
             loading="lazy"
             onError={(e) => {
+              console.error('[RaffleCard] Image failed to load:', {
+                url: data.image_url,
+                title: data.title,
+                id: data.id,
+                error: e
+              });
               e.currentTarget.style.display = 'none';
               if (e.currentTarget.parentElement) {
-                e.currentTarget.parentElement.className = "h-full w-full bg-muted";
+                e.currentTarget.parentElement.className = "h-44 w-full overflow-hidden rounded-lg bg-muted flex items-center justify-center";
+                e.currentTarget.parentElement.innerHTML = '<div class="text-muted-foreground text-sm">Imagem não disponível</div>';
               }
+            }}
+            onLoad={() => {
+              console.log('[RaffleCard] Image loaded successfully:', {
+                url: data.image_url,
+                title: data.title,
+                id: data.id
+              });
             }}
           />
         ) : (
-          <div className="h-full w-full bg-muted" />
+          <div className="h-full w-full bg-muted flex items-center justify-center">
+            <div className="text-muted-foreground text-sm">Sem imagem</div>
+          </div>
         )}
       </div>
 
