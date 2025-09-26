@@ -28,6 +28,7 @@ import { getProductSchema } from "@/utils/structuredData";
 import { formatBRL as formatBRLUtils } from "@/utils/money";
 import { useRaffleWinner } from "@/hooks/useRaffleWinner";
 import { buildPrettyShareUrlSync } from "@/lib/shareUrl";
+import { getAvatarSrc } from "@/lib/avatarUtils";
 
 const FALLBACK_DETAILS = `
 <h3>Detalhes do Prêmio</h3>
@@ -502,7 +503,10 @@ export default function GanhaveisDetail() {
                 </div>
                 <div className="flex items-center gap-3 bg-white rounded-lg p-3">
                   <img
-                    src={winner.winner_avatar_url || '/default-avatar.png'}
+                    src={getAvatarSrc(
+                      { avatar_url: winner.winner_avatar_url },
+                      winner.winner_user_id
+                    )}
                     alt=""
                     className="h-10 w-10 rounded-full object-cover"
                   />
