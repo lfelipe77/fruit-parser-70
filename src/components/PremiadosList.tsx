@@ -1,13 +1,56 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { usePublicWinners } from '@/hooks/usePublicWinners';
+import { usePublicWinners, type PublicWinnerCard } from '@/hooks/usePublicWinners';
 import { toFiveSingles, formatFiveSingles } from '@/lib/numberFormat';
-import { getAvatarSrc } from '@/lib/avatarUtils';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 function brDate(d?: string | null) {
   if (!d) return '';
   const dt = new Date(d);
   return dt.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+}
+
+const isUuid = (s: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
+
+function WinnerAvatar({ name, handle, src }: { name?: string|null; handle?: string|null; src?: string }) {
+  const initials = (name || handle || "GA").trim().slice(0,2).toUpperCase();
+  return (
+    <Avatar className="h-10 w-10">
+      {src ? <AvatarImage src={src} alt={name || handle || "Ganhador"} /> : null}
+      <AvatarFallback>{initials}</AvatarFallback>
+    </Avatar>
+  );
+}
+
+function WinnerTitle({ w }: { w: PublicWinnerCard }) {
+  const handle = w.winner_handle ?? "";
+  const linkOk = !!handle && !isUuid(handle);
+  const displayName = w.winner_name || (linkOk ? handle : "Ganhador Anônimo");
+  const href = linkOk ? `/perfil/${encodeURIComponent(handle)}` : undefined;
+
+  return (
+    <div className="flex items-center gap-3">
+      <WinnerAvatar 
+        name={w.winner_name ?? undefined} 
+        handle={w.winner_handle ?? undefined} 
+        src={w.winner_avatar_url ?? undefined} 
+      />
+      <div className="flex flex-col min-w-0">
+        {href ? (
+          <Link to={href} className="font-medium text-foreground truncate hover:underline">
+            {displayName}
+          </Link>
+        ) : (
+          <span className="font-medium text-foreground truncate">{displayName}</span>
+        )}
+        <Link to={`/ganhavel/${w.raffle_id}`} className="text-sm text-muted-foreground truncate hover:underline">
+          {w.raffle_title ?? 'Ganhável sem nome'}
+        </Link>
+      </div>
+      {href ? <a className="sr-only" href={href}>Ver perfil</a> : null}
+    </div>
+  );
 }
 
 export default function PremiadosList() {
@@ -23,7 +66,7 @@ export default function PremiadosList() {
   if (error) {
     return (
       <div className="p-6 text-sm text-destructive">
-        Não foi possível carregar ganhadores (erro {error.code || 'desconhecido'}: {error.message})
+        Não foi possível carregar ganhadores públicos
       </div>
     );
   }
@@ -37,37 +80,13 @@ export default function PremiadosList() {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {data.map((w) => {
-        // Show winner handle if available, otherwise anonymous
-        const hasValidHandle = w.winner_handle && w.winner_handle.trim() !== '';
-        const handle = hasValidHandle ? w.winner_handle : 'Ganhador Anônimo';
-        const profileHref = hasValidHandle ? `/perfil/${encodeURIComponent(w.winner_handle!)}` : '#';
-        const ticketHref = w.ticket_id ? `/ticket/${w.ticket_id}` : '#';
-        const raffleHref = w.raffle_id ? `/ganhavel/${w.raffle_id}` : '#';
-
-        const federalFormatted = formatFiveSingles(toFiveSingles(w.federal_target));
-        const winningFormatted = formatFiveSingles(toFiveSingles(w.winning_ticket));
+      {data.map((w, index) => {
+        const federalFormatted = w.federal_target ? formatFiveSingles(toFiveSingles(w.federal_target)) : '—';
+        const winningFormatted = w.winning_ticket ? formatFiveSingles(toFiveSingles(w.winning_ticket)) : '—';
 
         return (
-          <div key={w.winner_id} className="rounded-2xl border border-border p-4 shadow-sm bg-card">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-                {(() => {
-                  const avatarSrc = getAvatarSrc({ avatar_url: w.avatar_url }, w.user_id);
-                  return avatarSrc && avatarSrc !== "/img/avatar-placeholder.png"
-                    ? <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                    : <span className="text-xs text-muted-foreground">👤</span>;
-                })()}
-              </div>
-              <div className="min-w-0">
-                <Link to={profileHref} className="block font-medium truncate hover:underline">
-                  {handle}
-                </Link>
-                <Link to={raffleHref} className="block text-sm font-medium text-foreground/80 truncate hover:underline">
-                  {w.raffle_title ?? 'Ganhável sem nome'}
-                </Link>
-              </div>
-            </div>
+          <div key={w.winner_id || index} className="rounded-2xl border border-border p-4 shadow-sm bg-card">
+            <WinnerTitle w={w} />
 
             <div className="mt-3 text-sm">
               <div><span className="font-medium">Últimas Dezenas (Federal):</span> {federalFormatted}</div>
