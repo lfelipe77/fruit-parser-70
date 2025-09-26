@@ -26,7 +26,7 @@ export type PublicWinnerCard = {
   provider_source?: string | null;
   delta?: number | null;
   
-  // Legacy fields for backward compatibility
+  // Legacy fields for backward compatibility (mapped from new fields)
   federal_target?: string;
   winning_ticket?: string;
 };
@@ -71,6 +71,9 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
     ),
     winner_handle: r.winner_handle?.trim() || null,
     winner_name: r.winner_name?.trim() || null,
+    // Map new fields to legacy field names for backward compatibility
+    federal_target: r.drawn_number || (Array.isArray(r.draw_pairs) ? r.draw_pairs.join('') : null),
+    winning_ticket: r.drawn_number || (Array.isArray(r.draw_pairs) ? r.draw_pairs.join('') : null),
   }));
 
   return rows;
