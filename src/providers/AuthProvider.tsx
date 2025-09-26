@@ -17,21 +17,8 @@ const AuthContext = createContext<AuthContextType>({
   initializing: true,
 });
 
-// Module-level guards and debouncing
-let _authListenerBound = false;
-let _lastAuthEvent = { type: '', at: 0 };
-let _debugLoggedOnce = false;
-
-function shouldIgnore(event: string) {
-  const now = Date.now();
-  const ignore = (
-    event === 'INITIAL_SESSION' &&
-    _lastAuthEvent.type === 'SIGNED_IN' &&
-    (now - _lastAuthEvent.at) < 750
-  );
-  _lastAuthEvent = { type: event, at: now };
-  return ignore;
-}
+// Guard against duplicate auth listeners
+let authListenerInstalled = false;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -42,60 +29,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Ensure single auth listener registration
-    if (_authListenerBound) {
-      if ((window as any).__DEBUG_FLAG && !_debugLoggedOnce) {
-        _debugLoggedOnce = true;
-        DebugBus.add({
-          ts: Date.now(),
-          source: 'auth:duplicate-listener-prevented',
-          detail: { count: 'multiple-attempts' }
-        });
-      }
-      return;
-    }
-    _authListenerBound = true;
-
-    if ((window as any).__DEBUG_FLAG) {
+    // Guard against duplicate auth listeners
+    if (authListenerInstalled) {
       DebugBus.add({
         ts: Date.now(),
-        source: 'auth:listener-install',
-        detail: { 
-          stack: new Error().stack?.split('\n').slice(0, 3).join('\n')
-        }
+        source: 'auth:duplicate-listener-prevented',
+        detail: { mounted: true }
       });
+      return;
     }
+    authListenerInstalled = true;
+
+    DebugBus.add({
+      ts: Date.now(),
+      source: 'auth:listener-install',
+      detail: { 
+        stack: new Error().stack?.split('\n').slice(0, 3).join('\n')
+      }
+    });
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
-        
-        if ((window as any).__DEBUG_FLAG) {
-          DebugBus.add({
-            ts: Date.now(),
-            source: 'auth',
-            detail: { 
-              event, 
-              userId: session?.user?.id || null,
-              hasSession: !!session 
-            }
-          });
-        }
-        
-        // Debounce duplicate events
-        if (shouldIgnore(event)) {
-          if ((window as any).__DEBUG_FLAG) {
-            DebugBus.add({
-              ts: Date.now(),
-              source: 'auth:ignored',
-              detail: { event, reason: 'duplicate-initial-session' }
-            });
-          }
-          return;
-        }
-        
         console.log('[AuthProvider] Auth state change:', event, session?.user?.id || 'no-user');
+        
+        DebugBus.add({
+          ts: Date.now(),
+          source: 'auth:state-change',
+          detail: { 
+            event, 
+            userId: session?.user?.id || null,
+            hasSession: !!session 
+          }
+        });
         
         // Only update state synchronously - no navigation on auth events
         setSession(session);
@@ -137,17 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      // Only reset flag in development/HMR; in production this should be permanent
-      if (import.meta.env.DEV) {
-        _authListenerBound = false;
-      }
-      if ((window as any).__DEBUG_FLAG) {
-        DebugBus.add({
-          ts: Date.now(),
-          source: 'auth:listener-cleanup',
-          detail: { mounted: false, dev: import.meta.env.DEV }
-        });
-      }
+      authListenerInstalled = false;
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'auth:listener-cleanup',
+        detail: { mounted: false }
+      });
     };
   }, []);
 
