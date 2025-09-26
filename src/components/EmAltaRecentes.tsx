@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RaffleCardInfo } from "@/types/raffles";
 import RaffleCard from "./RaffleCard";
+import { DebugBus } from "@/debug/DebugBus";
 
 function SkeletonCard() {
   return (
@@ -27,6 +28,12 @@ export default function EmAltaRecentesSection() {
   React.useEffect(() => {
     let cancelled = false;
     
+    DebugBus.add({
+      ts: Date.now(),
+      source: 'EmAltaRecentes:mount',
+      detail: { url: window.location.href }
+    });
+    
     const RAFFLE_CARD_SELECT =
       "id,title,description,image_url,status," +
       "ticket_price,goal_amount,amount_raised,progress_pct_money," +
@@ -35,6 +42,11 @@ export default function EmAltaRecentesSection() {
       "location_display:location_city,participants_count";
     
     const fetchData = async () => {
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:fetchData',
+        detail: { cancelled }
+      });
       setLoading(true);
       setErr(null);
       try {
@@ -98,6 +110,11 @@ export default function EmAltaRecentesSection() {
 
     const handleRaffleUpdate = (event?: any) => {
       console.log('[EmAltaRecentes] Received raffleUpdated event:', event?.detail);
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:raffleUpdated',
+        detail: { cancelled, event: event?.detail }
+      });
       if (!cancelled) {
         safeFetchData();
       }
@@ -106,6 +123,11 @@ export default function EmAltaRecentesSection() {
     // Listen for raffle completion events
     const handleRaffleCompletion = (event?: any) => {
       console.log('[EmAltaRecentes] Received raffleCompleted event:', event?.detail);
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:raffleCompleted',
+        detail: { cancelled, event: event?.detail }
+      });
       if (!cancelled) {
         safeFetchData(); // Refresh to show in completed section
       }
@@ -114,8 +136,24 @@ export default function EmAltaRecentesSection() {
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
     window.addEventListener('raffleCompleted', handleRaffleCompletion);
     
+    DebugBus.add({
+      ts: Date.now(),
+      source: 'EmAltaRecentes:interval:start',
+      detail: { intervalMs: 30000 }
+    });
+    
     // Auto-refresh with visibility check - don't poll when hidden
     const interval = setInterval(() => {
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:interval:tick',
+        detail: { 
+          cancelled, 
+          visibilityState: document.visibilityState,
+          willRefresh: !cancelled && document.visibilityState === 'visible'
+        }
+      });
+      
       if (!cancelled && document.visibilityState === 'visible') {
         console.log('[EmAltaRecentes] Auto-refreshing data...');
         safeFetchData();
@@ -126,6 +164,11 @@ export default function EmAltaRecentesSection() {
     
     return () => { 
       cancelled = true; 
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:cleanup',
+        detail: { url: window.location.href }
+      });
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
       window.removeEventListener('raffleCompleted', handleRaffleCompletion);
       clearInterval(interval);

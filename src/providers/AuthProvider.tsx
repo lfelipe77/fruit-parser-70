@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { sendAppEmail } from '@/lib/sendAppEmail';
 import { welcomeEmail } from '@/lib/emailTemplates';
+import { DebugBus } from '@/debug/DebugBus';
 
 type AuthContextType = {
   user: User | null;
@@ -16,6 +17,9 @@ const AuthContext = createContext<AuthContextType>({
   initializing: true,
 });
 
+// Guard against duplicate auth listeners
+let authListenerInstalled = false;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -25,11 +29,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // Guard against duplicate auth listeners
+    if (authListenerInstalled) {
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'auth:duplicate-listener-prevented',
+        detail: { mounted: true }
+      });
+      return;
+    }
+    authListenerInstalled = true;
+
+    DebugBus.add({
+      ts: Date.now(),
+      source: 'auth:listener-install',
+      detail: { 
+        stack: new Error().stack?.split('\n').slice(0, 3).join('\n')
+      }
+    });
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
         console.log('[AuthProvider] Auth state change:', event, session?.user?.id || 'no-user');
+        
+        DebugBus.add({
+          ts: Date.now(),
+          source: 'auth:state-change',
+          detail: { 
+            event, 
+            userId: session?.user?.id || null,
+            hasSession: !!session 
+          }
+        });
         
         // Only update state synchronously - no navigation on auth events
         setSession(session);
@@ -71,6 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      authListenerInstalled = false;
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'auth:listener-cleanup',
+        detail: { mounted: false }
+      });
     };
   }, []);
 
