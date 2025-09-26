@@ -1,24 +1,34 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getAvatarSrc } from '@/lib/avatarUtils';
 
 // Local type so we don't block on codegen
 export type PublicWinnerCard = {
-  winner_id?: number;
+  winner_id: string | number;
   raffle_id: string;
   raffle_title: string;
-  ticket_id?: string;
-  user_id?: string | null;
-  winner_handle?: string | null;
-  winner_name?: string | null;
-  winner_avatar_url?: string | null;  // IMPORTANT
-  federal_target?: string;
-  winning_ticket?: string;
+  ticket_id?: string | null;
+  ticket_number?: string | null;
+  prize_position?: number | null;
   draw_date?: string | null;
   logged_at?: string | null;
-  prize_position?: number | null;
+
+  winner_user_id?: string | null;       // NEW
+  winner_handle?: string | null;
+  winner_name?: string | null;
+  winner_avatar_url?: string | null;
+
   drawn_number?: string | null;
   draw_pairs?: string | null;
   concurso_number?: string | null;
+  source?: string | null;
+  provider?: string | null;
+  provider_source?: string | null;
+  delta?: number | null;
+  
+  // Legacy fields for backward compatibility
+  federal_target?: string;
+  winning_ticket?: string;
 };
 
 const normalizeUrl = (u?: string | null) =>
@@ -28,7 +38,7 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
   // 1) anon-safe enriched view with specific columns
   let { data, error } = await supabase
     .from('v_public_winners_pubnames')
-    .select('winner_handle, winner_name, winner_avatar_url, raffle_title, draw_date, logged_at, prize_position, drawn_number, draw_pairs, concurso_number, raffle_id, ticket_id, user_id, winner_id, federal_target, winning_ticket')
+    .select('winner_id, raffle_id, raffle_title, ticket_id, ticket_number, prize_position, draw_date, logged_at, winner_user_id, winner_handle, winner_name, winner_avatar_url, drawn_number, draw_pairs, concurso_number, source, provider, provider_source, delta')
     .order('draw_date', { ascending: false, nullsFirst: false })
     .order('logged_at', { ascending: false })
     .limit(50);
@@ -54,7 +64,11 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
   // Normalize for UI with proper avatar handling
   const rows = (data ?? []).map(r => ({
     ...r,
-    winner_avatar_url: normalizeUrl(r.winner_avatar_url),
+    // Build URL from id if avatar_url is empty
+    winner_avatar_url: getAvatarSrc(
+      { avatar_url: r.winner_avatar_url ?? undefined },
+      r.winner_user_id ?? undefined
+    ),
     winner_handle: r.winner_handle?.trim() || null,
     winner_name: r.winner_name?.trim() || null,
   }));

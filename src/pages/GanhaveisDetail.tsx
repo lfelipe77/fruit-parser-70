@@ -219,7 +219,7 @@ export default function GanhaveisDetail() {
       
       const { data: ownerData, error: ownerError } = await supabase
         .from('v_organizer_public' as any)
-        .select('username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
+        .select('organizer_user_id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
         .eq('raffle_id', key)
         .maybeSingle();
       

@@ -13,6 +13,7 @@ import { getAvatarSrc } from "@/lib/avatarUtils";
 interface DetalhesOrganizadorProps {
   organizer: {
     id: string;
+    organizer_user_id?: string;
     name: string;
     username: string;
     bio?: string;
@@ -27,6 +28,13 @@ interface DetalhesOrganizadorProps {
 export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorProps) {
   // Don't block rendering if stats fail to load (e.g., anonymous users)
   const { data: stats, isLoading, error, refetch } = useProfileStats(organizer?.id);
+  
+  // Build avatar URL using the helper with ID
+  const avatarUrl = getAvatarSrc(
+    { avatar_url: organizer.avatar_url ?? undefined },
+    organizer.organizer_user_id ?? organizer.id
+  );
+  
   return (
     <Card>
       <CardHeader>
@@ -39,7 +47,7 @@ export default function DetalhesOrganizador({ organizer }: DetalhesOrganizadorPr
         {/* Profile Section */}
         <div className="flex items-start gap-4">
           <Avatar className="w-16 h-16">
-            <AvatarImage src={getAvatarSrc(organizer, organizer.id)} />
+            <AvatarImage src={avatarUrl} />
             <AvatarFallback className="text-lg">
               {organizer.name.charAt(0).toUpperCase()}
             </AvatarFallback>
