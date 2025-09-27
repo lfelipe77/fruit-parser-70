@@ -199,7 +199,7 @@ const AppContent = () => {
       <VisitLogger />
       <GlobalRaffleCompletionMonitor />
       <ScrollToTop />
-      <UnifiedDebugPanel />
+      
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
