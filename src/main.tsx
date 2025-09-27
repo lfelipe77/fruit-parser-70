@@ -4,6 +4,7 @@ import App from './App.tsx'
 import './index.css'
 import './i18n'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
+import { loadProductionScripts } from './utils/productionScripts'
 
 // Debug kit for hard reload investigation
 import { DebugOverlay } from '@/debug/DebugOverlay'
@@ -114,6 +115,9 @@ if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
         });
       }
     }
+    
+    // Load production scripts (GA, Lovable) only in production
+    loadProductionScripts();
     
     // existing React render here (unchanged):
     createRoot(document.getElementById("root")!).render(

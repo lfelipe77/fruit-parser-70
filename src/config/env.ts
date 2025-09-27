@@ -21,6 +21,8 @@ interface EnvConfig {
   readonly DISABLE_GA?: string;
   readonly LOGO_URL?: string;
   readonly NOTIFICATIONS?: string;
+  readonly GA_MEASUREMENT_ID?: string;
+  readonly ENABLE_LOVABLE?: string;
 }
 
 function getEnvVar(key: string, required = false): string | undefined {
@@ -54,4 +56,6 @@ export const env: EnvConfig = {
   DISABLE_GA: getEnvVar('DISABLE_GA'),
   LOGO_URL: getEnvVar('LOGO_URL'),
   NOTIFICATIONS: getEnvVar('NOTIFICATIONS'),
+  GA_MEASUREMENT_ID: getEnvVar('GA_MEASUREMENT_ID'),
+  ENABLE_LOVABLE: getEnvVar('ENABLE_LOVABLE'),
 } as const;

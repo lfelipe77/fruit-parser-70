@@ -157,7 +157,6 @@ export default function HeroSection() {
                   alt="Ganhavel plataforma de rifas online - pessoas celebrando prêmios de carros, dinheiro, viagens e tecnologia com transparência total"
                   className="w-full h-[250px] md:h-[300px] object-cover"
                   loading="eager"
-                  fetchPriority="high"
                   width="400"
                   height="300"
                 />
@@ -243,7 +242,6 @@ export default function HeroSection() {
                 alt="Ganhavel plataforma de rifas online - pessoas celebrando prêmios de carros, dinheiro, viagens e tecnologia com transparência total"
                 className="w-full h-[500px] object-cover"
                 loading="eager"
-                fetchPriority="high"
                 width="600"
                 height="500"
               />
