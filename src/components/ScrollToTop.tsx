@@ -25,9 +25,14 @@ export default function ScrollToTop() {
       return;
     }
 
-    // Only scroll to top on user-initiated navigations and only when pathname changes
-    if (navType === 'PUSH') {
+    // Only scroll to top on pathname changes with user navigation
+    // Ignore periodic data updates by checking if this is an actual navigation
+    const pathnameChanged = prev.pathname !== pathname;
+    if (pathnameChanged && navType === 'PUSH') {
+      emit('[SCROLL-TO-TOP] scrolling to top - pathname changed');
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    } else if (!pathnameChanged) {
+      emit('[SCROLL-TO-TOP] skipped - no pathname change (likely data update)');
     }
 
     prevRef.current = { pathname, search };
