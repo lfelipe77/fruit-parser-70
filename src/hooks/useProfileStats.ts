@@ -60,14 +60,20 @@ async function fetchStats(userId: string | null): Promise<ProfileStats> {
       console.error('[ProfileStats] Error fetching participating count:', participatingError);
     }
 
-    // Get wins count from v_public_winners_pubnames view
-    const { count: winsCount, error: winsError } = await supabase
-      .from('v_public_winners_pubnames')
-      .select('winner_id', { count: 'exact', head: true })
-      .eq('user_id', uid);
-
-    if (winsError) {
-      console.error('[ProfileStats] Error fetching wins count:', winsError);
+    // Try to get wins count from v_public_winners_pubnames view
+    let winsCount = 0;
+    try {
+      const { count, error: winsError } = await supabase
+        .from('v_public_winners_pubnames')
+        .select('winner_id', { count: 'exact', head: true })
+        .eq('user_id', uid);
+      
+      if (!winsError) {
+        winsCount = count ?? 0;
+      }
+    } catch (error) {
+      // Silently handle view access errors
+      winsCount = 0;
     }
 
     console.debug('[ProfileStats] Wins count for user:', uid, 'count:', winsCount);

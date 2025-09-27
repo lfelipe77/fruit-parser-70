@@ -108,7 +108,6 @@ function buildShareMeta(raffle: any, origin: string) {
 
 
 export default function GanhaveisDetail() {
-  console.log('[DETAIL]', 'mount');
   const params = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -142,7 +141,6 @@ export default function GanhaveisDetail() {
 
   // ---- Data fetching function
   const fetchData = React.useCallback(async () => {
-    console.log('[DETAIL]', 'fetchData run');
     if (!key) return;
     
     try {
@@ -216,8 +214,6 @@ export default function GanhaveisDetail() {
       }
 
       // Load organizer profile via raffle-scoped view (anon-safe)
-      console.log('[GanhaveisDetail] Loading organizer for raffle:', key);
-      
       const { data: ownerData, error: ownerError } = await supabase
         .from('v_organizer_public' as any)
         .select('organizer_user_id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
@@ -225,7 +221,6 @@ export default function GanhaveisDetail() {
         .maybeSingle();
       
       if (ownerError) console.warn('[GanhaveisDetail] Organizer fetch error:', ownerError);
-      console.log('[GanhaveisDetail] Organizer data (view):', ownerData);
       setOrganizerData(ownerData);
 
       // URL normalization - redirect to canonical slug if needed
@@ -234,14 +229,9 @@ export default function GanhaveisDetail() {
         
         if (isUUID && baseData.slug && !location.pathname.endsWith(`/ganhavel/${baseData.slug}`)) {
           setNormalizedOnce(true);
-          if (DEBUG_NO_HARD_RELOADS) {
-            // Use history.replaceState to avoid navigation/remount
-            const canonicalUrl = `/ganhavel/${baseData.slug}`;
-            window.history.replaceState(window.history.state, '', canonicalUrl);
-            console.log('[GanhaveisDetail] Soft URL normalization to:', canonicalUrl);
-          } else {
-            navigate(`/ganhavel/${baseData.slug}`, { replace: true });
-          }
+          // Always use soft normalization to prevent blinks
+          const canonicalUrl = `/ganhavel/${baseData.slug}`;
+          window.history.replaceState(window.history.state, '', canonicalUrl);
           return;
         }
         
@@ -271,22 +261,12 @@ export default function GanhaveisDetail() {
 
   // ---- Realtime updates
   React.useEffect(() => {
-    console.log('[DETAIL]', 'effect setup');
     const DEBUG_DISABLE_30S_JUMP = isDebugFlagEnabled();
-    
-    const emit = (msg: string) => {
-      console.log(msg);
-      (window as any).__debugEvent && (window as any).__debugEvent(msg);
-    };
-    emit('[DETAIL] 30s jump disabled: ' + DEBUG_DISABLE_30S_JUMP);
     
     // Throttle to prevent fetch storms from events
     let fetchInFlight = false;
     const safeFetchData = async () => {
-      if (fetchInFlight) {
-        console.log('[DETAIL]', 'skipping fetch - already in flight');
-        return;
-      }
+      if (fetchInFlight) return;
       fetchInFlight = true;
       try {
         await fetchData();
@@ -330,7 +310,6 @@ export default function GanhaveisDetail() {
     // This is now the default behavior for all users
     
     return () => {
-      console.log('[DETAIL]', 'effect cleanup');
       supabase.removeChannel(ch);
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
       document.removeEventListener('visibilitychange', handleVisibilityChange);

@@ -17,7 +17,7 @@ export const useGoogleAnalytics = (measurementId: string) => {
     
     // Check if already injected to prevent duplicates
     if (!window.gtag && !document.querySelector('script[src*="gtag/js"]')) {
-      console.warn('[GA] Script not found in DOM, analytics may not be working');
+      // Silently skip if GA not loaded
       return;
     }
     
