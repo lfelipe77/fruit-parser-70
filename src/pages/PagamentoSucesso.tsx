@@ -106,8 +106,8 @@ export default function PagamentoSucesso() {
         }
 
         const { data: tx, error } = await supabase
-          .from("transactions")
-          .select("id, numbers, buyer_user_id, raffle_id, amount, receipt_email_sent_at")
+          .from("my_transactions_public")
+          .select("id, numbers, buyer_user_id, raffle_id, amount, title, image_url")
           .eq("id", txId)
           .maybeSingle();
 
@@ -130,40 +130,24 @@ export default function PagamentoSucesso() {
           } catch { comboStrings = []; }
           setCombos(comboStrings);
           
-          // Fetch raffle details
+          // Fetch raffle details (title and image are already in tx, but get slug)
           const { data: raffle } = await supabase
-            .from('raffles_public_money_ext')
-            .select('slug, title, image_url')
+            .from('raffles_public')
+            .select('slug')
             .eq('id', tx.raffle_id)
             .maybeSingle();
 
-          // Fetch organizer details
-          const { data: raffleWithCreator } = await supabase
-            .from('raffles')
-            .select('organizer_id')
-            .eq('id', tx.raffle_id)
-            .maybeSingle();
-
-          let organizerDetails = null;
-          if (raffleWithCreator?.organizer_id) {
-            const { data: organizer } = await supabase
-              .from('user_profiles_public')
-              .select('display_name, avatar_url')
-              .eq('id', raffleWithCreator.organizer_id)
-              .maybeSingle();
-            
-            organizerDetails = organizer;
-          }
-
-          if (raffle) {
+          if (raffle?.slug) {
             setRaffleSlug(raffle.slug);
-            setRaffleDetails({
-              title: raffle.title || 'Sorteio',
-              image_url: raffle.image_url || '/placeholder.svg',
-              organizer_name: organizerDetails?.display_name || 'Ganhavel',
-              organizer_avatar_url: getAvatarSrc(organizerDetails, raffleWithCreator?.organizer_id)
-            });
           }
+          
+          // Set raffle details from transaction data
+          setRaffleDetails({
+            title: tx.title || 'Ganhavel',
+            image_url: tx.image_url || '/placeholder.svg',
+            organizer_name: 'Ganhavel',
+            organizer_avatar_url: '/placeholder.svg'
+          });
 
           // Also update rehydrated data
           setRehydrated({
@@ -174,8 +158,14 @@ export default function PagamentoSucesso() {
             unitPrice: asNumber(tx.amount, 0) / Math.max(1, comboStrings.length),
           });
           
-          // Send receipt email if not already sent
-          if (!tx.receipt_email_sent_at && !emailSent) {
+          // Check if receipt email was already sent and send if not
+          const { data: txReceipt } = await supabase
+            .from("transactions")
+            .select("receipt_email_sent_at")
+            .eq("id", txId)
+            .maybeSingle();
+          
+          if (!txReceipt?.receipt_email_sent_at && !emailSent) {
             await handleReceiptEmail(tx, comboStrings, session.user.email);
           }
           
@@ -373,7 +363,6 @@ export default function PagamentoSucesso() {
     quantity,
     totalAmount: totalPaid,
     organizerName: raffleDetails?.organizer_name || rehydrated.organizerName || "Ganhavel",
-    organizerAvatar: raffleDetails?.organizer_avatar_url || "/placeholder.svg",
     paymentId,
     paymentDate
   };
@@ -486,7 +475,7 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
               {/* Rifa Details */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Rifa Participando</CardTitle>
+                  <CardTitle>Ganhavel Participando</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-4 mb-4">
@@ -500,17 +489,7 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{String(paymentData.rifaTitle ?? '')}</h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <img 
-                          src={paymentData.organizerAvatar} 
-                          alt={paymentData.organizerName}
-                          className="w-6 h-6 object-cover rounded-full"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder.svg';
-                          }}
-                        />
-                        <p className="text-muted-foreground">Por: {String(paymentData.organizerName ?? '')}</p>
-                      </div>
+                      <p className="text-muted-foreground mb-2">Por: {String(paymentData.organizerName ?? '')}</p>
                       <div className="flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-yellow-500" />
                         <span className="text-sm text-muted-foreground">
