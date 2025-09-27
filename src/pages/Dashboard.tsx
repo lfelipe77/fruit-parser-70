@@ -33,12 +33,7 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  const didRun = React.useRef(false);
-  
   useEffect(() => {
-    if (didRun.current) return;
-    didRun.current = true;
-    
     console.log('[dash] user state:', { user: !!user, authLoading });
     if (user && !authLoading) {
       fetchDashboardData();
