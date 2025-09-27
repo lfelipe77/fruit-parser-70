@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PayoutSummary } from "@/components/PayoutSummary";
+import { computeCheckout } from "@/utils/money";
 
 type Raffle = {
   id: string;
@@ -115,9 +116,23 @@ export default function RaffleDetail() {
   }, [raffle?.id]);
 
   const userId = useMemo(() => session?.user?.id ?? null, [session]);
-  const totalAmount = useMemo(() => (raffle ? (qty || 0) * (raffle.ticket_price ?? 0) : 0), [qty, raffle]);
-  const feeAmount = useMemo(() => provider === "asaas" ? 2.00 : 0.00, [provider]);
-  const grandTotal = useMemo(() => totalAmount + feeAmount, [totalAmount, feeAmount]);
+  
+  // Calculate minimum quantity and checkout details
+  const checkoutDetails = useMemo(() => {
+    if (!raffle?.ticket_price) return { qty: 1, fee: 2.00, subtotal: 0, chargeTotal: 2.00 };
+    return computeCheckout(raffle.ticket_price, qty);
+  }, [qty, raffle?.ticket_price]);
+  
+  // Ensure qty matches the minimum required qty
+  useEffect(() => {
+    if (checkoutDetails.qty !== qty) {
+      setQty(checkoutDetails.qty);
+    }
+  }, [checkoutDetails.qty, qty]);
+  
+  const totalAmount = useMemo(() => checkoutDetails.subtotal, [checkoutDetails.subtotal]);
+  const feeAmount = useMemo(() => checkoutDetails.fee, [checkoutDetails.fee]);
+  const grandTotal = useMemo(() => checkoutDetails.chargeTotal, [checkoutDetails.chargeTotal]);
 
   async function handleBuy() {
     try {
@@ -256,13 +271,38 @@ export default function RaffleDetail() {
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Quantidade</label>
-            <input
-              type="number"
-              min={1}
-              className="border rounded p-2 w-32"
-              value={qty}
-              onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setQty(Math.max(checkoutDetails.qty, qty - 1))}
+                disabled={qty <= checkoutDetails.qty}
+                className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={checkoutDetails.qty}
+                className="border rounded p-2 w-20 text-center"
+                value={qty}
+                onChange={(e) => {
+                  const newQty = Math.max(checkoutDetails.qty, Number(e.target.value) || checkoutDetails.qty);
+                  setQty(newQty);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setQty(qty + 1)}
+                className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
+              >
+                +
+              </button>
+            </div>
+            {checkoutDetails.qty > 1 && (
+              <div className="text-xs text-gray-500">
+                Mínimo: {checkoutDetails.qty} bilhetes (R$ 5,00 + taxas)
+              </div>
+            )}
           </div>
 
           <div className="grid gap-2">
