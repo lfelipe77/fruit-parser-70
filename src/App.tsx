@@ -208,18 +208,19 @@ const AppContent = () => {
             <LanceSeuGanhavel />
           </RequireAuth>
         } />
-        {/* Ganhavel routes - MUST be before other routes to prevent conflicts */}
+        {/* Payment routes - MUST be before generic ganhavel route */}
+        <Route path="/ganhavel/:id/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
+        <Route path="/ganhavel/:ganhaveisId/pagamento-sucesso" element={<PagamentoSucesso />} />
+        <Route path="/ganhavel/:ganhaveisId/pagamento-erro" element={<PagamentoErro />} />
+        {/* Optional alias/redirect for legacy URLs */}
+        <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
+        {/* Generic ganhavel route - MUST be after specific routes */}
         <Route path="/ganhavel/:slug" element={<GanhaveisDetail />} />
         <Route path="/descobrir" element={<DiscoverRaffles />} />
         <Route path="/resultados" element={<Resultados />} />
         <Route path="/categorias" element={<CategoriesPage />} />
         <Route path="/categorias/:categorySlug" element={<CategoryDetailPage />} />
         <Route path="/categorias/:categorySlug/:subSlug" element={<SubcategoryDetailPage />} />
-        {/* Optional alias/redirect for legacy URLs */}
-        <Route path="/raffles/:id" element={<RafflesToGanhavelRedirect />} />
-        <Route path="/ganhavel/:id/confirmacao-pagamento" element={<ConfirmacaoPagamento />} />
-        <Route path="/ganhavel/:ganhaveisId/pagamento-sucesso" element={<PagamentoSucesso />} />
-        <Route path="/ganhavel/:ganhaveisId/pagamento-erro" element={<PagamentoErro />} />
         <Route path="/cadastro" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esqueci-senha" element={<EsqueciSenha />} />
