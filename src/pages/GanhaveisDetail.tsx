@@ -150,6 +150,20 @@ export default function GanhaveisDetail() {
     [moneyRow, extrasRow]
   );
   
+  // Calculate minimum quantity required for R$5.00 minimum
+  const minQtyRequired = React.useMemo(() => {
+    if (!raffle?.ticketPrice) return 1;
+    const result = computeCheckout(raffle.ticketPrice, 1);
+    return result.qty;
+  }, [raffle?.ticketPrice]);
+  
+  // Initialize qty to minimum when raffle loads
+  React.useEffect(() => {
+    if (raffle?.ticketPrice && qty < minQtyRequired) {
+      setQty(minQtyRequired);
+    }
+  }, [raffle?.ticketPrice, minQtyRequired]);
+  
   const lastPaidAgo = useRelativeTime(raffle?.lastPaidAt ?? null, "pt-BR");
 
   // ---- Winner data for premiado raffles
@@ -335,10 +349,22 @@ export default function GanhaveisDetail() {
   }, [fetchData, key]);
 
   // ---- Derived - compute checkout with minimum validation
-  const { qty: adjustedQty, fee, subtotal, chargeTotal } = React.useMemo(() => {
-    return computeCheckout(raffle?.ticketPrice ?? 0, qty);
-  }, [raffle?.ticketPrice, qty]);
+  const checkoutResult = React.useMemo(() => {
+    // Use qty directly, but enforce minimum in calculations
+    const effectiveQty = Math.max(minQtyRequired, qty);
+    const fee = 2.00;
+    const subtotal = effectiveQty * (raffle?.ticketPrice ?? 0);
+    const chargeTotal = subtotal + fee;
+    
+    return {
+      qty: effectiveQty,
+      fee: Math.round(fee * 100) / 100,
+      subtotal: Math.round(subtotal * 100) / 100,
+      chargeTotal: Math.round(chargeTotal * 100) / 100
+    };
+  }, [raffle?.ticketPrice, qty, minQtyRequired]);
   
+  const { qty: adjustedQty, fee, subtotal, chargeTotal } = checkoutResult;
   const qtyAdjusted = adjustedQty !== qty;
   const drawLabel = raffle?.drawDate ? formatDateBR(raffle.drawDate) : "—";
   // Allow purchasing until winner is selected (premiado), not just when active
@@ -551,14 +577,15 @@ export default function GanhaveisDetail() {
 
               <div className="flex items-center gap-3 bg-white rounded-lg p-2">
                 <button 
-                  onClick={() => setQty(q => Math.max(1, q - 1))} 
-                  className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
+                  onClick={() => setQty(Math.max(minQtyRequired, qty - 1))}
+                  disabled={qty <= minQtyRequired}
+                  className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium disabled:opacity-50"
                 >
                   –
                 </button>
-                <span className="w-12 text-center font-semibold">{adjustedQty}</span>
+                <span className="w-12 text-center font-semibold">{qty}</span>
                 <button 
-                  onClick={() => setQty(q => q + 1)} 
+                  onClick={() => setQty(qty + 1)}
                   className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
                 >
                   +
@@ -567,7 +594,7 @@ export default function GanhaveisDetail() {
               
               {qtyAdjusted && (
                 <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
-                  Quantidade ajustada para atender o mínimo de R$ 5,00.
+                  Quantidade mínima: {minQtyRequired} bilhetes para atingir R$ 5,00.
                 </div>
               )}
 

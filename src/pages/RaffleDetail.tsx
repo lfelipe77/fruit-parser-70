@@ -31,6 +31,7 @@ export default function RaffleDetail() {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState<number>(1);
+  console.log('[QTY DEBUG] Component render - qty:', qty);
   const [provider, setProvider] = useState<Provider>("asaas");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -121,6 +122,7 @@ export default function RaffleDetail() {
   const minQtyRequired = useMemo(() => {
     if (!raffle?.ticket_price) return 1;
     const result = computeCheckout(raffle.ticket_price, 1);
+    console.log('[QTY DEBUG] minQtyRequired calculated:', result.qty, 'for price:', raffle.ticket_price);
     return result.qty;
   }, [raffle?.ticket_price]);
   
@@ -128,6 +130,7 @@ export default function RaffleDetail() {
   const [hasInitialized, setHasInitialized] = useState(false);
   useEffect(() => {
     if (raffle?.ticket_price && !hasInitialized) {
+      console.log('[QTY DEBUG] First-time initialization - setting qty to:', minQtyRequired);
       setQty(minQtyRequired);
       setHasInitialized(true);
     }
@@ -141,6 +144,8 @@ export default function RaffleDetail() {
     const actualQty = Math.max(minQtyRequired, qty); // Ensure we respect minimum but use user's qty
     const subtotal = actualQty * raffle.ticket_price;
     const chargeTotal = subtotal + fee;
+    
+    console.log('[QTY DEBUG] checkoutDetails calculated - qty:', qty, 'actualQty:', actualQty, 'minQtyRequired:', minQtyRequired);
     
     return { 
       qty: actualQty, 
@@ -312,7 +317,11 @@ export default function RaffleDetail() {
               />
               <button
                 type="button"
-                onClick={() => setQty(qty + 1)}
+                onClick={() => {
+                  console.log('[QTY DEBUG] + button clicked - qty before:', qty, 'minQtyRequired:', minQtyRequired);
+                  setQty(qty + 1);
+                  console.log('[QTY DEBUG] + button clicked - setQty called with:', qty + 1);
+                }}
                 className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50"
               >
                 +
