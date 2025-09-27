@@ -124,12 +124,14 @@ export default function RaffleDetail() {
     return result.qty;
   }, [raffle?.ticket_price]);
   
-  // Initialize qty to minimum on raffle load
+  // Initialize qty to minimum ONLY when raffle first loads, not on user interactions
+  const [hasInitialized, setHasInitialized] = useState(false);
   useEffect(() => {
-    if (raffle?.ticket_price && qty < minQtyRequired) {
+    if (raffle?.ticket_price && !hasInitialized) {
       setQty(minQtyRequired);
+      setHasInitialized(true);
     }
-  }, [raffle?.ticket_price, minQtyRequired]);
+  }, [raffle?.ticket_price, minQtyRequired, hasInitialized]);
   
   // Calculate checkout details - use qty directly, don't let computeCheckout modify it
   const checkoutDetails = useMemo(() => {
