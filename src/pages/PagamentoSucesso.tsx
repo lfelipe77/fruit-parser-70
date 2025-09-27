@@ -23,6 +23,7 @@ import { sendAppEmail } from "@/lib/sendAppEmail";
 import { receiptEmail } from "@/lib/emailTemplates";
 import { pushNotification } from "@/lib/notify";
 import { buildPrettyShareUrlSync } from "@/lib/shareUrl";
+import { getAvatarSrc } from "@/lib/avatarUtils";
 interface PaymentSuccessData {
   raffleId?: string;
   txId?: string;
@@ -73,6 +74,12 @@ export default function PagamentoSucesso() {
   );
   const [emailSent, setEmailSent] = useState(false);
   const [raffleSlug, setRaffleSlug] = useState<string | null>(null);
+  const [raffleDetails, setRaffleDetails] = useState<{
+    title: string;
+    image_url: string;
+    organizer_name: string;
+    organizer_avatar_url: string;
+  } | null>(null);
 
   const txId = s?.txId ?? searchParams.get("tx") ?? id ?? ganhaveisId ?? undefined;
   const [isLoading, setIsLoading] = useState(false);
@@ -123,15 +130,39 @@ export default function PagamentoSucesso() {
           } catch { comboStrings = []; }
           setCombos(comboStrings);
           
-          // Fetch raffle details to get the slug
+          // Fetch raffle details
           const { data: raffle } = await supabase
-            .from('raffles')
-            .select('slug')
+            .from('raffles_public_money_ext')
+            .select('slug, title, image_url')
             .eq('id', tx.raffle_id)
             .maybeSingle();
 
-          if (raffle?.slug) {
+          // Fetch organizer details
+          const { data: raffleWithCreator } = await supabase
+            .from('raffles')
+            .select('organizer_id')
+            .eq('id', tx.raffle_id)
+            .maybeSingle();
+
+          let organizerDetails = null;
+          if (raffleWithCreator?.organizer_id) {
+            const { data: organizer } = await supabase
+              .from('user_profiles_public')
+              .select('display_name, avatar_url')
+              .eq('id', raffleWithCreator.organizer_id)
+              .maybeSingle();
+            
+            organizerDetails = organizer;
+          }
+
+          if (raffle) {
             setRaffleSlug(raffle.slug);
+            setRaffleDetails({
+              title: raffle.title || 'Sorteio',
+              image_url: raffle.image_url || '/placeholder.svg',
+              organizer_name: organizerDetails?.display_name || 'Ganhavel',
+              organizer_avatar_url: getAvatarSrc(organizerDetails, raffleWithCreator?.organizer_id)
+            });
           }
 
           // Also update rehydrated data
@@ -336,12 +367,13 @@ export default function PagamentoSucesso() {
 
   const paymentData = {
     rifaId: raffleId,
-    rifaTitle: rehydrated.rifaTitle || "Sorteio",
-    rifaImage: rehydrated.rifaImage || "/placeholder.svg",
+    rifaTitle: raffleDetails?.title || rehydrated.rifaTitle || "Sorteio",
+    rifaImage: raffleDetails?.image_url || rehydrated.rifaImage || "/placeholder.svg",
     selectedNumbers: numbers,
     quantity,
     totalAmount: totalPaid,
-    organizerName: rehydrated.organizerName || "Ganhavel",
+    organizerName: raffleDetails?.organizer_name || rehydrated.organizerName || "Ganhavel",
+    organizerAvatar: raffleDetails?.organizer_avatar_url || "/placeholder.svg",
     paymentId,
     paymentDate
   };
@@ -462,11 +494,24 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                       src={paymentData.rifaImage} 
                       alt={paymentData.rifaTitle}
                       className="w-20 h-20 object-cover rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{String(paymentData.rifaTitle ?? '')}</h3>
-                      <p className="text-muted-foreground">Por: {String(paymentData.organizerName ?? '')}</p>
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <img 
+                          src={paymentData.organizerAvatar} 
+                          alt={paymentData.organizerName}
+                          className="w-6 h-6 object-cover rounded-full"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
+                        />
+                        <p className="text-muted-foreground">Por: {String(paymentData.organizerName ?? '')}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-yellow-500" />
                         <span className="text-sm text-muted-foreground">
                           Aguardando sorteio
