@@ -129,13 +129,24 @@ export default function RaffleDetail() {
     if (raffle?.ticket_price && qty < minQtyRequired) {
       setQty(minQtyRequired);
     }
-  }, [raffle?.ticket_price, minQtyRequired]); // Removed qty from dependencies to avoid loops
+  }, [raffle?.ticket_price, minQtyRequired]);
   
-  // Calculate checkout details with current qty
+  // Calculate checkout details - use qty directly, don't let computeCheckout modify it
   const checkoutDetails = useMemo(() => {
     if (!raffle?.ticket_price) return { qty: 1, fee: 2.00, subtotal: 0, chargeTotal: 2.00 };
-    return computeCheckout(raffle.ticket_price, qty);
-  }, [qty, raffle?.ticket_price]);
+    
+    const fee = 2.00;
+    const actualQty = Math.max(minQtyRequired, qty); // Ensure we respect minimum but use user's qty
+    const subtotal = actualQty * raffle.ticket_price;
+    const chargeTotal = subtotal + fee;
+    
+    return { 
+      qty: actualQty, 
+      fee: Math.round(fee * 100) / 100, 
+      subtotal: Math.round(subtotal * 100) / 100, 
+      chargeTotal: Math.round(chargeTotal * 100) / 100 
+    };
+  }, [qty, raffle?.ticket_price, minQtyRequired]);
   
   const totalAmount = useMemo(() => checkoutDetails.subtotal, [checkoutDetails.subtotal]);
   const feeAmount = useMemo(() => checkoutDetails.fee, [checkoutDetails.fee]);
