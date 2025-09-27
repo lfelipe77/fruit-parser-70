@@ -4,7 +4,6 @@ import App from './App.tsx'
 import './index.css'
 import './i18n'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
-import { loadProductionScripts } from './utils/productionScripts'
 
 // Debug kit for hard reload investigation
 import { DebugOverlay } from '@/debug/DebugOverlay'
@@ -125,8 +124,15 @@ if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
       </AppErrorBoundary>
     );
     
-    // Load production scripts after React has rendered
-    loadProductionScripts();
+    // Load production scripts after React has rendered - only in production
+    if (import.meta.env.PROD) {
+      try {
+        const { loadProductionScripts } = await import('./utils/productionScripts');
+        loadProductionScripts();
+      } catch (error) {
+        console.warn('Failed to load production scripts:', error);
+      }
+    }
     
     log.info('[MAIN] App rendered successfully');
   } catch (error) {
