@@ -22,7 +22,8 @@ import {
   BarChart3,
   Eye,
   Menu,
-  Plus
+  Plus,
+  Bug
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -208,8 +209,21 @@ export default function Navigation() {
                 </SheetContent>
               </Sheet>
 
-              {/* Remove notification and language selector per user request */}
-              
+              {/* Temporary Debug Button */}
+              {import.meta.env.DEV && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('debug', '1');
+                    window.location.href = url.toString();
+                  }}
+                  className="hidden md:flex"
+                >
+                  <Bug className="w-4 h-4" />
+                </Button>
+              )}
               
               {/* Admin dropdown menu - only show when user is confirmed admin */}
               {isAdmin === true && !adminLoading && (
