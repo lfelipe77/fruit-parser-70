@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
       // connect-src * ws: wss: https://*.supabase.co https://*.functions.supabase.co https://challenges.cloudflare.com blob: data:
       // frame-src https://challenges.cloudflare.com
       // script-src 'self' https://challenges.cloudflare.com 'unsafe-eval' 'unsafe-inline'
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://www.gstatic.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src * ws: wss:; frame-ancestors *; object-src 'none'; base-uri 'self';",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com https://www.gstatic.com https://www.recaptcha.net https://cdn.gpteng.co; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src * ws: wss: https://www.google-analytics.com; frame-ancestors *; object-src 'none'; base-uri 'self';",
       'X-Frame-Options': 'SAMEORIGIN',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'no-referrer',
@@ -35,14 +35,14 @@ export default defineConfig(({ mode }) => ({
     ? { pure: ['console.debug'], drop: ['debugger'] }
     : {},
   build: {
-    // Use default esbuild minifier (faster than terser)
     minify: 'esbuild',
     rollupOptions: {
-      // Optional: Configure esbuild to drop console.debug in production
-      ...(mode === 'production' && {
-        external: [],
-        plugins: [],
-      }),
+      output: {
+        manualChunks: undefined,
+      },
     },
+    // Ensure proper chunk naming and avoid 404s
+    assetsDir: 'assets',
+    sourcemap: false,
   },
 }));
