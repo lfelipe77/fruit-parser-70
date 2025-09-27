@@ -157,10 +157,14 @@ export default function GanhaveisDetail() {
     return result.qty;
   }, [raffle?.ticketPrice]);
   
+  // Track if quantity was auto-adjusted to minimum
+  const [wasAutoAdjusted, setWasAutoAdjusted] = React.useState(false);
+  
   // Initialize qty to minimum when raffle loads
   React.useEffect(() => {
     if (raffle?.ticketPrice && qty < minQtyRequired) {
       setQty(minQtyRequired);
+      setWasAutoAdjusted(true);
     }
   }, [raffle?.ticketPrice, minQtyRequired]);
   
@@ -366,6 +370,15 @@ export default function GanhaveisDetail() {
   
   const { qty: adjustedQty, fee, subtotal, chargeTotal } = checkoutResult;
   const qtyAdjusted = adjustedQty !== qty;
+  
+  // Debug logging
+  console.log('GanhaveisDetail Debug:', {
+    qty,
+    minQtyRequired,
+    adjustedQty,
+    qtyAdjusted,
+    ticketPrice: raffle?.ticketPrice
+  });
   const drawLabel = raffle?.drawDate ? formatDateBR(raffle.drawDate) : "—";
   // Allow purchasing until winner is selected (premiado), not just when active
   const isActive = raffle?.status === "active" || (raffle?.status !== "completed" && raffle?.status !== "premiado");
@@ -577,7 +590,11 @@ export default function GanhaveisDetail() {
 
               <div className="flex items-center gap-3 bg-white rounded-lg p-2">
                 <button 
-                  onClick={() => setQty(Math.max(minQtyRequired, qty - 1))}
+                  onClick={() => {
+                    const newQty = Math.max(minQtyRequired, qty - 1);
+                    setQty(newQty);
+                    if (newQty > minQtyRequired) setWasAutoAdjusted(false);
+                  }}
                   disabled={qty <= minQtyRequired}
                   className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium disabled:opacity-50"
                 >
@@ -585,14 +602,17 @@ export default function GanhaveisDetail() {
                 </button>
                 <span className="w-12 text-center font-semibold">{qty}</span>
                 <button 
-                  onClick={() => setQty(qty + 1)}
+                  onClick={() => {
+                    setQty(qty + 1);
+                    setWasAutoAdjusted(false);
+                  }}
                   className="rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 w-8 h-8 flex items-center justify-center text-emerald-600 font-medium"
                 >
                   +
                 </button>
               </div>
               
-              {qtyAdjusted && (
+              {wasAutoAdjusted && qty === minQtyRequired && (
                 <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
                   Quantidade ajustada para atender o mínimo de R$ 5,00.
                 </div>
