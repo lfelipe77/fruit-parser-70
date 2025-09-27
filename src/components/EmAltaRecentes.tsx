@@ -93,7 +93,7 @@ export default function EmAltaRecentesSection() {
     } finally {
       setLoading(false);
     }
-  }, [updateTop, updateRecent, refreshInterval]);
+  }, [updateTop, updateRecent]);
 
   // Initial fetch
   React.useEffect(() => {

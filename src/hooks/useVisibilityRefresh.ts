@@ -66,7 +66,7 @@ export function useVisibilityRefresh({
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearRefreshInterval();
     };
-  }, [enabled, refreshInterval, isVisible, onRefresh]);
+  }, [enabled, refreshInterval]);
 
   return { isVisible };
 }
