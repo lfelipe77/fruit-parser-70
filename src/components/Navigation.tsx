@@ -210,20 +210,20 @@ export default function Navigation() {
               </Sheet>
 
               {/* Temporary Debug Button */}
-              {import.meta.env.DEV && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('debug', '1');
-                    window.location.href = url.toString();
-                  }}
-                  className="hidden md:flex"
-                >
-                  <Bug className="w-4 h-4" />
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('debug', '1');
+                  window.location.href = url.toString();
+                }}
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
+                title="Enable Debug Mode"
+              >
+                <Bug className="w-4 h-4" />
+                <span className="hidden sm:inline text-xs">Debug</span>
+              </Button>
               
               {/* Admin dropdown menu - only show when user is confirmed admin */}
               {isAdmin === true && !adminLoading && (
