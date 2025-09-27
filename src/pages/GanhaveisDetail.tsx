@@ -249,11 +249,13 @@ export default function GanhaveisDetail() {
       }
 
       // Load organizer profile via raffle-scoped view (anon-safe)
-      const { data: ownerData, error: ownerError } = await supabase
+      // Use the actual raffle UUID from baseData, not the key which might be a slug
+      const raffleId = baseData?.id;
+      const { data: ownerData, error: ownerError } = raffleId ? await supabase
         .from('v_organizer_public' as any)
         .select('organizer_user_id,username,full_name,avatar_url,bio,location,website_url,instagram,twitter,facebook,youtube,tiktok,whatsapp,telegram')
-        .eq('raffle_id', key)
-        .maybeSingle();
+        .eq('raffle_id', raffleId)
+        .maybeSingle() : { data: null, error: null };
       
       if (ownerError) console.warn('[GanhaveisDetail] Organizer fetch error:', ownerError);
       setOrganizerData(ownerData);
