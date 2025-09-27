@@ -142,8 +142,11 @@ export default function Descobrir() {
 
   const sortedRifas = [...filteredRifas].sort((a, b) => {
     switch (sortBy) {
-      case "ending-soon":
-        return a.daysLeft - b.daysLeft;
+      case "almost-complete":
+        // Sort by progress percentage (raised/goal), highest first
+        const progressA = (a.raised / a.goal) * 100;
+        const progressB = (b.raised / b.goal) * 100;
+        return progressB - progressA;
       case "newest":
         return b.daysLeft - a.daysLeft;
       case "popularity":
@@ -254,9 +257,9 @@ export default function Descobrir() {
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                  <SelectContent>
                   <SelectItem value="popularity">Mais Populares</SelectItem>
-                  <SelectItem value="ending-soon">Encerrando em Breve</SelectItem>
+                  <SelectItem value="almost-complete">Quase Completos</SelectItem>
                   <SelectItem value="newest">Mais Recentes</SelectItem>
                   <SelectItem value="goal">Maior Valor</SelectItem>
                 </SelectContent>
