@@ -67,7 +67,6 @@ import RequireAuth from "./components/RequireAuth";
 import { usePublicVisitLogger, shouldLogPage } from "@/hooks/usePublicVisitLogger";
 import { DevErrorBoundary } from '@/components/DevErrorBoundary';
 import { useLocation } from 'react-router-dom';
-import GlobalAuthDebugOverlay from '@/components/GlobalAuthDebugOverlay';
 import { GlobalRaffleCompletionMonitor } from '@/components/GlobalRaffleCompletionMonitor';
 import MinimalDashboard from '@/pages/MinimalDashboard';
 import Profile from '@/pages/Profile';
@@ -79,15 +78,13 @@ import AdminPayouts from '@/pages/AdminPayouts';
 import LastPathKeeper from '@/components/LastPathKeeper';
 import { useAuthContext } from '@/providers/AuthProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
-import { DebugBanner } from '@/components/DebugBanner';
 import DiagnosticsPage from '@/pages/DiagnosticsPage';
 import EmailTest from '@/pages/admin/EmailTest';
 import MidiaKit from '@/pages/MidiaKit';
 import GanhaveisPartnershipMagalu from '@/pages/GanhaveisPartnershipMagalu';
 import GanhaveisPartnershipKabum from '@/pages/GanhaveisPartnershipKabum';
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics';
-import { resolveDebugFlags } from '@/utils/debugGate';
-import { DebugHud } from '@/components/DebugHud';
+import { UnifiedDebugPanel } from '@/components/UnifiedDebugPanel';
 
 function RouteBadge() {
   if (import.meta.env.VITE_DEBUG_OVERLAY !== 'true') return null;
@@ -116,8 +113,8 @@ const queryClient = new QueryClient();
 // Only start debug instrumentation when HUD is explicitly enabled
 if (typeof window !== 'undefined') {
   const startDebugInstrumentation = () => {
-    const debugFlags = resolveDebugFlags();
-    if (!debugFlags.SHOW_DEBUG_HUD) return;
+    const showDebugHud = localStorage.getItem('SHOW_DEBUG_HUD') === 'true';
+    if (!showDebugHud) return;
     
     const emit = (msg: string) => {
       console.log(msg);
@@ -191,9 +188,6 @@ const AppContent = () => {
   const { session } = useAuthContext();
   const isAuthenticated = !!session;
   
-  // Resolve debug flags from URL params and localStorage
-  const debugFlags = resolveDebugFlags();
-  
   // Google Analytics tracking - check for duplicate injection
   if (import.meta.env.VITE_DISABLE_GA !== 'true') {
     useGoogleAnalytics('G-E7V14RLKKV');
@@ -202,12 +196,10 @@ const AppContent = () => {
   return (
     <>
       <LastPathKeeper isAuthenticated={isAuthenticated} />
-      <LegacyDebugBanner />
-      <DebugBanner />
       <VisitLogger />
       <GlobalRaffleCompletionMonitor />
       <ScrollToTop />
-      <DebugHud show={debugFlags.SHOW_DEBUG_HUD} />
+      <UnifiedDebugPanel />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
@@ -360,8 +352,6 @@ const App = () => (
           <Toaster />
           <DevErrorBoundary>
             <Router>
-              <GlobalAuthDebugOverlay />
-              <RouteBadge />
               <AppContent />
             </Router>
           </DevErrorBoundary>

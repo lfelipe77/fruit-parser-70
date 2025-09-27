@@ -120,7 +120,6 @@ if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
       <AppErrorBoundary>
         <HelmetProvider>
           <App />
-          <DebugOverlay />
         </HelmetProvider>
       </AppErrorBoundary>
     );

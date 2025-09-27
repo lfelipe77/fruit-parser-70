@@ -31,8 +31,8 @@ export function RaffleCard({ r, raffle, showBuy = true, onView }: RaffleCardProp
   const data = r || raffle;
   const lastSaleTime = useRelativeTime(data?.last_paid_at, "pt-BR");
   
-  // Debug logging for time issues
-  if (data?.last_paid_at) {
+  // Debug logging for time issues - only in debug mode
+  if (data?.last_paid_at && new URLSearchParams(window.location.search).has('debug')) {
     console.log(`[RaffleCard] ID: ${data.id}, last_paid_at: ${data.last_paid_at}, calculated time: ${lastSaleTime}`);
   }
   if (!data?.id) return null;

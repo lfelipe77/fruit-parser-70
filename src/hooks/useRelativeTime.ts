@@ -4,9 +4,12 @@ export function useRelativeTime(iso?: string | null, locale: string = "pt-BR") {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60_000); // update every 60s
+    // Only start timer if we have a valid ISO date
+    if (!iso) return;
+    
+    const id = setInterval(() => setNow(Date.now()), 5 * 60_000); // update every 5 minutes instead of 1
     return () => clearInterval(id);
-  }, []);
+  }, [iso]);
 
   return useMemo(() => {
     if (!iso) return "—";
