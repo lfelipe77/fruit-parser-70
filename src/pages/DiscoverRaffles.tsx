@@ -21,7 +21,7 @@ export default function DiscoverRaffles() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState("almost-complete");
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -88,12 +88,11 @@ export default function DiscoverRaffles() {
       const STATUS_FOR_ENDING_SOON = ['active'];
 
       switch (sortBy) {
-        case "ending-soon": {
+        case "almost-complete": {
           query = query
-            .eq('status', 'active')
-            .not('draw_date', 'is', null)
-            .gt('draw_date', new Date().toISOString())
-            .order('draw_date', { ascending: true, nullsFirst: false });
+            .in('status', STATUS_FOR_ALL)
+            .order('progress_pct_money', { ascending: false, nullsFirst: false })
+            .order('amount_raised', { ascending: false, nullsFirst: false });
           break;
         }
         case "popularity": {
@@ -127,9 +126,9 @@ export default function DiscoverRaffles() {
       const { data, error, count } = await query;
       let rows = (data as unknown as RaffleCardInfo[]) || [];
 
-      // Fallback for "ending soon" if no results (show recent activity instead)
-      if (!error && rows.length === 0 && sortBy === "ending-soon") {
-        console.log('[Discover] No ending soon results, falling back to recent activity');
+      // Fallback for "almost-complete" if no results (show recent activity instead)
+      if (!error && rows.length === 0 && sortBy === "almost-complete") {
+        console.log('[Discover] No almost-complete results, falling back to recent activity');
         const fallback = await supabase
           .from('raffles_public_money_ext')
           .select(RAFFLE_CARD_SELECT)
@@ -275,7 +274,7 @@ export default function DiscoverRaffles() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="popularity">Mais Populares</SelectItem>
-                  <SelectItem value="ending-soon">Encerrando em Breve</SelectItem>
+                  <SelectItem value="almost-complete">Quase Completos</SelectItem>
                   <SelectItem value="newest">Mais Recentes</SelectItem>
                   <SelectItem value="goal">Maior Valor</SelectItem>
                 </SelectContent>
