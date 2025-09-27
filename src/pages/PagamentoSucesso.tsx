@@ -24,6 +24,7 @@ import { receiptEmail } from "@/lib/emailTemplates";
 import { pushNotification } from "@/lib/notify";
 import { buildPrettyShareUrlSync } from "@/lib/shareUrl";
 import { getAvatarSrc } from "@/lib/avatarUtils";
+import ganhavelLogo from '@/assets/ganhavel-logo.png';
 interface PaymentSuccessData {
   raffleId?: string;
   txId?: string;
@@ -141,10 +142,17 @@ export default function PagamentoSucesso() {
             setRaffleSlug(raffle.slug);
           }
           
+          // Debug log the transaction data
+          console.log('[PagamentoSucesso] Transaction data:', { 
+            title: tx.title, 
+            image_url: tx.image_url, 
+            raffle_id: tx.raffle_id 
+          });
+          
           // Set raffle details from transaction data
           setRaffleDetails({
             title: tx.title || 'Ganhavel',
-            image_url: tx.image_url || '/placeholder.svg',
+            image_url: tx.image_url || ganhavelLogo,
             organizer_name: 'Ganhavel',
             organizer_avatar_url: '/placeholder.svg'
           });
@@ -357,8 +365,8 @@ export default function PagamentoSucesso() {
 
   const paymentData = {
     rifaId: raffleId,
-    rifaTitle: raffleDetails?.title || rehydrated.rifaTitle || "Sorteio",
-    rifaImage: raffleDetails?.image_url || rehydrated.rifaImage || "/placeholder.svg",
+    rifaTitle: raffleDetails?.title || rehydrated.rifaTitle || "Ganhavel",
+    rifaImage: raffleDetails?.image_url || rehydrated.rifaImage || ganhavelLogo,
     selectedNumbers: numbers,
     quantity,
     totalAmount: totalPaid,
@@ -366,6 +374,9 @@ export default function PagamentoSucesso() {
     paymentId,
     paymentDate
   };
+
+  // Debug log the payment data
+  console.log('[PagamentoSucesso] Payment data:', paymentData);
 
   // Transaction already created in ConfirmacaoPagamento - no need to call usePersistMock again
 
@@ -482,9 +493,10 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
                     <img 
                       src={paymentData.rifaImage} 
                       alt={paymentData.rifaTitle}
-                      className="w-20 h-20 object-cover rounded-lg"
+                      className="w-20 h-20 object-cover rounded-lg bg-gray-100"
                       onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
+                        console.log('Image failed to load, using fallback:', paymentData.rifaImage);
+                        e.currentTarget.src = ganhavelLogo;
                       }}
                     />
                     <div className="flex-1">
