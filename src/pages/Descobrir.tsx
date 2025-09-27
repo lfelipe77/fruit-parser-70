@@ -127,7 +127,7 @@ const categories = [
 export default function Descobrir() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [sortBy, setSortBy] = useState("popularity");
+  const [sortBy, setSortBy] = useState("almost-complete");
   
   // Usar o hook de filtro de localização
   const { filter: locationFilter, filteredRifas: locationFilteredRifas, updateFilter, clearFilters } = useLocationFilter(allRifas);
