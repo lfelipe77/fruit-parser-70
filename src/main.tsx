@@ -116,9 +116,6 @@ if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
       }
     }
     
-    // Load production scripts (GA, Lovable) only in production
-    loadProductionScripts();
-    
     // existing React render here (unchanged):
     createRoot(document.getElementById("root")!).render(
       <AppErrorBoundary>
@@ -127,6 +124,10 @@ if (typeof window !== 'undefined' && location.search.includes('nosw=1')) {
         </HelmetProvider>
       </AppErrorBoundary>
     );
+    
+    // Load production scripts after React has rendered
+    loadProductionScripts();
+    
     log.info('[MAIN] App rendered successfully');
   } catch (error) {
     log.error('[MAIN] App boot failed:', error);
