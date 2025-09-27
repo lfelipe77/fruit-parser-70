@@ -41,13 +41,14 @@ export default function EmAltaRecentesSection() {
       "category_name,subcategory_name," +
       "location_display:location_city,participants_count";
     
-    const fetchData = async () => {
+    const fetchData = async (isRefresh = false) => {
       DebugBus.add({
         ts: Date.now(),
         source: 'EmAltaRecentes:fetchData',
-        detail: { cancelled }
+        detail: { cancelled, isRefresh }
       });
-      setLoading(true);
+      // Only show loading skeleton on initial load, not on refresh
+      if (!isRefresh) setLoading(true);
       setErr(null);
       try {
         const [emAlta, recentes] = await Promise.all([
@@ -87,7 +88,7 @@ export default function EmAltaRecentesSection() {
       } catch (e: any) {
         if (!cancelled) setErr(e?.message ?? "Falha ao carregar");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !isRefresh) setLoading(false);
       }
     };
 
@@ -102,7 +103,7 @@ export default function EmAltaRecentesSection() {
       }
       fetchInFlight = true;
       try {
-        await fetchData();
+        await fetchData(true); // Mark as refresh to avoid loading flicker
       } finally {
         fetchInFlight = false;
       }
@@ -160,7 +161,7 @@ export default function EmAltaRecentesSection() {
       } else if (!cancelled) {
         console.log('[EmAltaRecentes] Skipping refresh - tab hidden');
       }
-    }, 30000); // Refresh every 30 seconds
+    }, 60000); // Refresh every 60 seconds (less aggressive)
     
     return () => { 
       cancelled = true; 
