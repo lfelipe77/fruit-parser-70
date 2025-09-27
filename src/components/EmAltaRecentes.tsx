@@ -54,7 +54,7 @@ export default function EmAltaRecentesSection() {
     try {
       const [emAlta, recentes] = await Promise.all([
         supabase
-          .from("raffles_public_money_ext")
+          .from("raffles_public_ext")
           .select(RAFFLE_CARD_SELECT)
           .in('status', ['active', 'drawing', 'premiado'])
           .order('last_paid_at', { ascending: false, nullsFirst: false })
@@ -63,7 +63,7 @@ export default function EmAltaRecentesSection() {
           .order('created_at', { ascending: false })
           .limit(12),
         supabase
-          .from("raffles_public_money_ext")
+          .from("raffles_public_ext")
           .select(RAFFLE_CARD_SELECT)
           .in('status', ['active', 'drawing', 'premiado'])
           .order("created_at", { ascending: false })
