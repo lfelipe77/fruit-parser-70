@@ -592,7 +592,7 @@ export default function GanhaveisDetail() {
                 </button>
               </div>
               
-              {qtyAdjusted && qty === minQtyRequired && (
+              {qtyAdjusted && (
                 <div className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
                   Quantidade ajustada para atender o mínimo de R$ 5,00.
                 </div>
