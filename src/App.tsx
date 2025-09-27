@@ -189,8 +189,8 @@ const AppContent = () => {
   const isAuthenticated = !!session;
   
   // Google Analytics tracking - check for duplicate injection
-  if (import.meta.env.VITE_DISABLE_GA !== 'true') {
-    useGoogleAnalytics('G-E7V14RLKKV');
+  if (import.meta.env.VITE_DISABLE_GA !== 'true' && import.meta.env.VITE_GA_MEASUREMENT_ID) {
+    useGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
   }
 
   return (
