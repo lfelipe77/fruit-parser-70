@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { X, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { devLog } from "@/utils/devUtils";
 
 interface PixPaymentModalProps {
   isOpen: boolean;
@@ -61,16 +62,22 @@ export default function PixPaymentModal({
     }
   };
 
-  // Poll payment status with fallback
+  // Poll payment status with exponential backoff and cleanup
   useEffect(() => {
     if (!isOpen || !paymentData.provider_payment_id) return;
 
     let pollCount = 0;
+    let currentDelay = 2000; // Start at 2s
+    const maxDelay = 12000; // Max 12s
+    let pollTimeout: NodeJS.Timeout;
+    let mounted = true;
 
-    const pollInterval = setInterval(async () => {
+    const poll = async () => {
+      if (!mounted) return;
+      
       try {
         pollCount++;
-        console.log(`[PIX Poll] Checking payment status for ${paymentData.provider_payment_id}`);
+        devLog.info(`[PIX Poll] Checking payment status for ${paymentData.provider_payment_id} (attempt ${pollCount}, delay ${currentDelay}ms)`);
         
         const { data, error } = await supabase
           .from("payments_pending")
@@ -78,20 +85,25 @@ export default function PixPaymentModal({
           .eq("asaas_payment_id", paymentData.provider_payment_id)
           .maybeSingle();
 
+        if (!mounted) return;
+
         if (error) {
           console.warn("Payment polling error:", error.message);
+          scheduleNext();
           return;
         }
 
-        console.log(`[PIX Poll] Current status: ${data?.status || 'not found'}`);
+        devLog.info(`[PIX Poll] Current status: ${data?.status || 'not found'}`);
 
         if (data?.status === "PAID") {
-          console.log('[PIX Poll] Payment confirmed! Finalizing purchase...');
+          devLog.info('[PIX Poll] Payment confirmed! Finalizing purchase...');
           setIsPolling(false);
-          clearInterval(pollInterval);
+          
+          // IMMEDIATELY stop polling on terminal state
+          mounted = false;
           
           // Finalize the purchase to mint tickets and update raffle data
-          console.log('[PIX Poll] Starting finalization with data:', {
+          devLog.info('[PIX Poll] Starting finalization with data:', {
             reservationId: paymentData.reservation_id,
             asaasPaymentId: paymentData.provider_payment_id
           });
@@ -111,13 +123,13 @@ export default function PixPaymentModal({
               headers: jwt ? { Authorization: `Bearer ${jwt}` } : {}
             });
 
-            console.log('[PIX Poll] Function response:', { finalizeData, finalizeError });
+            devLog.info('[PIX Poll] Function response:', { finalizeData, finalizeError });
 
             if (finalizeError) {
               console.error('[PIX Poll] Finalization failed:', finalizeError);
               // Still navigate to success even if finalization fails - webhook will handle it
             } else {
-              console.log('[PIX Poll] Purchase finalized successfully:', finalizeData);
+              devLog.info('[PIX Poll] Purchase finalized successfully:', finalizeData);
             }
           } catch (finalizeErr) {
             console.error('[PIX Poll] Finalization exception:', finalizeErr);
@@ -131,9 +143,9 @@ export default function PixPaymentModal({
           return;
         }
 
-        // Every 3rd poll (~9s), use fallback to check Asaas directly
+        // Every 3rd poll, use fallback to check Asaas directly
         if (pollCount % 3 === 0 && !data) {
-          console.log(`[PIX Poll] Fallback check via payment-status function`);
+          devLog.info(`[PIX Poll] Fallback check via payment-status function`);
           try {
             const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('payment-status', {
               body: {
@@ -143,21 +155,40 @@ export default function PixPaymentModal({
             });
 
             if (!fallbackError && fallbackData?.status) {
-              console.log(`[PIX Poll] Fallback status: ${fallbackData.status}`);
+              devLog.info(`[PIX Poll] Fallback status: ${fallbackData.status}`);
               // The function updates the DB if paid, so next regular poll will find it
             }
           } catch (fallbackErr) {
             console.warn('[PIX Poll] Fallback check failed:', fallbackErr);
           }
         }
+
+        scheduleNext();
       } catch (error) {
         console.warn("Payment polling unexpected error:", error);
+        scheduleNext();
       }
-    }, 3000); // Poll every 3 seconds
+    };
 
+    const scheduleNext = () => {
+      if (!mounted) return;
+      
+      // Exponential backoff: 2s → 3s → 5s → 8s → 12s (max)
+      const nextDelay = Math.min(currentDelay * 1.5, maxDelay);
+      currentDelay = nextDelay;
+      
+      pollTimeout = setTimeout(poll, currentDelay);
+    };
+
+    // Start polling immediately
     setIsPolling(true);
+    poll();
+
     return () => {
-      clearInterval(pollInterval);
+      mounted = false;
+      if (pollTimeout) {
+        clearTimeout(pollTimeout);
+      }
       setIsPolling(false);
     };
   }, [isOpen, paymentData.provider_payment_id, onSuccess]);

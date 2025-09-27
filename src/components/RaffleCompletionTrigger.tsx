@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRaffleCompletionDetector } from '@/hooks/useRaffleCompletionDetector';
+import { devLog } from '@/utils/devUtils';
 
 /**
  * Component to manually trigger completion check for a specific raffle
@@ -16,22 +17,39 @@ export function RaffleCompletionTrigger({
   onCompletion,
   enabled = true 
 }: RaffleCompletionTriggerProps) {
+  const didRun = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  
   const { triggerCheck } = useRaffleCompletionDetector({
     raffleId,
     enabled,
     checkInterval: 10000, // Check every 10 seconds for specific raffle
     onCompletion: onCompletion ? (id, details) => {
-      console.log(`[CompletionTrigger] Raffle ${id} completed:`, details);
+      devLog.info(`[CompletionTrigger] Raffle ${id} completed:`, details);
       onCompletion(id);
     } : undefined
   });
 
-  // Trigger immediate check on mount
+  // Trigger immediate check on mount with debounce and run-once guard
   useEffect(() => {
-    if (enabled && raffleId) {
-      console.log(`[CompletionTrigger] Triggering immediate check for raffle: ${raffleId}`);
-      setTimeout(triggerCheck, 1000); // Slight delay to avoid race conditions
+    if (didRun.current || !enabled || !raffleId) return;
+    didRun.current = true;
+    
+    devLog.info(`[CompletionTrigger] Triggering immediate check for raffle: ${raffleId}`);
+    
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
+    
+    // Debounced trigger with slight delay to avoid race conditions
+    timeoutRef.current = setTimeout(triggerCheck, 200);
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [raffleId, enabled, triggerCheck]);
 
   return null; // This component doesn't render anything

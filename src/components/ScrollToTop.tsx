@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigationType } from 'react-router-dom';
 import { isDebugFlagEnabled } from '@/config/debugFlags';
+import { devLog } from '@/utils/devUtils';
 
 export default function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -8,7 +9,7 @@ export default function ScrollToTop() {
   const prevRef = useRef({ pathname: '', search: '' });
 
   const emit = (msg: string) => {
-    console.log(msg);
+    devLog.info(msg); // Dev-only logging
     (window as any).__debugEvent && (window as any).__debugEvent(msg);
   };
 

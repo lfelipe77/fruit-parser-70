@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import React from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import MyTicketCard from "@/components/MyTicketCard";
@@ -77,6 +78,7 @@ export default function MyTicketsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const didFetch = React.useRef(false);
   
   const filter = searchParams.get('filter');
   const isDebugMode = searchParams.get('debug') === '1';
@@ -290,10 +292,12 @@ export default function MyTicketsPage() {
   };
 
   useEffect(() => {
-    if (!user || !session) return;
+    if (didFetch.current || !user || !session) return;
+    didFetch.current = true;
     
     setItems([]);
     fetchTickets();
+    console.log('[MyTickets] Fetched tickets once on mount');
   }, [user, session, filter]);
 
   if (!user) {

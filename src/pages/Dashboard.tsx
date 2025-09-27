@@ -6,6 +6,7 @@ import { useMyProfile } from "@/hooks/useUnifiedProfile";
 import { LogOut, User, CreditCard, Trophy, History } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAvatarSrc } from '@/lib/avatarUtils';
@@ -32,7 +33,12 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  const didRun = React.useRef(false);
+  
   useEffect(() => {
+    if (didRun.current) return;
+    didRun.current = true;
+    
     console.log('[dash] user state:', { user: !!user, authLoading });
     if (user && !authLoading) {
       fetchDashboardData();

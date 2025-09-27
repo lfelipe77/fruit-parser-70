@@ -273,8 +273,13 @@ export default function ConfirmacaoPagamento() {
     } catch (_) { /* no-op */ }
   }, [reservationId, checkoutData, raffle?.ticket_price, isMounted]);
 
-  // State machine initialization and server persistence
+  // State machine initialization and server persistence with run-once guard
+  const didInitialize = React.useRef(false);
+  
   React.useEffect(() => {
+    if (didInitialize.current) return;
+    didInitialize.current = true;
+    
     let mounted = true;
 
     async function initializeStateMachine() {

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { usePublicWinners, type PublicWinnerCard } from "@/hooks/usePublicWinners";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
+import { devLog } from "@/utils/devUtils";
 
 type HomeStats = {
   total_raised: number;
@@ -37,7 +38,7 @@ export default function HeroSection() {
 
   async function fetchStats(): Promise<{ src: 'cache'|'live', data: HomeStats|null }> {
     try {
-      console.log('[HeroSection] Fetching stats...');
+      devLog.info('[HeroSection] Fetching stats...');
       
       // participants (sum from public view - stable, no RLS surprises)
       const { data: partRows, error: partErr } = await supabase
@@ -49,11 +50,14 @@ export default function HeroSection() {
       if (partErr) throw partErr;
       const participants = (partRows ?? []).reduce((a, r) => a + (r.participants_count ?? 0), 0);
       
-      console.log('[HeroSection] Participants from public view:', {
+      // Dev-only diagnostics
+      devLog.group('[HeroSection] raw stats');
+      devLog.info('Participants from public view:', {
         raffleCount: partRows?.length || 0,
         totalParticipants: participants,
         sampleData: partRows?.slice(0, 3)
       });
+      devLog.groupEnd();
 
       // active raffles (from public view too)
       const { count: activeCount, error: activeErr } = await supabase
@@ -63,7 +67,7 @@ export default function HeroSection() {
 
       if (activeErr) throw activeErr;
 
-      console.log('[HeroSection] Active raffles count:', activeCount);
+      devLog.info('[HeroSection] Active raffles count:', activeCount);
 
       const statsData: HomeStats = {
         total_raised: 0,
@@ -76,7 +80,7 @@ export default function HeroSection() {
         recent_transactions: 0
       };
 
-      console.log('[HeroSection] Final stats data:', statsData);
+      devLog.info('[HeroSection] Final stats data:', statsData);
       return { src: 'live', data: statsData };
     } catch (error) {
       console.error('Failed to fetch stats:', error);

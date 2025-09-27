@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
+import { devLog } from "@/utils/devUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toBRL, asNumber } from "@/utils/money";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,8 @@ export default function PagamentoSucesso() {
   const txId = s?.txId ?? searchParams.get("tx") ?? id ?? ganhaveisId ?? undefined;
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [showAutoRedirect, setShowAutoRedirect] = useState(false);
+  const autoRedirectRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     // If we already have combos from nav state, we're good
@@ -158,6 +161,13 @@ export default function PagamentoSucesso() {
           }
           
           setIsLoading(false);
+          
+          // Start auto-redirect timer once data is loaded successfully
+          setShowAutoRedirect(true);
+          autoRedirectRef.current = setTimeout(() => {
+            devLog.info('[PagamentoSucesso] Auto-redirecting to /my-tickets after 2s');
+            navigate('/my-tickets', { replace: true });
+          }, 2000);
         } else {
           setHasError(true);
           setIsLoading(false);
@@ -168,7 +178,13 @@ export default function PagamentoSucesso() {
         setIsLoading(false);
       }
     })();
-  }, [txId, combos, emailSent]);
+    
+    return () => {
+      if (autoRedirectRef.current) {
+        clearTimeout(autoRedirectRef.current);
+      }
+    };
+  }, [txId, combos, emailSent, navigate]);
 
   const handleReceiptEmail = async (tx: any, ticketNumbers: string[], buyerEmail: string) => {
     if (!buyerEmail || !tx?.raffle_id) {
@@ -391,6 +407,11 @@ Participe você também e concorra a este prêmio incrível! 🚀`;
             <p className="text-muted-foreground text-lg">
               Sua participação foi confirmada com sucesso
             </p>
+            {showAutoRedirect && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Redirecionando para seus tickets em alguns segundos...
+              </p>
+            )}
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
