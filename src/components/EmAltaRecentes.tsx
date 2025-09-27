@@ -4,9 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { RaffleCardInfo } from "@/types/raffles";
 import RaffleCard from "./RaffleCard";
 import { DebugBus } from "@/debug/DebugBus";
-import { useVisibilityRefresh } from "@/hooks/useVisibilityRefresh";
-import { useDiffState } from "@/hooks/useDiffState";
-import { env } from "@/config/env";
 
 function SkeletonCard() {
   return (
@@ -23,126 +20,160 @@ function SkeletonCard() {
 
 export default function EmAltaRecentesSection() {
   const navigate = useNavigate();
-  const [top, updateTop] = useDiffState<RaffleCardInfo[]>([]);
-  const [recent, updateRecent] = useDiffState<RaffleCardInfo[]>([]);
+  const [top, setTop] = React.useState<RaffleCardInfo[]>([]);
+  const [recent, setRecent] = React.useState<RaffleCardInfo[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState<string | null>(null);
-  
-  // Get refresh interval from env (default 30s)
-  const refreshInterval = React.useMemo(() => {
-    const envMs = env.CALM_REFRESH_MS;
-    return envMs ? parseInt(envMs, 10) : 30000;
-  }, []);
 
-  const RAFFLE_CARD_SELECT =
-    "id,title,description,image_url,status," +
-    "ticket_price,goal_amount,amount_raised,progress_pct_money," +
-    "last_paid_at,created_at,draw_date," +
-    "category_name,subcategory_name," +
-    "location_display:location_city,participants_count";
-
-  const fetchData = React.useCallback(async () => {
-    DebugBus.add({
-      ts: Date.now(),
-      source: 'EmAltaRecentes:fetchData',
-      detail: { refreshInterval }
-    });
-    
-    setLoading(true);
-    setErr(null);
-    
-    try {
-      const [emAlta, recentes] = await Promise.all([
-        supabase
-          .from("raffles_public_ext")
-          .select(RAFFLE_CARD_SELECT)
-          .in('status', ['active', 'drawing', 'premiado'])
-          .order('last_paid_at', { ascending: false, nullsFirst: false })
-          .order('participants_count', { ascending: false, nullsFirst: true })
-          .order('amount_raised', { ascending: false, nullsFirst: true })
-          .order('created_at', { ascending: false })
-          .limit(12),
-        supabase
-          .from("raffles_public_ext")
-          .select(RAFFLE_CARD_SELECT)
-          .in('status', ['active', 'drawing', 'premiado'])
-          .order("created_at", { ascending: false })
-          .limit(24)
-      ]);
-      
-      if (emAlta.error) throw emAlta.error;
-      if (recentes.error) throw recentes.error;
-      
-      console.debug('[EmAlta] count=%d sample=%o', emAlta.data?.length ?? 0, emAlta.data?.slice(0,3)?.map((r: any) => r.id));
-      
-      const newTop = ((emAlta.data || []) as unknown as RaffleCardInfo[]).slice(0, 3);
-      const newRecent = ((recentes.data || []) as unknown as RaffleCardInfo[]).slice(0, 3);
-      
-      // Use diff state updates - only re-render if data actually changed
-      const topChanged = updateTop(newTop);
-      const recentChanged = updateRecent(newRecent);
-      
-      if (topChanged || recentChanged) {
-        console.debug('[EmAltaRecentes] Data changed, re-rendering');
-      } else {
-        console.debug('[EmAltaRecentes] No changes detected, skipping re-render');
-      }
-      
-    } catch (e: any) {
-      setErr(e?.message ?? "Falha ao carregar");
-    } finally {
-      setLoading(false);
-    }
-  }, [updateTop, updateRecent]);
-
-  // Initial fetch
   React.useEffect(() => {
+    let cancelled = false;
+    
     DebugBus.add({
       ts: Date.now(),
       source: 'EmAltaRecentes:mount',
-      detail: { url: window.location.href, refreshInterval }
+      detail: { url: window.location.href }
     });
     
-    fetchData();
-  }, [fetchData]);
+    const RAFFLE_CARD_SELECT =
+      "id,title,description,image_url,status," +
+      "ticket_price,goal_amount,amount_raised,progress_pct_money," +
+      "last_paid_at,created_at,draw_date," +
+      "category_name,subcategory_name," +
+      "location_display:location_city,participants_count";
+    
+    const fetchData = async () => {
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:fetchData',
+        detail: { cancelled }
+      });
+      setLoading(true);
+      setErr(null);
+      try {
+        const [emAlta, recentes] = await Promise.all([
+          supabase
+            .from("raffles_public_money_ext")
+            .select(RAFFLE_CARD_SELECT)
+            .in('status', ['active', 'drawing', 'premiado'])
+            .order('last_paid_at', { ascending: false, nullsFirst: false })
+            .order('participants_count', { ascending: false, nullsFirst: true })
+            .order('amount_raised', { ascending: false, nullsFirst: true })
+            .order('created_at', { ascending: false })
+            .limit(12),
+          supabase
+            .from("raffles_public_money_ext")
+            .select(RAFFLE_CARD_SELECT)
+            .in('status', ['active', 'drawing', 'premiado'])
+            .order("created_at", { ascending: false })
+            .limit(24)
+        ]);
+        
+        if (!cancelled) {
+          if (emAlta.error) throw emAlta.error;
+          if (recentes.error) throw recentes.error;
+          
+          console.debug('[EmAlta] count=%d sample=%o', emAlta.data?.length ?? 0, emAlta.data?.slice(0,3)?.map((r: any) => r.id));
+          console.debug('[EmAlta] Full top 3 data:', emAlta.data?.slice(0,3)?.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            amount_raised: r.amount_raised,
+            participants_count: r.participants_count,
+            last_paid_at: r.last_paid_at
+          })));
+          
+          setTop(((emAlta.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
+          setRecent(((recentes.data || []) as unknown as RaffleCardInfo[]).slice(0, 3));
+        }
+      } catch (e: any) {
+        if (!cancelled) setErr(e?.message ?? "Falha ao carregar");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
 
-  // Listen for raffle events
-  React.useEffect(() => {
+    fetchData();
+
+    // Listen for raffle updates to invalidate and re-fetch - throttled
+    let fetchInFlight = false;
+    const safeFetchData = async () => {
+      if (fetchInFlight || cancelled) {
+        console.log('[EmAltaRecentes] skipping fetch - in flight or cancelled');
+        return;
+      }
+      fetchInFlight = true;
+      try {
+        await fetchData();
+      } finally {
+        fetchInFlight = false;
+      }
+    };
+
     const handleRaffleUpdate = (event?: any) => {
       console.log('[EmAltaRecentes] Received raffleUpdated event:', event?.detail);
       DebugBus.add({
         ts: Date.now(),
         source: 'EmAltaRecentes:raffleUpdated',
-        detail: { event: event?.detail }
+        detail: { cancelled, event: event?.detail }
       });
-      fetchData();
+      if (!cancelled) {
+        safeFetchData();
+      }
     };
 
+    // Listen for raffle completion events
     const handleRaffleCompletion = (event?: any) => {
       console.log('[EmAltaRecentes] Received raffleCompleted event:', event?.detail);
       DebugBus.add({
         ts: Date.now(),
         source: 'EmAltaRecentes:raffleCompleted',
-        detail: { event: event?.detail }
+        detail: { cancelled, event: event?.detail }
       });
-      fetchData();
+      if (!cancelled) {
+        safeFetchData(); // Refresh to show in completed section
+      }
     };
 
     window.addEventListener('raffleUpdated', handleRaffleUpdate);
     window.addEventListener('raffleCompleted', handleRaffleCompletion);
     
-    return () => {
+    DebugBus.add({
+      ts: Date.now(),
+      source: 'EmAltaRecentes:interval:start',
+      detail: { intervalMs: 30000 }
+    });
+    
+    // Auto-refresh with visibility check - don't poll when hidden
+    const interval = setInterval(() => {
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:interval:tick',
+        detail: { 
+          cancelled, 
+          visibilityState: document.visibilityState,
+          willRefresh: !cancelled && document.visibilityState === 'visible'
+        }
+      });
+      
+      if (!cancelled && document.visibilityState === 'visible') {
+        console.log('[EmAltaRecentes] Auto-refreshing data...');
+        safeFetchData();
+      } else if (!cancelled) {
+        console.log('[EmAltaRecentes] Skipping refresh - tab hidden');
+      }
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => { 
+      cancelled = true; 
+      DebugBus.add({
+        ts: Date.now(),
+        source: 'EmAltaRecentes:cleanup',
+        detail: { url: window.location.href }
+      });
       window.removeEventListener('raffleUpdated', handleRaffleUpdate);
       window.removeEventListener('raffleCompleted', handleRaffleCompletion);
+      clearInterval(interval);
     };
-  }, [fetchData]);
-
-  // Visibility-aware refresh
-  useVisibilityRefresh({
-    refreshInterval,
-    onRefresh: fetchData,
-    enabled: true
-  });
+  }, []);
 
   const Grid = ({ items }: { items: RaffleCardInfo[] }) => (
     <div className="grid gap-4 md:grid-cols-3">

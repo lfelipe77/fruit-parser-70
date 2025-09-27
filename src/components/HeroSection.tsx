@@ -6,10 +6,9 @@ import { useHeroCopy } from "@/hooks/useHeroCopy";
 import { FadeText } from "@/components/FadeText";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { usePublicWinners, type PublicWinnerCard } from "@/hooks/usePublicWinners";
 import heroImage from "/lovable-uploads/a4d4bbdb-5b32-4b05-a45d-083c4d90dbb9.png";
-import HeroStatsCard from "./HeroStatsCard";
 
 type HomeStats = {
   total_raised: number;
@@ -110,21 +109,23 @@ export default function HeroSection() {
     return `R$ ${num}`;
   };
 
-  // Memoized display stats - only recalculate when values actually change
-  const displayStats = useMemo(() => {
-    const winnersCount = winners?.length ?? 0;
-    const hasWinners = winnersCount > 0;
-    const activeCount = stats?.active_ganhaveis ?? 128;
-    
-    return {
-      prizeValue: hasWinners ? winnersCount.toString() : "0",
-      prizeLabel: "Premiados",
-      participants: stats ? stats.total_participants.toString() : "0",
-      ganhaveis: stats ? stats.active_ganhaveis.toString() : "0",
-      activeGanhaveis: activeCount.toString(),
-      hasWinners
-    };
-  }, [stats?.total_participants, stats?.active_ganhaveis, winners?.length]);
+  // Use real stats or fallback to hardcoded values
+  const paid = Number(stats?.total_prize_paid ?? 0);
+  
+  // For the floating card, show active ganhaveis (not total)
+  const activeCount = stats?.active_ganhaveis ?? 128;
+  
+  // Count actual winners from the v_public_winners view (like in Resultados/Premiados)
+  const winnersCount = winners?.length ?? 0;
+  const hasWinners = winnersCount > 0;
+  
+  const displayStats = {
+    prizeValue: hasWinners ? winnersCount.toString() : "0",
+    prizeLabel: "Premiados",
+    participants: stats ? stats.total_participants.toString() : "0",
+    ganhaveis: stats ? stats.active_ganhaveis.toString() : "0",
+    activeGanhaveis: activeCount.toString()
+  };
   
   return (
     <section className="relative bg-gradient-hero py-12 md:py-16 lg:py-20 overflow-hidden">
@@ -195,22 +196,35 @@ export default function HeroSection() {
             )}
             
             <div className="grid grid-cols-3 gap-4 md:gap-6 pt-6 md:pt-8 max-w-lg mx-auto lg:mx-0">
-              <HeroStatsCard
-                icon={TrendingUp}
-                value={displayStats.prizeValue}
-                label={displayStats.prizeLabel}
-                hasValue={displayStats.hasWinners}
-              />
-              <HeroStatsCard
-                icon={Users}
-                value={displayStats.participants}
-                label="Participantes"
-              />
-              <HeroStatsCard
-                icon={Target}
-                value={displayStats.ganhaveis}
-                label="Ganhaveis Ativos"
-              />
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="w-8 md:w-10 h-8 md:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-4 md:w-5 h-4 md:h-5 text-primary" />
+                  </div>
+                </div>
+                <div className={`font-semibold text-base md:text-lg ${!hasWinners ? 'text-muted-foreground' : ''}`}>
+                  {displayStats.prizeValue}
+                </div>
+                <div className="text-xs md:text-sm text-muted-foreground">{displayStats.prizeLabel}</div>
+              </div>
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="w-8 md:w-10 h-8 md:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Users className="w-4 md:w-5 h-4 md:h-5 text-primary" />
+                  </div>
+                </div>
+                <div className="font-semibold text-base md:text-lg">{displayStats.participants}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Participantes</div>
+              </div>
+              <div className="text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="w-8 md:w-10 h-8 md:h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Target className="w-4 md:w-5 h-4 md:h-5 text-primary" />
+                  </div>
+                </div>
+                <div className="font-semibold text-base md:text-lg">{displayStats.ganhaveis}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">Ganhaveis Ativos</div>
+              </div>
             </div>
             
             {/* Debug info - only shown with ?debug=1 */}

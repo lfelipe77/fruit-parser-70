@@ -21,7 +21,6 @@ interface EnvConfig {
   readonly DISABLE_GA?: string;
   readonly LOGO_URL?: string;
   readonly NOTIFICATIONS?: string;
-  readonly CALM_REFRESH_MS?: string;
 }
 
 function getEnvVar(key: string, required = false): string | undefined {
@@ -55,5 +54,4 @@ export const env: EnvConfig = {
   DISABLE_GA: getEnvVar('DISABLE_GA'),
   LOGO_URL: getEnvVar('LOGO_URL'),
   NOTIFICATIONS: getEnvVar('NOTIFICATIONS'),
-  CALM_REFRESH_MS: getEnvVar('CALM_REFRESH_MS'),
 } as const;
