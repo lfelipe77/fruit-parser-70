@@ -117,18 +117,25 @@ export default function RaffleDetail() {
 
   const userId = useMemo(() => session?.user?.id ?? null, [session]);
   
-  // Calculate minimum quantity and checkout details
+  // Calculate minimum quantity required for R$5.00 minimum
+  const minQtyRequired = useMemo(() => {
+    if (!raffle?.ticket_price) return 1;
+    const result = computeCheckout(raffle.ticket_price, 1);
+    return result.qty;
+  }, [raffle?.ticket_price]);
+  
+  // Initialize qty to minimum on raffle load
+  useEffect(() => {
+    if (raffle?.ticket_price && qty < minQtyRequired) {
+      setQty(minQtyRequired);
+    }
+  }, [raffle?.ticket_price, minQtyRequired]); // Removed qty from dependencies to avoid loops
+  
+  // Calculate checkout details with current qty
   const checkoutDetails = useMemo(() => {
     if (!raffle?.ticket_price) return { qty: 1, fee: 2.00, subtotal: 0, chargeTotal: 2.00 };
     return computeCheckout(raffle.ticket_price, qty);
   }, [qty, raffle?.ticket_price]);
-  
-  // Ensure qty matches the minimum required qty
-  useEffect(() => {
-    if (checkoutDetails.qty !== qty) {
-      setQty(checkoutDetails.qty);
-    }
-  }, [checkoutDetails.qty, qty]);
   
   const totalAmount = useMemo(() => checkoutDetails.subtotal, [checkoutDetails.subtotal]);
   const feeAmount = useMemo(() => checkoutDetails.fee, [checkoutDetails.fee]);
@@ -274,19 +281,19 @@ export default function RaffleDetail() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setQty(Math.max(checkoutDetails.qty, qty - 1))}
-                disabled={qty <= checkoutDetails.qty}
+                onClick={() => setQty(Math.max(minQtyRequired, qty - 1))}
+                disabled={qty <= minQtyRequired}
                 className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 −
               </button>
               <input
                 type="number"
-                min={checkoutDetails.qty}
+                min={minQtyRequired}
                 className="border rounded p-2 w-20 text-center"
                 value={qty}
                 onChange={(e) => {
-                  const newQty = Math.max(checkoutDetails.qty, Number(e.target.value) || checkoutDetails.qty);
+                  const newQty = Math.max(minQtyRequired, Number(e.target.value) || minQtyRequired);
                   setQty(newQty);
                 }}
               />
@@ -298,9 +305,9 @@ export default function RaffleDetail() {
                 +
               </button>
             </div>
-            {checkoutDetails.qty > 1 && (
+            {minQtyRequired > 1 && (
               <div className="text-xs text-gray-500">
-                Mínimo: {checkoutDetails.qty} bilhetes (R$ 5,00 + taxas)
+                Mínimo: {minQtyRequired} bilhetes (R$ 5,00 + taxas)
               </div>
             )}
           </div>
