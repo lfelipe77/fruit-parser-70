@@ -85,9 +85,11 @@ export default function Navigation() {
                 <Link to="/descobrir" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('discover')}
                 </Link>
+                {/* Hidden for now
                 <Link to="/categorias" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('categories')}
                 </Link>
+                */}
                 <Link to="/resultados" className="text-muted-foreground hover:text-foreground transition-colors">
                   {t('results')}
                 </Link>
@@ -138,6 +140,7 @@ export default function Navigation() {
                       <span>Descobrir Ganhaveis</span>
                     </Link>
                     
+                    {/* Hidden for now
                     <Link 
                       to="/categorias" 
                       className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-accent transition-colors"
@@ -146,6 +149,7 @@ export default function Navigation() {
                       <BarChart3 className="w-4 h-4 text-muted-foreground" />
                       <span>Categorias</span>
                     </Link>
+                    */}
                     
                     <Link 
                       to="/resultados" 
