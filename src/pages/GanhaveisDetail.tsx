@@ -51,20 +51,37 @@ const FALLBACK_DETAILS = `
 `;
 
 const FALLBACK_RULES = `
-<h3>Regulamento da Rifa</h3>
-<h4>🏆 COMO O GANHADOR É DEFINIDO</h4>
-<ol>
-<li><strong>Sorteio acontece</strong><br/>Utilizamos o número da Loteria Federal do país de origem do prêmio.</li>
-<li><strong>Comparação com os bilhetes vendidos</strong><br/>Se houver um bilhete com o número exato → esse é o ganhador.<br/>Se nenhum tiver o número exato → vale o mais próximo em ordem crescente.</li>
-<li><strong>Sem repetições</strong><br/>Cada bilhete é único no sistema. Um número premiado não pode ser repetido em outro sorteio.</li>
-</ol>
-<p>✅ <strong>Garantia de Justiça</strong></p>
-<ul>
-<li>Sorteio 100% vinculado à Loteria Federal</li>
-<li>Zero manipulação / nenhuma fraude</li>
-<li>Processo rastreável, seguro e auditável</li>
-<li>O site, toda a lógica e toda operação é 100% transparente e auditável</li>
-</ul>
+<h4>🏆 Como o ganhador é definido</h4>
+
+<p><strong>💰 Quando completa:</strong> assim que o Ganhável atinge 100%, ele entra no próximo sorteio da Loteria Federal.</p>
+
+<p><strong>🔢 Cálculo do vencedor:</strong> usamos os últimos pares de números da Loteria Federal.</p>
+
+<p>Se houver bilhete exato, ele vence.</p>
+
+<p>Se não houver, vence o mais próximo em ordem crescente.</p>
+
+<p><strong>📊 Transparência total:</strong> sempre mostramos o número sorteado e o bilhete vencedor lado a lado.</p>
+
+<p><strong>🚫 Sem repetições:</strong> cada bilhete é único no sistema.</p>
+
+<h4>✅ Garantia de justiça</h4>
+
+<p>Sorteio 100% vinculado à Loteria Federal.</p>
+
+<p>Zero manipulação ou fraude.</p>
+
+<p>Processo público, rastreável e auditável.</p>
+
+<h4>📦 Entrega do Ganhável</h4>
+
+<p><strong>🛒 Compra feita pelo link de afiliado informado.</strong></p>
+
+<p><strong>📞 Nossa equipe entra em contato para ajustes e confirmação.</strong></p>
+
+<p><strong>📑 Prêmio só é finalizado após comprovação de recebimento.</strong></p>
+
+<p>Assim cada participante tem segurança, justiça e transparência em todo o processo.</p>
 `;
 
 function buildShareMeta(raffle: any, origin: string) {
