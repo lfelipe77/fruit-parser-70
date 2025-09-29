@@ -72,7 +72,8 @@ export async function fetchPublicWinners(supabase: any): Promise<PublicWinnerCar
     winner_handle: r.winner_handle?.trim() || null,
     winner_name: r.winner_name?.trim() || null,
     // Map new fields to legacy field names for backward compatibility
-    federal_target: r.drawn_number || (Array.isArray(r.draw_pairs) ? r.draw_pairs.join('') : null),
+    // Use draw_pairs (actual Federal lottery numbers) instead of drawn_number (which has incorrect data)
+    federal_target: Array.isArray(r.draw_pairs) ? r.draw_pairs.join('') : (r.drawn_number || null),
     winning_ticket: r.drawn_number || (Array.isArray(r.draw_pairs) ? r.draw_pairs.join('') : null),
   }));
 
