@@ -621,6 +621,9 @@ export default function GanhaveisDetail() {
               )}
 
               <div className="space-y-2 bg-white rounded-lg p-4">
+                <div className="flex justify-between text-sm font-medium text-emerald-600">
+                  <span>Valor por bilhete:</span><span>{formatBRL(raffle.ticketPrice || 0)}</span>
+                </div>
                 <div className="flex justify-between text-sm">
                   <span>Bilhetes ({adjustedQty}x):</span><span>{formatBRL(subtotal)}</span>
                 </div>
