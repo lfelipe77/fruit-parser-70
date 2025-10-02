@@ -196,28 +196,30 @@ export function useEnhancedProfileSave() {
         
         return result;
       } else {
-        // Regular profile update without avatar - don't touch avatar_url
+        // Regular profile update without avatar - don't update avatar_url field at all
         setStage('Saving profile...');
         setProgress(50);
         
-        // Get current profile to preserve avatar_url
-        const { data: currentProfile } = await supabase
+        const now = new Date().toISOString();
+        const payload = {
+          ...updates,
+          updated_at: now,
+        };
+        
+        // Update without touching avatar_url
+        const { data, error } = await supabase
           .from('user_profiles')
-          .select('avatar_url')
+          .update(payload)
           .eq('id', user.id)
+          .select()
           .single();
         
-        const result = await saveAvatarProfileResilient(
-          supabase, 
-          user.id, 
-          currentProfile?.avatar_url || '', 
-          updates
-        );
+        if (error) throw error;
         
         setProgress(100);
         setStage('Complete!');
         
-        return result;
+        return data;
       }
     } catch (e: any) {
       setError(e.message ?? 'Failed to save profile');
