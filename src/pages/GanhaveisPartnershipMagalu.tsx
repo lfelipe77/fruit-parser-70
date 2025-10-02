@@ -334,7 +334,7 @@ const GanhaveisPartnershipMagalu = () => {
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold mb-6 text-foreground">O que é a Ganhavel</h2>
               <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-                A Ganhavel é a primeira plataforma de sorteios de prêmios 100% honesta, transparente e gamificada.
+                A Ganhavel é o primeiro market place de sorteios de prêmios 100% honesto, transparente e gamificado.
                 O sorteio só acontece quando o valor total do prêmio é atingido, e todo o processo é seguro, 
                 auditável e vinculado à Loteria Federal.
               </p>
