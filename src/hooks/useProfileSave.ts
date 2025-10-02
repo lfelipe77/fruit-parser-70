@@ -188,7 +188,7 @@ export function useProfileSave() {
 
       // 2) Build final update payload
       const allowedKeys = new Set([
-        'full_name', 'username', 'bio', 'location', 'instagram', 'website_url', 'avatar_url'
+        'full_name', 'username', 'bio', 'location', 'instagram', 'website_url'
       ]);
 
       const base: Record<string, any> = {
@@ -201,10 +201,27 @@ export function useProfileSave() {
 
       console.log('[useProfileSave] Final payload:', payload);
 
-      // 3) Use resilient save function
-      const result = await saveAvatarProfileResilient(supabase, user.id, avatarUrl || '', payload);
-      console.log('[useProfileSave] Save completed successfully:', result);
-      return result;
+      // 3) If we have a new avatar, pass it; otherwise just update profile fields
+      if (avatarUrl) {
+        const result = await saveAvatarProfileResilient(supabase, user.id, avatarUrl, payload);
+        console.log('[useProfileSave] Save with avatar completed:', result);
+        return result;
+      } else {
+        // Update profile without touching avatar_url
+        const now = new Date().toISOString();
+        const updatePayload = { ...payload, updated_at: now };
+        
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update(updatePayload)
+          .eq('id', user.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        console.log('[useProfileSave] Save without avatar completed:', data);
+        return data;
+      }
     } catch (e: any) {
       console.error('[useProfileSave] Error:', fmtErr(e));
       setError(e.message ?? 'Failed to save profile');
