@@ -507,17 +507,21 @@ const BusinessModel: React.FC = () => {
           </CardHeader>
           <CardContent className="p-8 grid md:grid-cols-2 gap-6">
             <div>
-              <h4 className="font-semibold mb-2">Buscamos parceiros em cinco frentes:</h4>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+              <h4 className="font-semibold mb-4">Buscamos parceiros em cinco frentes:</h4>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
                 <li><span className="text-foreground">Profissionais</span> — desenvolvedores, designers, marketing, gestão de comunidade</li>
                 <li><span className="text-foreground">Criadores de Conteúdo</span> — influenciadores digitais, educadores e empreendedores</li>
                 <li><span className="text-foreground">Empresas & Plataformas</span> — agências, marketplaces, SaaS, soluções financeiras</li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
                 <li><span className="text-foreground">Varejistas & Fornecedores</span> — vendedores diretos de produtos e prêmios para a plataforma</li>
                 <li><span className="text-foreground">Parceiros de Expansão</span> — mídia, tecnologia e presença internacional</li>
               </ul>
-            </div>
-            <div className="bg-white/60 dark:bg-black/20 p-6 rounded-xl border border-border/50">
-              <p className="text-sm"><span className="font-semibold">Win–Win:</span> Cada parceria gera valor para ambos os lados, fortalecendo a rede e ampliando o alcance da plataforma.</p>
+              <div className="bg-white/60 dark:bg-black/20 p-6 rounded-xl border border-border/50 mt-4">
+                <p className="text-sm"><span className="font-semibold">Win–Win:</span> Cada parceria gera valor para ambos os lados, fortalecendo a rede e ampliando o alcance da plataforma.</p>
+              </div>
             </div>
           </CardContent>
         </Card>
