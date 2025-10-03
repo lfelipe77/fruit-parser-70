@@ -512,6 +512,7 @@ const BusinessModel: React.FC = () => {
                 <li><span className="text-foreground">Profissionais</span> — desenvolvedores, designers, marketing, gestão de comunidade</li>
                 <li><span className="text-foreground">Criadores de Conteúdo</span> — influenciadores digitais, educadores e empreendedores</li>
                 <li><span className="text-foreground">Empresas & Plataformas</span> — agências, marketplaces, SaaS, soluções financeiras</li>
+                <li><span className="text-foreground">Varejistas & Fornecedores</span> — vendedores diretos de produtos e prêmios para a plataforma</li>
                 <li><span className="text-foreground">Parceiros de Expansão</span> — mídia, tecnologia e presença internacional</li>
               </ul>
             </div>
