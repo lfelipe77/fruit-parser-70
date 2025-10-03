@@ -507,7 +507,7 @@ const BusinessModel: React.FC = () => {
           </CardHeader>
           <CardContent className="p-8 grid md:grid-cols-2 gap-6">
             <div>
-              <h4 className="font-semibold mb-2">Buscamos parceiros em quatro frentes:</h4>
+              <h4 className="font-semibold mb-2">Buscamos parceiros em cinco frentes:</h4>
               <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
                 <li><span className="text-foreground">Profissionais</span> — desenvolvedores, designers, marketing, gestão de comunidade</li>
                 <li><span className="text-foreground">Criadores de Conteúdo</span> — influenciadores digitais, educadores e empreendedores</li>
