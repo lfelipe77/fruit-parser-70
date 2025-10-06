@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Rocket, Target, LineChart, Users, Shield, TrendingUp, DollarSign, Share2, Zap, Globe2, Handshake, BarChart3, AlertTriangle, Trophy, Calendar, Building, CheckCircle } from 'lucide-react';
+import founderFelipeImage from '@/assets/founder-felipe-ribeiro.png';
 
 const ogImage = '/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png';
 
@@ -465,6 +466,79 @@ const BusinessModel: React.FC = () => {
               Transformar milhões em protagonistas da própria renda, permitindo que, de forma responsável e segura, 
               lancem prêmios — inclusive de afiliados — e alcancem novas oportunidades de ganho e conexão.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Time Fundador */}
+        <Card className="mb-12 overflow-hidden border-green-200/50 bg-gradient-to-br from-green-50/80 to-primary/5 dark:from-green-950/30 dark:to-primary/10 hover-scale">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 text-green-700 dark:text-green-400 text-2xl">
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              Time Fundador
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="grid lg:grid-cols-2 gap-8 items-center">
+              {/* Left side - Text block */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Felipe Ribeiro</h3>
+                  <p className="text-lg text-primary font-semibold mb-4">Fundador da Ganhavel</p>
+                  <p className="text-foreground/90 leading-relaxed">
+                    Profissional de automação, inspirado pela revolução da Inteligência Artificial e pela ambição de criar experiências únicas e transformadoras.
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 flex items-center justify-center bg-primary/10 rounded-lg">
+                      <Globe2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">20 anos internacionais — Reino Unido, EUA, França, Espanha</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 flex items-center justify-center bg-primary/10 rounded-lg">
+                      <Building className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">Múltiplas empresas — Empreendedor serial e especialista em automação</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 flex items-center justify-center bg-primary/10 rounded-lg">
+                      <Zap className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">Revolução da IA — Execução rápida de projetos antes impensáveis</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right side - Profile card */}
+              <div className="flex justify-center lg:justify-end">
+                <div className="bg-gradient-to-br from-blue-50/90 to-white/90 dark:from-blue-950/30 dark:to-background/50 p-6 rounded-xl shadow-lg border border-blue-200/30 dark:border-blue-800/30 max-w-sm">
+                  <div className="text-center mb-6">
+                    <div className="w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full border-4 border-white shadow-lg">
+                      <img 
+                        src={founderFelipeImage} 
+                        alt="Felipe Ribeiro - Fundador da Ganhavel" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                  
+                  <blockquote className="text-sm text-foreground/80 italic leading-relaxed">
+                    "A tecnologia deve servir para conectar pessoas e criar experiências genuínas.
+                    A Ganhavel representa essa visão: transparência, inovação e impacto real na vida das pessoas."
+                  </blockquote>
+                  
+                  <div className="mt-4 text-xs font-medium text-muted-foreground text-right">
+                    — Felipe Ribeiro, Fundador
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
