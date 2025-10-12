@@ -88,6 +88,71 @@ export default function PagamentoSucesso() {
   const [showAutoRedirect, setShowAutoRedirect] = useState(false);
   const autoRedirectRef = useRef<NodeJS.Timeout>();
 
+  // Handler for sending receipt email - must be declared before useEffect
+  const handleReceiptEmail = async (tx: any, ticketNumbers: string[], buyerEmail: string) => {
+    if (!buyerEmail || !tx?.raffle_id) {
+      console.warn('Missing required data for receipt email');
+      return;
+    }
+
+    try {
+      // Fetch raffle details for email
+      const { data: raffle, error: raffleError } = await supabase
+        .from('raffles')
+        .select('title, slug, id')
+        .eq('id', tx.raffle_id)
+        .maybeSingle();
+
+      if (raffleError) {
+        console.error('Error fetching raffle for receipt email:', raffleError);
+        return;
+      }
+
+      if (raffle) {
+        // Atomic "send once" guard
+        const { data: claim, error: claimError } = await supabase
+          .from('transactions')
+          .update({ receipt_email_sent_at: new Date().toISOString() })
+          .eq('id', tx.id)
+          .is('receipt_email_sent_at', null)
+          .select('id');
+
+        if (claimError) {
+          console.error('Error claiming receipt email send:', claimError);
+          return;
+        }
+        if (!claim || claim.length === 0) {
+          return; // already sent/claimed elsewhere
+        }
+
+        try {
+          const parts = receiptEmail({
+            raffleTitle: raffle.title,
+            raffleUrl: buildPrettyShareUrlSync({ id: raffle.id, slug: raffle.slug }),
+            tickets: ticketNumbers,
+            myTicketsUrl: `${window.location.origin}/#/minha-conta?tab=bilhetes`,
+            resultsUrl: `${window.location.origin}/#/resultados`,
+            valueBRL: toBRL(asNumber(tx.amount, 0)),
+            txId: tx.id
+          });
+
+          await sendAppEmail(buyerEmail, parts.subject, parts.html, parts.text);
+          setEmailSent(true);
+          console.log('Receipt email sent successfully to:', buyerEmail);
+        } catch (e) {
+          console.error('Receipt email send failed, reverting claim:', e);
+          await supabase
+            .from('transactions')
+            .update({ receipt_email_sent_at: null })
+            .eq('id', tx.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error sending receipt email:', error);
+      // Don't throw - just log the error
+    }
+  };
+
   useEffect(() => {
     // If we already have combos from nav state, we're good
     if (combos && combos.length) return;
@@ -215,69 +280,6 @@ export default function PagamentoSucesso() {
     };
   }, [txId, combos, emailSent, navigate]);
 
-  const handleReceiptEmail = async (tx: any, ticketNumbers: string[], buyerEmail: string) => {
-    if (!buyerEmail || !tx?.raffle_id) {
-      console.warn('Missing required data for receipt email');
-      return;
-    }
-
-    try {
-      // Fetch raffle details for email
-      const { data: raffle, error: raffleError } = await supabase
-        .from('raffles')
-        .select('title, slug, id')
-        .eq('id', tx.raffle_id)
-        .maybeSingle();
-
-      if (raffleError) {
-        console.error('Error fetching raffle for receipt email:', raffleError);
-        return;
-      }
-
-      if (raffle) {
-        // Atomic "send once" guard
-        const { data: claim, error: claimError } = await supabase
-          .from('transactions')
-          .update({ receipt_email_sent_at: new Date().toISOString() })
-          .eq('id', tx.id)
-          .is('receipt_email_sent_at', null)
-          .select('id');
-
-        if (claimError) {
-          console.error('Error claiming receipt email send:', claimError);
-          return;
-        }
-        if (!claim || claim.length === 0) {
-          return; // already sent/claimed elsewhere
-        }
-
-        try {
-          const parts = receiptEmail({
-            raffleTitle: raffle.title,
-            raffleUrl: buildPrettyShareUrlSync({ id: raffle.id, slug: raffle.slug }),
-            tickets: ticketNumbers,
-            myTicketsUrl: `${window.location.origin}/#/minha-conta?tab=bilhetes`,
-            resultsUrl: `${window.location.origin}/#/resultados`,
-            valueBRL: toBRL(asNumber(tx.amount, 0)),
-            txId: tx.id
-          });
-
-          await sendAppEmail(buyerEmail, parts.subject, parts.html, parts.text);
-          setEmailSent(true);
-          console.log('Receipt email sent successfully to:', buyerEmail);
-        } catch (e) {
-          console.error('Receipt email send failed, reverting claim:', e);
-          await supabase
-            .from('transactions')
-            .update({ receipt_email_sent_at: null })
-            .eq('id', tx.id);
-        }
-      }
-    } catch (error) {
-      console.error('Error sending receipt email:', error);
-      // Don't throw - just log the error
-    }
-  };
 
   // Support both new and legacy formats
   const quantity = asNumber(rehydrated.quantity || rehydrated.quantity, 1);
