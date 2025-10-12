@@ -94,13 +94,19 @@ export default function SobreNos() {
                   <h3 className="font-bold text-lg mb-4 text-green-700 dark:text-green-400">
                     GANHAVEL — Transparência Total
                   </h3>
-                  <div className="space-y-2 text-muted-foreground">
+                  <div className="space-y-3 text-muted-foreground">
                     <p>• Não tem lucro algum com nenhuma das rifas.</p>
                     <p>• Serve somente para que qualquer pessoa possa lançar produtos e produtos afiliados.</p>
                     <p>• Os fundadores, o site e a plataforma não têm lucro algum relacionado aos sorteios das rifas.</p>
                   </div>
-                  <p className="text-lg mt-6 leading-relaxed">
-                    O Ganhavel existe para garantir que cada sorteio aconteça de forma justa, legal e rastreável, utilizando tecnologia e automação para eliminar o risco humano e o favorecimento. Aqui, a plataforma não retém valores, não manipula resultados e não explora o prêmio. O foco é construir confiança, e devolver às pessoas o direito de participar de sorteios verdadeiros, com segurança e legitimidade.
+                  <p className="text-lg mt-6 leading-relaxed text-muted-foreground">
+                    O Ganhavel existe para garantir que cada sorteio aconteça de forma justa, legal e rastreável, utilizando tecnologia e automação para eliminar o risco humano e o favorecimento.
+                  </p>
+                  <p className="text-lg mt-4 leading-relaxed text-muted-foreground">
+                    Aqui, a plataforma não retém valores, não manipula resultados e não explora o prêmio.
+                  </p>
+                  <p className="text-lg mt-4 leading-relaxed text-muted-foreground">
+                    O foco é construir confiança, e devolver às pessoas o direito de participar de sorteios verdadeiros, com segurança e legitimidade.
                   </p>
                 </div>
               </CardContent>
@@ -116,18 +122,18 @@ export default function SobreNos() {
                   O Ganhavel nasceu para dar fim às "rifas falsas" e oferecer uma alternativa 100% transparente, legal e automatizada com inteligência artificial.
                 </p>
                 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                    <span>Aqui, ninguém faz sorteio próprio.</span>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" />
+                    <span className="leading-relaxed">Aqui, ninguém faz sorteio próprio.</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                    <span>Utilizamos os resultados oficiais da Loteria Federal da Caixa Econômica — um sistema público, auditável e de total credibilidade.</span>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" />
+                    <span className="leading-relaxed">Utilizamos os resultados oficiais da Loteria Federal da Caixa Econômica — um sistema público, auditável e de total credibilidade.</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                    <span>Os valores não ficam com a plataforma – vão direto para a compra do prêmio.</span>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" />
+                    <span className="leading-relaxed">Os valores não ficam com a plataforma – vão direto para a compra do prêmio.</span>
                   </div>
                 </div>
               </CardContent>
@@ -140,11 +146,14 @@ export default function SobreNos() {
                   <Gift className="w-8 h-8 text-green-500" />
                   Os prêmios são "Ganháveis", não apostáveis.
                 </h2>
-                <p className="text-lg mb-4 text-muted-foreground">
+                <p className="text-lg mb-4 text-muted-foreground leading-relaxed">
                   Todos os prêmios vendidos no Ganhavel são produtos reais — comprados automaticamente com o valor arrecadado e entregues com comprovante fiscal.
                 </p>
-                <p className="text-lg text-muted-foreground">
-                  Se por qualquer motivo o prêmio não puder ser entregue, o ganhador poderá escolher qualquer outro produto disponível no Ganhavel.com, sem prejuízo. Esse modelo garante que ninguém perca e todos joguem limpo.
+                <p className="text-lg mb-4 text-muted-foreground leading-relaxed">
+                  Se por qualquer motivo o prêmio não puder ser entregue, o ganhador poderá escolher qualquer outro produto disponível no Ganhavel.com, sem prejuízo.
+                </p>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Esse modelo garante que ninguém perca e todos joguem limpo.
                 </p>
               </CardContent>
             </Card>
@@ -159,34 +168,37 @@ export default function SobreNos() {
                 <p className="text-lg mb-6 font-semibold">
                   Nosso objetivo é claro:
                 </p>
-                <p className="text-lg mb-6 text-muted-foreground">
-                  Eliminar as rifas ilegais e criar uma rede de prêmios ganháveis para todos. No Ganhavel, cada pessoa pode lançar um prêmio, participar ou divulgar de forma segura, sabendo que o processo é validado por sistemas oficiais.
+                <p className="text-lg mb-4 text-muted-foreground leading-relaxed">
+                  Eliminar as rifas ilegais e criar uma rede de prêmios ganháveis para todos.
+                </p>
+                <p className="text-lg mb-6 text-muted-foreground leading-relaxed">
+                  No Ganhavel, cada pessoa pode lançar um prêmio, participar ou divulgar de forma segura, sabendo que o processo é validado por sistemas oficiais.
                 </p>
                 
                 <p className="text-lg mb-4 font-semibold">
                   Além de segurança, o Ganhavel também cria novas fontes de renda:
                 </p>
                 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                    <span>Quem lança um Ganhável pode lucrar com links de afiliados.</span>
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-1" />
+                    <span className="leading-relaxed">Quem lança um Ganhável pode lucrar com links de afiliados.</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                    <span>Quem participa pode concorrer a prêmios reais com total transparência.</span>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-1" />
+                    <span className="leading-relaxed">Quem participa pode concorrer a prêmios reais com total transparência.</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                    <span>Quem divulga ajuda o sorteio a acontecer — e ganha junto.</span>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-1" />
+                    <span className="leading-relaxed">Quem divulga ajuda o sorteio a acontecer — e ganha junto.</span>
                   </div>
                 </div>
                 
-                <p className="text-lg text-muted-foreground">
+                <p className="text-lg text-muted-foreground leading-relaxed">
                   É um ciclo de confiança, colaboração e oportunidade.
                 </p>
                 
-                <p className="text-lg mt-4 font-semibold">
+                <p className="text-lg mt-6 font-semibold leading-relaxed">
                   Seja você um criador, afiliado ou participante — no Ganhavel, você joga limpo, com segurança e propósito.
                 </p>
               </CardContent>
