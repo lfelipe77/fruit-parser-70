@@ -149,7 +149,7 @@ const BusinessModel: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-lg leading-relaxed text-foreground/90">
-              Ganhavel é uma plataforma onde qualquer pessoa pode lançar, participar e promover sorteios de prêmios reais ("ganhaveis").
+              Ganhavel é um marketplace onde qualquer pessoa pode lançar, participar e promover sorteios de prêmios reais ("ganhaveis").
               Oferecemos produtos diversos: físicos, digitais, afiliados, próprios, alheios e virais.
             </p>
             <div className="bg-white/60 dark:bg-black/20 p-4 rounded-lg">
