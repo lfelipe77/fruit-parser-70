@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Rocket, Target, LineChart, Users, Shield, TrendingUp, DollarSign, Share2, Zap, Globe2, Handshake, BarChart3, AlertTriangle, Trophy, Calendar, Building, CheckCircle } from 'lucide-react';
+import { Rocket, Target, LineChart, Users, Shield, TrendingUp, DollarSign, Share2, Zap, Globe2, Handshake, BarChart3, AlertTriangle, Trophy, Calendar, Building, CheckCircle, Lock, Gem } from 'lucide-react';
 import founderFelipeImage from '@/assets/founder-felipe-ribeiro.png';
 
 const ogImage = '/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png';
@@ -45,6 +45,69 @@ const BusinessModel: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Transparency Hero Section */}
+      <section className="relative overflow-hidden bg-[#F9F9F9] dark:bg-[#1a1a1a] border-b border-border/20">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#B33F40]/5 via-transparent to-[#00B686]/5" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(179,63,64,0.1),transparent_50%)]" />
+        <div className="container mx-auto px-4 py-16 max-w-5xl relative">
+          <div className="text-center space-y-8 animate-fade-in">
+            {/* Main Title with Icon */}
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Gem className="w-8 h-8 text-[#B33F40]" />
+              <h2 className="text-4xl md:text-5xl font-bold text-[#2C2C2C] dark:text-white">
+                Transparência Total
+              </h2>
+            </div>
+            
+            <div className="inline-block">
+              <p className="text-2xl md:text-3xl font-semibold text-[#B33F40] bg-gradient-to-r from-[#B33F40] to-[#c54e4f] bg-clip-text text-transparent">
+                Nenhum Lucro Sobre o Prêmio
+              </p>
+            </div>
+
+            {/* Key Points */}
+            <div className="max-w-3xl mx-auto space-y-4 text-lg text-[#2C2C2C] dark:text-gray-200">
+              <p className="leading-relaxed">
+                O Ganhável não lucra sobre o valor do prêmio.
+                <br />
+                Cada sorteio só acontece quando <span className="font-semibold text-[#00B686]">100% do valor é vendido</span> — e o pagamento ao organizador é liberado apenas após a confirmação da entrega do prêmio.
+              </p>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12">
+              <div className="flex flex-col items-center gap-3 p-6 bg-white/80 dark:bg-[#2C2C2C]/50 rounded-2xl shadow-lg hover:shadow-xl transition-all hover-scale border border-[#00B686]/20">
+                <Lock className="w-10 h-10 text-[#00B686]" />
+                <p className="text-center text-sm font-medium text-[#2C2C2C] dark:text-gray-200">
+                  Tudo é rastreado e auditável em tempo real
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center gap-3 p-6 bg-white/80 dark:bg-[#2C2C2C]/50 rounded-2xl shadow-lg hover:shadow-xl transition-all hover-scale border border-[#00B686]/20">
+                <Shield className="w-10 h-10 text-[#00B686]" />
+                <p className="text-center text-sm font-medium text-[#2C2C2C] dark:text-gray-200">
+                  Validado pela Loteria Federal
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center gap-3 p-6 bg-white/80 dark:bg-[#2C2C2C]/50 rounded-2xl shadow-lg hover:shadow-xl transition-all hover-scale border border-[#00B686]/20">
+                <Gem className="w-10 h-10 text-[#00B686]" />
+                <p className="text-center text-sm font-medium text-[#2C2C2C] dark:text-gray-200">
+                  Ecossistema 100% transparente
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom Statement */}
+            <div className="pt-6">
+              <p className="text-xl font-medium text-[#2C2C2C] dark:text-white">
+                Um ecossistema de sorteios <span className="text-[#00B686] font-bold">seguros</span>, <span className="text-[#00B686] font-bold">justos</span> e <span className="text-[#00B686] font-bold">100% transparentes</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-b">
