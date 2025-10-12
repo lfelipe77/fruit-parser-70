@@ -46,6 +46,35 @@ const BusinessModel: React.FC = () => {
         </div>
       </header>
 
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-b">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]" />
+        <div className="container mx-auto px-4 py-16 max-w-4xl relative">
+          <div className="text-center animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <Rocket className="w-4 h-4" />
+              Business Model
+            </div>
+            <h1 className="text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Ganhavel — Business Model</h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">O modelo que conecta prêmios reais, sorteios e afiliados em um ecossistema transparente e escalável.</p>
+            <div className="flex justify-center gap-4 mt-8">
+              <Button size="lg" asChild className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
+                <Link to="/descobrir">
+                  <Target className="w-5 h-5 mr-2" />
+                  Descobrir
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="hover-scale">
+                <Link to="/como-funciona">
+                  <LineChart className="w-5 h-5 mr-2" />
+                  Como Funciona
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Transparency Hero Section */}
       <section className="relative overflow-hidden bg-[#F9F9F9] dark:bg-[#1a1a1a] border-b border-border/20">
         <div className="absolute inset-0 bg-gradient-to-br from-[#B33F40]/5 via-transparent to-[#00B686]/5" />
@@ -104,35 +133,6 @@ const BusinessModel: React.FC = () => {
               <p className="text-xl font-medium text-[#2C2C2C] dark:text-white">
                 Um ecossistema de sorteios <span className="text-[#00B686] font-bold">seguros</span>, <span className="text-[#00B686] font-bold">justos</span> e <span className="text-[#00B686] font-bold">100% transparentes</span>.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-b">
-        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]" />
-        <div className="container mx-auto px-4 py-16 max-w-4xl relative">
-          <div className="text-center animate-fade-in">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <Rocket className="w-4 h-4" />
-              Business Model
-            </div>
-            <h1 className="text-5xl font-bold text-foreground mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Ganhavel — Business Model</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">O modelo que conecta prêmios reais, sorteios e afiliados em um ecossistema transparente e escalável.</p>
-            <div className="flex justify-center gap-4 mt-8">
-              <Button size="lg" asChild className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70">
-                <Link to="/descobrir">
-                  <Target className="w-5 h-5 mr-2" />
-                  Descobrir
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild className="hover-scale">
-                <Link to="/como-funciona">
-                  <LineChart className="w-5 h-5 mr-2" />
-                  Como Funciona
-                </Link>
-              </Button>
             </div>
           </div>
         </div>
