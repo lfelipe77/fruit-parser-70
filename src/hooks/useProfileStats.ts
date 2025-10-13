@@ -60,8 +60,15 @@ async function fetchStats(userId: string | null): Promise<ProfileStats> {
       console.error('[ProfileStats] Error fetching participating count:', participatingError);
     }
 
-    // Skip wins count for now due to schema issues
-    const winsCount = 0;
+    // Get wins count from raffle_winner_logs
+    const { count: winsCount, error: winsError } = await supabase
+      .from('raffle_winner_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', uid);
+
+    if (winsError) {
+      console.error('[ProfileStats] Error fetching wins count:', winsError);
+    }
 
     console.debug('[ProfileStats] Wins count for user:', uid, 'count:', winsCount);
 
