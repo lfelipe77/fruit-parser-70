@@ -393,24 +393,16 @@ export default function PerfilPublico() {
                   </Avatar>
                   
                   <div className="flex flex-col gap-3">
-                    <div className="flex gap-2">
-                      <a
-                        href={`/#/perfil/${profile?.username ?? profileUserId}`}
-                        className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50 flex-1 text-center"
-                      >
-                        Ver Perfil
-                      </a>
-                      <button
-                        type="button"
-                        className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
-                        onClick={() => {
-                          const url = window.location.href;
-                          navigator.clipboard?.writeText?.(url);
-                        }}
-                      >
-                        Compartilhar
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="rounded-xl border px-3 py-2 text-sm hover:bg-neutral-50"
+                      onClick={() => {
+                        const url = window.location.href;
+                        navigator.clipboard?.writeText?.(url);
+                      }}
+                    >
+                      Compartilhar
+                    </button>
                     
                     {user.videoApresentacao && (
                       <Button 
