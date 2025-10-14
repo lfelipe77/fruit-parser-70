@@ -193,25 +193,41 @@ export default function PerfilPublico() {
             }
           }
 
-          // Fetch raffle statuses to drive button labels
+          // Fetch raffle statuses AND money data to drive button labels and progress bars
           const raffleIds = Array.from(groupedMap.keys());
           let statusesById: Record<string, string> = {};
+          let moneyById: Record<string, { goal_amount: number; amount_raised: number; progress_pct_money: number }> = {};
           if (raffleIds.length) {
-            const { data: rStatus, error: rErr } = await supabase
-              .from('raffles')
-              .select('id,status')
+            const { data: rData, error: rErr } = await supabase
+              .from('raffles_public_money_ext')
+              .select('id,status,goal_amount,amount_raised,progress_pct_money')
               .in('id', raffleIds);
             if (rErr) {
-              console.error('[PerfilPublico] Failed to fetch raffle statuses', rErr);
+              console.error('[PerfilPublico] Failed to fetch raffle data', rErr);
             } else {
-              statusesById = Object.fromEntries((rStatus || []).map((r: any) => [r.id, r.status]));
+              statusesById = Object.fromEntries((rData || []).map((r: any) => [r.id, r.status]));
+              moneyById = Object.fromEntries((rData || []).map((r: any) => [
+                r.id, 
+                { 
+                  goal_amount: r.goal_amount || 0, 
+                  amount_raised: r.amount_raised || 0, 
+                  progress_pct_money: r.progress_pct_money || 0 
+                }
+              ]));
             }
           }
 
-          const grouped = raffleIds.map((id) => ({
-            ...groupedMap.get(id),
-            raffle_status: statusesById[id] || null,
-          }));
+          const grouped = raffleIds.map((id) => {
+            const base = groupedMap.get(id);
+            const money = moneyById[id] || { goal_amount: 0, amount_raised: 0, progress_pct_money: 0 };
+            return {
+              ...base,
+              raffle_status: statusesById[id] || null,
+              goal_amount: money.goal_amount,
+              amount_raised: money.amount_raised,
+              progress_pct_money: money.progress_pct_money,
+            };
+          });
 
           // DEV: check duplicate leaks
           if (import.meta.env.DEV) {
