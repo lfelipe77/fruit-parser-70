@@ -105,8 +105,11 @@ export default function Dashboard() {
           .order('created_at', { ascending: false })
           .limit(10),
 
-        // Skip wins count query for now due to schema mismatch
-        Promise.resolve({ data: [], count: 0 })
+        // Get wins count from v_public_winners
+        supabase
+          .from('v_public_winners')
+          .select('winner_id', { count: 'exact', head: true })
+          .eq('user_id', uid)
       ]);
 
       // Handle results and errors
@@ -122,7 +125,11 @@ export default function Dashboard() {
         console.error('Error fetching transactions:', transactionsResult.error);
       }
 
-      const winsCount = 0; // Skip wins count for now due to schema issues
+      if (winsResult.error) {
+        console.error('Error fetching wins count:', winsResult.error);
+      }
+
+      const winsCount = winsResult.count ?? 0;
 
       // Calculate total tickets from transaction numbers (each array element represents one ticket)
       const totalTickets = (ticketsResult.data || [])
