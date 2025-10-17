@@ -259,6 +259,14 @@ const BusinessModel: React.FC = () => {
               Plataformas como 123Rifas, Rifa Tech, Rife-me e Rifa 321 dominam as rifas online no Brasil, 
               porém atuam em zona cinzenta legal, com prêmios limitados e pouca automação. A Ganhavel resolve esses pontos com validação pela Loteria Federal e fluxo 100% automatizado.
             </p>
+            <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-6 rounded-lg border border-primary/20">
+              <p className="text-base leading-relaxed">
+                <span className="font-semibold text-primary">Interface SaaS de Qualidade Premium:</span> A plataforma oferece design profissional e infraestrutura robusta, proporcionando uma experiência intuitiva com informações inovadoras — como o valor arrecadado em tempo real e o alvo da arrecadação — que tornam o modelo de lucro 100% transparente e justo. Toda transação é rastreável, validada e auditável, garantindo total confiança entre organizadores e participantes.
+              </p>
+              <p className="text-sm text-muted-foreground mt-3">
+                <span className="font-medium">Futuro:</span> É possível adicionar ao valor do prêmio uma taxa opcional pelo serviço de garantia, oferecendo camadas extras de segurança e confiança para organizadores e participantes.
+              </p>
+            </div>
             <div className="overflow-x-auto">
               <div className="min-w-full bg-white/60 dark:bg-black/20 rounded-lg p-4">
                 <table className="w-full text-sm">
