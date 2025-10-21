@@ -3,6 +3,8 @@
 // Accepts /ganhavel/<slug>.html or /ganhavel/<uuid>.html
 // Always emits canonical with the slug (fallback to id if missing).
 
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+
 const SITE = "https://ganhavel.com";
 const FALLBACK_IMG = `${SITE}/lovable-uploads/c9c19afd-3358-47d6-a351-f7f1fe50603c.png`;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -162,7 +164,7 @@ async function fetchRaffle(key: string) {
   }
 }
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   try {
     const url = new URL(req.url);
     const path = url.pathname;

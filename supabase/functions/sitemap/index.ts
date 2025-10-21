@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    const baseUrl = 'https://weautomatetheworld.com';
+    const baseUrl = 'https://ganhavel.com';
     const today = new Date().toISOString().split('T')[0];
 
     // Static pages
