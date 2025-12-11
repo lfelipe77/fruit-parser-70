@@ -101,6 +101,20 @@ export type Database = {
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
         ]
       }
       admin_pick_log: {
@@ -848,6 +862,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ganhaveis_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "ganhaveis_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
+          {
             foreignKeyName: "ganhaveis_subcategory_id_fkey"
             columns: ["subcategory_id"]
             isOneToOne: false
@@ -950,6 +978,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -1176,6 +1218,20 @@ export type Database = {
             columns: ["ganhavel_id"]
             isOneToOne: false
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "lottery_results_ganhavel_id_fkey"
+            columns: ["ganhavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "lottery_results_ganhavel_id_fkey"
+            columns: ["ganhavel_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -1437,6 +1493,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_verified_buyer_user_id_fkey"
+            columns: ["buyer_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_buyer_user_id_fkey"
+            columns: ["buyer_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
+          {
             foreignKeyName: "payments_verified_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: false
@@ -1504,6 +1574,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -1645,6 +1729,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payouts_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -2028,6 +2126,20 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -2099,6 +2211,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -2452,6 +2578,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
+          {
             foreignKeyName: "raffles_state_uf_fkey"
             columns: ["state_uf"]
             isOneToOne: false
@@ -2555,6 +2695,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -2863,6 +3017,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "reservation_links_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -3231,6 +3399,20 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -3282,6 +3464,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -3605,6 +3801,20 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -3635,6 +3845,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -3846,6 +4070,20 @@ export type Database = {
             foreignKeyName: "transactions_raffle_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -3876,6 +4114,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -3922,7 +4174,7 @@ export type Database = {
           total_ganhaveis: number | null
           twitter: string | null
           updated_at: string | null
-          username: string | null
+          username: string
           website_url: string | null
           welcome_sent_at: string | null
           whatsapp: string | null
@@ -3949,7 +4201,7 @@ export type Database = {
           total_ganhaveis?: number | null
           twitter?: string | null
           updated_at?: string | null
-          username?: string | null
+          username: string
           website_url?: string | null
           welcome_sent_at?: string | null
           whatsapp?: string | null
@@ -3976,7 +4228,7 @@ export type Database = {
           total_ganhaveis?: number | null
           twitter?: string | null
           updated_at?: string | null
-          username?: string | null
+          username?: string
           website_url?: string | null
           welcome_sent_at?: string | null
           whatsapp?: string | null
@@ -4025,6 +4277,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -4116,6 +4382,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -4388,6 +4668,20 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -4477,6 +4771,20 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -4507,6 +4815,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -4602,6 +4924,20 @@ export type Database = {
             foreignKeyName: "transactions_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -4632,6 +4968,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -4719,6 +5069,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_verified_buyer_user_id_fkey"
+            columns: ["buyer_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_buyer_user_id_fkey"
+            columns: ["buyer_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
+          {
             foreignKeyName: "payments_verified_raffle_id_fkey"
             columns: ["raffle_id"]
             isOneToOne: false
@@ -4786,6 +5150,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "payments_verified_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -4922,6 +5300,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
+          {
             foreignKeyName: "raffles_winner_user_id_fkey"
             columns: ["winner_user_id"]
             isOneToOne: false
@@ -4948,6 +5340,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -5241,6 +5647,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "raffles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
+          {
             foreignKeyName: "raffles_subcategory_fk"
             columns: ["subcategory_id"]
             isOneToOne: false
@@ -5288,6 +5708,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "raffles_winner_user_id_fkey"
+            columns: ["winner_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -5415,6 +5849,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -5610,6 +6058,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: false
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "transactions_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -5922,6 +6384,20 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -5993,6 +6469,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -6087,6 +6577,20 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -6117,6 +6621,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -6225,6 +6743,20 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -6277,6 +6809,20 @@ export type Database = {
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
         ]
       }
       v_federal_winners: {
@@ -6308,6 +6854,45 @@ export type Database = {
           pair4: string | null
           pair5: string | null
           updated_at: string | null
+        }
+        Relationships: []
+      }
+      v_organizer_public: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          facebook: string | null
+          full_name: string | null
+          instagram: string | null
+          location: string | null
+          organizer_user_id: string | null
+          raffle_id: string | null
+          telegram: string | null
+          tiktok: string | null
+          twitter: string | null
+          username: string | null
+          website_url: string | null
+          whatsapp: string | null
+          youtube: string | null
+        }
+        Relationships: []
+      }
+      v_organizer_public_old: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          facebook: string | null
+          full_name: string | null
+          instagram: string | null
+          location: string | null
+          raffle_id: string | null
+          telegram: string | null
+          tiktok: string | null
+          twitter: string | null
+          username: string | null
+          website_url: string | null
+          whatsapp: string | null
+          youtube: string | null
         }
         Relationships: []
       }
@@ -6415,6 +7000,20 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -6466,6 +7065,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -6558,6 +7171,20 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -6629,6 +7256,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -6828,6 +7469,20 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -6899,6 +7554,318 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_paid_tickets_with_null_numbers"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_fk"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_numbers_resolved"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "mv_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_draw_pool_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_paid_tickets_with_null_numbers"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_keys"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_ticket_numbers_resolved"
+            referencedColumns: ["ticket_id"]
+          },
+        ]
+      }
+      v_public_winners_base: {
+        Row: {
+          avatar_url: string | null
+          concurso_number: string | null
+          draw_date: string | null
+          federal_target: string | null
+          logged_at: string | null
+          raffle_id: string | null
+          raffle_title: string | null
+          ticket_id: string | null
+          user_id: string | null
+          winner_handle: string | null
+          winner_id: number | null
+          winning_ticket: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_core"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_raffle_ticket_stats"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_money_view"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_ext"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles_public_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_core"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_min_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -7010,18 +7977,25 @@ export type Database = {
       }
       v_public_winners_pubnames: {
         Row: {
-          avatar_url: string | null
           concurso_number: string | null
+          delta: number | null
           draw_date: string | null
-          federal_target: string | null
+          draw_pairs: string[] | null
+          drawn_number: string | null
           logged_at: string | null
+          prize_position: number | null
+          provider: string | null
+          provider_source: string | null
           raffle_id: string | null
           raffle_title: string | null
+          source: string | null
           ticket_id: string | null
-          user_id: string | null
+          ticket_number: string | null
+          winner_avatar_url: string | null
           winner_handle: string | null
           winner_id: number | null
-          winning_ticket: string | null
+          winner_name: string | null
+          winner_user_id: string | null
         }
         Relationships: [
           {
@@ -7092,6 +8066,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -7169,6 +8157,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -7454,6 +8456,20 @@ export type Database = {
             foreignKeyName: "raffle_winners_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: true
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -7525,6 +8541,20 @@ export type Database = {
             columns: ["raffle_id"]
             isOneToOne: true
             referencedRelation: "v_admin_winners_v2"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "raffle_winners_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "v_organizer_public_old"
             referencedColumns: ["raffle_id"]
           },
           {
@@ -7646,6 +8676,20 @@ export type Database = {
             foreignKeyName: "tickets_raffle_fk"
             columns: ["raffle_id"]
             isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public_old"
+            referencedColumns: ["raffle_id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_fk"
+            columns: ["raffle_id"]
+            isOneToOne: false
             referencedRelation: "v_raffle_ticket_stats"
             referencedColumns: ["raffle_id"]
           },
@@ -7676,6 +8720,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
           },
         ]
       }
@@ -7727,14 +8785,25 @@ export type Database = {
             referencedRelation: "user_profiles_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_organizer_public"
+            referencedColumns: ["organizer_user_id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_winners_pubnames"
+            referencedColumns: ["winner_user_id"]
+          },
         ]
       }
     }
     Functions: {
-      _next_free_number: {
-        Args: { p_raffle: string }
-        Returns: number
-      }
+      _next_free_number: { Args: { p_raffle: string }; Returns: number }
       _notify_insert: {
         Args: {
           p_data: Json
@@ -7746,20 +8815,14 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_delete_category: {
-        Args: { p_id: number }
-        Returns: undefined
-      }
-      admin_delete_subcategory: {
-        Args: { p_id: string }
-        Returns: undefined
-      }
+      admin_delete_category: { Args: { p_id: number }; Returns: undefined }
+      admin_delete_subcategory: { Args: { p_id: string }; Returns: undefined }
       admin_federal_manual_upsert: {
         Args: { p_concurso: string; p_draw_date: string; p_pairs: string[] }
         Returns: Json
       }
       admin_federal_pick_all: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           concurso_number: string
           draw_date: string
@@ -7769,36 +8832,35 @@ export type Database = {
           user_id: string
         }[]
       }
-      admin_federal_pick_now: {
-        Args: Record<PropertyKey, never> | { p_raffle_id: string }
-        Returns: {
-          picked_concurso_number: string
-          picked_draw_date: string
-          result_raffle_id: string
-          result_ticket_id: string
-          result_user_id: string
-        }[]
-      }
+      admin_federal_pick_now:
+        | {
+            Args: never
+            Returns: {
+              picked_concurso_number: string
+              picked_draw_date: string
+              result_raffle_id: string
+              result_ticket_id: string
+              result_user_id: string
+            }[]
+          }
+        | {
+            Args: { p_raffle_id: string }
+            Returns: {
+              picked_concurso_number: string
+              picked_draw_date: string
+              result_raffle_id: string
+              result_ticket_id: string
+              result_user_id: string
+            }[]
+          }
       admin_federal_set_latest: {
         Args: { p_concurso: string; p_draw_date: string; p_numbers: string[] }
         Returns: Json
       }
-      admin_federal_sync_enqueue: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      admin_federal_sync_now: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      admin_health_snapshot: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      admin_pick_all_completed_federal: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      admin_federal_sync_enqueue: { Args: never; Returns: Json }
+      admin_federal_sync_now: { Args: never; Returns: Json }
+      admin_health_snapshot: { Args: never; Returns: Json }
+      admin_pick_all_completed_federal: { Args: never; Returns: Json }
       admin_pick_all_with_log: {
         Args: { p_limit?: number; p_trigger?: string }
         Returns: {
@@ -7810,10 +8872,7 @@ export type Database = {
           winner_user_id: string
         }[]
       }
-      admin_ping: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      admin_ping: { Args: never; Returns: string }
       admin_tickets_backfill_raffle: {
         Args: { p_raffle_id: string }
         Returns: {
@@ -7850,28 +8909,13 @@ export type Database = {
         Args: { p_qty: number; p_raffle_id: string }
         Returns: number[]
       }
-      allocate_tickets: {
-        Args: { p_purchase_id: string }
-        Returns: undefined
-      }
-      anonymize_ip: {
-        Args: { ip_address: string }
-        Returns: string
-      }
-      approve_raffle: {
-        Args: { p_raffle_id: string }
-        Returns: Json
-      }
-      archive_latest_federal: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      auth_is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      allocate_tickets: { Args: { p_purchase_id: string }; Returns: undefined }
+      anonymize_ip: { Args: { ip_address: string }; Returns: string }
+      approve_raffle: { Args: { p_raffle_id: string }; Returns: Json }
+      archive_latest_federal: { Args: never; Returns: undefined }
+      auth_is_admin: { Args: never; Returns: boolean }
       backfill_all_paid_null_numbers: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           fixed: number
           raffle_id: string
@@ -7881,18 +8925,9 @@ export type Database = {
         Args: { p_raffle: string }
         Returns: number
       }
-      bytea_to_text: {
-        Args: { data: string }
-        Returns: string
-      }
-      check_login_abuse: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_raffle_spam: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      bytea_to_text: { Args: { data: string }; Returns: string }
+      check_login_abuse: { Args: never; Returns: undefined }
+      check_raffle_spam: { Args: never; Returns: undefined }
       check_rate_limit: {
         Args: {
           max_count: number
@@ -7902,10 +8937,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_suspicious_actions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_suspicious_actions: { Args: never; Returns: undefined }
       col_exists: {
         Args: { col: string; sch: string; tbl: string }
         Returns: boolean
@@ -7945,9 +8977,9 @@ export type Database = {
         }
         Returns: string
       }
-      create_security_alert_admin: {
-        Args:
-          | {
+      create_security_alert_admin:
+        | {
+            Args: {
               p_context?: Json
               p_description: string
               p_ip_address?: string
@@ -7955,21 +8987,18 @@ export type Database = {
               p_type: string
               p_user_id?: string
             }
-          | { p_message: string; p_meta: Json; p_type: string }
-        Returns: string
-      }
+            Returns: string
+          }
+        | {
+            Args: { p_message: string; p_meta: Json; p_type: string }
+            Returns: undefined
+          }
       create_security_alert_admin_v2: {
         Args: { p_message: string; p_meta: Json; p_type: string }
         Returns: undefined
       }
-      current_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      ensure_profile: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      current_user_id: { Args: never; Returns: string }
+      ensure_profile: { Args: never; Returns: undefined }
       ensure_purchase_payment: {
         Args: {
           p_asaas_payment_id: string
@@ -7980,39 +9009,30 @@ export type Database = {
         }
         Returns: undefined
       }
-      example_function: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      expire_stale_reservations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      f_numbers_key_from_json: {
-        Args: { p: Json }
-        Returns: number
-      }
-      finalize_paid_purchase: {
-        Args:
-          | {
-              p_asaas_payment_id: string
-              p_paid_amount: number
-              p_paid_at: string
-              p_reservation_id: string
-            }
-          | {
+      example_function: { Args: never; Returns: undefined }
+      expire_stale_reservations: { Args: never; Returns: undefined }
+      f_numbers_key_from_json: { Args: { p: Json }; Returns: number }
+      finalize_paid_purchase:
+        | {
+            Args: {
               p_asaas_payment_id?: string
               p_customer_cpf?: string
               p_customer_name?: string
               p_customer_phone?: string
               p_reservation_id: string
             }
-        Returns: Json
-      }
-      finalize_payout: {
-        Args: { p_raffle_id: string }
-        Returns: string
-      }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_asaas_payment_id: string
+              p_paid_amount: number
+              p_paid_at: string
+              p_reservation_id: string
+            }
+            Returns: Json
+          }
+      finalize_payout: { Args: { p_raffle_id: string }; Returns: string }
       finalize_purchase: {
         Args: {
           p_amount: number
@@ -8033,7 +9053,7 @@ export type Database = {
         }[]
       }
       fn_raffles_public_money_ext: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           amount_raised: number
           category_name: string
@@ -8059,16 +9079,13 @@ export type Database = {
           title: string
         }[]
       }
-      ganhavel_slugify: {
-        Args: { _t: string }
-        Returns: string
-      }
+      ganhavel_slugify: { Args: { _t: string }; Returns: string }
       generate_deterministic_pair: {
         Args: { p_position: number; p_ticket_id: string }
         Returns: string
       }
       get_admin_latest_federal_status: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           concurso_number: string
           draw_date: string
@@ -8080,16 +9097,33 @@ export type Database = {
           latest_store_updated_at: string
         }[]
       }
-      get_admin_logs: {
-        Args: Record<PropertyKey, never> | { p_limit?: number }
-        Returns: {
-          action: string
-          context: Json
-          created_at: string
-          id: string
-          user_id: string
-        }[]
-      }
+      get_admin_logs:
+        | {
+            Args: never
+            Returns: {
+              action: string
+              context: Json
+              created_at: string
+              id: string
+              user_id: string
+            }[]
+          }
+        | {
+            Args: { p_limit?: number }
+            Returns: {
+              action: string
+              created_at: string | null
+              details: string | null
+              id: string
+              user_id: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "action_logs"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
       get_admin_winner_detail: {
         Args: { p_raffle_id: string }
         Returns: {
@@ -8116,6 +9150,12 @@ export type Database = {
           winner_id: number | null
           winner_user_id: string | null
           winning_ticket: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "v_admin_winners_v2"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       get_admin_winners_by_raffle: {
@@ -8145,6 +9185,12 @@ export type Database = {
           winner_user_id: string | null
           winning_ticket: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "v_admin_winners_core"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_admin_winners_min: {
         Args: {
@@ -8181,6 +9227,12 @@ export type Database = {
           winner_user_id: string | null
           winning_ticket: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "v_admin_winners_min_v2"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_admin_winners_min_count: {
         Args: {
@@ -8193,19 +9245,34 @@ export type Database = {
         }
         Returns: number
       }
-      get_audit_logs_recent: {
-        Args:
-          | { p_action?: string; p_limit?: number; p_minutes?: number }
-          | { p_limit?: number }
-        Returns: {
-          action: string | null
-          context: Json | null
-          created_at: string | null
-          id: string
-          payload: Json | null
-          user_id: string | null
-        }[]
-      }
+      get_audit_logs_recent:
+        | {
+            Args: { p_limit?: number }
+            Returns: {
+              action: string | null
+              context: Json | null
+              created_at: string | null
+              id: string
+              payload: Json | null
+              user_id: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "audit_logs"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
+        | {
+            Args: { p_action?: string; p_limit?: number; p_minutes?: number }
+            Returns: {
+              action: string
+              context: Json
+              created_at: string
+              id: string
+              user_id: string
+            }[]
+          }
       get_audit_statistics: {
         Args: { days_back?: number }
         Returns: {
@@ -8217,10 +9284,7 @@ export type Database = {
           total_events: number
         }[]
       }
-      get_current_user_role: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      get_current_user_role: { Args: { user_id: string }; Returns: string }
       get_my_audit_logs: {
         Args: { p_action?: string; p_limit?: number; p_minutes?: number }
         Returns: {
@@ -8234,9 +9298,42 @@ export type Database = {
         Args: { user1: string; user2: string }
         Returns: string
       }
-      get_profile_stats: {
-        Args: { target_user_id?: string }
-        Returns: Json
+      get_profile_stats: { Args: { target_user_id?: string }; Returns: Json }
+      get_public_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          facebook: string
+          full_name: string
+          id: string
+          instagram: string
+          location: string
+          telegram: string
+          tiktok: string
+          twitter: string
+          username: string
+          website_url: string
+          whatsapp: string
+          youtube: string
+        }[]
+      }
+      get_public_winners_pubnames: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string
+          concurso_number: string
+          draw_date: string
+          federal_target: string
+          logged_at: string
+          raffle_id: string
+          raffle_title: string
+          ticket_id: string
+          user_id: string
+          winner_handle: string
+          winner_id: number
+          winning_ticket: string
+        }[]
       }
       get_reservation_audit: {
         Args: { p_reservation_id: string }
@@ -8257,35 +9354,88 @@ export type Database = {
           ticket_numbers: number[] | null
           ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
         }
+        SetofOptions: {
+          from: "*"
+          to: "reservation_audit_v1"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      hello_secure: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      hello_secure: { Args: never; Returns: string }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "http_request"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_delete: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_get: {
-        Args: { data: Json; uri: string } | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_delete:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_get:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_head: {
         Args: { uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_header: {
         Args: { field: string; value: string }
         Returns: Database["public"]["CompositeTypes"]["http_header"]
+        SetofOptions: {
+          from: "*"
+          to: "http_header"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_list_curlopt: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           curlopt: string
           value: string
@@ -8294,81 +9444,65 @@ export type Database = {
       http_patch: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_post: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { data: Json; uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_post:
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_put: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_reset_curlopt: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      http_reset_curlopt: { Args: never; Returns: boolean }
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never> | { p_uid: string }
-        Returns: boolean
-      }
-      is_admin_alias: {
-        Args: { uid: string }
-        Returns: boolean
-      }
-      is_admin_rpc: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_numbers_5singles: {
-        Args: { n: Json }
-        Returns: boolean
-      }
-      is_ticket_numbers_5pairs: {
-        Args: { n: Json }
-        Returns: boolean
-      }
-      is_ticket_numbers_5singles: {
-        Args: { n: Json }
-        Returns: boolean
-      }
-      is_ticket_numbers_valid: {
-        Args: { in_numbers: Json }
-        Returns: boolean
-      }
-      is_tx_numbers_valid: {
-        Args: { n: Json }
-        Returns: boolean
-      }
-      is_valid_cnpj: {
-        Args: { raw: string }
-        Returns: boolean
-      }
-      is_valid_cpf: {
-        Args: { raw: string }
-        Returns: boolean
-      }
-      is_valid_cpf_or_cnpj: {
-        Args: { raw: string }
-        Returns: boolean
-      }
-      job_assign_next_draw: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      job_close_draws: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      job_mark_funded: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      is_admin:
+        | { Args: never; Returns: boolean }
+        | { Args: { p_uid: string }; Returns: boolean }
+      is_admin_alias: { Args: { uid: string }; Returns: boolean }
+      is_admin_rpc: { Args: never; Returns: boolean }
+      is_numbers_5singles: { Args: { n: Json }; Returns: boolean }
+      is_ticket_numbers_5pairs: { Args: { n: Json }; Returns: boolean }
+      is_ticket_numbers_5singles: { Args: { n: Json }; Returns: boolean }
+      is_ticket_numbers_valid: { Args: { in_numbers: Json }; Returns: boolean }
+      is_tx_numbers_valid: { Args: { n: Json }; Returns: boolean }
+      is_valid_cnpj: { Args: { raw: string }; Returns: boolean }
+      is_valid_cpf: { Args: { raw: string }; Returns: boolean }
+      is_valid_cpf_or_cnpj: { Args: { raw: string }; Returns: boolean }
+      job_assign_next_draw: { Args: never; Returns: undefined }
+      job_close_draws: { Args: never; Returns: undefined }
+      job_mark_funded: { Args: never; Returns: undefined }
       list_reservations_audit: {
         Args: {
           p_cursor_last_ticket_at?: string
@@ -8392,6 +9526,12 @@ export type Database = {
           ticket_numbers: number[] | null
           ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "reservation_audit_v1"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       list_reservations_by_me: {
         Args: {
@@ -8416,6 +9556,12 @@ export type Database = {
           ticket_numbers: number[] | null
           ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "reservation_audit_v1"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       list_reservations_by_user_admin: {
         Args: {
@@ -8441,6 +9587,12 @@ export type Database = {
           ticket_numbers: number[] | null
           ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "reservation_audit_v1"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       list_reservations_unpaid: {
         Args: {
@@ -8465,37 +9617,36 @@ export type Database = {
           ticket_numbers: number[] | null
           ticket_statuses: Database["public"]["Enums"]["ticket_status"][] | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "reservation_audit_v1"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
-      log_audit_event: {
-        Args:
-          | { action: string; actor_id: string; context: Json }
-          | { action: string; context?: Json }
-        Returns: undefined
-      }
-      log_audit_event_json: {
-        Args: { payload: Json }
-        Returns: undefined
-      }
+      log_audit_event:
+        | { Args: { action: string; context?: Json }; Returns: undefined }
+        | {
+            Args: { action: string; actor_id: string; context: Json }
+            Returns: undefined
+          }
+      log_audit_event_json: { Args: { payload: Json }; Returns: undefined }
       log_bulk_admin_action: {
         Args: { action_type: string; affected_ids: string[]; reason?: string }
         Returns: undefined
       }
-      log_event: {
-        Args:
-          | { p_payload: Json; p_type: string; p_user: string }
-          | { p_payload: Json; p_type: string; p_user: string }
-        Returns: undefined
-      }
-      log_public_visit: {
-        Args:
-          | {
-              dedup_minutes?: number
-              visit_ip: string
-              visit_url: string
-              visit_user_agent?: string
-              visit_user_id?: string
-            }
-          | {
+      log_event:
+        | {
+            Args: { p_payload: Json; p_type: string; p_user: string }
+            Returns: undefined
+          }
+        | {
+            Args: { p_payload: Json; p_type: string; p_user: string }
+            Returns: undefined
+          }
+      log_public_visit:
+        | {
+            Args: {
               visit_city?: string
               visit_country?: string
               visit_ip: string
@@ -8503,8 +9654,18 @@ export type Database = {
               visit_url?: string
               visit_user_agent?: string
             }
-        Returns: undefined
-      }
+            Returns: string
+          }
+        | {
+            Args: {
+              dedup_minutes?: number
+              visit_ip: string
+              visit_url: string
+              visit_user_agent?: string
+              visit_user_id?: string
+            }
+            Returns: undefined
+          }
       log_ticket_purchase: {
         Args: {
           p_raffle_id: string
@@ -8535,26 +9696,11 @@ export type Database = {
         }
         Returns: undefined
       }
-      mask_audit_pii_row: {
-        Args: { ctx: Json }
-        Returns: Json
-      }
-      maybe_close_raffle: {
-        Args: { p_raffle_id: string }
-        Returns: undefined
-      }
-      normalize_tx_status: {
-        Args: { s: string }
-        Returns: string
-      }
-      only_digits: {
-        Args: { v: string }
-        Returns: string
-      }
-      pick_winners_from_latest_federal: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      mask_audit_pii_row: { Args: { ctx: Json }; Returns: Json }
+      maybe_close_raffle: { Args: { p_raffle_id: string }; Returns: undefined }
+      normalize_tx_status: { Args: { s: string }; Returns: string }
+      only_digits: { Args: { v: string }; Returns: string }
+      pick_winners_from_latest_federal: { Args: never; Returns: Json }
       purchase_preview_by_reservation: {
         Args: { p_reservation_id: string }
         Returns: {
@@ -8583,18 +9729,9 @@ export type Database = {
           transaction_id: string
         }[]
       }
-      purge_old_audit_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      purge_old_public_visits: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      purge_old_visit_data: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      purge_old_audit_logs: { Args: never; Returns: number }
+      purge_old_public_visits: { Args: never; Returns: number }
+      purge_old_visit_data: { Args: never; Returns: number }
       push_notification: {
         Args: {
           p_data?: Json
@@ -8631,10 +9768,7 @@ export type Database = {
           user_id: string
         }[]
       }
-      rebuild_reservation_audit_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      rebuild_reservation_audit_cache: { Args: never; Returns: undefined }
       record_mock_purchase: {
         Args: {
           p_buyer_user_id: string
@@ -8671,18 +9805,9 @@ export type Database = {
         }
         Returns: string
       }
-      refresh_homepage_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      refresh_user_follower_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      request_password_reset: {
-        Args: { user_email: string }
-        Returns: string
-      }
+      refresh_homepage_stats: { Args: never; Returns: undefined }
+      refresh_user_follower_stats: { Args: never; Returns: undefined }
+      request_password_reset: { Args: { user_email: string }; Returns: string }
       reserve_tickets: {
         Args: { p_qty: number; p_raffle_id: string }
         Returns: number[]
@@ -8697,18 +9822,9 @@ export type Database = {
           unit_price: number
         }[]
       }
-      run_close_draws_if_ready: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      run_security_checks: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      sanitize_audit_context: {
-        Args: { input_context: Json }
-        Returns: Json
-      }
+      run_close_draws_if_ready: { Args: never; Returns: undefined }
+      run_security_checks: { Args: never; Returns: undefined }
+      sanitize_audit_context: { Args: { input_context: Json }; Returns: Json }
       sanitize_ticket_numbers: {
         Args: {
           enforce_validation?: boolean
@@ -8734,38 +9850,17 @@ export type Database = {
           user_id: string
         }[]
       }
-      select_winner: {
-        Args: { p_raffle_id: string }
-        Returns: string
-      }
-      set_payment_context: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      select_winner: { Args: { p_raffle_id: string }; Returns: string }
+      set_payment_context: { Args: never; Returns: undefined }
       should_log_visit: {
         Args: { visit_ip: string; visit_url: string }
         Returns: boolean
       }
-      slug_dedup: {
-        Args: { _base: string }
-        Returns: string
-      }
-      slugify: {
-        Args: { txt: string }
-        Returns: string
-      }
-      some_function: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      text_to_bytea: {
-        Args: { data: string }
-        Returns: string
-      }
-      ticket_tail5_key: {
-        Args: { pairs: string[] }
-        Returns: string
-      }
+      slug_dedup: { Args: { _base: string }; Returns: string }
+      slugify: { Args: { txt: string }; Returns: string }
+      some_function: { Args: never; Returns: undefined }
+      text_to_bytea: { Args: { data: string }; Returns: string }
+      ticket_tail5_key: { Args: { pairs: string[] }; Returns: string }
       tickets_by_reservation: {
         Args: { p_reservation: string }
         Returns: {
@@ -8794,11 +9889,18 @@ export type Database = {
           updated_at: string
           user_id: string | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       tickets_numbers_conflict: {
         Args: { p_numbers: Json; p_raffle_id: string }
         Returns: boolean
       }
+      unaccent: { Args: { "": string }; Returns: string }
       update_user_role: {
         Args: { new_role: string; user_id: string }
         Returns: undefined
@@ -8820,10 +9922,20 @@ export type Database = {
         }
         Returns: string
       }
-      urlencode: {
-        Args: { data: Json } | { string: string } | { string: string }
-        Returns: string
-      }
+      urlencode:
+        | { Args: { data: Json }; Returns: string }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
       validate_rate_limit_before_action: {
         Args: {
           action_type: string
@@ -8858,7 +9970,7 @@ export type Database = {
         value: string | null
       }
       http_request: {
-        method: unknown | null
+        method: unknown
         uri: string | null
         headers: Database["public"]["CompositeTypes"]["http_header"][] | null
         content_type: string | null
