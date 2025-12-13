@@ -83,6 +83,7 @@ import EmailTest from '@/pages/admin/EmailTest';
 import MidiaKit from '@/pages/MidiaKit';
 import GanhaveisPartnershipMagalu from '@/pages/GanhaveisPartnershipMagalu';
 import GanhaveisPartnershipKabum from '@/pages/GanhaveisPartnershipKabum';
+import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics';
 import { UnifiedDebugPanel } from '@/components/UnifiedDebugPanel';
 
@@ -243,6 +244,7 @@ const AppContent = () => {
         <Route path="/midia-kit" element={<MidiaKit />} />
         <Route path="/ganhavel-magalu" element={<GanhaveisPartnershipMagalu />} />
         <Route path="/ganhavel-kabum" element={<GanhaveisPartnershipKabum />} />
+        <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
         {/* Hash route compatibility for direct hash access */}
         <Route path="business-model" element={<BusinessModel />} />
         <Route path="investment" element={<Investment />} />
