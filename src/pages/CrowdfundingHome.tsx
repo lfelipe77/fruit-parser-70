@@ -87,6 +87,7 @@ export default function CrowdfundingHome() {
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link to="/sobre-nos" className="hover:text-foreground transition-colors">Sobre Nós</Link></li>
                 <li><Link to="/trabalhe-conosco" className="hover:text-foreground transition-colors">Trabalhe Conosco</Link></li>
+                <li><Link to="/politica-de-privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
               </ul>
             </div>
           </div>
