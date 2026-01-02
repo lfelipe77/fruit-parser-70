@@ -84,6 +84,7 @@ import MidiaKit from '@/pages/MidiaKit';
 import GanhaveisPartnershipMagalu from '@/pages/GanhaveisPartnershipMagalu';
 import GanhaveisPartnershipKabum from '@/pages/GanhaveisPartnershipKabum';
 import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
+import TermosCondicoes from '@/pages/TermosCondicoes';
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics';
 import { UnifiedDebugPanel } from '@/components/UnifiedDebugPanel';
 
@@ -245,6 +246,7 @@ const AppContent = () => {
         <Route path="/ganhavel-magalu" element={<GanhaveisPartnershipMagalu />} />
         <Route path="/ganhavel-kabum" element={<GanhaveisPartnershipKabum />} />
         <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+        <Route path="/termos-e-condicoes" element={<TermosCondicoes />} />
         {/* Hash route compatibility for direct hash access */}
         <Route path="business-model" element={<BusinessModel />} />
         <Route path="investment" element={<Investment />} />
