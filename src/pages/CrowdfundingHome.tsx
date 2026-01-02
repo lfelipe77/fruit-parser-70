@@ -86,13 +86,6 @@ export default function CrowdfundingHome() {
               <h3 className="font-semibold mb-4">Empresa</h3>
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link to="/sobre-nos" className="hover:text-foreground transition-colors">Sobre Nós</Link></li>
-                <li><Link to="/trabalhe-conosco" className="hover:text-foreground transition-colors">Trabalhe Conosco</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-muted-foreground">
                 <li><Link to="/termos-e-condicoes" className="hover:text-foreground transition-colors">Termos e Condições</Link></li>
                 <li><Link to="/politica-de-privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
               </ul>
